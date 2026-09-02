@@ -5,6 +5,10 @@ using UnityEngine;
 public class MapManager : MonoBehaviour
 {
     [SerializeField] private float baseSpeed = 10f;
+    [SerializeField] private NodeView nodeViewPrefab;
+    [SerializeField] private EdgeView edgeViewPrefab;
+    [SerializeField] private Transform nodesParent;
+    [SerializeField] private Transform edgesParent;
 
     private const string EdgeStoreToN1 = "Store-N1";
     private const string EdgeN1ToN2Main = "N1-N2-Main";
@@ -14,17 +18,17 @@ public class MapManager : MonoBehaviour
     private readonly List<MapNode> nodes = new();
     private readonly List<MapEdge> edges = new();
     private readonly RouteState routeState = new();
+    private readonly Dictionary<string, EdgeView> edgeViews = new();
 
     private void Start()
     {
         CreateTestMap();
         SetMainRoute();
         RecalculateRoute();
+        CreateMapViews();
+        UpdateEdgeViews();
 
-        Debug.Log($"Main route: distance={routeState.TotalDistance}, time={routeState.EstimatedTime:F2}");
-
-        ToggleEdge(EdgeN1ToN2Backstreet);
-        Debug.Log($"Backstreet route: distance={routeState.TotalDistance}, time={routeState.EstimatedTime:F2}");
+        Debug.Log($"Current route: distance={routeState.TotalDistance}, time={routeState.EstimatedTime:F2}");
     }
 
     public void ToggleEdge(string edgeId)
@@ -48,6 +52,9 @@ public class MapManager : MonoBehaviour
         }
 
         RecalculateRoute();
+        UpdateEdgeViews();
+
+        Debug.Log($"Current route: distance={routeState.TotalDistance}, time={routeState.EstimatedTime:F2}");
     }
 
     private void CreateTestMap()
@@ -74,6 +81,36 @@ public class MapManager : MonoBehaviour
         routeState.ActiveEdgeIds.Add(EdgeN2ToGoal);
     }
 
+    private void CreateMapViews()
+    {
+        foreach (MapNode node in nodes)
+        {
+            NodeView nodeView = Instantiate(nodeViewPrefab, nodesParent);
+            nodeView.Initialize(node);
+        }
+
+        foreach (MapEdge edge in edges)
+        {
+            MapNode nodeA = FindNode(edge.NodeAId);
+            MapNode nodeB = FindNode(edge.NodeBId);
+            bool isActive = routeState.ActiveEdgeIds.Contains(edge.Id);
+
+            EdgeView edgeView = Instantiate(edgeViewPrefab, edgesParent);
+            edgeView.Initialize(edge, nodeA, nodeB, this, isActive);
+
+            edgeViews.Add(edge.Id, edgeView);
+        }
+    }
+
+    private void UpdateEdgeViews()
+    {
+        foreach (MapEdge edge in edges)
+        {
+            bool isActive = routeState.ActiveEdgeIds.Contains(edge.Id);
+            edgeViews[edge.Id].SetActive(isActive);
+        }
+    }
+
     private void RecalculateRoute()
     {
         float totalDistance = 0f;
@@ -94,5 +131,10 @@ public class MapManager : MonoBehaviour
     private float CalculateEdgeTime(MapEdge edge)
     {
         return edge.Distance / (baseSpeed * edge.TrafficFactor);
+    }
+
+    private MapNode FindNode(string nodeId)
+    {
+        return nodes.First(node => node.Id == nodeId);
     }
 }
