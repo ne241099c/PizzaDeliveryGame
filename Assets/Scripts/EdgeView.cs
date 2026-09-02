@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class EdgeView : MonoBehaviour
 {
@@ -23,47 +24,72 @@ public class EdgeView : MonoBehaviour
         Vector3 start = nodeA.Position;
         Vector3 end = nodeB.Position;
 
+        if (edge.RoadType == RoadType.Backstreet)
+        {
+            Vector3 direction = (end - start).normalized;
+            Vector3 perpendicular = new Vector3(-direction.y, direction.x, 0f);
+            Vector3 offset = perpendicular * 0.25f;
+
+            start += offset;
+            end += offset;
+        }
+
+        transform.position = start;
+        Vector3 localEnd = end - start;
+
         lineRenderer.positionCount = 2;
-        lineRenderer.SetPosition(0, start);
-        lineRenderer.SetPosition(1, end);
-        lineRenderer.useWorldSpace = true;
+        lineRenderer.useWorldSpace = false;
+        lineRenderer.SetPosition(0, Vector3.zero);
+        lineRenderer.SetPosition(1, localEnd);
 
         edgeCollider.points = new Vector2[]
         {
-            nodeA.Position,
-            nodeB.Position
+            Vector2.zero,
+            localEnd
         };
 
         edgeCollider.enabled = edge.RoadType == RoadType.Backstreet;
+        edgeCollider.edgeRadius = edge.RoadType == RoadType.Backstreet ? 0.35f : 0f;
 
         SetActive(isActive);
+    }
+
+    private void Update()
+    {
+        if (edge == null || edge.RoadType != RoadType.Backstreet)
+        {
+            return;
+        }
+
+        if (Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            return;
+        }
+
+        Vector2 screenPosition = Mouse.current.position.ReadValue();
+        Vector2 worldPosition = Camera.main.ScreenToWorldPoint(screenPosition);
+
+        if (edgeCollider.OverlapPoint(worldPosition))
+        {
+            mapManager.ToggleEdge(edge.Id);
+        }
     }
 
     public void SetActive(bool isActive)
     {
         if (edge.RoadType == RoadType.Main)
         {
-            lineRenderer.startWidth = 0.18f;
-            lineRenderer.endWidth = 0.18f;
+            lineRenderer.startWidth = 0.12f;
+            lineRenderer.endWidth = 0.12f;
             lineRenderer.startColor = isActive ? Color.green : Color.gray;
             lineRenderer.endColor = isActive ? Color.green : Color.gray;
         }
         else
         {
-            lineRenderer.startWidth = 0.1f;
-            lineRenderer.endWidth = 0.1f;
+            lineRenderer.startWidth = 0.08f;
+            lineRenderer.endWidth = 0.08f;
             lineRenderer.startColor = isActive ? Color.green : Color.yellow;
             lineRenderer.endColor = isActive ? Color.green : Color.yellow;
         }
-    }
-
-    private void OnMouseDown()
-    {
-        if (edge.RoadType != RoadType.Backstreet)
-        {
-            return;
-        }
-
-        mapManager.ToggleEdge(edge.Id);
     }
 }

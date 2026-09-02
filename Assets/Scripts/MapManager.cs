@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -20,6 +21,9 @@ public class MapManager : MonoBehaviour
     private readonly RouteState routeState = new();
     private readonly Dictionary<string, EdgeView> edgeViews = new();
 
+    public event Action<RouteState> OnRouteChanged;
+    public RouteState CurrentRouteState => routeState;
+
     private void Start()
     {
         CreateTestMap();
@@ -28,7 +32,7 @@ public class MapManager : MonoBehaviour
         CreateMapViews();
         UpdateEdgeViews();
 
-        Debug.Log($"Current route: distance={routeState.TotalDistance}, time={routeState.EstimatedTime:F2}");
+        OnRouteChanged?.Invoke(routeState);
     }
 
     public void ToggleEdge(string edgeId)
@@ -54,7 +58,7 @@ public class MapManager : MonoBehaviour
         RecalculateRoute();
         UpdateEdgeViews();
 
-        Debug.Log($"Current route: distance={routeState.TotalDistance}, time={routeState.EstimatedTime:F2}");
+        OnRouteChanged?.Invoke(routeState);
     }
 
     private void CreateTestMap()
