@@ -75,4 +75,10 @@ public class DeliveryPersonSelector : MonoBehaviour
                 image.color = Color.white;
             }
         }
+
+        public void ClearSelection()
+        {
+            SelectedPerson = null;
+            Refresh();
+        }
     }

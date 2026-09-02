@@ -32,6 +32,7 @@ public class DeliveryFlowController : MonoBehaviour
 
         scoreManager.OnDeliveryCompleted();
         orderListUI.RemoveOrder(selectedOrder);
+        deliveryPersonSelector.ClearSelection();
 
         UpdateCompleteyButtonState();
     }
