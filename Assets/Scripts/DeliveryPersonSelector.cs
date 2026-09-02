@@ -48,37 +48,37 @@ public class DeliveryPersonSelector : MonoBehaviour
         }
     }
 
-        private void TogglePerson(DeliveryPerson person)
-        {
-            if (SelectedPerson == person)
-            {
-                SelectedPerson = null;
-            }
-            else
-            {
-                SelectedPerson = person;
-            }
-
-            Refresh();
-        }
-
-        private void UpdateButtonColor(Button button, DeliveryPerson person)
-        {
-            Image image = button.GetComponent<Image>();
-
-            if (SelectedPerson == person)
-            {
-                image.color = Color.cyan;
-            }
-            else
-            {
-                image.color = Color.white;
-            }
-        }
-
-        public void ClearSelection()
+    private void TogglePerson(DeliveryPerson person)
+    {
+        if (SelectedPerson == person)
         {
             SelectedPerson = null;
-            Refresh();
+        }
+        else
+        {
+            SelectedPerson = person;
+        }
+
+        Refresh();
+    }
+
+    private void UpdateButtonColor(Button button, DeliveryPerson person)
+    {
+        Image image = button.GetComponent<Image>();
+
+        if (SelectedPerson == person)
+        {
+            image.color = Color.cyan;
+        }
+        else
+        {
+            image.color = Color.white;
         }
     }
+
+    public void ClearSelection()
+    {
+        SelectedPerson = null;
+        Refresh();
+    }
+}

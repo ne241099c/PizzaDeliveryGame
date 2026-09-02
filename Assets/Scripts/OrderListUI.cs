@@ -56,7 +56,7 @@ public class OrderListUI : MonoBehaviour
             label.text = order.DestinationName;
 
             button.onClick.AddListener(() => ToggleOrder(order));
-            UpdateButtonColor(button,order);
+            UpdateButtonColor(button, order);
         }
     }
 

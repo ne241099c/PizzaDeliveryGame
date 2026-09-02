@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class DeliveryFlowController : MonoBehaviour
 {
-    [SerializeField] ScoreManager scoreManager;
+    [SerializeField] private ScoreManager scoreManager;
     [SerializeField] private OrderListUI orderListUI;
     [SerializeField] private DeliveryPersonSelector deliveryPersonSelector;
     [SerializeField] private Button completeDeliveryButton;
@@ -11,18 +11,18 @@ public class DeliveryFlowController : MonoBehaviour
     private void Start()
     {
         completeDeliveryButton.onClick.AddListener(CompleteDelivery);
-        UpdateCompleteyButtonState();
+        UpdateCompleteButtonState();
     }
 
     private void Update()
     {
-        UpdateCompleteyButtonState();
+        UpdateCompleteButtonState();
     }
 
     private void CompleteDelivery()
     {
-       Order selectedOrder = orderListUI.SelectedOrder;
-       DeliveryPerson selectedPerson = deliveryPersonSelector.SelectedPerson;
+        Order selectedOrder = orderListUI.SelectedOrder;
+        DeliveryPerson selectedPerson = deliveryPersonSelector.SelectedPerson;
 
         if (selectedOrder == null || selectedPerson == null)
         {
@@ -34,10 +34,10 @@ public class DeliveryFlowController : MonoBehaviour
         orderListUI.RemoveOrder(selectedOrder);
         deliveryPersonSelector.ClearSelection();
 
-        UpdateCompleteyButtonState();
+        UpdateCompleteButtonState();
     }
 
-    private void UpdateCompleteyButtonState()
+    private void UpdateCompleteButtonState()
     {
         bool hasSelectedOrder = orderListUI.SelectedOrder != null;
         bool hasSelectedPerson = deliveryPersonSelector.SelectedPerson != null;
