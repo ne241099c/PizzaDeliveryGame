@@ -67,3 +67,9 @@ PrefabはScene内で直接編集するのではなく、ProjectビューのPrefa
 - 注文をStart時固定ではなく、時間経過で追加する。
 - 注文0件時の表示を追加する。
 - スコア以外に完了件数を表示する。
+
+## 実装メモ
+
+- `OrderListUI` と `DeliveryPersonSelector` の `Refresh()` は、生成済みボタンを使い回す方式。必要数が足りない場合だけ追加生成し、不要なボタンは非表示にする。
+- ボタンの `onClick` ではラムダ式で対象データを渡している。`capturedOrder` / `capturedPerson` というローカル変数に一度入れて、このボタンがどのデータを扱うかを明示している。
+- `DeliveryFlowController` は `Update()` でボタン状態を毎フレーム確認している。M1では十分だが、M2以降で選択変更イベントを使う形に置き換える余地がある。

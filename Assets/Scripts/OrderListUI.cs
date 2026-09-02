@@ -40,23 +40,36 @@ public class OrderListUI : MonoBehaviour
 
     private void Refresh()
     {
-        foreach (Button button in orderButtons)
+        EnsureButtonCount(orders.Count);
+
+        for (int i = 0; i < orderButtons.Count; i++)
         {
-            Destroy(button.gameObject);
-        }
+            Button button = orderButtons[i];
+            bool hasOrder = i < orders.Count;
+            button.gameObject.SetActive(hasOrder);
 
-        orderButtons.Clear();
+            if (!hasOrder)
+            {
+                continue;
+            }
 
-        foreach (Order order in orders)
-        {
-            Button button = Instantiate(orderItemPrefab, orderListContent);
-            orderButtons.Add(button);
-
+            Order order = orders[i];
             TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>();
             label.text = order.DestinationName;
 
-            button.onClick.AddListener(() => ToggleOrder(order));
+            button.onClick.RemoveAllListeners();
+            Order capturedOrder = order;
+            button.onClick.AddListener(() => ToggleOrder(capturedOrder));
             UpdateButtonColor(button, order);
+        }
+    }
+
+    private void EnsureButtonCount(int requiredCount)
+    {
+        while (orderButtons.Count < requiredCount)
+        {
+            Button button = Instantiate(orderItemPrefab, orderListContent);
+            orderButtons.Add(button);
         }
     }
 

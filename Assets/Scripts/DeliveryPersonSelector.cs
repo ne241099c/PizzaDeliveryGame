@@ -28,23 +28,36 @@ public class DeliveryPersonSelector : MonoBehaviour
 
     private void Refresh()
     {
-        foreach (Button button in deliveryPersonButtons)
+        EnsureButtonCount(deliveryPeople.Count);
+
+        for (int i = 0; i < deliveryPersonButtons.Count; i++)
         {
-            Destroy(button.gameObject);
-        }
+            Button button = deliveryPersonButtons[i];
+            bool hasPerson = i < deliveryPeople.Count;
+            button.gameObject.SetActive(hasPerson);
 
-        deliveryPersonButtons.Clear();
+            if (!hasPerson)
+            {
+                continue;
+            }
 
-        foreach (DeliveryPerson person in deliveryPeople)
-        {
-            Button button = Instantiate(deliveryPersonItemPrefab, deliveryPersonListContent);
-            deliveryPersonButtons.Add(button);
-
+            DeliveryPerson person = deliveryPeople[i];
             TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>();
             label.text = person.Name;
 
-            button.onClick.AddListener(() => TogglePerson(person));
+            button.onClick.RemoveAllListeners();
+            DeliveryPerson capturedPerson = person;
+            button.onClick.AddListener(() => TogglePerson(capturedPerson));
             UpdateButtonColor(button, person);
+        }
+    }
+
+    private void EnsureButtonCount(int requiredCount)
+    {
+        while (deliveryPersonButtons.Count < requiredCount)
+        {
+            Button button = Instantiate(deliveryPersonItemPrefab, deliveryPersonListContent);
+            deliveryPersonButtons.Add(button);
         }
     }
 

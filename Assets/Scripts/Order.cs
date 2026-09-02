@@ -6,14 +6,14 @@ public class Order
 {
     public string Id;
     public string DestinationName;
-    public float OrderdAt;
+    public float OrderedAt;
     public float TimeLimit;
 
-    public Order(string destinationName, float orderdAt, float timeLimit)
+    public Order(string destinationName, float orderedAt, float timeLimit)
     {
         Id = Guid.NewGuid().ToString();
         DestinationName = destinationName;
-        OrderdAt = orderdAt;
+        OrderedAt = orderedAt;
         TimeLimit = timeLimit;
     }
 }
