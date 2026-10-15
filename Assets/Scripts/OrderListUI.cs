@@ -33,9 +33,9 @@ public class OrderListUI : MonoBehaviour
 
     private void CreateDummyOrders()
     {
-        orders.Add(new Order("Tanaka House", Time.time, 60f));
-        orders.Add(new Order("Suzuki Apartment", Time.time, 60f));
-        orders.Add(new Order("Sato Office", Time.time, 60f));
+        orders.Add(new Order("Goal1", "Tanaka House", Time.time, 60f));
+        orders.Add(new Order("Goal2", "Suzuki Apartment", Time.time, 60f));
+        // orders.Add(new Order("Goal3", "Sato Office", Time.time, 60f));
     }
 
     private void Refresh()
