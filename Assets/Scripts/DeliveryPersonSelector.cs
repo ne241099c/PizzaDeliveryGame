@@ -8,99 +8,61 @@ public class DeliveryPersonSelector : MonoBehaviour
 {
     [SerializeField] private Transform deliveryPersonListContent;
     [SerializeField] private Button deliveryPersonItemPrefab;
-
-    private readonly List<DeliveryPerson> deliveryPeople = new();
-    private readonly List<Button> deliveryPersonButtons = new();
-
+    [SerializeField] private GameClock clock;
+    [SerializeField] private List<DeliveryPerson> deliveryPeople = new()
+    {
+        new DeliveryPerson("Minato", 0.9f), new DeliveryPerson("Aoi", 0.6f), new DeliveryPerson("Ren", 0.3f)
+    };
+    private readonly List<Button> buttons = new();
     public DeliveryPerson SelectedPerson { get; private set; }
+    public IReadOnlyList<DeliveryPerson> People => deliveryPeople;
     public event Action SelectionChanged;
-
-    public void ConfigureContent(Transform content) => deliveryPersonListContent = content;
 
     private void Start()
     {
-        CreateDummyDeliveryPeople();
+        buttons.AddRange(deliveryPersonListContent.GetComponentsInChildren<Button>(true));
+        while (buttons.Count < deliveryPeople.Count)
+        {
+            var button = Instantiate(deliveryPersonItemPrefab, deliveryPersonListContent);
+            var layout = button.GetComponent<LayoutElement>() ?? button.gameObject.AddComponent<LayoutElement>();
+            layout.minHeight = layout.preferredHeight = 62;
+            buttons.Add(button);
+        }
+        for (int i = 0; i < buttons.Count; i++)
+        {
+            buttons[i].gameObject.SetActive(i < deliveryPeople.Count);
+            if (i >= deliveryPeople.Count) continue;
+            DeliveryPerson person = deliveryPeople[i];
+            buttons[i].onClick.RemoveAllListeners();
+            buttons[i].onClick.AddListener(() => Select(person));
+            buttons[i].GetComponentInChildren<TextMeshProUGUI>().raycastTarget = false;
+        }
         Refresh();
-        SelectionChanged?.Invoke();
     }
-
-    private void CreateDummyDeliveryPeople()
-    {
-        deliveryPeople.Add(new DeliveryPerson("Minato", 0.9f));
-        deliveryPeople.Add(new DeliveryPerson("Aoi", 0.6f));
-        deliveryPeople.Add(new DeliveryPerson("Ren", 0.3f));
-    }
-
+    private void Update() => Refresh();
     private void Refresh()
     {
-        EnsureButtonCount(deliveryPeople.Count);
-
-        for (int i = 0; i < deliveryPersonButtons.Count; i++)
+        for (int i = 0; i < deliveryPeople.Count && i < buttons.Count; i++)
         {
-            Button button = deliveryPersonButtons[i];
-            bool hasPerson = i < deliveryPeople.Count;
-            button.gameObject.SetActive(hasPerson);
-
-            if (!hasPerson)
-            {
-                continue;
-            }
-
-            DeliveryPerson person = deliveryPeople[i];
-            TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>();
-            label.text = $"{person.Name}    Skill {person.SkillLevel:F1}";
-            label.fontSize = 22;
-            label.color = new Color(0.12f, 0.16f, 0.23f);
-            label.raycastTarget = false;
-
-            button.onClick.RemoveAllListeners();
-            DeliveryPerson capturedPerson = person;
-            button.onClick.AddListener(() => TogglePerson(capturedPerson));
-            UpdateButtonColor(button, person);
+            var person = deliveryPeople[i];
+            float remaining = Mathf.Max(0, (person.CurrentTrip?.ReturnsAt ?? 0) - clock.ElapsedSeconds);
+            string state = person.IsAvailable ? "Idle" : $"{person.Status} / {remaining:F0}s";
+            var label = buttons[i].GetComponentInChildren<TextMeshProUGUI>();
+            label.text = $"{person.Name} / Skill {person.SkillLevel:F1}\n<size=17>{state}</size>";
+            label.fontSize = 19;
+            label.color = new Color(0.1f, 0.14f, 0.2f);
+            buttons[i].interactable = person.IsAvailable && clock.Phase == DayPhase.Open;
+            buttons[i].GetComponent<Image>().color = SelectedPerson == person ? Color.cyan
+                : person.IsAvailable ? Color.white : new Color(0.55f, 0.61f, 0.7f);
         }
     }
-
-    private void EnsureButtonCount(int requiredCount)
+    private void Select(DeliveryPerson person)
     {
-        while (deliveryPersonButtons.Count < requiredCount)
-        {
-            Button button = Instantiate(deliveryPersonItemPrefab, deliveryPersonListContent);
-            LayoutElement layout = button.gameObject.AddComponent<LayoutElement>();
-            layout.preferredHeight = 48f;
-            layout.minHeight = 48f;
-            deliveryPersonButtons.Add(button);
-        }
-    }
-
-    private void TogglePerson(DeliveryPerson person)
-    {
-        if (SelectedPerson == person)
-        {
-            SelectedPerson = null;
-        }
-        else
-        {
-            SelectedPerson = person;
-        }
-
+        if (!person.IsAvailable || clock.Phase != DayPhase.Open) return;
+        SelectedPerson = SelectedPerson == person ? null : person;
         Refresh();
         SelectionChanged?.Invoke();
     }
-
-    private void UpdateButtonColor(Button button, DeliveryPerson person)
-    {
-        Image image = button.GetComponent<Image>();
-
-        if (SelectedPerson == person)
-        {
-            image.color = Color.cyan;
-        }
-        else
-        {
-            image.color = Color.white;
-        }
-    }
-
     public void ClearSelection()
     {
         SelectedPerson = null;
