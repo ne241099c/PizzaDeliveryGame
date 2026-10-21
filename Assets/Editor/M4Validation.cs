@@ -19,9 +19,9 @@ public static class M4Validation
         int checks = 0;
         void Check(bool ok, string name) { if (!ok) throw new Exception("M4: " + name); checks++; }
         void Near(float a, float b, string name) => Check(Mathf.Abs(a-b)<0.001f, name + $" ({a}, expected {b})");
-        Near(OrderSpawner.CalculateDeadlineDuration(6.1f,5,1.8f),54.9f,"Goal1 deadline duration");
-        var order = new Order("Goal1","Test",10,54.9f);
-        Near(order.SpawnedAt,10,"Spawn timestamp"); Near(order.Deadline,64.9f,"Absolute deadline");
+        Near(UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().CreateOrder("Goal1",10).Deadline,10+UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().PromiseSeconds,"Deadline snapshots delivery promise");
+        var order = new Order("Goal1","Test",10,60);
+        Near(order.SpawnedAt,10,"Spawn timestamp"); Near(order.Deadline,70f,"Absolute deadline");
         Check(order.Status == OrderStatus.Pending,"New order pending");
         Check(DeliveryScoring.Calculate(50,60,100,5)==100,"Early full score");
         Check(DeliveryScoring.Calculate(60,60,100,5)==100,"Deadline inclusive");

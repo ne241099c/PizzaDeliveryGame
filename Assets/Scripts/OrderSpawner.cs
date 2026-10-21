@@ -9,10 +9,23 @@ public sealed class OrderSpawner : MonoBehaviour
     [SerializeField] private OrderListUI orders;
     [SerializeField, Min(0.1f)] private float interval = 25f;
     [SerializeField, Range(0f, 0.9f)] private float intervalVariation = 0.3f;
-    [SerializeField, Min(0.01f)] private float deadlineFactor = 1.8f;
-    private float nextSpawn;
+    [SerializeField, Min(0.01f)] private float initialPromiseSeconds = 60f;
+    [SerializeField, Min(0.01f)] private float maximumPromiseSeconds = 240f;
+    [SerializeField, Min(1f)] private float minimumPromiseMargin = 1.1f;
+    [SerializeField, Min(0.01f)] private float referencePromiseSeconds = 60f;
+    [SerializeField, Min(0f)] private float demandExponent = 0.7f;
+    [SerializeField, Min(0.01f)] private float minimumDemand = 0.4f;
+    [SerializeField, Min(0.01f)] private float maximumDemand = 2f;
+    private float progress;
+    private float jitter = 1;
     private bool scheduled;
+    public float PromiseSeconds { get; private set; }
+    public float MinimumPromiseSeconds { get; private set; }
+    public float MaximumPromiseSeconds => Mathf.Max(maximumPromiseSeconds, MinimumPromiseSeconds);
+    public float ReputationFactor => 1f;
+    public float ExpectedInterval => interval / (DemandFactor(PromiseSeconds) * ReputationFactor);
 
+    private void Awake() => PromiseSeconds = initialPromiseSeconds;
     private void OnEnable()
     {
         clock.OnDayStarted += ScheduleFirst;
@@ -25,31 +38,49 @@ public sealed class OrderSpawner : MonoBehaviour
         clock.Advanced -= Tick;
         map.MapReady -= MapReady;
     }
-    private void Start() { if (clock.Phase == DayPhase.Open) ScheduleFirst(); }
-    private void MapReady() { if (clock.Phase == DayPhase.Open && !scheduled) ScheduleFirst(); }
-    private float NextInterval() => Mathf.Max(0.1f, interval * Random.Range(1f - intervalVariation, 1f + intervalVariation));
+    private void Start() { if (map.IsReady) MapReady(); }
+    private void MapReady()
+    {
+        MinimumPromiseSeconds = map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress && !n.IsStore)
+            .Select(n=>ShortestArrivalSeconds(n.Id)).DefaultIfEmpty(0).Max() * minimumPromiseMargin;
+        SetPromiseSeconds(PromiseSeconds);
+        if (clock.Phase == DayPhase.Open) ScheduleFirst();
+    }
+    public void SetPromiseSeconds(float seconds)
+        => PromiseSeconds = Mathf.Clamp(seconds, Mathf.Max(0.01f,MinimumPromiseSeconds), MaximumPromiseSeconds);
+    public float DemandFactor(float seconds)
+        => Mathf.Clamp(Mathf.Pow(referencePromiseSeconds/Mathf.Max(0.01f,seconds),demandExponent),minimumDemand,maximumDemand);
+    public float ShortestArrivalSeconds(string destination)
+    {
+        var perfect = new DeliveryPerson("Reference",1,1,2,1,1,1);
+        var path = RoadPathfinder.FindShortestPath(map.Edges,map.StoreNodeId,destination,e=>map.GetTravelTime(e.Id,perfect));
+        if (path==null) throw new System.InvalidOperationException("Unreachable delivery address: "+destination);
+        return clock.ToRealSeconds(path.Sum(id=>map.GetTravelTime(id,perfect)));
+    }
+    public Order CreateOrder(string destination, float spawnedAt)
+        => new Order(destination,"Delivery to "+destination,spawnedAt,PromiseSeconds);
+    private void NextJitter() => jitter = Random.Range(1f-intervalVariation,1f+intervalVariation);
     private void ScheduleFirst()
     {
         if (scheduled || !map.IsReady) return;
-        nextSpawn = clock.ElapsedSeconds + NextInterval();
-        scheduled = true;
+        progress=0;NextJitter();scheduled=true;
     }
     private void Tick(float before, float now)
     {
         if (!scheduled || clock.Phase != DayPhase.Open || !map.IsReady) return;
-        var destinations = map.Nodes.Where(n => n.NodeType == NodeType.DeliveryAddress && !n.IsStore).ToArray();
-        if (destinations.Length == 0) return;
-        while (nextSpawn <= now && nextSpawn < clock.BusinessDuration)
+        var destinations = map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress && !n.IsStore).ToArray();
+        if (destinations.Length==0) return;
+        float cursor=before;
+        // Preserve progress through the current interval when the policy changes.
+        while (cursor < now)
         {
-            MapNode destination = destinations[Random.Range(0, destinations.Length)];
-            var probe = new Order(destination.Id, destination.Id, nextSpawn, 0);
-            float? mapTime = RoadPathfinder.GetIndividualReferenceTime(map, new[] { probe }, new DeliveryPerson("Reference", 1f));
-            if (mapTime.HasValue)
-                orders.AddOrder(new Order(destination.Id, "Delivery to " + destination.Id, nextSpawn,
-                    CalculateDeadlineDuration(mapTime.Value, clock.TravelTimeMultiplier, deadlineFactor)));
-            nextSpawn += NextInterval();
+            float duration=Mathf.Max(0.1f,ExpectedInterval*jitter);
+            float untilSpawn=(1-progress)*duration;
+            if (untilSpawn>now-cursor) {progress+=(now-cursor)/duration;break;}
+            cursor+=untilSpawn;
+            if(cursor>=clock.BusinessDuration)break;
+            orders.AddOrder(CreateOrder(destinations[Random.Range(0,destinations.Length)].Id,cursor));
+            progress=0;NextJitter();
         }
     }
-    public static float CalculateDeadlineDuration(float roundTripTime, float multiplier, float factor)
-        => roundTripTime * multiplier * factor;
 }

@@ -32,7 +32,7 @@ public static class M4PlayValidation
         void SelectPerson(int index) => Content(people,"deliveryPersonListContent").GetComponentsInChildren<Button>().ElementAt(index).onClick.Invoke();
         Set(clock,"automaticTick",false);
         Check(orders.OrderCount>0,"Automatic orders appeared");
-        Check(orders.Orders.All(o=>Mathf.Abs(o.TimeLimit-(o.DestinationNodeId=="Goal1"?54.9f:58.5f))<0.001f),"Spawned deadlines use expert round trips");
+        Check(orders.Orders.All(o=>Mathf.Abs(o.TimeLimit-60f)<0.001f),"Spawned deadlines snapshot promise");
         spawner.enabled=false;
         orders.RemoveOrders(orders.Orders.ToArray());
         float start=clock.ElapsedSeconds;
@@ -50,7 +50,7 @@ public static class M4PlayValidation
         GameObject.Find("DispatchSuggestion").GetComponent<Button>().onClick.Invoke();
         var d=new Order("Goal2","Test D",start,100);orders.AddOrder(d);SelectOrder(0);SelectPerson(2);
         GameObject.Find("DispatchSuggestion").GetComponent<Button>().onClick.Invoke();
-        Check(flow.ActiveTrips.Count==3 && people.People.All(p=>!p.IsAvailable),"Three concurrent trips");
+        Check(flow.ActiveTrips.Count==3 && people.People.Take(3).All(p=>!p.IsAvailable),"Three concurrent trips");
         Check(GameObject.Find("CourierMarkers").transform.childCount==3,"Three independent map markers");
         Check(stats.DeliveredCount==0 && score.Score==0,"No score at dispatch");
         var trips=flow.ActiveTrips.ToArray();
@@ -60,7 +60,7 @@ public static class M4PlayValidation
         clock.Advance(trips.Max(t=>t.LastDeliveryAt)-clock.ElapsedSeconds+0.01f);
         int expected=trips.Sum(t=>t.Deliveries.Sum(x=>score.ScoreArrival(x.ArrivesAt,x.Order.Deadline)));
         Check(stats.DeliveredCount==4 && stats.LateCount==1 && stats.TotalScore==expected && score.Score==expected,"Each arrival scores once with correct late count");
-        Check(people.People.All(p=>p.Status==DeliveryStatus.Returning),"All returning after last arrivals");
+        Check(people.People.Take(3).All(p=>p.Status==DeliveryStatus.Returning),"All returning after last arrivals");
         clock.Advance(trips.Max(t=>t.ReturnsAt)-clock.ElapsedSeconds+0.01f);
         Check(flow.ActiveTrips.Count==0 && people.People.All(p=>p.IsAvailable && p.CurrentTrip==null),"All couriers available at return");
         int total=score.Score;clock.Advance(1);Check(score.Score==total,"No duplicate scoring on later ticks");

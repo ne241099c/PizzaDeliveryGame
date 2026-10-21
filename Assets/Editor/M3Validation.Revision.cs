@@ -27,5 +27,27 @@ public static partial class M3Validation
         near(roster[1].Service,0.8f,"M4-2 Aoi service");
         near(roster[2].Endurance,0.9f,"M4-2 Ren endurance");
         near(roster[3].Safety,0.3f,"M4-2 Sora safety");
+        var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();
+        near(spawner.DemandFactor(30),1.624505f,"M4-3 30 second demand");
+        near(spawner.DemandFactor(180),0.463463f,"M4-3 180 second demand");
+        near(spawner.DemandFactor(1),2,"M4-3 demand upper clamp");
+        near(spawner.DemandFactor(10000),0.4f,"M4-3 demand lower clamp");
+        near(spawner.ShortestArrivalSeconds("Goal1"),3.05f/1.3f*5,"M4-3 fastest one-way Goal1");
+        near(spawner.MinimumPromiseSeconds,3.25f/1.3f*5*1.1f,"M4-3 farthest one-way lower bound");
+        near(spawner.ReputationFactor,1,"M4-3 reputation fixed at one");
+        float previousPromise=spawner.PromiseSeconds;
+        try
+        {
+            spawner.SetPromiseSeconds(30);var existing=spawner.CreateOrder("Goal1",12);
+            near(existing.Deadline,42,"M4-3 deadline at birth");
+            near(spawner.ExpectedInterval,25/Mathf.Pow(2,0.7f),"M4-3 short promise raises frequency");
+            spawner.SetPromiseSeconds(180);
+            near(existing.Deadline,42,"M4-3 slider cannot rewrite an existing deadline");
+            near(spawner.CreateOrder("Goal2",13).Deadline,193,"M4-3 only new orders get new promise");
+            near(spawner.ExpectedInterval,25/Mathf.Pow(1f/3f,0.7f),"M4-3 long promise reduces frequency");
+            spawner.SetPromiseSeconds(0);near(spawner.PromiseSeconds,spawner.MinimumPromiseSeconds,"M4-3 physical lower bound enforced");
+        }
+        finally {spawner.SetPromiseSeconds(previousPromise);}
+
     }
 }
