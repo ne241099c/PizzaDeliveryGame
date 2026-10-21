@@ -7,6 +7,14 @@ public sealed class ScoreManager : MonoBehaviour
     [SerializeField] private int scorePerDelivery = 100;
 
     private int score;
+    public int Score => score;
+    public int ScorePerDelivery => scorePerDelivery;
+
+    public void BindText(TextMeshProUGUI text)
+    {
+        scoreText = text;
+        UpdateScoreText();
+    }
 
     private void Start()
     {

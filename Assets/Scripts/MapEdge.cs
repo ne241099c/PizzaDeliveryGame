@@ -9,6 +9,7 @@ public class MapEdge
     public float Distance;
     public RoadType RoadType;
     public float TrafficFactor;
+    public bool Bidirectional = true;
 
     public MapEdge(
         string id,
@@ -16,7 +17,8 @@ public class MapEdge
         string nodeBId,
         float distance,
         RoadType roadType,
-        float trafficFactor)
+        float trafficFactor,
+        bool bidirectional = true)
     {
         Id = id;
         NodeAId = nodeAId;
@@ -24,5 +26,14 @@ public class MapEdge
         Distance = distance;
         RoadType = roadType;
         TrafficFactor = trafficFactor;
+        Bidirectional = bidirectional;
+    }
+
+    public bool TryTraverse(string fromNodeId, out string toNodeId)
+    {
+        if (fromNodeId == NodeAId) { toNodeId = NodeBId; return true; }
+        if (Bidirectional && fromNodeId == NodeBId) { toNodeId = NodeAId; return true; }
+        toNodeId = null;
+        return false;
     }
 }

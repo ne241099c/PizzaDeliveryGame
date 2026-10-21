@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,6 +8,13 @@ public class DeliveryFlowController : MonoBehaviour
     [SerializeField] private OrderListUI orderListUI;
     [SerializeField] private DeliveryPersonSelector deliveryPersonSelector;
     [SerializeField] private Button completeDeliveryButton;
+    private DeliveryPlannerUI planner;
+
+    public void ConfigureUI(Button completeButton, DeliveryPlannerUI planUI)
+    {
+        completeDeliveryButton = completeButton;
+        planner = planUI;
+    }
 
     private void Start()
     {
@@ -14,34 +22,31 @@ public class DeliveryFlowController : MonoBehaviour
         UpdateCompleteButtonState();
     }
 
-    private void Update()
+    private void Update() => UpdateCompleteButtonState();
+
+    private bool CanComplete()
     {
-        UpdateCompleteButtonState();
+        DeliveryPlan plan = planner != null ? planner.SelectedPlan : null;
+        return plan != null && deliveryPersonSelector.SelectedPerson != null
+            && deliveryPersonSelector.SelectedPerson.IsAvailable
+            && plan.Orders.Count == orderListUI.SelectedOrders.Count
+            && plan.Orders.All(o => orderListUI.SelectedOrders.Contains(o));
     }
 
     private void CompleteDelivery()
     {
-        Order selectedOrder = orderListUI.SelectedOrder;
-        DeliveryPerson selectedPerson = deliveryPersonSelector.SelectedPerson;
-
-        if (selectedOrder == null || selectedPerson == null)
-        {
-            Debug.LogWarning("Please select both an order and a delivery person!");
-            return;
-        }
-
-        scoreManager.OnDeliveryCompleted();
-        orderListUI.RemoveOrder(selectedOrder);
+        if (!CanComplete()) return;
+        DeliveryPlan plan = planner.SelectedPlan;
+        float? individualReferenceTime = planner.IndividualReferenceTime;
+        foreach (Order order in plan.Orders) scoreManager.OnDeliveryCompleted();
+        orderListUI.RemoveOrders(plan.Orders);
         deliveryPersonSelector.ClearSelection();
-
+        planner.ShowCompletion(plan, individualReferenceTime);
         UpdateCompleteButtonState();
     }
 
     private void UpdateCompleteButtonState()
     {
-        bool hasSelectedOrder = orderListUI.SelectedOrder != null;
-        bool hasSelectedPerson = deliveryPersonSelector.SelectedPerson != null;
-
-        completeDeliveryButton.interactable = hasSelectedOrder && hasSelectedPerson;
+        if (completeDeliveryButton != null) completeDeliveryButton.interactable = CanComplete();
     }
 }

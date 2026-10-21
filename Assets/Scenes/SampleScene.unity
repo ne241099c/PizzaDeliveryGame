@@ -1184,6 +1184,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapManager
   baseSpeed: 10
+  backstreetPenalty: 1
   nodeViewPrefab: {fileID: 9119976770738882504, guid: 44b33bfb1798f4481ab343ea093cfcc5, type: 3}
   edgeViewPrefab: {fileID: 4980519893912356978, guid: 3764a6a40b8314e1a9be0c45c474a3cb, type: 3}
   nodesParent: {fileID: 1662362905}
@@ -1554,6 +1555,7 @@ GameObject:
   - component: {fileID: 1404697812}
   - component: {fileID: 1404697813}
   - component: {fileID: 1404697814}
+  - component: {fileID: 1404697815}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -1634,6 +1636,18 @@ MonoBehaviour:
   orderListUI: {fileID: 1404697812}
   deliveryPersonSelector: {fileID: 1404697813}
   completeDeliveryButton: {fileID: 662861587}
+--- !u!114 &1404697815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1404697809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a3707bce76b407ea6c539cb58460562, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryPlannerUI
 --- !u!1 &1662362904
 GameObject:
   m_ObjectHideFlags: 0

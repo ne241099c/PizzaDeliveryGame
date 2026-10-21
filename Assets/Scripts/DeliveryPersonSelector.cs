@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -12,11 +13,15 @@ public class DeliveryPersonSelector : MonoBehaviour
     private readonly List<Button> deliveryPersonButtons = new();
 
     public DeliveryPerson SelectedPerson { get; private set; }
+    public event Action SelectionChanged;
+
+    public void ConfigureContent(Transform content) => deliveryPersonListContent = content;
 
     private void Start()
     {
         CreateDummyDeliveryPeople();
         Refresh();
+        SelectionChanged?.Invoke();
     }
 
     private void CreateDummyDeliveryPeople()
@@ -43,7 +48,10 @@ public class DeliveryPersonSelector : MonoBehaviour
 
             DeliveryPerson person = deliveryPeople[i];
             TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>();
-            label.text = person.Name;
+            label.text = $"{person.Name}    Skill {person.SkillLevel:F1}";
+            label.fontSize = 22;
+            label.color = new Color(0.12f, 0.16f, 0.23f);
+            label.raycastTarget = false;
 
             button.onClick.RemoveAllListeners();
             DeliveryPerson capturedPerson = person;
@@ -57,6 +65,9 @@ public class DeliveryPersonSelector : MonoBehaviour
         while (deliveryPersonButtons.Count < requiredCount)
         {
             Button button = Instantiate(deliveryPersonItemPrefab, deliveryPersonListContent);
+            LayoutElement layout = button.gameObject.AddComponent<LayoutElement>();
+            layout.preferredHeight = 48f;
+            layout.minHeight = 48f;
             deliveryPersonButtons.Add(button);
         }
     }
@@ -73,6 +84,7 @@ public class DeliveryPersonSelector : MonoBehaviour
         }
 
         Refresh();
+        SelectionChanged?.Invoke();
     }
 
     private void UpdateButtonColor(Button button, DeliveryPerson person)
@@ -93,5 +105,6 @@ public class DeliveryPersonSelector : MonoBehaviour
     {
         SelectedPerson = null;
         Refresh();
+        SelectionChanged?.Invoke();
     }
 }
