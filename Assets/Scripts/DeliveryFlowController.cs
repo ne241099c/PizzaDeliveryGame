@@ -19,15 +19,27 @@ public class DeliveryFlowController : MonoBehaviour
     private void OnEnable() { clock.Advanced += Tick; clock.OnClosed += Close; }
     private void OnDisable() { clock.Advanced -= Tick; clock.OnClosed -= Close; }
 
+    public string DispatchRejectionReason(DeliveryPlan plan, DeliveryPerson person)
+    {
+        if (clock.Phase != DayPhase.Open) return "The store is closed.";
+        if (person == null) return "Select a courier.";
+        if (!person.IsAvailable) return "This courier is travelling.";
+        int count = plan?.Orders.Count ?? orderListUI.SelectedOrders.Count;
+        if (count > person.Capacity) return $"{person.Name} can carry {person.Capacity} order(s); {count} selected.";
+        if (plan == null || plan.Orders.Count == 0) return "Visit all selected destinations and return to Store.";
+        if (!deliveryPersonSelector.People.Contains(person)) return "Courier is not in the roster.";
+        if (plan.Orders.Count != orderListUI.SelectedOrders.Count
+            || !plan.Orders.All(o=>orderListUI.SelectedOrders.Contains(o) && orderListUI.Contains(o)))
+            return "The selected orders changed. Review the route.";
+        return "";
+    }
     public bool CanDispatch(DeliveryPlan plan, DeliveryPerson person)
-        => clock.Phase == DayPhase.Open && plan != null && person != null && person.IsAvailable
-            && deliveryPersonSelector.People.Contains(person) && plan.Orders.Count > 0
-            && plan.Orders.Count == orderListUI.SelectedOrders.Count
-            && plan.Orders.All(o => orderListUI.SelectedOrders.Contains(o) && orderListUI.Contains(o));
+        => DispatchRejectionReason(plan,person).Length == 0;
 
     public bool Dispatch(DeliveryPlan plan, DeliveryPerson person)
     {
-        if (!CanDispatch(plan, person)) return false;
+        string rejection = DispatchRejectionReason(plan,person);
+        if (rejection.Length > 0) { Message?.Invoke(rejection); return false; }
         // Validate and freeze all arrival times before mutating orders or availability.
         var trip = new DeliveryTrip(FindFirstObjectByType<MapManager>(), plan, person,
             clock.ElapsedSeconds, clock.TravelTimeMultiplier);

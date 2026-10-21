@@ -125,7 +125,7 @@ public class DeliveryPlannerUI : MonoBehaviour
             : clock.Phase == DayPhase.Ended ? "DONE" : "READY";
         clockText.text = $"{phase} {seconds / 60:00}:{seconds % 60:00}";
         dispatchButton.interactable = flow.CanDispatch(SelectedPlan, people.SelectedPerson);
-        dispatchSuggestionButton.interactable = clock.Phase == DayPhase.Open && suggestion != null && people.SelectedPerson != null && people.SelectedPerson.IsAvailable;
+        dispatchSuggestionButton.interactable = clock.Phase == DayPhase.Open && suggestion != null && people.SelectedPerson != null && people.SelectedPerson.IsAvailable && people.SelectedPerson.CanCarry(orders.SelectedOrders.Count);
         clock.IsPlanning = clock.Phase == DayPhase.Open && orders.SelectedOrders.Count > 0 && people.SelectedPerson != null;
         if (clock.ElapsedSeconds > activityUntil) activityText.text = "";
     }
@@ -259,6 +259,8 @@ public class DeliveryPlannerUI : MonoBehaviour
         }
         if (clock.Phase != DayPhase.Open) statusText.text = "Closed. Couriers will finish their trips before the result is shown.";
         else if (orders.OrderCount == 0) statusText.text = "Waiting for orders. New orders appear automatically during opening.";
+        else if (people.SelectedPerson != null && orders.SelectedOrders.Count > people.SelectedPerson.Capacity)
+            statusText.text = flow.DispatchRejectionReason(SelectedPlan,people.SelectedPerson);
         else if (!canDraw) statusText.text = "Select orders and an available courier, then click a road on the map.";
         else if (SelectedPlan != null) statusText.text = "Route ready! Dispatch, or keep editing. The clock is still running.";
         else if (visited < orders.SelectedOrders.Count)

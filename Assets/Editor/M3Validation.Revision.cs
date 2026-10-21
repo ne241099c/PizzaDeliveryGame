@@ -48,6 +48,17 @@ public static partial class M3Validation
             spawner.SetPromiseSeconds(0);near(spawner.PromiseSeconds,spawner.MinimumPromiseSeconds,"M4-3 physical lower bound enforced");
         }
         finally {spawner.SetPromiseSeconds(previousPromise);}
+        check(roster[0].Capacity==1 && !roster[0].CanCarry(2),"M4-4 Minato cannot carry two");
+        check(roster[1].Capacity==2 && roster[1].CanCarry(2),"M4-4 Aoi can carry two");
+        check(roster[0].CanCarry(1),"M4-4 Minato single delivery");
+        check(!roster[1].CanCarry(0),"M4-4 empty dispatch rejected");
+        var batchOrders=new[]{new Order("Goal1","A",0,60),new Order("Goal2","B",0,60)};
+        var batchRoute=new ManualDeliveryRoute(map);batchRoute.TryReplace(RoadPathfinder.Suggest(map,batchOrders,roster[0]).EdgeIds);
+        var batchPlan=batchRoute.BuildCompletion(batchOrders,roster[0]);
+        var flow=UnityEngine.Object.FindFirstObjectByType<DeliveryFlowController>();
+        check(!flow.CanDispatch(batchPlan,roster[0]),"M4-4 dispatch guard rejects overload");
+        check(flow.DispatchRejectionReason(batchPlan,roster[0]).Contains("can carry 1"),"M4-4 overload reason is visible");
+
 
     }
 }

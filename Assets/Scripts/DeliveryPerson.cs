@@ -16,6 +16,7 @@ public class DeliveryPerson
     [SerializeField, Range(0, 1)] public float Safety = 0.5f;
     // Compatibility for older route fixtures; runtime calculations use the six abilities.
     public float SkillLevel { get => LocalKnowledge; set => LocalKnowledge = value; }
+    public bool CanCarry(int count) => count > 0 && count <= Capacity;
     public DeliveryStatus Status { get; internal set; }
     public DeliveryTrip CurrentTrip { get; internal set; }
     public bool IsAvailable

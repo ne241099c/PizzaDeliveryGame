@@ -38,15 +38,15 @@ public static class M4PlayValidation
         float start=clock.ElapsedSeconds;
         var a=new Order("Goal1","Test A",start,100);
         var b=new Order("Goal2","Test B late",start,1);
-        orders.AddOrder(a);orders.AddOrder(b);SelectOrder(0);SelectOrder(1);SelectPerson(0);
+        orders.AddOrder(a);orders.AddOrder(b);SelectOrder(0);SelectOrder(1);SelectPerson(1);
         foreach(string edge in new[]{"Store-N1","N1-N2-Main","N2-Goal1","Goal1-Goal2","N2-Goal2","N1-N2-Main","Store-N1"})
             GameObject.Find("NextRoad_"+edge).GetComponent<Button>().onClick.Invoke();
         Check(ui.SelectedPlan!=null && ui.IndividualReferenceTime>ui.SelectedPlan.TotalTime,"Manual batch beats individual reference");
         GameObject.Find("DispatchRoute").GetComponent<Button>().onClick.Invoke();
         Check(flow.ActiveTrips.Count==1 && a.Status==OrderStatus.Dispatched && orders.OrderCount==0,"Manual dispatch transfers orders");
         Check(orders.SelectedOrders.Count==0 && people.SelectedPerson==null && ui.Route.EdgeIds.Count==0,"Dispatch clears selection and next route");
-        SelectPerson(0);Check(people.SelectedPerson==null,"Busy courier cannot be selected");
-        var c=new Order("Goal1","Test C",start,100);orders.AddOrder(c);SelectOrder(0);SelectPerson(1);
+        SelectPerson(1);Check(people.SelectedPerson==null,"Busy courier cannot be selected");
+        var c=new Order("Goal1","Test C",start,100);orders.AddOrder(c);SelectOrder(0);SelectPerson(0);
         GameObject.Find("DispatchSuggestion").GetComponent<Button>().onClick.Invoke();
         var d=new Order("Goal2","Test D",start,100);orders.AddOrder(d);SelectOrder(0);SelectPerson(2);
         GameObject.Find("DispatchSuggestion").GetComponent<Button>().onClick.Invoke();
