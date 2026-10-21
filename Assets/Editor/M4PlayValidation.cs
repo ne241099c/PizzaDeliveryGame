@@ -58,7 +58,7 @@ public static class M4PlayValidation
         clock.Advance(first-clock.ElapsedSeconds+0.01f);
         Check(stats.DeliveredCount>0 && flow.ActiveTrips.Count==3,"Arrival scores before return");
         clock.Advance(trips.Max(t=>t.LastDeliveryAt)-clock.ElapsedSeconds+0.01f);
-        int expected=trips.Sum(t=>t.Deliveries.Sum(x=>score.ScoreArrival(x.ArrivesAt,x.Order.Deadline)));
+        int expected=trips.Sum(t=>t.Deliveries.Sum(x=>score.ScoreArrival(x.ArrivesAt,x.Order.Deadline,t.ServiceAtDispatch)));
         Check(stats.DeliveredCount==4 && stats.LateCount==1 && stats.TotalScore==expected && score.Score==expected,"Each arrival scores once with correct late count");
         Check(people.People.Take(3).All(p=>p.Status==DeliveryStatus.Returning),"All returning after last arrivals");
         clock.Advance(trips.Max(t=>t.ReturnsAt)-clock.ElapsedSeconds+0.01f);

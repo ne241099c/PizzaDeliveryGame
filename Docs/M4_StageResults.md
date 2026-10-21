@@ -11,6 +11,8 @@
 
 | M4-4 | 109 | DeliveryPerson、DeliveryFlowController、DeliveryPlannerUI、M3Validation.Revision、M4PlayValidation |
 
+| M4-6 | 125 | ReputationManager、DeliveryScoring、ScoreManager、DeliveryTrip、DeliveryFlowController、OrderSpawner、DeliveryPromiseUI、M4StageSceneSetup、M4SceneSetup、SampleScene、M3Validation.Revision、M4PlayValidationと対応meta |
+
 ## 判断した点
 
 - M4-2: 旧データのSkillLevelは土地勘へ移行する。旧検証用の2引数コンストラクタは運転0.5（速度係数1）として残す。実際の開始名簿は新仕様の4人・6能力をSceneとInspectorに保存。
@@ -20,3 +22,6 @@
 - M4-3: 下限の「最強」は名簿の最速者ではなく、運転1・土地勘1の理論上の配達員。上限240秒を下限が超える将来のマップでは、物理下限を優先してスライダー上限を引き上げる。
 
 - M4-4: 道順の編集・プレビューは積載超過でも可能だが、出発は手動・推奨の双方で禁止する。拒否理由をルート欄に表示する。経路の成立条件は変更しない。
+
+- M4-6: チップは期限内だけで、基本点とチップの合計を従来どおり整数へ四捨五入する。接客能力は出発時の値を保存し、配達中のInspector変更で得点が変わらないようにする。
+- M4-6: 「キャンセル−5」は閉店時キャンセルにも適用する。得点の閉店減点（初期0）と評判低下は別に処理する。

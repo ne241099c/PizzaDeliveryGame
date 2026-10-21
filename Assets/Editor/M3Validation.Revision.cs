@@ -34,7 +34,7 @@ public static partial class M3Validation
         near(spawner.DemandFactor(10000),0.4f,"M4-3 demand lower clamp");
         near(spawner.ShortestArrivalSeconds("Goal1"),3.05f/1.3f*5,"M4-3 fastest one-way Goal1");
         near(spawner.MinimumPromiseSeconds,3.25f/1.3f*5*1.1f,"M4-3 farthest one-way lower bound");
-        near(spawner.ReputationFactor,1,"M4-3 reputation fixed at one");
+        near(spawner.ReputationFactor,1,"M4-6 initial reputation gives factor one");
         float previousPromise=spawner.PromiseSeconds;
         try
         {
@@ -58,6 +58,27 @@ public static partial class M3Validation
         var flow=UnityEngine.Object.FindFirstObjectByType<DeliveryFlowController>();
         check(!flow.CanDispatch(batchPlan,roster[0]),"M4-4 dispatch guard rejects overload");
         check(flow.DispatchRejectionReason(batchPlan,roster[0]).Contains("can carry 1"),"M4-4 overload reason is visible");
+        near(DeliveryScoring.Calculate(60,60,100,5,0.8f,0.2f),116,"M4-6 Aoi on-time tip");
+        near(DeliveryScoring.Calculate(60,60,100,5,0.4f,0.2f),108,"M4-6 Minato on-time tip");
+        near(DeliveryScoring.Calculate(72,60,100,5,1,0.2f),40,"M4-6 late delivery has no tip");
+        near(DeliveryScoring.Calculate(90,60,100,5,1,0.2f),0,"M4-6 zero floor remains");
+        var reputationFixture=new GameObject("Isolated reputation validation");reputationFixture.SetActive(false);
+        try
+        {
+            var rep=reputationFixture.AddComponent<ReputationManager>();rep.ResetForDay();
+            near(rep.Value,50,"M4-6 initial reputation");near(rep.DemandFactor,1,"M4-6 neutral reputation factor");
+            near(rep.ArrivalChange(10,0),-2,"M4-6 late reputation formula");
+            near(rep.ArrivalChange(10,1),-1,"M4-6 service protects reputation");
+            near(rep.ArrivalChange(100,0),-5,"M4-6 late loss ceiling");
+            rep.RecordArrival(0,0);near(rep.Value,51,"M4-6 on-time reputation gain");
+            rep.RecordCancellation(1);near(rep.Value,46,"M4-6 cancellation lowers reputation");
+            check(rep.DemandFactor<1,"M4-6 damaged reputation reduces demand");
+            rep.RecordCancellation(100);near(rep.Value,0,"M4-6 reputation floor");near(rep.DemandFactor,0.6f,"M4-6 lowest demand factor");
+            for(int i=0;i<150;i++)rep.RecordArrival(0,0);
+            near(rep.Value,100,"M4-6 reputation ceiling");near(rep.DemandFactor,1.4f,"M4-6 highest demand factor");
+        }
+        finally {UnityEngine.Object.DestroyImmediate(reputationFixture);}
+
 
 
     }

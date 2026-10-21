@@ -10,6 +10,7 @@ public class DeliveryFlowController : MonoBehaviour
     [SerializeField] private DeliveryPersonSelector deliveryPersonSelector;
     [SerializeField] private GameClock clock;
     [SerializeField] private DayStats stats;
+    [SerializeField] private ReputationManager reputation;
     private readonly List<DeliveryTrip> activeTrips = new();
     public IReadOnlyList<DeliveryTrip> ActiveTrips => activeTrips;
     public event Action<DeliveryTrip> Dispatched;
@@ -65,11 +66,13 @@ public class DeliveryFlowController : MonoBehaviour
                 delivery.Resolved = true;
                 delivery.Order.Status = OrderStatus.Delivered;
                 float late = Mathf.Max(0, delivery.ArrivesAt - delivery.Order.Deadline);
-                int points = scoreManager.ScoreArrival(delivery.ArrivesAt, delivery.Order.Deadline);
+                int points = scoreManager.ScoreArrival(delivery.ArrivesAt, delivery.Order.Deadline, trip.ServiceAtDispatch);
                 scoreManager.AddScore(points);
                 stats.RecordDelivery(points, late);
+                reputation.RecordArrival(late,trip.ServiceAtDispatch);
+                int tip=scoreManager.TipForArrival(delivery.ArrivesAt,delivery.Order.Deadline,trip.ServiceAtDispatch);
                 Message?.Invoke($"{trip.Person.Name}: {delivery.Order.DestinationNodeId} +{points}"
-                    + (late > 0 ? $" ({late:F1}s late)" : " (on time)"));
+                    + (late > 0 ? $" ({late:F1}s late)" : $" (on time / tip +{tip})"));
             }
             trip.Person.Status = trip.StatusAt(now);
             if (now < trip.ReturnsAt) continue;
@@ -92,6 +95,7 @@ public class DeliveryFlowController : MonoBehaviour
         int penalty = closing ? scoreManager.ClosingCancellationPenalty : 0;
         scoreManager.AddScore(-cancelled.Length * penalty);
         stats.RecordCancellation(cancelled.Length, penalty);
+        reputation.RecordCancellation(cancelled.Length);
         Message?.Invoke($"{cancelled.Length} waiting order(s) cancelled" + (closing ? " at closing." : " after expiry."));
     }
 

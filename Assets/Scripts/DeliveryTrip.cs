@@ -20,6 +20,7 @@ public sealed class DeliveryTrip
     public DeliveryPerson Person { get; }
     public IReadOnlyList<string> EdgeIds { get; }
     public IReadOnlyList<ScheduledDelivery> Deliveries { get; }
+    public float ServiceAtDispatch { get; }
     public float StartedAt { get; }
     public float ReturnsAt { get; }
     public float LastDeliveryAt { get; }
@@ -30,6 +31,7 @@ public sealed class DeliveryTrip
         if (plan == null || plan.EdgeIds.Count == 0 || plan.Orders.Count == 0 || multiplier <= 0)
             throw new ArgumentException("A valid route, orders, and positive multiplier are required.");
         Person = person;
+        ServiceAtDispatch = person.Service;
         StartedAt = startedAt;
         EdgeIds = Array.AsReadOnly(plan.EdgeIds.ToArray());
         starts = new Vector2[EdgeIds.Count];

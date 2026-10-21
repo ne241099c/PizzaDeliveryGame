@@ -130,6 +130,7 @@ public static class M4SceneSetup
         camera.transform.position = new Vector3(0, -1.8f, -10);
         camera.backgroundColor = new Color(0.045f, 0.07f, 0.12f);
         M4StageSceneSetup.AddPromiseUI();
+        M4StageSceneSetup.AddReputationUI();
         Canvas.ForceUpdateCanvases();
         Undo.CollapseUndoOperations(group);
         EditorSceneManager.MarkSceneDirty(scene);

@@ -41,6 +41,19 @@ public static class M4StageSceneSetup
         Canvas.ForceUpdateCanvases();EditorSceneManager.MarkSceneDirty(manager.scene);
     }
 
+    public static void AddReputationUI()
+    {
+        var manager=GameObject.Find("GameManager");
+        var reputation=manager.GetComponent<ReputationManager>()??Undo.AddComponent<ReputationManager>(manager);
+        var panel=Object.FindFirstObjectByType<Canvas>().transform.Find("DeliveryPolicy");
+        var existing=panel.Find("ReputationText");
+        var label=existing!=null?existing.GetComponent<TextMeshProUGUI>():Text(panel,"ReputationText","Reputation: 50.0 / Orders x1.00",16,74,430,28,18);
+        Bind(manager.GetComponent<DeliveryPromiseUI>(),"reputation",reputation,"reputationText",label);
+        Bind(manager.GetComponent<OrderSpawner>(),"reputation",reputation);
+        Bind(manager.GetComponent<DeliveryFlowController>(),"reputation",reputation);
+        EditorSceneManager.MarkSceneDirty(manager.scene);
+    }
+
     public static void Bind(Object target,params object[] pairs)
     {
         Undo.RecordObject(target,"Assign M4 scene references");var so=new SerializedObject(target);

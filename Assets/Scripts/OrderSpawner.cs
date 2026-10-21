@@ -7,6 +7,7 @@ public sealed class OrderSpawner : MonoBehaviour
     [SerializeField] private GameClock clock;
     [SerializeField] private MapManager map;
     [SerializeField] private OrderListUI orders;
+    [SerializeField] private ReputationManager reputation;
     [SerializeField, Min(0.1f)] private float interval = 25f;
     [SerializeField, Range(0f, 0.9f)] private float intervalVariation = 0.3f;
     [SerializeField, Min(0.01f)] private float initialPromiseSeconds = 60f;
@@ -22,7 +23,7 @@ public sealed class OrderSpawner : MonoBehaviour
     public float PromiseSeconds { get; private set; }
     public float MinimumPromiseSeconds { get; private set; }
     public float MaximumPromiseSeconds => Mathf.Max(maximumPromiseSeconds, MinimumPromiseSeconds);
-    public float ReputationFactor => 1f;
+    public float ReputationFactor => reputation != null ? reputation.DemandFactor : 1f;
     public float ExpectedInterval => interval / (DemandFactor(PromiseSeconds) * ReputationFactor);
 
     private void Awake() => PromiseSeconds = initialPromiseSeconds;
