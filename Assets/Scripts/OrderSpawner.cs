@@ -26,6 +26,7 @@ public sealed class OrderSpawner : MonoBehaviour
     private float progress;
     private float jitter = 1;
     private bool scheduled;
+    public event System.Action PolicyChanged;
     public float PromiseSeconds { get; private set; }
     public float MinimumPromiseSeconds { get; private set; }
     public float MaximumPromiseSeconds => Mathf.Max(maximumPromiseSeconds, MinimumPromiseSeconds);
@@ -56,7 +57,10 @@ public sealed class OrderSpawner : MonoBehaviour
     public void ResetForDay() { progress=0; jitter=1; scheduled=false; }
     public void ResetPolicy() => SetPromiseSeconds(initialPromiseSeconds);
     public void SetPromiseSeconds(float seconds)
-        => PromiseSeconds = Mathf.Clamp(seconds, Mathf.Max(0.01f,MinimumPromiseSeconds), MaximumPromiseSeconds);
+    {
+        float next=Mathf.Clamp(seconds,Mathf.Max(.01f,MinimumPromiseSeconds),MaximumPromiseSeconds);
+        if(next==PromiseSeconds)return;PromiseSeconds=next;PolicyChanged?.Invoke();
+    }
     public float DemandFactor(float seconds)
         => Mathf.Clamp(Mathf.Pow(referencePromiseSeconds/Mathf.Max(0.01f,seconds),demandExponent),minimumDemand,maximumDemand);
     public float ShortestArrivalSeconds(string destination)

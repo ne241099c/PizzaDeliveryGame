@@ -22,6 +22,7 @@ public class DeliveryPerson : ISerializationCallbackReceiver
     [SerializeField] private float[] experience=new float[5];
     [SerializeField,Range(1,2)] private int capacityPotential=2;
     [SerializeField] private DeliveryStatus status;
+    public bool HasPersistentId=>!string.IsNullOrWhiteSpace(id);
     public string Id => string.IsNullOrEmpty(id) ? id=Guid.NewGuid().ToString("N") : id;
     public float Driving {get=>driving;set=>driving=Mathf.Clamp(value,0,Potential(CourierAbility.Driving));}
     public float LocalKnowledge {get=>localKnowledge;set=>localKnowledge=Mathf.Clamp(value,0,Potential(CourierAbility.LocalKnowledge));}

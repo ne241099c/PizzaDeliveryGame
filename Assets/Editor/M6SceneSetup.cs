@@ -66,6 +66,21 @@ public static class M6SceneSetup
         }
         EditorSceneManager.MarkSceneDirty(m.scene);
     }
+    public static void AddSaveGame()
+    {
+        var m=GameObject.Find("GameManager");var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();
+        var save=m.GetComponent<CampaignSaveManager>()??Undo.AddComponent<CampaignSaveManager>(m);
+        var panel=canvas.transform.Find("SaveChoice");
+        if(panel==null)
+        {
+            var bg=Rect(canvas.transform,"SaveChoice",0,0,1280,840);bg.gameObject.AddComponent<Image>().color=new Color(.04f,.07f,.12f,.98f);panel=bg;
+            Text(panel,"ChoiceText","CONTINUE CAMPAIGN?",320,230,640,140,30);
+            M5SceneSetup.MakeButton(panel,"Continue","Continue",360,420,240,64);M5SceneSetup.MakeButton(panel,"NewGame","Start new",680,420,240,64);panel.gameObject.SetActive(false);
+            Text(canvas.transform.Find("Preparation"),"SaveNotice","",650,8,590,42,15);
+        }
+        Bind(save,"campaign",m.GetComponent<CampaignManager>(),"clock",m.GetComponent<GameClock>(),"economy",m.GetComponent<BusinessEconomy>(),"reputation",m.GetComponent<ReputationManager>(),"roster",m.GetComponent<DeliveryPersonSelector>(),"recruitment",m.GetComponent<RecruitmentManager>(),"training",m.GetComponent<TrainingManager>(),"spawner",m.GetComponent<OrderSpawner>(),"choicePanel",panel.gameObject,"continueButton",panel.Find("Continue").GetComponent<Button>(),"newButton",panel.Find("NewGame").GetComponent<Button>(),"choiceText",panel.Find("ChoiceText").GetComponent<TextMeshProUGUI>(),"notice",canvas.transform.Find("Preparation/SaveNotice").GetComponent<TextMeshProUGUI>());
+        Bind(m.GetComponent<CampaignManager>(),"saveGame",save);canvas.transform.Find("DayResults").SetAsLastSibling();EditorSceneManager.MarkSceneDirty(m.scene);
+    }
     public static void Apply()
     {
         var manager=GameObject.Find("GameManager");

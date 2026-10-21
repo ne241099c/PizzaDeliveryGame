@@ -59,6 +59,12 @@ public sealed class TrainingManager : MonoBehaviour
         LastMessage="Training cancelled; full refund.";Changed?.Invoke();return true;
     }
     private bool Reject(string reason){LastMessage=reason;Changed?.Invoke();return false;}
+    public void RestoreAssignments(IEnumerable<TrainingAssignment> restored)
+    {
+        assignments.Clear();assignments.AddRange(restored);
+        foreach(var assignment in assignments.Where(a=>!a.Completed))roster.People.First(p=>p.Id==assignment.PersonId).Status=DeliveryStatus.Training;
+        Changed?.Invoke();
+    }
     public void PrepareDay(){assignments.Clear();LastMessage="";Changed?.Invoke();}
     private void Tick(float before,float now)
     {

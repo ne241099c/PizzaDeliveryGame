@@ -10,6 +10,7 @@ public static class M5Validation
     public static string Run()
     {
         if(!Application.isPlaying)throw new InvalidOperationException("Enter Play first.");
+        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var savingScope=save?.SuppressSaving();save?.StartNewGame();
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();
         var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
         var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();

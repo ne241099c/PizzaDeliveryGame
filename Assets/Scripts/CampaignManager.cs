@@ -7,6 +7,8 @@ using UnityEngine.UI;
 public sealed class CampaignManager : MonoBehaviour
 {
     [SerializeField, Min(0)] private int bankruptcyGraceDays = 0;
+    [SerializeField] private CampaignSaveManager saveGame;
+    public event System.Action PreparationEntered;
     [SerializeField] private TrainingManager training;
     [SerializeField] private CourierProgression progression;
     [SerializeField] private RecruitmentManager recruitment;
@@ -27,7 +29,7 @@ public sealed class CampaignManager : MonoBehaviour
     public int DayNumber { get; private set; } = 1;
     public int TotalDelivered { get; private set; }
     public int TotalScore { get; private set; }
-    private void Start() { openButton.onClick.AddListener(StartBusiness); PrepareDay(); }
+    private void Start() {openButton.onClick.AddListener(StartBusiness);if(saveGame!=null)saveGame.Startup();else PrepareDay();}
     private void OnEnable() => clock.OnDayEnded += SettleDay;
     private void OnDisable() => clock.OnDayEnded -= SettleDay;
     private void Update() => dayText.text=$"Day {DayNumber} / {clock.Phase}";
@@ -42,6 +44,7 @@ public sealed class CampaignManager : MonoBehaviour
         TotalRevenue+=economy.DailyRevenue;BestDailyRevenue=System.Math.Max(BestDailyRevenue,economy.DailyRevenue);
         ConsecutiveNegativeDays=economy.Cash<0 ? ConsecutiveNegativeDays+1 : 0;
         IsBankrupt=ShouldDeclareBankruptcy(economy.Cash,ConsecutiveNegativeDays);
+        if(IsBankrupt)saveGame?.DeleteSave();
     }
     public string FinancialSummary => $"Day {DayNumber} / {(IsBankrupt ? "BANKRUPT - GAME OVER" : "SETTLEMENT")}\n"
         +$"Revenue: {economy.Ledger.Revenue:F2}\nMaterials: -{economy.Ledger.Materials:F2}\nFuel: -{economy.Ledger.Fuel:F2}\nWages: -{economy.Ledger.Wages:F2}\nFixed: -{economy.Ledger.FixedCosts:F2}\nProfit: {economy.Ledger.Profit:+0.00;-0.00;0.00}\n"
@@ -49,8 +52,8 @@ public sealed class CampaignManager : MonoBehaviour
         +$"Total revenue: {TotalRevenue:F2} / Best day: {BestDailyRevenue:F2}\n"+progression.DailySummary+"\n";
     public void StartBusiness()
     {
-        if(clock.Phase!=DayPhase.BeforeOpening || IsBankrupt)return;
-        preparationPanel.SetActive(false); clock.BeginDay();
+        if(clock.Phase!=DayPhase.BeforeOpening || IsBankrupt || (saveGame!=null && saveGame.AwaitingChoice && saveGame.AutomaticSavingEnabled))return;
+        saveGame?.SavePreparation();preparationPanel.SetActive(false); clock.BeginDay();
     }
     public void NextDay()
     {
@@ -63,11 +66,23 @@ public sealed class CampaignManager : MonoBehaviour
         IsBankrupt=false;ConsecutiveNegativeDays=0;TotalRevenue=BestDailyRevenue=0;
         recruitment.ResetRandom();spawner.ResetRandom();roster.ResetToInitialRoster();economy.NewGame(); DayNumber=1; TotalDelivered=TotalScore=0; reputation.ResetForDay(); spawner.ResetPolicy(); PrepareDay();
     }
+    public void RestorePreparation(CampaignSaveData data)
+    {
+        flow.ResetForNewGame();DayNumber=data.day;TotalDelivered=data.totalDelivered;TotalScore=data.totalScore;
+        TotalRevenue=CampaignSaveManager.Decimal(data.totalRevenue);BestDailyRevenue=CampaignSaveManager.Decimal(data.bestDailyRevenue);
+        ConsecutiveNegativeDays=data.negativeDays;IsBankrupt=false;clock.PrepareDay();
+        orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));orders.ClearSelection();roster.RestoreRoster(data.people);
+        reputation.Restore(data.reputation);dynamics.ResetForDay();spawner.ResetForDay();spawner.SetPromiseSeconds(data.promise);
+        economy.RestorePreparation(CampaignSaveManager.Decimal(data.cash),CampaignSaveManager.Decimal(data.openingCash),CampaignSaveManager.Decimal(data.preparationCosts),DayNumber);
+        score.ResetForDay();stats.ResetForDay();training.RestoreAssignments(data.training);
+        recruitment.RestoreApplicants(data.applicants.ConvertAll(a=>new Applicant(a.person,a.baselines,a.strengths,a.weaknesses)));
+        progression.PrepareDay();planner.PrepareDay();preparationPanel.SetActive(true);
+    }
     private void PrepareDay()
     {
         economy.PrepareDay(DayNumber); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
         orders.ClearSelection(); roster.ResetDailyState(); dynamics.ResetForDay(); spawner.ResetForDay();
         training.PrepareDay();score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();progression.PrepareDay();
-        preparationPanel.SetActive(true);
+        preparationPanel.SetActive(true);PreparationEntered?.Invoke();
     }
 }

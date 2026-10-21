@@ -14,7 +14,7 @@ public static class M6SimulationValidation
     private static DaySimulationSession session;
     private static DaySimulationSettings settings;
     private static int index,pass,checks;
-    private static string firstCsv;
+    private static string firstCsv,savePath;private static byte[] saveBefore;
     public static string Status {get;private set;}="Not run";
     public static string Summary {get;private set;}="";
     [MenuItem("Tools/Pizza Delivery/Validate M6 Simulation (Play Mode)")]
@@ -22,6 +22,7 @@ public static class M6SimulationValidation
     {
         if(session!=null || !Application.isPlaying)throw new InvalidOperationException("Enter Play and finish any running simulation first.");
         settings=UnityEngine.Object.FindFirstObjectByType<DaySimulationSettings>();cases=new();
+        var saving=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();savePath=saving?.SavePath;saveBefore=savePath!=null && File.Exists(savePath)?File.ReadAllBytes(savePath):null;
         foreach(bool batch in new[]{false,true})foreach(bool hire in new[]{false,true})foreach(bool adjust in new[]{false,true})
             cases.Add(new Case{Name=$"batch{batch}-hire{hire}-adjust{adjust}",Batch=batch,Hire=hire,Adjust=adjust});
         index=pass=checks=0;records.Clear();Summary="";StartCase();EditorApplication.update+=Tick;
@@ -57,6 +58,7 @@ public static class M6SimulationValidation
             records.AddRange(session.Records);session.Dispose();session=null;
             index++;pass=0;
             if(index<cases.Count){StartCase();return;}
+            byte[] after=savePath!=null && File.Exists(savePath)?File.ReadAllBytes(savePath):null;Check(saveBefore==null?after==null:after!=null && saveBefore.SequenceEqual(after),"simulations preserve normal player save");
             var dir=Path.Combine(Directory.GetParent(Application.dataPath).FullName,"Docs/M6_Simulations");Directory.CreateDirectory(dir);
             File.WriteAllText(Path.Combine(dir,"policies.csv"),SimulationDayRecord.Header+"\n"+string.Join("\n",records.Select(r=>r.Csv))+"\n");
             Summary=string.Join("\n",records.GroupBy(r=>r.Policy).Select(g=>$"{g.Key}: days {g.Count()}, cash {g.Last().Cash:F2}, reputation {g.Last().Reputation:F1}, busy {g.Average(r=>r.BusyRatio):F3}, hired {g.Sum(r=>r.Hired)}, bankrupt {g.Last().Bankrupt}"));

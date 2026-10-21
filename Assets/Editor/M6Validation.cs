@@ -105,6 +105,7 @@ public static partial class M6Validation
     }
     public static string Run()
     {
+        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var savingScope=save?.SuppressSaving();
         Checks=0;string previous=M5Validation.Run()+" / "+M4PlayValidation.CheckReset();
         var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         Check(economy.FixedCost(1)==150 && economy.FixedCost(2)==165 && economy.FixedCost(30)==585,"fixed cost growth");
@@ -115,7 +116,7 @@ public static partial class M6Validation
         var fixture=new GameObject("Busy fixture");fixture.SetActive(false);
         try {var stats=fixture.AddComponent<DayStats>();Near(stats.BusyRatio(2,300),0,"zero busy ratio");}
         finally {UnityEngine.Object.DestroyImmediate(fixture);}
-        ValidatePotentials();ValidateExperience();ValidateTraining();ValidateRecruitment();
+        ValidatePotentials();ValidateExperience();ValidateTraining();ValidateRecruitment();ValidateSaveGame();
         return previous+$" / PASS: {Checks} M6 checks.";
     }
 }

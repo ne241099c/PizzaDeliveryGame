@@ -39,6 +39,7 @@ public sealed class DaySimulationSession : IDisposable
     private readonly int? originalOrderSeed,originalDynamicsSeed,originalRecruitmentSeed;
     private readonly CanvasGroup canvasGroup;
     private readonly bool originalInteractable,originalRaycasts;
+    private readonly IDisposable savingScope;
     private readonly DaySimulationSettings settings;
     private readonly bool batch,hire,adjust;
     private readonly string policyName;
@@ -71,6 +72,7 @@ public sealed class DaySimulationSession : IDisposable
         if(canvasGroup==null){canvasGroup=canvas.gameObject.AddComponent<CanvasGroup>();canvasGroup.hideFlags=HideFlags.DontSave;}
         originalInteractable=canvasGroup.interactable;originalRaycasts=canvasGroup.blocksRaycasts;
         canvasGroup.interactable=false;canvasGroup.blocksRaycasts=false;
+        savingScope=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>()?.SuppressSaving();
         clock.AutomaticTick=false;spawner.enabled=true;
         StartPolicy();
     }
@@ -133,6 +135,7 @@ public sealed class DaySimulationSession : IDisposable
     public void Dispose()
     {
         if(disposed)return;disposed=true;
+        savingScope?.Dispose();
         clock.AutomaticTick=originalAutomaticTick;spawner.enabled=originalSpawnerEnabled;
         spawner.SeedOverride=originalOrderSeed;dynamics.SeedOverride=originalDynamicsSeed;recruitment.SeedOverride=originalRecruitmentSeed;
         canvasGroup.interactable=originalInteractable;canvasGroup.blocksRaycasts=originalRaycasts;

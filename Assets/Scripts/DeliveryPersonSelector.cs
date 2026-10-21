@@ -37,6 +37,7 @@ public class DeliveryPersonSelector : MonoBehaviour
         if(!deliveryPeople.Remove(person))return false;
         if(SelectedPerson==person)ClearSelection();RebuildRoster();return true;
     }
+    public void RestoreRoster(IEnumerable<DeliveryPerson> people) {deliveryPeople=new List<DeliveryPerson>(people);RebuildRoster();ResetDailyState();}
     public void ResetToInitialRoster()
     {
         deliveryPeople=startingRoster.ConvertAll(Copy);RebuildRoster();ResetDailyState();

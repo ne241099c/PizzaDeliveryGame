@@ -83,6 +83,8 @@ public sealed class RecruitmentManager : MonoBehaviour
         person.SetPotential(CourierAbility.Capacity,type==RecruitArchetype.Newcomer?(random.NextDouble()<newcomerCapacityPotentialTwo?largeCapacity:smallCapacity):largeCapacity);
         return new Applicant(person,baseline,strong,weak);
     }
+    public void RestoreApplicants(IEnumerable<Applicant> restored)
+    {applicants.Clear();applicants.AddRange(restored);LastMessage="Applicants restored.";Changed?.Invoke();}
     public void GenerateDay()
     {
         if(random==null)ResetRandom();applicants.Clear();

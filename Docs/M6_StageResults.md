@@ -26,3 +26,8 @@ M5をmainへfast-forward統合し、m6を作成。pushしない。式と初期�
 変更: RecruitmentManager, DeliveryPerson, PreparationUI, M5Validation, M6Validation, CSV。新人/即戦力/標準の3タイプ、タイプ別能力/素質/積載量、素質の平均差による採用費、タイプと得意能力の表示を追加。
 検証: 244既存+80 M6+496自動プレイ=820項目PASS。固定シード2000候補のタイプ閾値・比率・範囲、伸びしろの価格、素質保持と既存の採用/配達を検証。
 判断: 新人型以外の積載量素質の確率は指定がないため、1件の候補でも積載量素質は2とする。新人型のみ指定どおり70%で2。タイプ名は既存英語UIに合わせNewcomer/Experienced/Standardで表示。
+
+## M6-5
+変更: CampaignSaveManager/CampaignSaveData/ApplicantSaveDataとM6SaveValidationを追加。CampaignManager, BusinessEconomy, ReputationManager, DeliveryPerson/Selector, RecruitmentManager, TrainingManager, OrderSpawner, DaySimulationSession, M5Validation, M6Validation, M6SimulationValidation, M6SceneSetup, SampleScene。
+検証: 244既存+100 M6+497自動プレイ=841項目PASS。JSONと一時ファイルの往復、候補・成長・XP・訓練の一致、準備時保存、営業中非保存、起動時選択、形式不正/旧版での安全な新規開始、破産削除、通常セーブが検証/自動プレイで変わらないことを確認。実装中のout引数をラムダで参照するコンパイルエラーを修正後に全項目通過。
+判断: 準備に入った時だけでなく準備中の雇用/解雇/訓練/取消/目安変更と営業開始直前にも保存し、指示を失わないようにする。営業中の再開は最後の開店準備へ戻る。所持金と準備費用はdecimal文字列で保存。求人は引き直さず復元。将来の乱数列までは保存せず、保存時点の候補を保持する。保存先はpersistentDataPath/campaign.json。

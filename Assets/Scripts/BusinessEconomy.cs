@@ -27,6 +27,8 @@ public sealed class BusinessEconomy : MonoBehaviour
     private void OnDisable() { flow.RevenueEarned-=CreditArrival; flow.Dispatched-=ChargeMaterials; flow.Returned-=RecordDistance;clock.OnDayStarted-=CaptureWages; }
     private void Update() => cashText.text=$"Cash: {Cash:F2} / Sales: {DailyRevenue:F2}";
     private void CreditArrival(int points) { Cash+=points; Ledger.Revenue+=points; }
+    public void RestorePreparation(decimal cash,decimal opening,decimal costs,int day)
+    {Cash=cash;dayNumber=day;Ledger=new DayLedger(opening){PreparationCosts=costs};openingWages.Clear();}
     public void NewGame() { Cash=(decimal)initialCash; PrepareDay(); }
     public void PrepareDay(int day=1) { dayNumber=day; Ledger=new DayLedger(Cash); }
     private void CaptureWages() {openingWages.Clear();foreach(var person in roster.People)openingWages[person.Id]=DailyWage(person);}
