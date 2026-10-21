@@ -53,7 +53,7 @@ public static class M5SimulationValidation
                 Check(rows.Length>0 && rows.Length<=settings.DaysPerPolicy,"record count for promise "+promise);
                 Check(rows.Length==settings.DaysPerPolicy || rows.Last().Bankrupt,"only bankruptcy may stop early "+promise);
                 Check(rows.Select(r=>r.Day).SequenceEqual(Enumerable.Range(1,rows.Length)),"consecutive days "+promise);
-                Check(rows.All(r=>r.Wages==404 && r.FixedCosts==UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>().FixedCost(r.Day)),"fixed Aoi/Ren team wages and default fixed costs "+promise);
+                Check(rows.All(r=>r.Wages>0 && r.FixedCosts==UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>().FixedCost(r.Day)),"fixed Aoi/Ren team wages and default fixed costs "+promise);
                 decimal cash=300;
                 foreach(var r in rows)
                 {

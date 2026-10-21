@@ -4,6 +4,8 @@ using TMPro;
 /// <summary>Only confirmed arrival revenue credits cash; daily scores may also contain penalties.</summary>
 public sealed class BusinessEconomy : MonoBehaviour
 {
+    [SerializeField] private GameClock clock;
+    private readonly System.Collections.Generic.Dictionary<string,decimal> openingWages=new();
     [SerializeField] private DeliveryFlowController flow;
     [SerializeField] private DeliveryPersonSelector roster;
     [SerializeField, Min(0)] private float materialCostPerOrder = 20f;
@@ -21,12 +23,13 @@ public sealed class BusinessEconomy : MonoBehaviour
     public decimal DailyRevenue => Ledger.Revenue;
     public decimal OpeningCash => Ledger.OpeningCash;
     private void Awake() => NewGame();
-    private void OnEnable() { flow.RevenueEarned+=CreditArrival; flow.Dispatched+=ChargeMaterials; flow.Returned+=RecordDistance; }
-    private void OnDisable() { flow.RevenueEarned-=CreditArrival; flow.Dispatched-=ChargeMaterials; flow.Returned-=RecordDistance; }
+    private void OnEnable() { flow.RevenueEarned+=CreditArrival; flow.Dispatched+=ChargeMaterials; flow.Returned+=RecordDistance;clock.OnDayStarted+=CaptureWages; }
+    private void OnDisable() { flow.RevenueEarned-=CreditArrival; flow.Dispatched-=ChargeMaterials; flow.Returned-=RecordDistance;clock.OnDayStarted-=CaptureWages; }
     private void Update() => cashText.text=$"Cash: {Cash:F2} / Sales: {DailyRevenue:F2}";
     private void CreditArrival(int points) { Cash+=points; Ledger.Revenue+=points; }
     public void NewGame() { Cash=(decimal)initialCash; PrepareDay(); }
     public void PrepareDay(int day=1) { dayNumber=day; Ledger=new DayLedger(Cash); }
+    private void CaptureWages() {openingWages.Clear();foreach(var person in roster.People)openingWages[person.Id]=DailyWage(person);}
     public decimal FixedCost(int day) => Money((decimal)dailyFixedCost+(decimal)fixedCostGrowthPerDay*System.Math.Max(0,day-1));
     public static decimal Money(decimal amount) => System.Math.Round(amount,2,System.MidpointRounding.AwayFromZero);
     public decimal MaterialCost(int orderCount) => Money((decimal)materialCostPerOrder*orderCount);
@@ -48,7 +51,7 @@ public sealed class BusinessEconomy : MonoBehaviour
     {
         if(Ledger.Settled)return;
         Ledger.Fuel=FuelCost(Ledger.Distance);
-        foreach(var person in roster.People)Ledger.Wages+=DailyWage(person);
+        foreach(var person in roster.People)Ledger.Wages+=openingWages.TryGetValue(person.Id,out var wage)?wage:DailyWage(person);
         Ledger.FixedCosts=FixedCost(dayNumber);
         Cash-=Ledger.Fuel+Ledger.Wages+Ledger.FixedCosts;
         Ledger.Settled=true;

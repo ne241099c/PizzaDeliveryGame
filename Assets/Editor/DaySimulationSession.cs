@@ -7,15 +7,16 @@ using UnityEngine;
 /// <summary>Autoplay drives the real UI selection/dispatch and GameClock; it contains no economic formulas.</summary>
 public sealed class SimulationDayRecord
 {
-    public const string Header="seed,day,promise_seconds,revenue,materials,fuel,wages,fixed_costs,profit,cash,reputation,delivered,late,cancelled,accidents,bankrupt,stock,spawned,busy_ratio,hired,roster_size,preparation_costs,policy";
+    public const string Header="seed,day,promise_seconds,revenue,materials,fuel,wages,fixed_costs,profit,cash,reputation,delivered,late,cancelled,accidents,bankrupt,stock,spawned,busy_ratio,hired,roster_size,preparation_costs,policy,couriers,daily_growth,growth_count";
     public int Seed,Day,Delivered,Late,Cancelled,Accidents,Stock,Spawned,Hired,RosterSize;
     public float BusyRatio;
     public decimal PreparationCosts;
-    public string Policy="legacy";
+    public string Policy="legacy",Couriers="",DailyGrowth="";
+    public int GrowthCount;
     public float Promise,Reputation;
     public decimal Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash;
     public bool Bankrupt;
-    public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy}
+    public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy,Couriers,DailyGrowth,GrowthCount}
         .Select(v=>v is IFormattable f ? f.ToString(null,CultureInfo.InvariantCulture) : v.ToString()));
 }
 
@@ -33,6 +34,7 @@ public sealed class DaySimulationSession : IDisposable
     private readonly DayStats stats;
     private readonly ReputationManager reputation;
     private readonly DeliveryPlannerUI planner;
+    private readonly CourierProgression progression;
     private readonly bool originalAutomaticTick,originalSpawnerEnabled;
     private readonly int? originalOrderSeed,originalDynamicsSeed,originalRecruitmentSeed;
     private readonly CanvasGroup canvasGroup;
@@ -62,7 +64,7 @@ public sealed class DaySimulationSession : IDisposable
             || step<=0 || float.IsNaN(step) || float.IsInfinity(step) || maximumDaySeconds<=0 || float.IsNaN(maximumDaySeconds) || float.IsInfinity(maximumDaySeconds))
             throw new ArgumentException("Set valid simulation days, promises and clock step in the Inspector.");
         campaign=Find<CampaignManager>();clock=Find<GameClock>();spawner=Find<OrderSpawner>();dynamics=Find<DeliveryDynamics>();recruitment=Find<RecruitmentManager>();
-        economy=Find<BusinessEconomy>();flow=Find<DeliveryFlowController>();roster=Find<DeliveryPersonSelector>();orders=Find<OrderListUI>();stats=Find<DayStats>();reputation=Find<ReputationManager>();planner=Find<DeliveryPlannerUI>();
+        economy=Find<BusinessEconomy>();flow=Find<DeliveryFlowController>();roster=Find<DeliveryPersonSelector>();orders=Find<OrderListUI>();stats=Find<DayStats>();reputation=Find<ReputationManager>();planner=Find<DeliveryPlannerUI>();progression=Find<CourierProgression>();
         originalAutomaticTick=clock.AutomaticTick;originalSpawnerEnabled=spawner.enabled;
         originalOrderSeed=spawner.SeedOverride;originalDynamicsSeed=dynamics.SeedOverride;originalRecruitmentSeed=recruitment.SeedOverride;
         var canvas=Find<Canvas>();canvasGroup=canvas.GetComponent<CanvasGroup>();
@@ -117,7 +119,7 @@ public sealed class DaySimulationSession : IDisposable
             Profit=ledger.Profit,Cash=economy.Cash,Reputation=reputation.Value,Delivered=stats.DeliveredCount,Late=stats.LateCount,
             Cancelled=stats.CancelledCount,Accidents=stats.AccidentCount,Bankrupt=campaign.IsBankrupt,Stock=stats.ClosingCancelledCount,Spawned=stats.SpawnedCount,
             BusyRatio=stats.BusyRatio(roster.People.Count,clock.BusinessDuration),Hired=hired,RosterSize=roster.People.Count,
-            PreparationCosts=ledger.PreparationCosts,Policy=policyName };
+            PreparationCosts=ledger.PreparationCosts,Policy=policyName,Couriers=progression.AbilitiesCsv(),DailyGrowth=progression.GrowthCsv(),GrowthCount=progression.GrowthCount };
         Records.Add(record);DayCompleted?.Invoke(record);
         if(campaign.IsBankrupt || campaign.DayNumber>=days)
         {

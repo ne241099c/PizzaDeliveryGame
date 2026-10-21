@@ -39,6 +39,14 @@ public static class M6SceneSetup
     }
     private static void SetArray(SerializedObject so,string name,UnityEngine.Object[] values)
     {var array=so.FindProperty(name);array.arraySize=values.Length;for(int i=0;i<values.Length;i++)array.GetArrayElementAtIndex(i).objectReferenceValue=values[i];}
+    public static void AddProgression()
+    {
+        var m=GameObject.Find("GameManager");var progression=m.GetComponent<CourierProgression>();
+        Bind(progression,"flow",m.GetComponent<DeliveryFlowController>(),"roster",m.GetComponent<DeliveryPersonSelector>());
+        Bind(m.GetComponent<CampaignManager>(),"progression",progression);
+        Bind(m.GetComponent<BusinessEconomy>(),"clock",m.GetComponent<GameClock>());
+        EditorSceneManager.MarkSceneDirty(m.scene);
+    }
     public static void Apply()
     {
         var manager=GameObject.Find("GameManager");

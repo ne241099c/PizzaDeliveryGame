@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public sealed class CampaignManager : MonoBehaviour
 {
     [SerializeField, Min(0)] private int bankruptcyGraceDays = 0;
+    [SerializeField] private CourierProgression progression;
     [SerializeField] private RecruitmentManager recruitment;
     [SerializeField] private BusinessEconomy economy;
     [SerializeField] private GameClock clock;
@@ -44,7 +45,7 @@ public sealed class CampaignManager : MonoBehaviour
     public string FinancialSummary => $"Day {DayNumber} / {(IsBankrupt ? "BANKRUPT - GAME OVER" : "SETTLEMENT")}\n"
         +$"Revenue: {economy.Ledger.Revenue:F2}\nMaterials: -{economy.Ledger.Materials:F2}\nFuel: -{economy.Ledger.Fuel:F2}\nWages: -{economy.Ledger.Wages:F2}\nFixed: -{economy.Ledger.FixedCosts:F2}\nProfit: {economy.Ledger.Profit:+0.00;-0.00;0.00}\n"
         +$"Preparation hiring/severance: -{economy.Ledger.PreparationCosts:F2}\nCash: {economy.OpeningCash:F2} -> {economy.Cash:F2}\n"
-        +$"Total revenue: {TotalRevenue:F2} / Best day: {BestDailyRevenue:F2}\n";
+        +$"Total revenue: {TotalRevenue:F2} / Best day: {BestDailyRevenue:F2}\n"+progression.DailySummary+"\n";
     public void StartBusiness()
     {
         if(clock.Phase!=DayPhase.BeforeOpening || IsBankrupt)return;
@@ -65,7 +66,7 @@ public sealed class CampaignManager : MonoBehaviour
     {
         economy.PrepareDay(DayNumber); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
         orders.ClearSelection(); roster.ResetDailyState(); dynamics.ResetForDay(); spawner.ResetForDay();
-        score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();
+        score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();progression.PrepareDay();
         preparationPanel.SetActive(true);
     }
 }

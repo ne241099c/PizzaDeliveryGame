@@ -24,6 +24,8 @@ public sealed class DeliveryTrip
     private readonly DeliveryDynamics dynamics;
     private readonly Func<double> roll;
     private int nextEdgeToCheck;
+    public int BackstreetCount=>roads.Count(r=>r.RoadType==RoadType.Backstreet);
+    public int SafeRoadCount=>roads.Length-AccidentCount;
     public float StartingStamina { get; }
     public float EnduranceAtDispatch { get; }
     public float SafetyAtDispatch { get; }
