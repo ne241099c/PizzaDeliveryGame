@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public sealed class CampaignManager : MonoBehaviour
 {
     [SerializeField, Min(0)] private int bankruptcyGraceDays = 0;
+    [SerializeField] private RecruitmentManager recruitment;
     [SerializeField] private BusinessEconomy economy;
     [SerializeField] private GameClock clock;
     [SerializeField] private OrderListUI orders;
@@ -42,7 +43,7 @@ public sealed class CampaignManager : MonoBehaviour
     }
     public string FinancialSummary => $"Day {DayNumber} / {(IsBankrupt ? "BANKRUPT - GAME OVER" : "SETTLEMENT")}\n"
         +$"Revenue: {economy.Ledger.Revenue:F2}\nMaterials: -{economy.Ledger.Materials:F2}\nFuel: -{economy.Ledger.Fuel:F2}\nWages: -{economy.Ledger.Wages:F2}\nFixed: -{economy.Ledger.FixedCosts:F2}\nProfit: {economy.Ledger.Profit:+0.00;-0.00;0.00}\n"
-        +$"Cash: {economy.OpeningCash:F2} -> {economy.Cash:F2}\n"
+        +$"Preparation hiring/severance: -{economy.Ledger.PreparationCosts:F2}\nCash: {economy.OpeningCash:F2} -> {economy.Cash:F2}\n"
         +$"Total revenue: {TotalRevenue:F2} / Best day: {BestDailyRevenue:F2}\n";
     public void StartBusiness()
     {
@@ -58,13 +59,13 @@ public sealed class CampaignManager : MonoBehaviour
     {
         if(flow.ActiveTrips.Count>0) { UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex); return; }
         IsBankrupt=false;ConsecutiveNegativeDays=0;TotalRevenue=BestDailyRevenue=0;
-        roster.ResetToInitialRoster();economy.NewGame(); DayNumber=1; TotalDelivered=TotalScore=0; reputation.ResetForDay(); spawner.ResetPolicy(); PrepareDay();
+        recruitment.ResetRandom();roster.ResetToInitialRoster();economy.NewGame(); DayNumber=1; TotalDelivered=TotalScore=0; reputation.ResetForDay(); spawner.ResetPolicy(); PrepareDay();
     }
     private void PrepareDay()
     {
         economy.PrepareDay(); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
         orders.ClearSelection(); roster.ResetDailyState(); dynamics.ResetForDay(); spawner.ResetForDay();
-        score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay();
+        score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();
         preparationPanel.SetActive(true);
     }
 }

@@ -100,6 +100,59 @@ public static class M5Validation
         campaign.NewGame();
         check(campaign.DayNumber==1 && !campaign.IsBankrupt && campaign.TotalRevenue==0 && economy.Cash==300 && rep.Value==50,"start over resets campaign money reputation records");
         check(roster.People.Select(p=>p.Name).SequenceEqual(new[]{"Aoi","Ren"}) && roster.People.All(p=>p.CurrentStamina==1),"start over restores two-person roster and stamina");
+        var recruitment=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();
+        recruitment.SeedOverride=42;recruitment.ResetRandom();recruitment.GenerateDay();
+        check(recruitment.Applicants.Count>=2 && recruitment.Applicants.Count<=3,"daily applicants count 2-3");
+        check(recruitment.Applicants.Select(a=>a.Person.Name).Distinct().Count()==recruitment.Applicants.Count
+            && !recruitment.Applicants.Any(a=>roster.People.Any(p=>p.Name==a.Person.Name)),"applicant names unique against team and each other");
+        var fixture=new GameObject("Recruitment formula fixture");fixture.SetActive(false);
+        try
+        {
+            var generator=fixture.AddComponent<RecruitmentManager>();generator.SeedOverride=17;generator.ResetRandom();
+            var profiles=Enumerable.Range(0,100).Select(i=>generator.GenerateApplicant("Test"+i)).ToArray();
+            check(profiles.All(a=>a.Strengths.Count==2 && a.Weaknesses.Count==2 && !a.Strengths.Intersect(a.Weaknesses).Any()),"two disjoint strengths and weaknesses");
+            check(profiles.All(a=>a.Baselines.All(v=>v>=.3f && v<=.7f)),"baseline generation range");
+            Func<Applicant,float[]> abilities=a=>new[]{a.Person.Driving,a.Person.LocalKnowledge,a.Person.Service,a.Person.Endurance,a.Person.Safety};
+            check(profiles.All(a=>Enumerable.Range(0,5).All(i=>
+            {
+                float actual=abilities(a)[i],delta=actual-a.Baselines[i];
+                return actual>=0 && actual<=1 && (a.Strengths.Contains(i) ? delta>=.19999f && delta<=.30001f
+                    : a.Weaknesses.Contains(i) ? delta<=-.19999f && delta>=-.30001f : Mathf.Abs(delta)<.00001f);
+            })),"strength and weakness adjustment bounds with remaining ability unchanged");
+            check(profiles.Select(a=>a.Person.Capacity).Distinct().OrderBy(v=>v).SequenceEqual(new[]{1,2}),"fixed sample contains both capacity choices");
+            generator.ResetRandom();var replay=Enumerable.Range(0,100).Select(i=>generator.GenerateApplicant("Test"+i)).ToArray();
+            check(profiles.Zip(replay,(a,b)=>abilities(a).SequenceEqual(abilities(b)) && a.Person.Capacity==b.Person.Capacity).All(v=>v),"same seed reproduces applicant abilities and capacities");
+        }
+        finally {UnityEngine.Object.DestroyImmediate(fixture);}
+        funding.FindProperty("initialCash").floatValue=0;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
+        var candidate=recruitment.Applicants[0];int teamSize=roster.People.Count;
+        check(!recruitment.Hire(candidate) && recruitment.LastMessage.Contains("cash") && roster.People.Count==teamSize,"insufficient cash rejects hiring with reason");
+        funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
+        funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
+        decimal beforeHire=economy.Cash,fee=recruitment.HiringCost(candidate.Person);
+        check(recruitment.Hire(candidate) && roster.People.Contains(candidate.Person) && economy.Cash==beforeHire-fee,"hiring updates roster and charges three wage days");
+        check(economy.Ledger.PreparationCosts==fee && fee==economy.DailyWage(candidate.Person)*3,"hiring cost recorded separately from business profit");
+        decimal hiredWages=roster.People.Sum(p=>economy.DailyWage(p));
+        campaign.StartBusiness();orders.AddOrder(new Order("Goal1","New hire",0,100));orders.SelectOnly(orders.Orders[0]);
+        check(roster.SelectForDispatch(candidate.Person),"new hire selectable on the same day");
+        var hireRoute=new ManualDeliveryRoute(map);hireRoute.TryReplace(RoadPathfinder.Suggest(map,orders.SelectedOrders,candidate.Person).EdgeIds);
+        check(flow.Dispatch(hireRoute.BuildCompletion(orders.SelectedOrders,candidate.Person),candidate.Person),"new hire dispatches through existing flow");
+        check(!recruitment.Fire(roster.People[0]) && recruitment.LastMessage.Contains("preparation"),"firing blocked during business");
+        check(!recruitment.Hire(recruitment.Applicants.FirstOrDefault()) && recruitment.LastMessage.Contains("preparation"),"hiring blocked during business");
+        clock.Advance(clock.BusinessDuration+1000);
+        check(economy.Ledger.Wages==hiredWages,"hired courier wage included at settlement");
+        check(economy.Cash==economy.OpeningCash+economy.Ledger.Profit-economy.Ledger.PreparationCosts,"cash reconciles including preparation fees");
+        var oldApplicants=recruitment.Applicants.ToArray();campaign.NextDay();
+        check(clock.Phase==DayPhase.BeforeOpening && !recruitment.Applicants.Intersect(oldApplicants).Any(),"unhired applicants expire next morning");
+        check(roster.People.Contains(candidate.Person) && candidate.Person.CurrentStamina==1,"hired courier carried with full stamina");
+        check(recruitment.Hire(recruitment.Applicants[0]) && roster.People.Count==4,"fourth courier can be hired");
+        recruitment.GenerateDay();check(!recruitment.Hire(recruitment.Applicants[0]) && recruitment.LastMessage.Contains("limit"),"team limit rejects fifth hire with reason");
+        decimal beforeFire=economy.Cash,severance=recruitment.SeveranceCost(roster.People[0]);
+        check(recruitment.Fire(roster.People[0]) && economy.Cash==beforeFire-severance,"firing charges one daily wage and removes courier");
+        while(roster.People.Count>1)recruitment.Fire(roster.People[0]);
+        check(!recruitment.Fire(roster.People[0]) && recruitment.LastMessage.Contains("at least one"),"last courier cannot be fired with reason");
+        campaign.NewGame();
+        check(roster.People.Count==2 && economy.Cash==300 && economy.Ledger.PreparationCosts==0,"new game clears hired roster and preparation expenses");
         return legacy+$" / PASS: {checks} M5 checks.";
     }
 }

@@ -2,6 +2,7 @@
 public sealed class DayLedger
 {
     public decimal OpeningCash { get; }
+    public decimal PreparationCosts { get; internal set; }
     public decimal Revenue { get; internal set; }
     public decimal Materials { get; internal set; }
     public decimal Distance { get; internal set; }

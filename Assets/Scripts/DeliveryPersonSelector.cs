@@ -25,6 +25,16 @@ public class DeliveryPersonSelector : MonoBehaviour
     private static DeliveryPerson Copy(DeliveryPerson p) => new(p.Name,p.Driving,p.LocalKnowledge,p.Capacity,p.Service,p.Endurance,p.Safety);
     private void Awake() => startingRoster=deliveryPeople.ConvertAll(Copy);
     private void Start() => RebuildRoster();
+    public bool AddPerson(DeliveryPerson person)
+    {
+        if(person==null || deliveryPeople.Exists(p=>p.Name==person.Name))return false;
+        deliveryPeople.Add(person);RebuildRoster();return true;
+    }
+    public bool RemovePerson(DeliveryPerson person)
+    {
+        if(!deliveryPeople.Remove(person))return false;
+        if(SelectedPerson==person)ClearSelection();RebuildRoster();return true;
+    }
     public void ResetToInitialRoster()
     {
         deliveryPeople=startingRoster.ConvertAll(Copy);RebuildRoster();ResetDailyState();

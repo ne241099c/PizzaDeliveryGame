@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -44,7 +45,7 @@ public static class M5SceneSetup
         so.ApplyModifiedProperties();
         var card=Object.FindFirstObjectByType<Canvas>().transform.Find("DayResults/ResultCard").GetComponent<RectTransform>();
         Undo.RecordObject(card,"Room for financial breakdown");card.anchoredPosition=new Vector2(190,-85);card.sizeDelta=new Vector2(900,700);
-        var label=card.GetComponentInChildren<TextMeshProUGUI>();
+        var label=card.GetComponentsInChildren<TextMeshProUGUI>(true).First(t=>t.name=="ResultText");
         var viewport=card.Find("LedgerViewport")?.GetComponent<RectTransform>()??Rect(card,"LedgerViewport",28,20,844,570);
         if(viewport.GetComponent<Image>()==null)viewport.gameObject.AddComponent<Image>().color=new Color(0,0,0,.01f);
         if(viewport.GetComponent<RectMask2D>()==null)viewport.gameObject.AddComponent<RectMask2D>();
@@ -56,6 +57,56 @@ public static class M5SceneSetup
         var scroll=viewport.GetComponent<ScrollRect>()??viewport.gameObject.AddComponent<ScrollRect>();scroll.content=rt;scroll.viewport=viewport;scroll.horizontal=false;scroll.vertical=true;scroll.movementType=ScrollRect.MovementType.Clamped;scroll.scrollSensitivity=32;
         var button=card.Find("ReplayDay").GetComponent<RectTransform>();Undo.RecordObject(button,"Settlement action");button.anchoredPosition=new Vector2(300,-620);
         EditorSceneManager.MarkSceneDirty(manager.scene);
+    }
+    public static void AddPreparation()
+    {
+        var manager=GameObject.Find("GameManager");var canvas=Object.FindFirstObjectByType<Canvas>();
+        var panel=canvas.transform.Find("Preparation");
+        var recruitment=manager.GetComponent<RecruitmentManager>()??Undo.AddComponent<RecruitmentManager>(manager);
+        Bind(recruitment,"clock",manager.GetComponent<GameClock>(),"roster",manager.GetComponent<DeliveryPersonSelector>(),"economy",manager.GetComponent<BusinessEconomy>());
+        Bind(manager.GetComponent<CampaignManager>(),"recruitment",recruitment);
+        ConfigurePreparationLayout(panel,canvas);
+        if(panel.Find("PreparationOverview")!=null){EditorSceneManager.MarkSceneDirty(manager.scene);return;}
+        Text(panel,"PreparationTitle","PREPARATION / Build your team",28,8,1180,42,28);
+        var overview=Text(panel,"PreparationOverview","Day 1 / Cash 300 / Reputation 50",28,55,1180,38,23);
+        Text(panel,"TeamTitle","YOUR TEAM / scroll",28,100,580,32,21);
+        Text(panel,"ApplicantsTitle","TODAY'S APPLICANTS / scroll",652,100,580,32,21);
+        var team=MakeList(panel,"Team",28,138,598,366);var applicants=MakeList(panel,"Applicants",652,138,598,366);
+        var message=Text(panel,"EmploymentMessage","Choose your team, then start business.",28,515,1180,58,21);
+        var start=panel.Find("StartBusiness").GetComponent<RectTransform>();Undo.RecordObject(start,"Preparation start position");start.anchoredPosition=new Vector2(490,-592);
+        var template=Rect(panel,"EmploymentRowTemplate",0,0,598,120);template.gameObject.AddComponent<Image>().color=new Color(.14f,.21f,.28f);
+        var layout=template.gameObject.AddComponent<LayoutElement>();layout.minHeight=layout.preferredHeight=120;
+        Text(template,"Profile","Courier / Wage\nDrive / Know / Load\nService / Endurance / Safety\nHiring or severance",12,4,462,112,17);
+        MakeButton(template,"Action","Hire",486,38,98,44);template.gameObject.SetActive(false);
+        var ui=panel.gameObject.AddComponent<PreparationUI>();
+        Bind(ui,"recruitment",recruitment,"roster",manager.GetComponent<DeliveryPersonSelector>(),"economy",manager.GetComponent<BusinessEconomy>(),"reputation",manager.GetComponent<ReputationManager>(),"campaign",manager.GetComponent<CampaignManager>(),"overview",overview,"message",message,"teamContent",team,"applicantContent",applicants,"rowTemplate",template.gameObject);
+        ConfigurePreparationLayout(panel,canvas);
+        canvas.transform.Find("DayResults").SetAsLastSibling();EditorSceneManager.MarkSceneDirty(manager.scene);
+    }
+    private static void ConfigurePreparationLayout(Transform panel,Canvas canvas)
+    {
+        var panelRect=panel.GetComponent<RectTransform>();Undo.RecordObject(panelRect,"Fit preparation below policy");
+        panelRect.anchoredPosition=new Vector2(0,-202);panelRect.sizeDelta=new Vector2(1280,638);
+        var image=panel.GetComponent<Image>();Undo.RecordObject(image,"Opaque preparation background");image.color=new Color(.06f,.1f,.16f,1);
+        var cash=canvas.transform.Find("Cash").GetComponent<TextMeshProUGUI>();Undo.RecordObject(cash.rectTransform,"Cash in header");Undo.RecordObject(cash,"Cash font");
+        cash.rectTransform.anchoredPosition=new Vector2(24,-49);cash.rectTransform.sizeDelta=new Vector2(680,27);cash.fontSize=21;
+        var subtitle=canvas.transform.Find("Header/Subtitle");Undo.RecordObject(subtitle.gameObject,"Replace old subtitle with cash");subtitle.gameObject.SetActive(false);
+        var day=canvas.transform.Find("CampaignDay").GetComponent<RectTransform>();Undo.RecordObject(day,"Day in header");day.anchoredPosition=new Vector2(760,-49);day.sizeDelta=new Vector2(480,27);
+        var start=panel.Find("StartBusiness").GetComponent<RectTransform>();Undo.RecordObject(start,"Keep start button inside preparation");start.anchoredPosition=new Vector2(490,-574);start.sizeDelta=new Vector2(300,50);
+        foreach(string name in new[]{"TeamViewport","ApplicantsViewport"})
+        {
+            var child=panel.Find(name)?.GetComponent<RectTransform>();if(child!=null){Undo.RecordObject(child,"Preparation list height");child.sizeDelta=new Vector2(598,350);}
+        }
+        var message=panel.Find("EmploymentMessage")?.GetComponent<RectTransform>();if(message!=null){Undo.RecordObject(message,"Preparation message");message.anchoredPosition=new Vector2(28,-501);}
+    }
+    private static RectTransform MakeList(Transform parent,string name,float x,float y,float width,float height)
+    {
+        var viewport=Rect(parent,name+"Viewport",x,y,width,height);viewport.gameObject.AddComponent<Image>().color=new Color(.03f,.06f,.1f);viewport.gameObject.AddComponent<RectMask2D>();
+        var content=Rect(viewport,name+"Content",0,0,width,height);content.anchorMax=new Vector2(1,1);content.sizeDelta=new Vector2(0,height);
+        var layout=content.gameObject.AddComponent<VerticalLayoutGroup>();layout.spacing=8;layout.childControlWidth=true;layout.childControlHeight=true;layout.childForceExpandHeight=false;
+        content.gameObject.AddComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;
+        var scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.content=content;scroll.viewport=viewport;scroll.horizontal=false;scroll.vertical=true;scroll.movementType=ScrollRect.MovementType.Clamped;scroll.scrollSensitivity=32;
+        return content;
     }
     public static Button MakeButton(Transform parent,string name,string caption,float x,float y,float w,float h)
     {

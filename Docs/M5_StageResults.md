@@ -31,3 +31,8 @@
 変更: CampaignManager, DeliveryPlannerUI, DeliveryPersonSelector, M5SceneSetup, M3Validation.Revision, M5Validation, SampleScene。スクロール可能な精算明細・破産表示・通算売上/最高売上・最初からを実装。初期名簿をAoi/Renの2人に変更。
 検証: 169既存+39 M5=208項目通過。所持金0は破産しない、マイナス精算と猶予日数、翌日禁止、新規ゲームで初期資金・評判・名簿・体力・記録の初期化。
 判断: 猶予は連続したマイナス精算の日数で数え、回復した日は0へ戻す。破産時は精算画面にGAME OVERと通算記録を同時表示し、ボタンをStart overにする。
+
+## M5-5
+変更: RecruitmentManager, PreparationUIを追加。CampaignManager, BusinessEconomy, DayLedger, DeliveryPersonSelector, DeliveryPromiseUI, M5SceneSetup, M5Validation, M4PlayValidation, SampleScene。6能力・日給・採用費・解雇手当、2列のスクロール名簿と求人、理由つき制限、日次更新を実装。
+検証: 169既存+62 M5+8リセット=239項目通過。固定シード100人の生成規則・再現性・名前重複、資金不足・4人上限・最後1人保護、採用当日の配達・日給・翌日持ち越しを検証。Play画像で文字の重なりと画面下端も修正・再検証済み。
+判断: 解雇手当は資金不足でも支払い可能とし、破産は精算時のみ判定(採用は所持金不足で拒否)。採用費・解雇手当は準備費用として別記し、営業損益へ混ぜずに所持金と照合。名前プール不足時は重複を作らず理由を表示する。

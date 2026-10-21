@@ -35,7 +35,7 @@ public sealed class DeliveryPromiseUI : MonoBehaviour
     private void Update()
     {
         if(!ready)return;
-        promiseSlider.interactable=clock.Phase==DayPhase.Open;
+        promiseSlider.interactable=clock.Phase==DayPhase.Open || clock.Phase==DayPhase.BeforeOpening;
         promiseSlider.SetValueWithoutNotify(spawner.PromiseSeconds);
         promiseText.text=$"Delivery promise: {spawner.PromiseSeconds:F1}s (min {spawner.MinimumPromiseSeconds:F1}s)";
         reputationText.text=$"Reputation: {reputation.Value:F1} / Orders x{reputation.DemandFactor:F2}";
