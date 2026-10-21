@@ -27,7 +27,7 @@ public sealed class CampaignManager : MonoBehaviour
     private void OnEnable() => clock.OnDayEnded += SettleDay;
     private void OnDisable() => clock.OnDayEnded -= SettleDay;
     private void Update() => dayText.text=$"Day {DayNumber} / {clock.Phase}";
-    private void SettleDay() { TotalDelivered+=stats.DeliveredCount; TotalScore+=stats.TotalScore; }
+    private void SettleDay() { economy.SettleDay(); TotalDelivered+=stats.DeliveredCount; TotalScore+=stats.TotalScore; }
     public void StartBusiness()
     {
         if(clock.Phase!=DayPhase.BeforeOpening)return;

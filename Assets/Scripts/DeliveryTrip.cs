@@ -114,6 +114,19 @@ public sealed class DeliveryTrip
             onAccident?.Invoke(roads[index].Id,delay);
         }
     }
+    // Uses road distances, not visual coordinates or elapsed stopped time.
+    public float DistanceAt(float now)
+    {
+        float distance=0;
+        for(int i=0;i<roads.Length;i++)
+        {
+            float movingFrom=segmentStartTimes[i]+stopSeconds[i];
+            if(now<=movingFrom)continue;
+            float fraction=now>=segmentEndTimes[i] ? 1 : Mathf.InverseLerp(movingFrom,segmentEndTimes[i],now);
+            distance+=roads[i].Distance*fraction;
+        }
+        return distance;
+    }
     public float StoppedUntil(float now)
     {
         for(int i=0;i<stopSeconds.Length;i++)

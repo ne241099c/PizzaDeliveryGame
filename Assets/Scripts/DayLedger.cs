@@ -1,0 +1,14 @@
+/// <summary>One day's confirmed revenue and expenses. Cash movements are applied by BusinessEconomy.</summary>
+public sealed class DayLedger
+{
+    public decimal OpeningCash { get; }
+    public decimal Revenue { get; internal set; }
+    public decimal Materials { get; internal set; }
+    public decimal Distance { get; internal set; }
+    public decimal Fuel { get; internal set; }
+    public decimal Wages { get; internal set; }
+    public decimal FixedCosts { get; internal set; }
+    public decimal Profit => Revenue-Materials-Fuel-Wages-FixedCosts;
+    public bool Settled { get; internal set; }
+    public DayLedger(decimal openingCash) => OpeningCash=openingCash;
+}

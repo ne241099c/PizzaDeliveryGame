@@ -8078,6 +8078,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BusinessEconomy
   flow: {fileID: 1404697814}
+  roster: {fileID: 1404697813}
+  materialCostPerOrder: 20
+  fuelCostPerDistance: 0.4
+  wageBase: 50
+  wageAbilityFactor: 40
+  wageCapacityFactor: 30
+  dailyFixedCost: 150
   cashText: {fileID: 1514087125}
   initialCash: 300
 --- !u!1 &1408363483

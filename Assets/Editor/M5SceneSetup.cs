@@ -27,7 +27,7 @@ public static class M5SceneSetup
         var manager=GameObject.Find("GameManager");var canvas=Object.FindFirstObjectByType<Canvas>();
         var economy=manager.GetComponent<BusinessEconomy>()??Undo.AddComponent<BusinessEconomy>(manager);
         var label=canvas.transform.Find("Cash")?.GetComponent<TextMeshProUGUI>()??Text(canvas.transform,"Cash","Cash: 300.00",760,92,480,40,22);
-        Bind(economy,"flow",manager.GetComponent<DeliveryFlowController>(),"cashText",label);
+        Bind(economy,"flow",manager.GetComponent<DeliveryFlowController>(),"roster",manager.GetComponent<DeliveryPersonSelector>(),"cashText",label);
         Bind(manager.GetComponent<CampaignManager>(),"economy",economy);
         canvas.transform.Find("DayResults").SetAsLastSibling();
         EditorSceneManager.MarkSceneDirty(manager.scene);
