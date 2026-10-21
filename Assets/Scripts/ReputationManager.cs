@@ -10,6 +10,7 @@ public sealed class ReputationManager : MonoBehaviour
     [SerializeField, Min(0f)] private float maximumLateLoss = 5f;
     [SerializeField, Range(0,1)] private float serviceProtection = 0.5f;
     [SerializeField, Min(0f)] private float cancellationLoss = 5f;
+    [SerializeField, Min(0f)] private float closingCancellationLoss = 0f;
     [SerializeField, Min(0.01f)] private float demandBase = 0.6f;
     [SerializeField, Min(0f)] private float demandScale = 0.8f;
     public float Value { get; private set; }
@@ -20,6 +21,6 @@ public sealed class ReputationManager : MonoBehaviour
         => lateSeconds<=0 ? onTimeGain : -Mathf.Min(maximumLateLoss,lateBaseLoss+lateSeconds*lateLossPerSecond)
             * (1-serviceProtection*Mathf.Clamp01(service));
     public void RecordArrival(float lateSeconds,float service) => Apply(ArrivalChange(lateSeconds,service));
-    public void RecordCancellation(int count) => Apply(-cancellationLoss*count);
+    public void RecordCancellation(int count, bool closing = false) => Apply(-(closing ? closingCancellationLoss : cancellationLoss)*count);
     private void Apply(float delta) => Value=Mathf.Clamp(Value+delta,0,maximumReputation);
 }

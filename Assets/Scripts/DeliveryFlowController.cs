@@ -104,7 +104,7 @@ public class DeliveryFlowController : MonoBehaviour
         int penalty = closing ? scoreManager.ClosingCancellationPenalty : 0;
         scoreManager.AddScore(-cancelled.Length * penalty);
         stats.RecordCancellation(cancelled.Length, penalty);
-        reputation.RecordCancellation(cancelled.Length);
+        reputation.RecordCancellation(cancelled.Length, closing);
         Message?.Invoke($"{cancelled.Length} waiting order(s) cancelled" + (closing ? " at closing." : " after expiry."));
     }
 

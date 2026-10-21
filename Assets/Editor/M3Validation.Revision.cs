@@ -74,6 +74,7 @@ public static partial class M3Validation
             near(rep.ArrivalChange(10,1),-1,"M4-6 service protects reputation");
             near(rep.ArrivalChange(100,0),-5,"M4-6 late loss ceiling");
             rep.RecordArrival(0,0);near(rep.Value,51,"M4-6 on-time reputation gain");
+            rep.RecordCancellation(3,true);near(rep.Value,51,"M5-0 closing cancellation preserves reputation");
             rep.RecordCancellation(1);near(rep.Value,46,"M4-6 cancellation lowers reputation");
             check(rep.DemandFactor<1,"M4-6 damaged reputation reduces demand");
             rep.RecordCancellation(100);near(rep.Value,0,"M4-6 reputation floor");near(rep.DemandFactor,0.6f,"M4-6 lowest demand factor");
