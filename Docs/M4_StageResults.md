@@ -16,7 +16,7 @@
 | M4-7 | 148 | DeliveryDynamics、DeliveryPerson、DeliveryTrip、DeliveryFlowController、MapManager、DeliveryPersonSelector、DeliveryPlannerUI、M4StageSceneSetup、M4SceneSetup、SampleScene、M3Validation.Revision、M4PlayValidationと対応meta |
 | M4-5 | 153 | DeliveryMarkerView、M3Validation.Revision |
 | M4-0 | 160 | DeliveryPersonSelector、M4StageSceneSetup、M4SceneSetup、SampleScene、M3Validation.Revision |
-| M4-8 | 未着手 | 指定順に進める |
+| M4-8 | 168 | DeliveryPlannerUI、MapViewportUI、M4StageSceneSetup、M4SceneSetup、SampleScene、M3Validation.Revision、M4PlayValidationと対応meta、および操作・引継ぎ資料 |
 
 ## 判断した点
 
@@ -47,3 +47,20 @@
 - M4-5: 移動表示は既存のPositionAt参照をそのまま使い、停止中の赤表示・残り停止秒を追加。事故で変わった同じ到着予定を移動と採点で共有する。
 
 - M4-0: 既存の名簿内容とInspector参照を維持し、表示枠・マスク・スクロールと行高を追加。5人目の表示と選択も検証する。
+
+
+## 全段階後のPlay確認
+
+営業フロー31項目・やり直し6項目を通過。配達5件、遅延1件、キャンセル2件、459点、評判42.4。
+目安30秒では60秒間に4件、180秒では1件の実際の発注を確認。既存期限が不変で、評判低下が頻度へ反映されることも確認。
+同じ道順の4人の所要時間差、Soraの体力0.2での低速化、固定シード25による裏道事故・15秒停止・再開・遅延減点と評判低下を確認。
+もう一度ボタンによって評判50・体力1・得点0・待機状態へ戻ることを、実際の画面座標クリックで確認した。
+最終状態でコンパイルエラー・警告なし、Playの実行時エラーなし。検証用の設定はやり直しで消え、通常の初期値へ戻る。
+
+### M4-8で判断した点
+
+- 結果には、仕様の得点・件数・評判に加え、配達員ごとの積載量と残り体力を表示する。やり直しは既存のScene再読み込みを利用し、名簿の初期能力を保ったまま動的な状態を初期化する。
+- 目安設定欄の追加で結果画面の重なり順と画面の縦横比への対応が必要になった。結果を最前面にし、CanvasをExpand設定、地図カメラをScene上のMapViewportFrameへ追従させる。ゲーム数値は変更しない。
+- M4-9の釣り合い・面白さの判断は実施していない。Play確認はUIイベントと時刻の制御で場面を再現した動作確認。
+
+最新の遊び方とInspector項目は [M4_CurrentGuide.md](M4_CurrentGuide.md) を参照。

@@ -154,6 +154,19 @@ public static partial class M3Validation
             check(rows.All(r=>r.transform.Find("StaminaBar/Fill")!=null),"M4-0 every row has a stamina bar");
         }
         finally {UnityEngine.Object.DestroyImmediate(rosterFixture);}
+        var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>();
+        var resultsPanel=(GameObject)new SerializedObject(planner).FindProperty("resultsPanel").objectReferenceValue;
+        check(resultsPanel.transform.GetSiblingIndex()==resultsPanel.transform.parent.childCount-1,"M4-8 results cover policy controls");
+        var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();
+        check(canvas.GetComponent<CanvasScaler>().screenMatchMode==CanvasScaler.ScreenMatchMode.Expand,"M4-8 whole layout fits variable aspect ratio");
+        var footer=canvas.transform.Find("Footer").GetComponent<RectTransform>();var footerCorners=new Vector3[4];footer.GetWorldCorners(footerCorners);
+        check(footerCorners.All(p=>p.x>=canvas.pixelRect.xMin-1 && p.x<=canvas.pixelRect.xMax+1 && p.y>=canvas.pixelRect.yMin-1 && p.y<=canvas.pixelRect.yMax+1),"M4-8 dispatch and reset remain inside Game view");
+        check(planner.ResultSummary.Contains("Reputation:"),"M4-8 result includes reputation");
+        check(planner.ResultSummary.Contains("Minato / Load 1"),"M4-8 result includes capacity");
+        check(planner.ResultSummary.Contains("Stamina"),"M4-8 result includes remaining stamina");
+        near(UnityEngine.Object.FindFirstObjectByType<ReputationManager>().Value,50,"M4-8 fresh day reputation reset");
+        check(roster.All(p=>p.CurrentStamina==1 && p.IsAvailable && p.CurrentTrip==null),"M4-8 fresh day stamina and availability reset");
+
 
 
 

@@ -15,6 +15,7 @@ public class DeliveryPlannerUI : MonoBehaviour
     [SerializeField] private GameClock clock;
     [SerializeField] private DeliveryFlowController flow;
     [SerializeField] private DayStats stats;
+    [SerializeField] private ReputationManager reputation;
     [SerializeField] private TextMeshProUGUI statusText;
     [SerializeField] private TextMeshProUGUI routeSummary;
     [SerializeField] private TextMeshProUGUI comparisonText;
@@ -138,9 +139,14 @@ public class DeliveryPlannerUI : MonoBehaviour
     private void OnClosed() { route?.Clear(); RefreshRoute(); }
     private void ShowResults()
     {
-        resultText.text = $"DAY COMPLETE\n\nScore: {stats.TotalScore}\nDelivered: {stats.DeliveredCount}\nLate: {stats.LateCount}\nCancelled: {stats.CancelledCount}";
+        resultText.text = ResultSummary;
+        resultsPanel.transform.SetAsLastSibling();
         resultsPanel.SetActive(true);
     }
+
+    public string ResultSummary => $"DAY COMPLETE\n\nScore: {stats.TotalScore}\nDelivered: {stats.DeliveredCount}"
+        + $"\nLate: {stats.LateCount}\nCancelled: {stats.CancelledCount}\nReputation: {reputation.Value:F1}\n\nCouriers\n"
+        + string.Join("\n",people.People.Select(p=>$"{p.Name} / Load {p.Capacity} / Stamina {p.CurrentStamina:P0}"));
 
     public void Dispatch()
     {

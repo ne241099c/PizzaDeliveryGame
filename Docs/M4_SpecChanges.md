@@ -1,5 +1,7 @@
 # M4 仕様変更の受け取りと実装差分
 
+> 以下は仕様受領時点の記録。現在は新仕様の実装を完了している。最新は [M4_CurrentGuide.md](M4_CurrentGuide.md) と [M4_StageResults.md](M4_StageResults.md) を参照。
+
 2026-10-22。追加で受け取った4資料を `Docs/` の同名ファイルへ反映した。元資料は変更していない。
 
 - [計画書_M4.md](計画書_M4.md)

@@ -98,6 +98,35 @@ public static class M4StageSceneSetup
         EditorSceneManager.MarkSceneDirty(selector.gameObject.scene);
     }
 
+    public static void CompleteResults()
+    {
+        var manager=GameObject.Find("GameManager");
+        ConfigureViewport();
+        Bind(manager.GetComponent<DeliveryPlannerUI>(),"reputation",manager.GetComponent<ReputationManager>());
+        var card=Object.FindFirstObjectByType<Canvas>().transform.Find("DayResults/ResultCard").GetComponent<RectTransform>();
+        Undo.RecordObject(card.parent,"Results in front of policy controls");card.parent.SetAsLastSibling();
+        Undo.RecordObject(card,"Results room for reputation and roster");card.anchoredPosition=new Vector2(340,-110);card.sizeDelta=new Vector2(600,620);
+        var label=card.Find("ResultText").GetComponent<TextMeshProUGUI>();Undo.RecordObject(label,"Results font");Undo.RecordObject(label.rectTransform,"Results size");
+        label.fontSize=24;label.rectTransform.anchoredPosition=new Vector2(36,-24);label.rectTransform.sizeDelta=new Vector2(528,470);
+        label.text="DAY COMPLETE\n\nScore: 0\nDelivered: 0\nLate: 0\nCancelled: 0\nReputation: 50.0\n\nCouriers / Load / Stamina";
+        var replay=card.Find("ReplayDay").GetComponent<RectTransform>();Undo.RecordObject(replay,"Results replay position");replay.anchoredPosition=new Vector2(140,-535);
+        EditorSceneManager.MarkSceneDirty(manager.scene);
+    }
+
+    public static void ConfigureViewport()
+    {
+        var canvas=Object.FindFirstObjectByType<Canvas>();
+        var scaler=canvas.GetComponent<CanvasScaler>();Undo.RecordObject(scaler,"Fit complete layout");
+        scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.Expand;
+        var existing=canvas.transform.Find("MapViewportFrame");
+        var frame=existing!=null?existing.GetComponent<RectTransform>():Rect(canvas.transform,"MapViewportFrame",320,318,397,319);
+        var view=frame.GetComponent<MapViewportUI>()??Undo.AddComponent<MapViewportUI>(frame.gameObject);
+        Bind(view,"mapCamera",Camera.main,"viewport",frame);
+        Undo.RecordObject(Camera.main,"Fit map viewport to UI slot");
+        Canvas.ForceUpdateCanvases();view.ApplyViewport();
+        canvas.transform.Find("DayResults").SetAsLastSibling();
+    }
+
     public static void Bind(Object target,params object[] pairs)
     {
         Undo.RecordObject(target,"Assign M4 scene references");var so=new SerializedObject(target);
