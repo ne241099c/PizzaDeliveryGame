@@ -91,6 +91,11 @@ public class DeliveryPersonSelector : MonoBehaviour
         }
         staminaBars[button]=existing.Find("Fill").GetComponent<RectTransform>();
     }
+    public bool SelectForDispatch(DeliveryPerson person)
+    {
+        if(!deliveryPeople.Contains(person) || !person.IsAvailable || clock.Phase!=DayPhase.Open)return false;
+        SelectedPerson=person;Refresh();SelectionChanged?.Invoke();return true;
+    }
     private void Select(DeliveryPerson person)
     {
         if (!person.IsAvailable || clock.Phase != DayPhase.Open) return;

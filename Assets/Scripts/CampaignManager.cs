@@ -6,6 +6,7 @@ using UnityEngine.UI;
 [DefaultExecutionOrder(-75)]
 public sealed class CampaignManager : MonoBehaviour
 {
+    [SerializeField] private BusinessEconomy economy;
     [SerializeField] private GameClock clock;
     [SerializeField] private OrderListUI orders;
     [SerializeField] private DeliveryPersonSelector roster;
@@ -40,11 +41,11 @@ public sealed class CampaignManager : MonoBehaviour
     public void NewGame()
     {
         if(flow.ActiveTrips.Count>0) { UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex); return; }
-        DayNumber=1; TotalDelivered=TotalScore=0; reputation.ResetForDay(); spawner.ResetPolicy(); PrepareDay();
+        economy.NewGame(); DayNumber=1; TotalDelivered=TotalScore=0; reputation.ResetForDay(); spawner.ResetPolicy(); PrepareDay();
     }
     private void PrepareDay()
     {
-        clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
+        economy.PrepareDay(); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
         orders.ClearSelection(); roster.ResetDailyState(); dynamics.ResetForDay(); spawner.ResetForDay();
         score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay();
         preparationPanel.SetActive(true);

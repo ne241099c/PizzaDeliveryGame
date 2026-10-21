@@ -16,6 +16,7 @@ public class DeliveryFlowController : MonoBehaviour
     public IReadOnlyList<DeliveryTrip> ActiveTrips => activeTrips;
     public event Action<DeliveryTrip> Dispatched;
     public event Action<DeliveryTrip> Returned;
+    public event Action<int> RevenueEarned;
     public event Action<string> Message;
 
     private void OnEnable() { clock.Advanced += Tick; clock.OnClosed += Close; }
@@ -73,6 +74,7 @@ public class DeliveryFlowController : MonoBehaviour
                 float late = Mathf.Max(0, delivery.ArrivesAt - delivery.Order.Deadline);
                 int points = scoreManager.ScoreArrival(delivery.ArrivesAt, delivery.Order.Deadline, trip.ServiceAtDispatch);
                 scoreManager.AddScore(points);
+                RevenueEarned?.Invoke(points);
                 stats.RecordDelivery(points, late);
                 reputation.RecordArrival(late,trip.ServiceAtDispatch);
                 int tip=scoreManager.TipForArrival(delivery.ArrivesAt,delivery.Order.Deadline,trip.ServiceAtDispatch);

@@ -11,3 +11,13 @@
 変更: CampaignManager / M5SceneSetup / M5Validationを追加。GameClock, DayStats, ScoreManager, OrderSpawner, DeliveryPersonSelector, DeliveryPlannerUI, SampleSceneに日次リセット・次の日の接続を追加。
 検証: 169既存 + 10 M5 = 179項目通過。日数・評判・同一名簿の維持、注文・体力・得点・時計のリセットと翌日の営業開始。
 判断: シーンを再読込せず同じ名簿インスタンスを保持。新規ゲームだけを別の入口に分離。
+
+## M5-2 — 検証失敗のため停止・未コミット
+変更中: BusinessEconomyを追加し初期資金300・到着時の売上加算・日次売上リセットを接続。DeliveryFlowController, DeliveryPersonSelector, OrderListUI, CampaignManager, M5SceneSetup, M5Validation, SampleSceneを変更。
+実装中の検証コードにRouteSuggestionをDeliveryPlanへ直接渡す型エラーがあり、ManualDeliveryRoute.BuildCompletionで変換するよう修正。コンパイルエラー・警告は解消済み。
+段階検証 M5Validation.Run の内部で、既存M3Validationの「M4-8 results cover policy controls」が失敗。AddEconomyがCanvasの末尾にCashラベルを追加し、DayResultsが最後の兄弟でなくなったことが原因。到着時の所持金・売上計算の新しい検証には到達していない。
+計画書の停止ルールに従って、この失敗後は修正・次段階へ進まず停止。M5-2は未コミット、M5-3〜6は未着手。UnityはPlay停止。
+判断した点: 金額はdecimalで保持し、初期値はInspectorのfloatから変換する。売上は到着時の確定得点だけを受け取り、閉店キャンセルの得点ペナルティとは分ける。
+
+### M5-2 修正完了
+利用者の「直して最後まで」の依頼で再開。AddEconomyの末尾でDayResultsを最後の兄弟に置くよう修正。全169既存+18 M5=187項目通過。期限内チップ・遅延減額を含む実際の到着売上と翌日持ち越しまで検証済み。

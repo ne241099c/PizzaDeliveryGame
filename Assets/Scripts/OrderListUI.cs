@@ -95,6 +95,11 @@ public class OrderListUI : MonoBehaviour
             : remaining <= urgentSeconds ? new Color(1f, 0.62f, 0.48f) : Color.white;
         button.interactable = clock.Phase == DayPhase.Open;
     }
+    public bool SelectOnly(Order order)
+    {
+        if(clock.Phase!=DayPhase.Open || !Contains(order))return false;
+        selectedOrders.Clear();selectedOrders.Add(order);Refresh();SelectionChanged?.Invoke();return true;
+    }
     private void ToggleOrder(Order order)
     {
         if (clock.Phase != DayPhase.Open || !Contains(order)) return;
