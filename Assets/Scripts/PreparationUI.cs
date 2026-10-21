@@ -38,14 +38,14 @@ public sealed class PreparationUI : MonoBehaviour
         FitPool(teamRows,roster.People.Count,teamContent);FitPool(applicantRows,recruitment.Applicants.Count,applicantContent);
         for(int i=0;i<roster.People.Count;i++)
         {
-            var person=roster.People[i];var row=teamRows[i];
+            var person=roster.People[i];var row=teamRows[i];row.GetComponent<CourierAbilitiesView>()?.Show(person);
             row.transform.Find("Profile").GetComponent<TextMeshProUGUI>().text=Profile(person)+$"\nSeverance: {recruitment.SeveranceCost(person):F2}";
             var button=row.GetComponentInChildren<Button>();button.GetComponentInChildren<TextMeshProUGUI>().text="Fire";
             button.onClick.RemoveAllListeners();button.onClick.AddListener(()=>recruitment.Fire(person));
         }
         for(int i=0;i<recruitment.Applicants.Count;i++)
         {
-            var applicant=recruitment.Applicants[i];var row=applicantRows[i];
+            var applicant=recruitment.Applicants[i];var row=applicantRows[i];row.GetComponent<CourierAbilitiesView>()?.Show(applicant.Person);
             row.transform.Find("Profile").GetComponent<TextMeshProUGUI>().text=Profile(applicant.Person)+$"\nHiring: {recruitment.HiringCost(applicant.Person):F2}";
             var button=row.GetComponentInChildren<Button>();button.GetComponentInChildren<TextMeshProUGUI>().text="Hire";
             button.onClick.RemoveAllListeners();button.onClick.AddListener(()=>recruitment.Hire(applicant));

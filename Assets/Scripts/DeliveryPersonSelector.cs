@@ -14,7 +14,8 @@ public class DeliveryPersonSelector : MonoBehaviour
         new DeliveryPerson("Aoi", 0.6f, 0.6f, 2, 0.8f, 0.7f, 0.8f),
         new DeliveryPerson("Ren", 0.5f, 0.3f, 2, 0.5f, 0.9f, 0.4f)
     };
-    [SerializeField, Min(52)] private float rowHeight = 88f;
+    [SerializeField, Min(52)] private float rowHeight = 230f;
+    [SerializeField,Range(0,1)] private float initialPotentialBonus=.25f;
     private readonly Dictionary<Button,RectTransform> staminaBars = new();
     private readonly List<Button> buttons = new();
     public DeliveryPerson SelectedPerson { get; private set; }
@@ -22,8 +23,8 @@ public class DeliveryPersonSelector : MonoBehaviour
     public event Action SelectionChanged;
 
     private List<DeliveryPerson> startingRoster;
-    private static DeliveryPerson Copy(DeliveryPerson p) => new(p.Name,p.Driving,p.LocalKnowledge,p.Capacity,p.Service,p.Endurance,p.Safety);
-    private void Awake() => startingRoster=deliveryPeople.ConvertAll(Copy);
+    private static DeliveryPerson Copy(DeliveryPerson p) => p.Clone();
+    private void Awake() { foreach(var person in deliveryPeople)person.InitializePotentials(initialPotentialBonus);startingRoster=deliveryPeople.ConvertAll(Copy); }
     private void Start() => RebuildRoster();
     public bool AddPerson(DeliveryPerson person)
     {
@@ -62,7 +63,7 @@ public class DeliveryPersonSelector : MonoBehaviour
             rowLayout.minHeight=rowLayout.preferredHeight=rowHeight;
             var labelRect=buttons[i].GetComponentInChildren<TextMeshProUGUI>().rectTransform;
             labelRect.anchorMin=Vector2.zero;labelRect.anchorMax=Vector2.one;
-            labelRect.offsetMin=new Vector2(8,8);labelRect.offsetMax=new Vector2(-8,-4);
+            labelRect.offsetMin=new Vector2(8,rowHeight-64);labelRect.offsetMax=new Vector2(-8,-4);
             EnsureStaminaBar(buttons[i]);
             DeliveryPerson person = deliveryPeople[i];
             buttons[i].onClick.RemoveAllListeners();
@@ -82,7 +83,8 @@ public class DeliveryPersonSelector : MonoBehaviour
             var label = buttons[i].GetComponentInChildren<TextMeshProUGUI>();
             label.text = $"{person.Name} / {state}\n<size=14>Drive {person.Driving:F1}  Know {person.LocalKnowledge:F1}  Load {person.Capacity}"
                 + $"\nService {person.Service:F1}  Endurance {person.Endurance:F1}  Safety {person.Safety:F1}</size>";
-            label.fontSize = 17;
+            label.fontSize = 15;
+            buttons[i].GetComponent<CourierAbilitiesView>()?.Show(person);
             label.color = new Color(0.1f, 0.14f, 0.2f);
             if(staminaBars.TryGetValue(buttons[i],out var bar))bar.anchorMax=new Vector2(person.CurrentStamina,1);
             buttons[i].interactable = person.IsAvailable && clock.Phase == DayPhase.Open;
