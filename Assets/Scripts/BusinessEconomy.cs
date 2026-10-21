@@ -12,6 +12,8 @@ public sealed class BusinessEconomy : MonoBehaviour
     [SerializeField, Min(0)] private float wageAbilityFactor = 40f;
     [SerializeField, Min(0)] private float wageCapacityFactor = 30f;
     [SerializeField, Min(0)] private float dailyFixedCost = 150f;
+    [SerializeField, Min(0)] private float fixedCostGrowthPerDay = 15f;
+    private int dayNumber=1;
     [SerializeField] private TextMeshProUGUI cashText;
     [SerializeField, Min(0)] private float initialCash = 300f;
     public decimal Cash { get; private set; }
@@ -24,7 +26,8 @@ public sealed class BusinessEconomy : MonoBehaviour
     private void Update() => cashText.text=$"Cash: {Cash:F2} / Sales: {DailyRevenue:F2}";
     private void CreditArrival(int points) { Cash+=points; Ledger.Revenue+=points; }
     public void NewGame() { Cash=(decimal)initialCash; PrepareDay(); }
-    public void PrepareDay() => Ledger=new DayLedger(Cash);
+    public void PrepareDay(int day=1) { dayNumber=day; Ledger=new DayLedger(Cash); }
+    public decimal FixedCost(int day) => Money((decimal)dailyFixedCost+(decimal)fixedCostGrowthPerDay*System.Math.Max(0,day-1));
     public static decimal Money(decimal amount) => System.Math.Round(amount,2,System.MidpointRounding.AwayFromZero);
     public decimal MaterialCost(int orderCount) => Money((decimal)materialCostPerOrder*orderCount);
     public decimal FuelCost(decimal distance) => Money((decimal)fuelCostPerDistance*distance);
@@ -46,7 +49,7 @@ public sealed class BusinessEconomy : MonoBehaviour
         if(Ledger.Settled)return;
         Ledger.Fuel=FuelCost(Ledger.Distance);
         foreach(var person in roster.People)Ledger.Wages+=DailyWage(person);
-        Ledger.FixedCosts=Money((decimal)dailyFixedCost);
+        Ledger.FixedCosts=FixedCost(dayNumber);
         Cash-=Ledger.Fuel+Ledger.Wages+Ledger.FixedCosts;
         Ledger.Settled=true;
     }

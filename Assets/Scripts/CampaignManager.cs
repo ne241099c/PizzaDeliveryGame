@@ -63,7 +63,7 @@ public sealed class CampaignManager : MonoBehaviour
     }
     private void PrepareDay()
     {
-        economy.PrepareDay(); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
+        economy.PrepareDay(DayNumber); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
         orders.ClearSelection(); roster.ResetDailyState(); dynamics.ResetForDay(); spawner.ResetForDay();
         score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();
         preparationPanel.SetActive(true);

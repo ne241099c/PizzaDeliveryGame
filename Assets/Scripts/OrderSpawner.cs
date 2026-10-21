@@ -4,6 +4,7 @@ using UnityEngine;
 [DefaultExecutionOrder(-50)]
 public sealed class OrderSpawner : MonoBehaviour
 {
+    [SerializeField] private DayStats stats;
     [SerializeField] private GameClock clock;
     [SerializeField] private MapManager map;
     [SerializeField] private OrderListUI orders;
@@ -88,6 +89,7 @@ public sealed class OrderSpawner : MonoBehaviour
             cursor+=untilSpawn;
             if(cursor>=clock.BusinessDuration)break;
             orders.AddOrder(CreateOrder(destinations[random.Next(destinations.Length)].Id,cursor));
+            stats?.RecordSpawn();
             progress=0;NextJitter();
         }
     }

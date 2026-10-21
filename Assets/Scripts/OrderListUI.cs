@@ -95,10 +95,12 @@ public class OrderListUI : MonoBehaviour
             : remaining <= urgentSeconds ? new Color(1f, 0.62f, 0.48f) : Color.white;
         button.interactable = clock.Phase == DayPhase.Open;
     }
-    public bool SelectOnly(Order order)
+    public bool SelectOnly(Order order) => SelectForDispatch(new[]{order});
+    public bool SelectForDispatch(IEnumerable<Order> selection)
     {
-        if(clock.Phase!=DayPhase.Open || !Contains(order))return false;
-        selectedOrders.Clear();selectedOrders.Add(order);Refresh();SelectionChanged?.Invoke();return true;
+        var chosen=selection?.ToArray();
+        if(clock.Phase!=DayPhase.Open || chosen==null || chosen.Length<1 || chosen.Length>2 || chosen.Distinct().Count()!=chosen.Length || chosen.Any(o=>!Contains(o)))return false;
+        selectedOrders.Clear();selectedOrders.AddRange(chosen);Refresh();SelectionChanged?.Invoke();return true;
     }
     private void ToggleOrder(Order order)
     {

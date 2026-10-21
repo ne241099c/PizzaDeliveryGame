@@ -53,12 +53,12 @@ public static class M5SimulationValidation
                 Check(rows.Length>0 && rows.Length<=settings.DaysPerPolicy,"record count for promise "+promise);
                 Check(rows.Length==settings.DaysPerPolicy || rows.Last().Bankrupt,"only bankruptcy may stop early "+promise);
                 Check(rows.Select(r=>r.Day).SequenceEqual(Enumerable.Range(1,rows.Length)),"consecutive days "+promise);
-                Check(rows.All(r=>r.Wages==404 && r.FixedCosts==150),"fixed Aoi/Ren team wages and default fixed costs "+promise);
+                Check(rows.All(r=>r.Wages==404 && r.FixedCosts==UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>().FixedCost(r.Day)),"fixed Aoi/Ren team wages and default fixed costs "+promise);
                 decimal cash=300;
                 foreach(var r in rows)
                 {
                     Check(r.Profit==r.Revenue-r.Materials-r.Fuel-r.Wages-r.FixedCosts,"ledger profit "+promise+" day "+r.Day);
-                    cash+=r.Profit;Check(cash==r.Cash,"cash carry "+promise+" day "+r.Day);
+                    cash+=r.Profit-r.PreparationCosts;Check(cash==r.Cash,"cash carry "+promise+" day "+r.Day);
                     Check(r.Delivered>=r.Late && r.Delivered>=0 && r.Cancelled>=0 && r.Accidents>=0 && r.Reputation>=0 && r.Reputation<=100,"daily counters and reputation bounds");
                 }
             }
@@ -67,7 +67,7 @@ public static class M5SimulationValidation
             Check(campaign.IsBankrupt || campaign.DayNumber==settings.DaysPerPolicy,"final policy stops at day limit or bankruptcy");
             Check(economy.Ledger.Settled,"last day fully settled");
             string root=Directory.GetParent(Application.dataPath).FullName;
-            string directory=Path.Combine(root,"Docs/M5_Simulations");Directory.CreateDirectory(directory);
+            string directory=Path.Combine(root,"Docs/M6_Simulations/legacy");Directory.CreateDirectory(directory);
             string path=Path.Combine(directory,"seed-"+settings.RandomSeed+".csv");File.WriteAllText(path,firstCsv);
             LastSummary=string.Join("\n",settings.PromiseSeconds.Select(p=>
             {

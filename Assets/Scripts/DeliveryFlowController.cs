@@ -93,6 +93,7 @@ public class DeliveryFlowController : MonoBehaviour
             trip.Person.Status = trip.StatusAt(now);
             if (now < trip.ReturnsAt) continue;
             trip.Returned = true;
+            stats.RecordReturn(trip,clock.BusinessDuration);
             dynamics.ApplyTripFatigue(trip.Person,trip.StartingStamina,trip.EnduranceAtDispatch,trip.ReturnsAt-trip.StartedAt);
             trip.Person.LastReturnedAt=trip.ReturnsAt;
             trip.Person.CurrentTrip = null;
@@ -114,7 +115,7 @@ public class DeliveryFlowController : MonoBehaviour
         orderListUI.RemoveOrders(cancelled);
         int penalty = closing ? scoreManager.ClosingCancellationPenalty : 0;
         scoreManager.AddScore(-cancelled.Length * penalty);
-        stats.RecordCancellation(cancelled.Length, penalty);
+        stats.RecordCancellation(cancelled.Length, penalty, closing);
         reputation.RecordCancellation(cancelled.Length, closing);
         Message?.Invoke($"{cancelled.Length} waiting order(s) cancelled" + (closing ? " at closing." : " after expiry."));
     }
