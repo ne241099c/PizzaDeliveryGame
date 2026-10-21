@@ -7,7 +7,7 @@ using UnityEngine;
 public sealed class DaySimulationWindow : EditorWindow
 {
     private DaySimulationSession session;
-    private string status="Run in Play Mode. Each promise starts from the initial campaign. Hiring/firing is disabled during autoplay.";
+    private string status="Run in Play Mode. Each promise starts from the initial campaign. Set dispatch, hiring, promise and training policies below.";
     private string outputPath;
     private static string DefaultPath => Path.Combine(Directory.GetParent(Application.dataPath).FullName,"Docs/M5_Simulations");
     [MenuItem("Tools/Pizza Delivery/Simulate Days")]
@@ -25,7 +25,7 @@ public sealed class DaySimulationWindow : EditorWindow
         EditorGUI.EndDisabledGroup();
         if(session!=null && GUILayout.Button("Stop"))Stop();
         if(!string.IsNullOrEmpty(outputPath) && GUILayout.Button("Show CSV"))EditorUtility.RevealInFinder(outputPath);
-        EditorGUILayout.HelpBox("Uses real order generation, suggested dispatch, accidents, scoring and settlement. Bankruptcy ends that policy early. Parameters here are also on GameManager in the Inspector.",MessageType.None);
+        EditorGUILayout.HelpBox("Uses real order generation, suggested dispatch, accidents, scoring and settlement. Hiring/training follow the selected policy. Bankruptcy ends that policy early. Parameters here are also on GameManager in the Inspector.",MessageType.None);
     }
     private void Begin(DaySimulationSettings settings)
     {

@@ -81,6 +81,11 @@ public static class M6SceneSetup
         Bind(save,"campaign",m.GetComponent<CampaignManager>(),"clock",m.GetComponent<GameClock>(),"economy",m.GetComponent<BusinessEconomy>(),"reputation",m.GetComponent<ReputationManager>(),"roster",m.GetComponent<DeliveryPersonSelector>(),"recruitment",m.GetComponent<RecruitmentManager>(),"training",m.GetComponent<TrainingManager>(),"spawner",m.GetComponent<OrderSpawner>(),"choicePanel",panel.gameObject,"continueButton",panel.Find("Continue").GetComponent<Button>(),"newButton",panel.Find("NewGame").GetComponent<Button>(),"choiceText",panel.Find("ChoiceText").GetComponent<TextMeshProUGUI>(),"notice",canvas.transform.Find("Preparation/SaveNotice").GetComponent<TextMeshProUGUI>());
         Bind(m.GetComponent<CampaignManager>(),"saveGame",save);canvas.transform.Find("DayResults").SetAsLastSibling();EditorSceneManager.MarkSceneDirty(m.scene);
     }
+    public static void FinalizeScene()
+    {
+        var manager=GameObject.Find("GameManager");Bind(manager.GetComponent<RecruitmentManager>(),"dynamics",manager.GetComponent<DeliveryDynamics>());
+        EditorSceneManager.MarkSceneDirty(manager.scene);
+    }
     public static void Apply()
     {
         var manager=GameObject.Find("GameManager");

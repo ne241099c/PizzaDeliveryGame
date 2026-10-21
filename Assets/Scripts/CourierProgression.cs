@@ -18,6 +18,7 @@ public sealed class CourierProgression : MonoBehaviour
     [SerializeField] private bool automaticGrowth=true;
     private readonly List<string> growth=new();
     private readonly Dictionary<string,float[]> dailyStart=new();
+    private readonly Dictionary<string,float[]> experienceGrowth=new();
     public float ExperiencePerLevel=>experiencePerLevel;
     public float GrowthPerLevel=>growthPerLevel;
     public int GrowthCount=>growth.Count;
@@ -26,9 +27,10 @@ public sealed class CourierProgression : MonoBehaviour
     private void OnDisable() {if(flow!=null){flow.Returned-=Return;flow.Dispatched-=TrackNewPerson;}}
     public void PrepareDay()
     {
-        growth.Clear();dailyStart.Clear();foreach(var person in roster.People)dailyStart[person.Id]=Values(person);
+        growth.Clear();dailyStart.Clear();experienceGrowth.Clear();foreach(var person in roster.People)dailyStart[person.Id]=Values(person);
     }
     private void TrackNewPerson(DeliveryTrip trip) {if(!dailyStart.ContainsKey(trip.Person.Id))dailyStart[trip.Person.Id]=Values(trip.Person);}
+    public void TrackRoster() {foreach(var p in roster.People)if(!dailyStart.ContainsKey(p.Id))dailyStart[p.Id]=Values(p);}
     public static float[] Values(DeliveryPerson p)=>Enumerable.Range(0,6).Select(i=>p.Ability((CourierAbility)i)).ToArray();
     public float ExperienceEarned(DeliveryTrip trip,CourierAbility ability)=>ability switch
     {
@@ -51,7 +53,12 @@ public sealed class CourierProgression : MonoBehaviour
     public void ApplyTraining(DeliveryPerson person,CourierAbility ability,float increase)
     {float before=person.Ability(ability);person.SetAbility(ability,before+increase);if(person.Ability(ability)>=person.Potential(ability))person.SetExperience(ability,0);RecordChange(person,ability,before,"Training");}
     private void RecordChange(DeliveryPerson p,CourierAbility a,float before,string source)
-    {if(p.Ability(a)>before)growth.Add($"{p.Name} / {a}: {before:F2} -> {p.Ability(a):F2} ({source})");}
+    {
+        if(p.Ability(a)<=before)return;growth.Add($"{p.Name} / {a}: {before:F2} -> {p.Ability(a):F2} ({source})");
+        if(source=="Experience"){if(!experienceGrowth.ContainsKey(p.Id))experienceGrowth[p.Id]=new float[6];experienceGrowth[p.Id][(int)a]+=p.Ability(a)-before;}
+    }
     public string GrowthCsv()=>string.Join(";",roster.People.Select(p=>p.Name+":"+string.Join("/",Values(p).Select((v,i)=>(v-(dailyStart.TryGetValue(p.Id,out var start)?start[i]:v)).ToString("F4",System.Globalization.CultureInfo.InvariantCulture)))));
+    public string ExperienceGrowthCsv()=>string.Join(";",roster.People.Select(p=>p.Name+":"+string.Join("/",Enumerable.Range(0,6).Select(i=>(experienceGrowth.TryGetValue(p.Id,out var gains)?gains[i]:0).ToString("F4",System.Globalization.CultureInfo.InvariantCulture)))));
+    public string PotentialsCsv()=>string.Join(";",roster.People.Select(p=>p.Name+":"+string.Join("/",Enumerable.Range(0,6).Select(i=>p.Potential((CourierAbility)i).ToString("F4",System.Globalization.CultureInfo.InvariantCulture)))));
     public string AbilitiesCsv()=>string.Join(";",roster.People.Select(p=>p.Name+":"+string.Join("/",Values(p).Select(v=>v.ToString("F4",System.Globalization.CultureInfo.InvariantCulture)))));
 }

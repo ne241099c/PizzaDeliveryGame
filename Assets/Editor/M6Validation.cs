@@ -9,6 +9,22 @@ public static partial class M6Validation
     public static void Near(float actual,float expected,string name) => Check(Mathf.Abs(actual-expected)<.001f,name+" actual "+actual+" expected "+expected);
     [MenuItem("Tools/Pizza Delivery/Validate M6 (Play Mode)")]
     public static void Menu() => Debug.Log(Run());
+    private static void ValidatePreparationButtons()
+    {
+        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
+        var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
+        var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();
+        campaign.StartBusiness();campaign.NewGame();
+        var content=canvas.transform.Find("Preparation/TeamViewport/TeamContent");var row=content.GetChild(0);var person=roster.People[0];
+        row.Find("TrainingControls/Train0").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+        Check(training.HasAssignment(person) && economy.Cash==30,"actual training button rebinds new roster after hidden preparation");
+        row.Find("CancelTraining").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(economy.Cash==300 && person.IsAvailable,"actual cancel button refunds");
+        row.Find("Action").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(roster.People.Count==1 && !roster.People.Contains(person),"actual fire button targets current person");
+        campaign.NewGame();var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
+        canvas.transform.Find("Preparation/ApplicantsViewport/ApplicantsContent").GetChild(0).Find("Action").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+        Check(roster.People.Count==3,"actual hire button targets current applicant");campaign.NewGame();
+        Check(roster.People.Count==2 && clock.Phase==DayPhase.BeforeOpening,"button integration returns clean campaign");
+    }
     private static void ValidateRecruitment()
     {
         var generator=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();generator.SeedOverride=123;generator.ResetRandom();
@@ -116,7 +132,7 @@ public static partial class M6Validation
         var fixture=new GameObject("Busy fixture");fixture.SetActive(false);
         try {var stats=fixture.AddComponent<DayStats>();Near(stats.BusyRatio(2,300),0,"zero busy ratio");}
         finally {UnityEngine.Object.DestroyImmediate(fixture);}
-        ValidatePotentials();ValidateExperience();ValidateTraining();ValidateRecruitment();ValidateSaveGame();
+        ValidatePotentials();ValidateExperience();ValidateTraining();ValidateRecruitment();ValidateSaveGame();ValidatePreparationButtons();
         return previous+$" / PASS: {Checks} M6 checks.";
     }
 }

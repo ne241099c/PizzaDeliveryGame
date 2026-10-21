@@ -19,7 +19,7 @@ public sealed class PreparationUI : MonoBehaviour
     [SerializeField] private Transform applicantContent;
     [SerializeField] private GameObject rowTemplate;
     private readonly List<GameObject> teamRows=new(),applicantRows=new();
-    private void OnEnable() {recruitment.Changed+=RecruitmentChanged;training.Changed+=TrainingChanged;}
+    private void OnEnable() {recruitment.Changed+=RecruitmentChanged;training.Changed+=TrainingChanged;Refresh();}
     private void OnDisable() {recruitment.Changed-=RecruitmentChanged;training.Changed-=TrainingChanged;}
     private void RecruitmentChanged(){displayMessage=recruitment.LastMessage;Refresh();}
     private void TrainingChanged(){displayMessage=training.LastMessage;Refresh();}

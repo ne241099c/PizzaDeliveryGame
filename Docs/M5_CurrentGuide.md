@@ -1,5 +1,7 @@
 # M5 操作・検証ガイド
 
+> M5時点の記録。現在はM6で成長・訓練・3タイプ求人・日別固定費・セーブを追加。[M6_CurrentGuide.md](M6_CurrentGuide.md) を参照。
+
 2026-10-22。M5-0〜M5-6を実装。数値は仕様の初期値で、M4-9の人による数値調整は未実施。段階ごとの変更・検証・判断は [M5_StageResults.md](M5_StageResults.md)、測定結果は [M5_Simulations/README.md](M5_Simulations/README.md)。
 
 ## 遊び方

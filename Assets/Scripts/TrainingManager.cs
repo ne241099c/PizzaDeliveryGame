@@ -47,7 +47,7 @@ public sealed class TrainingManager : MonoBehaviour
     public bool Request(DeliveryPerson p,CourierAbility ability)
     {
         string reason=Rejection(p,ability);if(reason.Length>0)return Reject(reason);
-        decimal fee=Cost(p,ability);economy.SpendPreparation(fee);
+        progression.TrackRoster();decimal fee=Cost(p,ability);economy.SpendPreparation(fee);
         assignments.Add(new TrainingAssignment{PersonId=p.Id,Ability=ability,Fee=fee.ToString(CultureInfo.InvariantCulture)});
         p.Status=DeliveryStatus.Training;LastMessage=$"Training: {p.Name} / {ability}; completes at {EndsAt:F0}s.";Changed?.Invoke();return true;
     }

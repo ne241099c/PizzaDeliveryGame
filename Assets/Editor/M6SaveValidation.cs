@@ -32,6 +32,8 @@ public static partial class M6Validation
             save.Continue();Check(!save.AwaitingChoice && save.SnapshotJson()==snapshot,"JSON load round trip preserves all campaign data");
             Near(roster.People[0].Driving,.62f,"loaded grown ability");Near(roster.People[0].Experience(CourierAbility.Service),123,"loaded XP remainder");
             Check(roster.People[0].Status==DeliveryStatus.Training && training.Assignments.Count==1,"loaded training blocks dispatch");
+            var recruiting=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();var loadedApplicant=recruiting.Applicants[0];
+            Check(recruiting.Hire(loadedApplicant) && loadedApplicant.Person.CurrentStamina==1,"hiring restored applicant starts with full configured stamina");
             campaign.StartBusiness();string beforeBusiness=File.ReadAllText(temp);clock.Advance(1);save.SavePreparation();
             Check(File.ReadAllText(temp)==beforeBusiness,"business never overwrites preparation save");
             clock.Advance(clock.BusinessDuration+1000);campaign.NextDay();

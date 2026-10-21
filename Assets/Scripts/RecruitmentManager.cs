@@ -17,6 +17,7 @@ public sealed class Applicant
 /// <summary>Preparation-only hiring, with reproducible constrained applicant generation.</summary>
 public sealed class RecruitmentManager : MonoBehaviour
 {
+    [SerializeField] private DeliveryDynamics dynamics;
     [SerializeField] private TrainingManager training;
     [SerializeField] private GameClock clock;
     [SerializeField] private DeliveryPersonSelector roster;
@@ -108,6 +109,7 @@ public sealed class RecruitmentManager : MonoBehaviour
     public bool Hire(Applicant applicant)
     {
         string reason=HireRejection(applicant);if(reason.Length>0)return Reject(reason);
+        dynamics?.ResetPerson(applicant.Person);
         if(!roster.AddPerson(applicant.Person))return Reject("A courier with this name already exists.");
         economy.SpendPreparation(HiringCost(applicant.Person));applicants.Remove(applicant);
         LastMessage=$"Hired {applicant.Person.Name}. Available today.";Changed?.Invoke();return true;

@@ -23,8 +23,9 @@ public sealed class DeliveryDynamics : MonoBehaviour
     public void ResetForDay()
     {
         seedSource=new System.Random(SeedOverride ?? (useFixedSeed?randomSeed:Environment.TickCount));
-        if(roster!=null)foreach(var person in roster.People) {person.CurrentStamina=initialStamina;person.LastReturnedAt=0;}
+        if(roster!=null)foreach(var person in roster.People) ResetPerson(person);
     }
+    public void ResetPerson(DeliveryPerson person) {person.CurrentStamina=initialStamina;person.LastReturnedAt=0;}
     public float StaminaAfterTrip(float starting,float endurance,float duration)
         => Mathf.Clamp01(starting-Mathf.Max(0,duration)*depletionPerSecond*Mathf.Max(0,depletionBase-endurance));
     public float StaminaAfterRest(float starting,float endurance,float duration)

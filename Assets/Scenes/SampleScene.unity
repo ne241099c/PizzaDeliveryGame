@@ -21138,6 +21138,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d8dc3286de2a43a9a03c0a01949cd6d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecruitmentManager
+  dynamics: {fileID: 1404697822}
   training: {fileID: 1404697828}
   clock: {fileID: 1404697819}
   roster: {fileID: 1404697813}
@@ -21202,6 +21203,9 @@ MonoBehaviour:
   randomSeed: 20261022
   clockStepSeconds: 0.25
   maximumDaySeconds: 3600
+  trainCouriers: 0
+  trainingReserve: 200
+  comparisonDays: 30
   batchDispatch: 0
   hireApplicants: 0
   adjustPromise: 0
