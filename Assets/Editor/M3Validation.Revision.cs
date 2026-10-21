@@ -114,6 +114,13 @@ public static partial class M3Validation
             near(stopped.ReturnsAt,baseReturn+15*stopped.EdgeIds.Count,"M4-7 multiple stop delays accumulate");
             near(stopped.Deliveries[0].ArrivesAt,baseArrival+15*route.NodeIds.ToList().IndexOf("Goal1"),"M4-7 future return accidents do not change an earlier arrival");
             near(stopped.TotalDelaySeconds,15*stopped.EdgeIds.Count,"M4-7 total accident delay");
+            check(DeliveryMarkerView.MarkerCaption(stopped,5).Contains("STOP 10s"),"M4-5 map marker shows stop countdown");
+            check(!DeliveryMarkerView.MarkerCaption(stopped,stopped.ReturnsAt+1).Contains("STOP"),"M4-5 map stop display clears");
+            float firstRoadDuration=map.GetTravelTime("Store-N1",person)*5;
+            var midpoint=Vector2.Lerp(map.Nodes.First(n=>n.IsStore).Position,map.Nodes.First(n=>n.Id=="N1").Position,0.5f);
+            near(Vector2.Distance(stopped.PositionAt(15+firstRoadDuration/2),midpoint),0,"M4-5 movement resumes after pause");
+            check(Vector2.Distance(clean.PositionAt(2),stopped.PositionAt(2))>0,"M4-5 one stopped courier does not stop another");
+            near(Vector2.Distance(stopped.PositionAt(stopped.ReturnsAt+1),map.Nodes.First(n=>n.IsStore).Position),0,"M4-5 delayed trip finishes at store");
             var other=dynamicsFixture.AddComponent<DeliveryDynamics>();
             foreach(var d in new[]{rules,other}){var settings=new SerializedObject(d);settings.FindProperty("useFixedSeed").boolValue=true;settings.FindProperty("randomSeed").intValue=7;settings.ApplyModifiedPropertiesWithoutUndo();d.ResetForDay();}
             var firstRoll=rules.CreateRoller();var secondRoll=other.CreateRoller();

@@ -14,7 +14,8 @@
 | M4-6 | 125 | ReputationManager、DeliveryScoring、ScoreManager、DeliveryTrip、DeliveryFlowController、OrderSpawner、DeliveryPromiseUI、M4StageSceneSetup、M4SceneSetup、SampleScene、M3Validation.Revision、M4PlayValidationと対応meta |
 
 | M4-7 | 148 | DeliveryDynamics、DeliveryPerson、DeliveryTrip、DeliveryFlowController、MapManager、DeliveryPersonSelector、DeliveryPlannerUI、M4StageSceneSetup、M4SceneSetup、SampleScene、M3Validation.Revision、M4PlayValidationと対応meta |
-| M4-5 / M4-0 / M4-8 | 未着手 | 前段階が通っていないため進めていない |
+| M4-5 | 153 | DeliveryMarkerView、M3Validation.Revision |
+| M4-0 / M4-8 | 未着手 | 指定順に進める |
 
 ## 判断した点
 
@@ -41,3 +42,5 @@
 - 体力は仕様の帰還時一括消耗に合わせ、出発時の現在体力を速度と事故リスクに保存する。帰還中・事故停止中を含む店外時間を消耗時間として扱う。
 - 帰還したフレームの余った時間は、実際の帰還時刻から待機回復する。
 - 乱数は配達ごとの独立ストリームとし、Inspectorで固定シードを指定できる構成にした。
+
+- M4-5: 移動表示は既存のPositionAt参照をそのまま使い、停止中の赤表示・残り停止秒を追加。事故で変わった同じ到着予定を移動と採点で共有する。
