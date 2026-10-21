@@ -17,6 +17,11 @@ public sealed class OrderSpawner : MonoBehaviour
     [SerializeField, Min(0f)] private float demandExponent = 0.7f;
     [SerializeField, Min(0.01f)] private float minimumDemand = 0.4f;
     [SerializeField, Min(0.01f)] private float maximumDemand = 2f;
+    [SerializeField] private bool useFixedSeed;
+    [SerializeField] private int randomSeed = 9187;
+    private System.Random random;
+    public int? SeedOverride { get; set; }
+    public void ResetRandom() => random=new System.Random(SeedOverride ?? (useFixedSeed ? randomSeed : System.Environment.TickCount));
     private float progress;
     private float jitter = 1;
     private bool scheduled;
@@ -26,7 +31,7 @@ public sealed class OrderSpawner : MonoBehaviour
     public float ReputationFactor => reputation != null ? reputation.DemandFactor : 1f;
     public float ExpectedInterval => interval / (DemandFactor(PromiseSeconds) * ReputationFactor);
 
-    private void Awake() => PromiseSeconds = initialPromiseSeconds;
+    private void Awake() { PromiseSeconds=initialPromiseSeconds;ResetRandom(); }
     private void OnEnable()
     {
         clock.OnDayStarted += ScheduleFirst;
@@ -62,7 +67,7 @@ public sealed class OrderSpawner : MonoBehaviour
     }
     public Order CreateOrder(string destination, float spawnedAt)
         => new Order(destination,"Delivery to "+destination,spawnedAt,PromiseSeconds);
-    private void NextJitter() => jitter = Random.Range(1f-intervalVariation,1f+intervalVariation);
+    private void NextJitter() { if(random==null)ResetRandom();jitter=Mathf.Lerp(1f-intervalVariation,1f+intervalVariation,(float)random.NextDouble()); }
     private void ScheduleFirst()
     {
         if (scheduled || !map.IsReady) return;
@@ -82,7 +87,7 @@ public sealed class OrderSpawner : MonoBehaviour
             if (untilSpawn>now-cursor) {progress+=(now-cursor)/duration;break;}
             cursor+=untilSpawn;
             if(cursor>=clock.BusinessDuration)break;
-            orders.AddOrder(CreateOrder(destinations[Random.Range(0,destinations.Length)].Id,cursor));
+            orders.AddOrder(CreateOrder(destinations[random.Next(destinations.Length)].Id,cursor));
             progress=0;NextJitter();
         }
     }

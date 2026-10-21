@@ -61,7 +61,9 @@ public static partial class M3Validation
         var batchPlan=batchRoute.BuildCompletion(batchOrders,minato);
         var flow=UnityEngine.Object.FindFirstObjectByType<DeliveryFlowController>();
         check(!flow.CanDispatch(batchPlan,minato),"M4-4 dispatch guard rejects overload");
-        check(flow.DispatchRejectionReason(batchPlan,minato).Contains("can carry 1"),"M4-4 overload reason is visible");
+        string capacityReason=flow.DispatchRejectionReason(batchPlan,minato);
+        bool storeOpen=UnityEngine.Object.FindFirstObjectByType<GameClock>().Phase==DayPhase.Open;
+        check(capacityReason.Contains(storeOpen ? "can carry 1" : "closed"),"M5 dispatch reason respects preparation/open phase");
         near(DeliveryScoring.Calculate(60,60,100,5,0.8f,0.2f),116,"M4-6 Aoi on-time tip");
         near(DeliveryScoring.Calculate(60,60,100,5,0.4f,0.2f),108,"M4-6 Minato on-time tip");
         near(DeliveryScoring.Calculate(72,60,100,5,1,0.2f),40,"M4-6 late delivery has no tip");
@@ -145,7 +147,8 @@ public static partial class M3Validation
             var selector=rosterFixture.AddComponent<DeliveryPersonSelector>();var settings=new SerializedObject(selector);
             settings.FindProperty("deliveryPersonListContent").objectReferenceValue=rosterFixture.transform;
             settings.FindProperty("deliveryPersonItemPrefab").objectReferenceValue=actualSettings.FindProperty("deliveryPersonItemPrefab").objectReferenceValue;
-            settings.FindProperty("clock").objectReferenceValue=UnityEngine.Object.FindFirstObjectByType<GameClock>();
+            var fixtureClock=rosterFixture.AddComponent<GameClock>();fixtureClock.BeginDay();
+            settings.FindProperty("clock").objectReferenceValue=fixtureClock;
             var entries=settings.FindProperty("deliveryPeople");entries.arraySize=5;entries.GetArrayElementAtIndex(4).FindPropertyRelative("Name").stringValue="Extra";
             settings.ApplyModifiedPropertiesWithoutUndo();rosterFixture.SetActive(true);selector.RebuildRoster();
             var rows=rosterFixture.GetComponentsInChildren<Button>(true);

@@ -16,12 +16,13 @@ public sealed class DeliveryDynamics : MonoBehaviour
     [SerializeField, Min(0)] private float accidentStopSeconds = 15f;
     [SerializeField] private bool useFixedSeed;
     [SerializeField] private int randomSeed = 2718;
+    public int? SeedOverride { get; set; }
     private System.Random seedSource;
     public float AccidentStopSeconds => accidentStopSeconds;
     private void Awake() => ResetForDay();
     public void ResetForDay()
     {
-        seedSource=new System.Random(useFixedSeed?randomSeed:Environment.TickCount);
+        seedSource=new System.Random(SeedOverride ?? (useFixedSeed?randomSeed:Environment.TickCount));
         if(roster!=null)foreach(var person in roster.People) {person.CurrentStamina=initialStamina;person.LastReturnedAt=0;}
     }
     public float StaminaAfterTrip(float starting,float endurance,float duration)
@@ -37,7 +38,7 @@ public sealed class DeliveryDynamics : MonoBehaviour
             *(road==RoadType.Backstreet?backstreetRisk:mainRoadRisk)*(1+fatigueRiskScale*(1-Mathf.Clamp01(stamina))));
     public Func<double> CreateRoller()
     {
-        if(seedSource==null)seedSource=new System.Random(useFixedSeed?randomSeed:Environment.TickCount);
+        if(seedSource==null)seedSource=new System.Random(SeedOverride ?? (useFixedSeed?randomSeed:Environment.TickCount));
         // Each trip owns its stream: frame grouping cannot change another courier's draws.
         var random=new System.Random(seedSource.Next());return random.NextDouble;
     }

@@ -9,8 +9,13 @@ public sealed class DeliveryMarkerView : MonoBehaviour
     [SerializeField] private float markerOffset = 0.2f;
     [SerializeField] private float markerFontSize = 5.5f;
     private readonly System.Collections.Generic.Dictionary<DeliveryTrip, TextMeshPro> markers = new();
-    private void OnEnable() { flow.Dispatched += Add; flow.Returned += Remove; }
-    private void OnDisable() { flow.Dispatched -= Add; flow.Returned -= Remove; }
+    private void OnEnable() { flow.Dispatched += Add; flow.Returned += Remove; flow.TripsCleared += Clear; }
+    private void OnDisable() { flow.Dispatched -= Add; flow.Returned -= Remove; flow.TripsCleared -= Clear; }
+    private void Clear()
+    {
+        foreach(var marker in markers.Values)if(marker!=null)Destroy(marker.gameObject);
+        markers.Clear();
+    }
     private void Add(DeliveryTrip trip)
     {
         var go = new GameObject("Courier_" + trip.Person.Name);

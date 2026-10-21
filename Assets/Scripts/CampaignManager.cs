@@ -57,9 +57,9 @@ public sealed class CampaignManager : MonoBehaviour
     }
     public void NewGame()
     {
-        if(flow.ActiveTrips.Count>0) { UnityEngine.SceneManagement.SceneManager.LoadScene(gameObject.scene.buildIndex); return; }
+        flow.ResetForNewGame();
         IsBankrupt=false;ConsecutiveNegativeDays=0;TotalRevenue=BestDailyRevenue=0;
-        recruitment.ResetRandom();roster.ResetToInitialRoster();economy.NewGame(); DayNumber=1; TotalDelivered=TotalScore=0; reputation.ResetForDay(); spawner.ResetPolicy(); PrepareDay();
+        recruitment.ResetRandom();spawner.ResetRandom();roster.ResetToInitialRoster();economy.NewGame(); DayNumber=1; TotalDelivered=TotalScore=0; reputation.ResetForDay(); spawner.ResetPolicy(); PrepareDay();
     }
     private void PrepareDay()
     {

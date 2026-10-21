@@ -1,5 +1,9 @@
 # Pizza Delivery Game 引き継ぎ資料
 
+> **最新: M5-0〜M5-6 実装完了 (2026-10-22)**
+> `m5`に段階別ローカルコミット。操作は [M5_CurrentGuide.md](M5_CurrentGuide.md)、変更・検証は [M5_StageResults.md](M5_StageResults.md)、測定CSVは [M5_Simulations](M5_Simulations/README.md)。
+> 開店準備→営業→精算→翌日、所持金・費用・破産・雇用/解雇を追加。初期名簿はAoi/Renの2人。以下のM4以前の記録は履歴。
+
 更新日: 2026-10-15（最新状況は下記を参照）
 
 > **新仕様M4の実装を完了（2026-10-22）**

@@ -18,6 +18,12 @@ public class DeliveryFlowController : MonoBehaviour
     public event Action<DeliveryTrip> Returned;
     public event Action<int> RevenueEarned;
     public event Action<string> Message;
+    public event Action TripsCleared;
+    public void ResetForNewGame()
+    {
+        foreach(var trip in activeTrips){trip.Person.CurrentTrip=null;trip.Person.Status=DeliveryStatus.Idle;}
+        activeTrips.Clear();TripsCleared?.Invoke();
+    }
 
     private void OnEnable() { clock.Advanced += Tick; clock.OnClosed += Close; }
     private void OnDisable() { clock.Advanced -= Tick; clock.OnClosed -= Close; }
@@ -58,7 +64,10 @@ public class DeliveryFlowController : MonoBehaviour
         return true;
     }
     private void ReportAccident(DeliveryTrip trip,string road,float delay)
-        => Message?.Invoke($"ACCIDENT: {trip.Person.Name} / {road} / stopped {delay:F0}s; arrival delayed.");
+    {
+        stats.RecordAccident();
+        Message?.Invoke($"ACCIDENT: {trip.Person.Name} / {road} / stopped {delay:F0}s; arrival delayed.");
+    }
 
     private void Tick(float before, float now)
     {

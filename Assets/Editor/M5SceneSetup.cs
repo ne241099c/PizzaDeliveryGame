@@ -108,6 +108,12 @@ public static class M5SceneSetup
         var scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.content=content;scroll.viewport=viewport;scroll.horizontal=false;scroll.vertical=true;scroll.movementType=ScrollRect.MovementType.Clamped;scroll.scrollSensitivity=32;
         return content;
     }
+    public static void AddSimulationSettings()
+    {
+        var manager=GameObject.Find("GameManager");
+        if(manager.GetComponent<DaySimulationSettings>()==null)Undo.AddComponent<DaySimulationSettings>(manager);
+        EditorSceneManager.MarkSceneDirty(manager.scene);
+    }
     public static Button MakeButton(Transform parent,string name,string caption,float x,float y,float w,float h)
     {
         var rect=Rect(parent,name,x,y,w,h);rect.gameObject.AddComponent<Image>().color=new Color(.3f,.75f,.6f);

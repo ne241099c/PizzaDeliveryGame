@@ -153,6 +153,18 @@ public static class M5Validation
         check(!recruitment.Fire(roster.People[0]) && recruitment.LastMessage.Contains("at least one"),"last courier cannot be fired with reason");
         campaign.NewGame();
         check(roster.People.Count==2 && economy.Cash==300 && economy.Ledger.PreparationCosts==0,"new game clears hired roster and preparation expenses");
+        spawner.enabled=false;campaign.StartBusiness();clock.Advance(clock.BusinessDuration-1);
+        var lastOrder=new Order("Goal1","Closing trip",clock.ElapsedSeconds,100);orders.AddOrder(lastOrder);orders.SelectOnly(lastOrder);roster.SelectForDispatch(roster.People[0]);
+        UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>().DispatchWithSuggestion();
+        check(flow.ActiveTrips.Count==1,"late departure uses actual suggested route dispatch");
+        clock.Advance(1);
+        check(clock.Phase==DayPhase.Closed && flow.ActiveTrips.Count==1,"closing waits for courier before settlement");
+        clock.Advance(10000);check(clock.Phase==DayPhase.Ended && flow.ActiveTrips.Count==0 && economy.Ledger.Settled,"last return triggers settlement");
+        campaign.NewGame();campaign.StartBusiness();
+        var resetOrder=new Order("Goal1","Reset in flight",0,100);orders.AddOrder(resetOrder);orders.SelectOnly(resetOrder);roster.SelectForDispatch(roster.People[0]);
+        UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>().DispatchWithSuggestion();
+        check(flow.ActiveTrips.Count==1,"trip exists before new game reset");
+        campaign.NewGame();check(flow.ActiveTrips.Count==0 && orders.OrderCount==0 && clock.Phase==DayPhase.BeforeOpening,"new game clears active trips without scene reload");
         return legacy+$" / PASS: {checks} M5 checks.";
     }
 }
