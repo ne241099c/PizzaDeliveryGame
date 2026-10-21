@@ -8,6 +8,31 @@ public static partial class M6Validation
     public static void Near(float actual,float expected,string name) => Check(Mathf.Abs(actual-expected)<.001f,name+" actual "+actual+" expected "+expected);
     [MenuItem("Tools/Pizza Delivery/Validate M6 (Play Mode)")]
     public static void Menu() => Debug.Log(Run());
+    private static void ValidateTraining()
+    {
+        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
+        var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();spawner.enabled=false;
+        var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var hiring=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();
+        var aoi=roster.People[0];Check(training.Cost(aoi,CourierAbility.Driving)==270 && training.Cost(aoi,CourierAbility.Capacity)==400,"training costs");
+        Check(!training.Request(aoi,CourierAbility.Capacity) && training.LastMessage.Contains("potential"),"capped ability rejected");
+        var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=0;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
+        Check(!training.Request(aoi,CourierAbility.Driving) && training.LastMessage.Contains("cash"),"insufficient training cash rejected");
+        funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
+        decimal cash=economy.Cash;Check(training.Request(aoi,CourierAbility.Driving) && economy.Cash==cash-270 && !aoi.IsAvailable,"training debits cash and blocks courier");
+        Check(!hiring.Fire(aoi) && hiring.LastMessage.Contains("training"),"training prevents firing");
+        Check(!training.Request(aoi,CourierAbility.Service),"second training rejected");
+        Check(training.Cancel(aoi) && economy.Cash==cash && aoi.IsAvailable,"cancel fully refunds and restores availability");
+        Check(training.Request(aoi,CourierAbility.Driving),"cancel permits replacement request");campaign.StartBusiness();
+        Check(!roster.SelectForDispatch(aoi) && roster.SelectForDispatch(roster.People[1]),"other couriers available during training");
+        clock.Advance(149.75f);Near(aoi.Driving,.6f,"ability unchanged before half day");Check(!aoi.IsAvailable,"training blocks first half");
+        clock.Advance(.25f);Near(aoi.Driving,.7f,"training grants gain at half day");Check(roster.SelectForDispatch(aoi),"trained courier selectable in second half");
+        Check(!training.Cancel(aoi) && !training.Request(aoi,CourierAbility.Service),"business cannot cancel or reorder training");
+        clock.Advance(1000);Check(economy.Ledger.Wages==404,"training day pays normal opening wage");campaign.NewGame();
+        var config=new SerializedObject(training);config.FindProperty("trainingDurationRatio").floatValue=1;config.ApplyModifiedPropertiesWithoutUndo();
+        aoi=roster.People[0];Check(training.Request(aoi,CourierAbility.Driving),"full-day training request");campaign.StartBusiness();clock.Advance(299.75f);Check(!aoi.IsAvailable,"ratio one unavailable until closing");
+        clock.Advance(.25f);Near(aoi.Driving,.7f,"ratio one completes at closing");Check(clock.Phase==DayPhase.Ended,"full-day training permits settlement");
+        config.FindProperty("trainingDurationRatio").floatValue=.5f;config.ApplyModifiedPropertiesWithoutUndo();campaign.NewGame();
+    }
     private static void ValidateExperience()
     {
         var rules=UnityEngine.Object.FindFirstObjectByType<CourierProgression>();
@@ -63,7 +88,7 @@ public static partial class M6Validation
         var fixture=new GameObject("Busy fixture");fixture.SetActive(false);
         try {var stats=fixture.AddComponent<DayStats>();Near(stats.BusyRatio(2,300),0,"zero busy ratio");}
         finally {UnityEngine.Object.DestroyImmediate(fixture);}
-        ValidatePotentials();ValidateExperience();
+        ValidatePotentials();ValidateExperience();ValidateTraining();
         return previous+$" / PASS: {Checks} M6 checks.";
     }
 }

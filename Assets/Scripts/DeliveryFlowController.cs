@@ -32,6 +32,7 @@ public class DeliveryFlowController : MonoBehaviour
     {
         if (clock.Phase != DayPhase.Open) return "The store is closed.";
         if (person == null) return "Select a courier.";
+        if(person.Status==DeliveryStatus.Training)return "This courier is training.";
         if (!person.IsAvailable) return "This courier is travelling.";
         int count = plan?.Orders.Count ?? orderListUI.SelectedOrders.Count;
         if (count > person.Capacity) return $"{person.Name} can carry {person.Capacity} order(s); {count} selected.";

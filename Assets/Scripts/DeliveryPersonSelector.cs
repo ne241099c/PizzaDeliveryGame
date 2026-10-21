@@ -8,6 +8,7 @@ public class DeliveryPersonSelector : MonoBehaviour
 {
     [SerializeField] private Transform deliveryPersonListContent;
     [SerializeField] private Button deliveryPersonItemPrefab;
+    [SerializeField] private TrainingManager training;
     [SerializeField] private GameClock clock;
     [SerializeField] private List<DeliveryPerson> deliveryPeople = new()
     {
@@ -79,7 +80,7 @@ public class DeliveryPersonSelector : MonoBehaviour
         {
             var person = deliveryPeople[i];
             float remaining = Mathf.Max(0, (person.CurrentTrip?.ReturnsAt ?? 0) - clock.ElapsedSeconds);
-            string state = person.IsAvailable ? "Idle" : $"{person.Status} / {remaining:F0}s";
+            string state = person.Status==DeliveryStatus.Training ? training?.Caption(person)??"Training" : person.IsAvailable ? "Idle" : $"{person.Status} / {remaining:F0}s";
             var label = buttons[i].GetComponentInChildren<TextMeshProUGUI>();
             label.text = $"{person.Name} / {state}\n<size=14>Drive {person.Driving:F1}  Know {person.LocalKnowledge:F1}  Load {person.Capacity}"
                 + $"\nService {person.Service:F1}  Endurance {person.Endurance:F1}  Safety {person.Safety:F1}</size>";

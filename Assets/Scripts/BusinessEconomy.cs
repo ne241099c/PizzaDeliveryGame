@@ -42,6 +42,7 @@ public sealed class BusinessEconomy : MonoBehaviour
         decimal cost=MaterialCost(trip.Deliveries.Count); Cash-=cost; Ledger.Materials+=cost;
     }
     private void RecordDistance(DeliveryTrip trip) => Ledger.Distance+=(decimal)trip.DistanceAt(trip.ReturnsAt);
+    public void RefundPreparation(decimal amount) {if(amount<0 || amount>Ledger.PreparationCosts)throw new System.ArgumentOutOfRangeException(nameof(amount));Cash+=amount;Ledger.PreparationCosts-=amount;}
     public void SpendPreparation(decimal amount)
     {
         if(amount<0)throw new System.ArgumentOutOfRangeException(nameof(amount));

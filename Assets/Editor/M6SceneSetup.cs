@@ -47,6 +47,25 @@ public static class M6SceneSetup
         Bind(m.GetComponent<BusinessEconomy>(),"clock",m.GetComponent<GameClock>());
         EditorSceneManager.MarkSceneDirty(m.scene);
     }
+    public static void AddTraining()
+    {
+        var m=GameObject.Find("GameManager");var training=m.GetComponent<TrainingManager>()??Undo.AddComponent<TrainingManager>(m);
+        Bind(training,"clock",m.GetComponent<GameClock>(),"roster",m.GetComponent<DeliveryPersonSelector>(),"economy",m.GetComponent<BusinessEconomy>(),"progression",m.GetComponent<CourierProgression>());
+        Bind(m.GetComponent<CampaignManager>(),"training",training);Bind(m.GetComponent<RecruitmentManager>(),"training",training);Bind(m.GetComponent<DeliveryPersonSelector>(),"training",training);
+        var panel=UnityEngine.Object.FindFirstObjectByType<Canvas>().transform.Find("Preparation");Bind(panel.GetComponent<PreparationUI>(),"training",training);
+        var template=panel.Find("EmploymentRowTemplate");
+        if(template.Find("TrainingControls")==null)
+        {
+            var layout=template.GetComponent<LayoutElement>();Undo.RecordObject(layout,"Training row height");layout.minHeight=layout.preferredHeight=375;
+            var controls=Rect(template,"TrainingControls",8,278,582,90);
+            for(int i=0;i<6;i++)
+            {
+                var b=M5SceneSetup.MakeButton(controls,"Train"+i,"Train "+(CourierAbility)i,(i%3)*194,(i/3)*44,186,40);b.GetComponentInChildren<TextMeshProUGUI>().fontSize=13;
+            }
+            var cancel=M5SceneSetup.MakeButton(template,"CancelTraining","Cancel",486,84,98,30);cancel.GetComponentInChildren<TextMeshProUGUI>().fontSize=16;
+        }
+        EditorSceneManager.MarkSceneDirty(m.scene);
+    }
     public static void Apply()
     {
         var manager=GameObject.Find("GameManager");

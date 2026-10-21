@@ -16,3 +16,8 @@ M5をmainへfast-forward統合し、m6を作成。pushしない。式と初期�
 変更: CourierProgression, DeliveryTrip, BusinessEconomy, CampaignManager, DaySimulationSession, M6SceneSetup, M6Validation, 旧シミュレーション検証, SampleScene, CSV。帰還時の5能力の経験値・繰り上がり・上限、精算の成長履歴、CSVの能力/増加量を追加。
 検証: 244既存+48 M6+496自動プレイ=788項目PASS。事故停止・無事故道路・遅延/期限内、繰り上がりと余剰、素質上限、日またぎ、当日404→翌日404.8の日給反映を検証。
 判断: 日給は営業開始時の名簿と能力で固定し、営業中の成長は翌日から反映する。成長の履歴は能力が実際に増えた帰還単位で記録。採用した日の開始値はその人の最初の出発時に記録する。
+
+## M6-3
+変更: TrainingManagerとTrainingAssignmentを追加。BusinessEconomy, CampaignManager, RecruitmentManager, DeliveryPersonSelector, DeliveryFlowController, PreparationUI, M6SceneSetup, M6Validation, SampleScene。
+検証: 244既存+67 M6+496自動プレイ=807項目PASS。訓練費、資金・素質・同日2回制限、取消全額返金、解雇禁止、半日/全日完了、成長後の選択と日給を検証。
+判断: 能力別Trainボタンで能力選択と指示を同時に行う。開始前の取消は1日1回の枠を戻す。訓練中は配達の稼働率へ含めない。日給は他の成長と同様に翌日から上昇。

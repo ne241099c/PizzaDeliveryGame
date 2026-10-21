@@ -16,6 +16,7 @@ public sealed class Applicant
 /// <summary>Preparation-only hiring, with reproducible constrained applicant generation.</summary>
 public sealed class RecruitmentManager : MonoBehaviour
 {
+    [SerializeField] private TrainingManager training;
     [SerializeField] private GameClock clock;
     [SerializeField] private DeliveryPersonSelector roster;
     [SerializeField] private BusinessEconomy economy;
@@ -90,6 +91,7 @@ public sealed class RecruitmentManager : MonoBehaviour
         if(clock.Phase!=DayPhase.BeforeOpening)return Reject("Firing is available only during preparation.");
         if(!roster.People.Contains(person))return Reject("Courier is not in the team.");
         if(roster.People.Count<=1)return Reject("Keep at least one courier.");
+        if(training!=null && training.HasAssignment(person))return Reject("Cancel training before firing this courier.");
         if(!person.IsAvailable)return Reject("This courier is travelling.");
         economy.SpendPreparation(SeveranceCost(person));roster.RemovePerson(person);
         LastMessage=$"Dismissed {person.Name}; severance paid.";Changed?.Invoke();return true;

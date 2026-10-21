@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public sealed class CampaignManager : MonoBehaviour
 {
     [SerializeField, Min(0)] private int bankruptcyGraceDays = 0;
+    [SerializeField] private TrainingManager training;
     [SerializeField] private CourierProgression progression;
     [SerializeField] private RecruitmentManager recruitment;
     [SerializeField] private BusinessEconomy economy;
@@ -66,7 +67,7 @@ public sealed class CampaignManager : MonoBehaviour
     {
         economy.PrepareDay(DayNumber); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
         orders.ClearSelection(); roster.ResetDailyState(); dynamics.ResetForDay(); spawner.ResetForDay();
-        score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();progression.PrepareDay();
+        training.PrepareDay();score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();progression.PrepareDay();
         preparationPanel.SetActive(true);
     }
 }
