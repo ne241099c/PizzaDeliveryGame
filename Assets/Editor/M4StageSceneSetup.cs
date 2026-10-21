@@ -54,6 +54,15 @@ public static class M4StageSceneSetup
         EditorSceneManager.MarkSceneDirty(manager.scene);
     }
 
+    public static void AddDynamics()
+    {
+        var manager=GameObject.Find("GameManager");
+        var rules=manager.GetComponent<DeliveryDynamics>()??Undo.AddComponent<DeliveryDynamics>(manager);
+        Bind(rules,"roster",manager.GetComponent<DeliveryPersonSelector>());
+        Bind(manager.GetComponent<DeliveryFlowController>(),"dynamics",rules);
+        EditorSceneManager.MarkSceneDirty(manager.scene);
+    }
+
     public static void Bind(Object target,params object[] pairs)
     {
         Undo.RecordObject(target,"Assign M4 scene references");var so=new SerializedObject(target);

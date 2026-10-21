@@ -13,6 +13,9 @@
 
 | M4-6 | 125 | ReputationManager、DeliveryScoring、ScoreManager、DeliveryTrip、DeliveryFlowController、OrderSpawner、DeliveryPromiseUI、M4StageSceneSetup、M4SceneSetup、SampleScene、M3Validation.Revision、M4PlayValidationと対応meta |
 
+| M4-7 | 148 | DeliveryDynamics、DeliveryPerson、DeliveryTrip、DeliveryFlowController、MapManager、DeliveryPersonSelector、DeliveryPlannerUI、M4StageSceneSetup、M4SceneSetup、SampleScene、M3Validation.Revision、M4PlayValidationと対応meta |
+| M4-5 / M4-0 / M4-8 | 未着手 | 前段階が通っていないため進めていない |
+
 ## 判断した点
 
 - M4-2: 旧データのSkillLevelは土地勘へ移行する。旧検証用の2引数コンストラクタは運転0.5（速度係数1）として残す。実際の開始名簿は新仕様の4人・6能力をSceneとInspectorに保存。
@@ -25,3 +28,16 @@
 
 - M4-6: チップは期限内だけで、基本点とチップの合計を従来どおり整数へ四捨五入する。接客能力は出発時の値を保存し、配達中のInspector変更で得点が変わらないようにする。
 - M4-6: 「キャンセル−5」は閉店時キャンセルにも適用する。得点の閉店減点（初期0）と評判低下は別に処理する。
+
+
+## M4-7で発生したエラーと修正
+
+検証コードが別アセンブリから `CurrentStamina` のinternal設定処理へ直接代入していたため、CS0200が発生した。指示どおり停止し、ユーザーからの修正依頼後に対応した。
+`DeliveryDynamics.ApplyTripFatigue` と `RecoverStamina` を使い、実行時と検証時が同じ体力操作を呼ぶ形へ修正。コンパイルエラー・警告なし、148項目すべてPASSを確認した。
+
+### M4-7で判断した点
+
+- 事故の抽選タイミングは各道路へ入る時点。同じ道路を往復すれば各方向で1回ずつ抽選する。
+- 体力は仕様の帰還時一括消耗に合わせ、出発時の現在体力を速度と事故リスクに保存する。帰還中・事故停止中を含む店外時間を消耗時間として扱う。
+- 帰還したフレームの余った時間は、実際の帰還時刻から待機回復する。
+- 乱数は配達ごとの独立ストリームとし、Inspectorで固定シードを指定できる構成にした。

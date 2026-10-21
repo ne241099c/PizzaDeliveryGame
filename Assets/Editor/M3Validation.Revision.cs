@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using UnityEngine;
+using UnityEditor;
 
 public static partial class M3Validation
 {
@@ -78,6 +79,48 @@ public static partial class M3Validation
             near(rep.Value,100,"M4-6 reputation ceiling");near(rep.DemandFactor,1.4f,"M4-6 highest demand factor");
         }
         finally {UnityEngine.Object.DestroyImmediate(reputationFixture);}
+        var dynamicsFixture=new GameObject("Isolated dynamics validation");dynamicsFixture.SetActive(false);
+        try
+        {
+            var rules=dynamicsFixture.AddComponent<DeliveryDynamics>();
+            near(rules.StaminaAfterTrip(1,0.6f,30),0.892f,"M4-7 trip depletion formula");
+            near(rules.StaminaAfterRest(0.5f,0.6f,30),0.599f,"M4-7 rest recovery formula");
+            near(rules.StaminaAfterTrip(0.1f,0,1000),0,"M4-7 stamina floor");
+            near(rules.StaminaAfterRest(0.9f,1,1000),1,"M4-7 stamina ceiling");
+            near(rules.AccidentProbability(0.3f,0,RoadType.Backstreet),0.105f,"M4-7 tired Sora backstreet risk");
+            near(rules.AccidentProbability(0.3f,1,RoadType.Main),0.035f,"M4-7 fresh Sora main risk");
+            near(rules.AccidentProbability(1,0,RoadType.Backstreet),0,"M4-7 perfect safety zero risk");
+            check(rules.AccidentProbability(0.3f,0,RoadType.Backstreet)>rules.AccidentProbability(0.8f,1,RoadType.Main),"M4-7 safety and rest reduce risk");
+            rules.ApplyTripFatigue(person,1,person.Endurance,0.5f/(0.004f*(1.5f-person.Endurance)));
+            near(map.GetStaminaSpeedFactor(person),0.85f,"M4-7 fatigue speed factor");
+            float tiredTime=route.GetTime(person);
+            var frozen=new DeliveryTrip(map,route.BuildCompletion(orders,person),person,0,5);
+            rules.RecoverStamina(person,10000);
+            check(route.GetTime(person)<tiredTime,"M4-7 resting makes next route faster");
+            near(frozen.ReturnsAt,tiredTime*5,"M4-7 dispatched speed remains frozen");
+            var clean=new DeliveryTrip(map,route.BuildCompletion(orders,person),person,0,5,rules,()=>1d);
+            clean.AdvanceAccidents(10000);check(clean.AccidentCount==0,"M4-7 fixed high draws cause no accidents");
+            var stopped=new DeliveryTrip(map,route.BuildCompletion(orders,person),person,0,5,rules,()=>0d);
+            float baseReturn=stopped.ReturnsAt,baseArrival=stopped.Deliveries[0].ArrivesAt;
+            stopped.AdvanceAccidents(0);
+            check(stopped.AccidentCount==1,"M4-7 draw on entry exactly once");
+            near(stopped.ReturnsAt,baseReturn+15,"M4-7 stop delays return");
+            near(stopped.Deliveries[0].ArrivesAt,baseArrival+15,"M4-7 stop delays arrival");
+            check(stopped.IsStoppedAt(5) && !stopped.IsStoppedAt(15),"M4-7 exact pause interval");
+            near(Vector2.Distance(stopped.PositionAt(5),map.Nodes.First(n=>n.IsStore).Position),0,"M4-7 stationary during stop");
+            stopped.AdvanceAccidents(1);check(stopped.AccidentCount==1,"M4-7 no duplicate draw on later frame");
+            stopped.AdvanceAccidents(10000);
+            check(stopped.AccidentCount==stopped.EdgeIds.Count,"M4-7 repeated road traversals each get a draw");
+            near(stopped.ReturnsAt,baseReturn+15*stopped.EdgeIds.Count,"M4-7 multiple stop delays accumulate");
+            near(stopped.Deliveries[0].ArrivesAt,baseArrival+15*route.NodeIds.ToList().IndexOf("Goal1"),"M4-7 future return accidents do not change an earlier arrival");
+            near(stopped.TotalDelaySeconds,15*stopped.EdgeIds.Count,"M4-7 total accident delay");
+            var other=dynamicsFixture.AddComponent<DeliveryDynamics>();
+            foreach(var d in new[]{rules,other}){var settings=new SerializedObject(d);settings.FindProperty("useFixedSeed").boolValue=true;settings.FindProperty("randomSeed").intValue=7;settings.ApplyModifiedPropertiesWithoutUndo();d.ResetForDay();}
+            var firstRoll=rules.CreateRoller();var secondRoll=other.CreateRoller();
+            check(Enumerable.Range(0,10).All(_=>firstRoll()==secondRoll()),"M4-7 fixed seed reproduces draws");
+        }
+        finally {UnityEngine.Object.DestroyImmediate(dynamicsFixture);}
+
 
 
 

@@ -40,6 +40,7 @@ public class DeliveryPlannerUI : MonoBehaviour
     private DeliveryPlan dispatchedPlan;
     private float? dispatchedReference;
     private float activityUntil;
+    private float previewStamina = -1;
     private readonly List<Button> roadButtons = new();
     private bool subscribed;
     public DeliveryPlan SelectedPlan { get; private set; }
@@ -107,6 +108,7 @@ public class DeliveryPlannerUI : MonoBehaviour
 
     private void OnPersonChanged()
     {
+        previewStamina=people.SelectedPerson?.CurrentStamina ?? -1;
         // Keep the drawn path, and recalculate its time using the new courier's skill.
         UpdateSuggestion();
         RefreshRoute();
@@ -120,6 +122,7 @@ public class DeliveryPlannerUI : MonoBehaviour
 
     private void Update()
     {
+        if(people.SelectedPerson!=null && Mathf.Abs(people.SelectedPerson.CurrentStamina-previewStamina)>0.005f)OnPersonChanged();
         int seconds = Mathf.CeilToInt(clock.RemainingSeconds);
         string phase = clock.Phase == DayPhase.Open ? "OPEN" : clock.Phase == DayPhase.Closed ? "CLOSED"
             : clock.Phase == DayPhase.Ended ? "DONE" : "READY";
@@ -141,6 +144,7 @@ public class DeliveryPlannerUI : MonoBehaviour
 
     public void Dispatch()
     {
+        UpdateSuggestion();RefreshRoute();
         DeliveryPlan plan = SelectedPlan;
         float? baseline = IndividualReferenceTime;
         if (!flow.Dispatch(plan, people.SelectedPerson)) return;

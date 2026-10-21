@@ -11,6 +11,7 @@ public class DeliveryFlowController : MonoBehaviour
     [SerializeField] private GameClock clock;
     [SerializeField] private DayStats stats;
     [SerializeField] private ReputationManager reputation;
+    [SerializeField] private DeliveryDynamics dynamics;
     private readonly List<DeliveryTrip> activeTrips = new();
     public IReadOnlyList<DeliveryTrip> ActiveTrips => activeTrips;
     public event Action<DeliveryTrip> Dispatched;
@@ -43,7 +44,7 @@ public class DeliveryFlowController : MonoBehaviour
         if (rejection.Length > 0) { Message?.Invoke(rejection); return false; }
         // Validate and freeze all arrival times before mutating orders or availability.
         var trip = new DeliveryTrip(FindFirstObjectByType<MapManager>(), plan, person,
-            clock.ElapsedSeconds, clock.TravelTimeMultiplier);
+            clock.ElapsedSeconds, clock.TravelTimeMultiplier,dynamics);
         foreach (Order order in plan.Orders) order.Status = OrderStatus.Dispatched;
         person.Status = DeliveryStatus.Delivering;
         person.CurrentTrip = trip;
@@ -52,14 +53,18 @@ public class DeliveryFlowController : MonoBehaviour
         deliveryPersonSelector.ClearSelection();
         Dispatched?.Invoke(trip);
         Message?.Invoke($"{person.Name} dispatched / returns in {trip.ReturnsAt - trip.StartedAt:F1}s");
+        trip.AdvanceAccidents(clock.ElapsedSeconds,(road,delay)=>ReportAccident(trip,road,delay));
         return true;
     }
+    private void ReportAccident(DeliveryTrip trip,string road,float delay)
+        => Message?.Invoke($"ACCIDENT: {trip.Person.Name} / {road} / stopped {delay:F0}s; arrival delayed.");
 
     private void Tick(float before, float now)
     {
         // Arrival timestamps, rather than frame time, determine scores even on slow frames.
         foreach (DeliveryTrip trip in activeTrips.ToArray())
         {
+            trip.AdvanceAccidents(now,(road,delay)=>ReportAccident(trip,road,delay));
             foreach (ScheduledDelivery delivery in trip.Deliveries)
             {
                 if (delivery.Resolved || now < delivery.ArrivesAt) continue;
@@ -77,11 +82,15 @@ public class DeliveryFlowController : MonoBehaviour
             trip.Person.Status = trip.StatusAt(now);
             if (now < trip.ReturnsAt) continue;
             trip.Returned = true;
+            dynamics.ApplyTripFatigue(trip.Person,trip.StartingStamina,trip.EnduranceAtDispatch,trip.ReturnsAt-trip.StartedAt);
+            trip.Person.LastReturnedAt=trip.ReturnsAt;
             trip.Person.CurrentTrip = null;
             trip.Person.Status = DeliveryStatus.Idle;
             activeTrips.Remove(trip);
             Returned?.Invoke(trip);
         }
+        foreach(var person in deliveryPersonSelector.People.Where(p=>p.IsAvailable))
+            dynamics.RecoverStamina(person,now-Mathf.Max(before,person.LastReturnedAt));
         CancelPending(now, false);
         TryFinishDay();
     }

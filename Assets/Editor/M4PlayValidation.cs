@@ -31,6 +31,10 @@ public static class M4PlayValidation
         void SelectOrder(int index) => Content(orders,"orderListContent").GetComponentsInChildren<Button>().ElementAt(index).onClick.Invoke();
         void SelectPerson(int index) => Content(people,"deliveryPersonListContent").GetComponentsInChildren<Button>().ElementAt(index).onClick.Invoke();
         Set(clock,"automaticTick",false);
+        var dynamics=UnityEngine.Object.FindFirstObjectByType<DeliveryDynamics>();
+        var dynamicsSo=new SerializedObject(dynamics);
+        float accidentProbability=dynamicsSo.FindProperty("baseAccidentProbability").floatValue;
+        dynamicsSo.FindProperty("baseAccidentProbability").floatValue=0;dynamicsSo.ApplyModifiedPropertiesWithoutUndo();
         Check(orders.OrderCount>0,"Automatic orders appeared");
         Check(orders.Orders.All(o=>Mathf.Abs(o.TimeLimit-60f)<0.001f),"Spawned deadlines snapshot promise");
         spawner.enabled=false;
@@ -81,6 +85,7 @@ public static class M4PlayValidation
         var result=(GameObject)new SerializedObject(ui).FindProperty("resultsPanel").objectReferenceValue;
         Check(result.activeSelf,"Results panel shown");
         Check(score.Score==stats.TotalScore,"Result and displayed score agree");
+        dynamicsSo.FindProperty("baseAccidentProbability").floatValue=accidentProbability;dynamicsSo.ApplyModifiedPropertiesWithoutUndo();
         return $"PASS: {checks} integrated Play checks. Delivered {stats.DeliveredCount}, late {stats.LateCount}, cancelled {stats.CancelledCount}, score {stats.TotalScore}. Use Play again to reset.";
     }
 }

@@ -4697,6 +4697,8 @@ MonoBehaviour:
   backstreetPenalty: 1
   drivingSpeedBase: 0.7
   drivingSpeedScale: 0.6
+  staminaSpeedBase: 0.7
+  staminaSpeedScale: 0.3
   nodeViewPrefab: {fileID: 9119976770738882504, guid: 44b33bfb1798f4481ab343ea093cfcc5, type: 3}
   edgeViewPrefab: {fileID: 4980519893912356978, guid: 3764a6a40b8314e1a9be0c45c474a3cb, type: 3}
   nodesParent: {fileID: 1662362905}
@@ -6910,6 +6912,7 @@ GameObject:
   - component: {fileID: 1404697816}
   - component: {fileID: 1404697820}
   - component: {fileID: 1404697821}
+  - component: {fileID: 1404697822}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -7028,6 +7031,7 @@ MonoBehaviour:
   clock: {fileID: 1404697819}
   stats: {fileID: 1404697818}
   reputation: {fileID: 1404697821}
+  dynamics: {fileID: 1404697822}
 --- !u!114 &1404697815
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7178,6 +7182,31 @@ MonoBehaviour:
   cancellationLoss: 5
   demandBase: 0.6
   demandScale: 0.8
+--- !u!114 &1404697822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1404697809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5efaaf8e55024c2697dc26d15900e8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryDynamics
+  roster: {fileID: 1404697813}
+  initialStamina: 1
+  depletionPerSecond: 0.004
+  depletionBase: 1.5
+  recoveryPerSecond: 0.003
+  recoveryBase: 0.5
+  baseAccidentProbability: 0.05
+  mainRoadRisk: 1
+  backstreetRisk: 1.5
+  fatigueRiskScale: 1
+  accidentStopSeconds: 15
+  useFixedSeed: 0
+  randomSeed: 2718
 --- !u!1 &1408363483
 GameObject:
   m_ObjectHideFlags: 0
