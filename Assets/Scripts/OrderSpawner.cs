@@ -47,6 +47,8 @@ public sealed class OrderSpawner : MonoBehaviour
         SetPromiseSeconds(PromiseSeconds);
         if (clock.Phase == DayPhase.Open) ScheduleFirst();
     }
+    public void ResetForDay() { progress=0; jitter=1; scheduled=false; }
+    public void ResetPolicy() => SetPromiseSeconds(initialPromiseSeconds);
     public void SetPromiseSeconds(float seconds)
         => PromiseSeconds = Mathf.Clamp(seconds, Mathf.Max(0.01f,MinimumPromiseSeconds), MaximumPromiseSeconds);
     public float DemandFactor(float seconds)

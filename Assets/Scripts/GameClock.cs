@@ -19,6 +19,11 @@ public sealed class GameClock : MonoBehaviour
     public float BusinessDuration => businessDuration;
     public float TravelTimeMultiplier => travelTimeMultiplier;
     public bool IsPlanning { get; set; }
+    public bool AutomaticTick { get => automaticTick; set => automaticTick = value; }
+    public void PrepareDay()
+    {
+        Phase = DayPhase.BeforeOpening; ElapsedSeconds = 0; IsPlanning = false;
+    }
     public event Action OnDayStarted;
     public event Action OnClosed;
     public event Action OnDayEnded;

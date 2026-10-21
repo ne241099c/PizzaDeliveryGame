@@ -7,6 +7,8 @@ public sealed class DayStats : MonoBehaviour
     public int CancelledCount { get; private set; }
     public int TotalScore { get; private set; }
 
+    public void ResetForDay() { DeliveredCount=LateCount=CancelledCount=TotalScore=0; }
+
     public void RecordDelivery(int points, float lateSeconds)
     {
         DeliveredCount++;

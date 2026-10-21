@@ -67,7 +67,7 @@ public class DeliveryPlannerUI : MonoBehaviour
         dispatchSuggestionButton.onClick.AddListener(DispatchWithSuggestion);
         fitButton.onClick.AddListener(FitMapCamera);
         resetButton.onClick.AddListener(Restart);
-        replayButton.onClick.AddListener(Restart);
+        replayButton.onClick.AddListener(NextDay);
         roadButtons.AddRange(roadContent.GetComponentsInChildren<Button>(true));
         resultsPanel.SetActive(false);
         subscribed = true;
@@ -134,7 +134,18 @@ public class DeliveryPlannerUI : MonoBehaviour
         if (clock.ElapsedSeconds > activityUntil) activityText.text = "";
     }
 
-    private void Restart() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    private void Restart()
+    {
+        var campaign=FindFirstObjectByType<CampaignManager>();
+        if(campaign!=null)campaign.NewGame();
+        else SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+    private void NextDay() => FindFirstObjectByType<CampaignManager>()?.NextDay();
+    public void PrepareDay()
+    {
+        resultsPanel.SetActive(false); route?.Clear(); dispatchedPlan=null; dispatchedReference=null;
+        activityText.text=""; UpdateSuggestion(); RefreshRoute();
+    }
     private void ShowActivity(string message) { activityText.text = message; activityUntil = clock.ElapsedSeconds + activitySeconds; }
     private void OnClosed() { route?.Clear(); RefreshRoute(); }
     private void ShowResults()

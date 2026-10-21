@@ -13,6 +13,7 @@ public sealed class ScoreManager : MonoBehaviour
     public float LatePenaltyPerSecond => latePenaltyPerSecond;
     public int ClosingCancellationPenalty => closingCancellationPenalty;
     private void Start() => UpdateScoreText();
+    public void ResetForDay() { Score=0; UpdateScoreText(); }
     public void AddScore(int amount) { Score += amount; UpdateScoreText(); }
     public int ScoreArrival(float arrivedAt, float deadline, float service = 0)
         => DeliveryScoring.Calculate(arrivedAt, deadline, scorePerDelivery, latePenaltyPerSecond,service,tipRatio);

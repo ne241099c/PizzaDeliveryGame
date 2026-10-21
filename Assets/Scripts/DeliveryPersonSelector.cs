@@ -24,6 +24,11 @@ public class DeliveryPersonSelector : MonoBehaviour
     public event Action SelectionChanged;
 
     private void Start() => RebuildRoster();
+    public void ResetDailyState()
+    {
+        foreach(var p in deliveryPeople) { p.Status=DeliveryStatus.Idle; p.CurrentTrip=null; p.LastReturnedAt=0; }
+        ClearSelection();
+    }
     public void RebuildRoster()
     {
         if(buttons.Count==0)buttons.AddRange(deliveryPersonListContent.GetComponentsInChildren<Button>(true));
