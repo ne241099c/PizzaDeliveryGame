@@ -53,7 +53,7 @@ public sealed class DeliveryTrip
                 starts[i] += offset;
                 ends[i] += offset;
             }
-            elapsed += map.GetTravelTime(edge.Id, person.SkillLevel) * multiplier;
+            elapsed += map.GetTravelTime(edge.Id, person) * multiplier;
             segmentEndTimes[i] = startedAt + elapsed;
             if (!arrivals.ContainsKey(next)) arrivals[next] = startedAt + elapsed;
             current = next;

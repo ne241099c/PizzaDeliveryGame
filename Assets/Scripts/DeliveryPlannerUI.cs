@@ -224,7 +224,7 @@ public class DeliveryPlannerUI : MonoBehaviour
         float skill = people.SelectedPerson?.SkillLevel ?? 1f;
         map.PreviewRoute(route.EdgeIds, route.CurrentNodeId, skill);
         int visited = orders.SelectedOrders.Count(o => route.HasVisited(o.DestinationNodeId));
-        routeSummary.text = $"Current: {route.CurrentNodeId}    Time: {clock.ToRealSeconds(route.GetTime(skill)):F1}s\nDestinations visited: {visited} / {orders.SelectedOrders.Count}";
+        routeSummary.text = $"Current: {route.CurrentNodeId}    Time: {clock.ToRealSeconds(people.SelectedPerson == null ? route.GetTime(skill) : route.GetTime(people.SelectedPerson)):F1}s\nDestinations visited: {visited} / {orders.SelectedOrders.Count}";
         nextRoadsTitle.text = "NEXT ROADS FROM " + route.CurrentNodeId;
         routePath.text = route.EdgeIds.Count == 0 ? "Start: " + map.StoreNodeId
             : string.Join("\n", route.EdgeIds.Select((id, i) =>
@@ -239,7 +239,7 @@ public class DeliveryPlannerUI : MonoBehaviour
             Button button = Instantiate(roadOptionPrefab, roadContent);
             button.gameObject.name = "NextRoad_" + edge.Id;
             var label = button.GetComponentInChildren<TextMeshProUGUI>();
-            label.text = $"To {next} / {roadName} / {clock.ToRealSeconds(map.GetTravelTime(edge.Id, skill)):F1}s";
+            label.text = $"To {next} / {roadName} / {clock.ToRealSeconds(people.SelectedPerson == null ? map.GetTravelTime(edge.Id, skill) : map.GetTravelTime(edge.Id, people.SelectedPerson)):F1}s";
             label.fontSize = 19;
             label.color = new Color(0.1f, 0.14f, 0.2f);
             label.raycastTarget = false;

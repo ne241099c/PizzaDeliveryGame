@@ -1532,17 +1532,20 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_text
-      value: 'Aoi / Skill 0.6
+      value: 'Aoi / Idle
 
-        <size=17>Idle</size>'
+        <size=14>Drive 0.6 Know 0.6 Load 2
+
+        Service
+        0.8 Endurance 0.7 Safety 0.8</size>'
       objectReference: {fileID: 0}
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_fontSize
-      value: 19
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_fontSizeBase
-      value: 19
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_RaycastTarget
@@ -1664,9 +1667,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
   m_MinWidth: -1
-  m_MinHeight: 62
+  m_MinHeight: 52
   m_PreferredWidth: -1
-  m_PreferredHeight: 62
+  m_PreferredHeight: 52
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -2152,7 +2155,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 16, y: -53}
-  m_SizeDelta: {x: 250, y: 192}
+  m_SizeDelta: {x: 250, y: 160}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &516876407
 MonoBehaviour:
@@ -3546,17 +3549,20 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_text
-      value: 'Ren / Skill 0.3
+      value: 'Ren / Idle
 
-        <size=17>Idle</size>'
+        <size=14>Drive 0.5 Know 0.3 Load 2
+
+        Service
+        0.5 Endurance 0.9 Safety 0.4</size>'
       objectReference: {fileID: 0}
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_fontSize
-      value: 19
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_fontSizeBase
-      value: 19
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_RaycastTarget
@@ -3678,9 +3684,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
   m_MinWidth: -1
-  m_MinHeight: 62
+  m_MinHeight: 52
   m_PreferredWidth: -1
-  m_PreferredHeight: 62
+  m_PreferredHeight: 52
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -3854,7 +3860,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 16, y: -259}
+  m_AnchoredPosition: {x: 16, y: -225}
   m_SizeDelta: {x: 250, y: 28}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &825037280
@@ -4225,6 +4231,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MapManager
   baseSpeed: 10
   backstreetPenalty: 1
+  drivingSpeedBase: 0.7
+  drivingSpeedScale: 0.6
   nodeViewPrefab: {fileID: 9119976770738882504, guid: 44b33bfb1798f4481ab343ea093cfcc5, type: 3}
   edgeViewPrefab: {fileID: 4980519893912356978, guid: 3764a6a40b8314e1a9be0c45c474a3cb, type: 3}
   nodesParent: {fileID: 1662362905}
@@ -5614,12 +5622,13 @@ RectTransform:
   - {fileID: 2034524304}
   - {fileID: 458848734}
   - {fileID: 726425486}
+  - {fileID: 1397494078}
   m_Father: {fileID: 1272594017}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 16, y: -298}
-  m_SizeDelta: {x: 250, y: 202}
+  m_AnchoredPosition: {x: 16, y: -264}
+  m_SizeDelta: {x: 250, y: 234}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1280267880
 MonoBehaviour:
@@ -6134,6 +6143,153 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 133529527138892620, guid: 44b33bfb1798f4481ab343ea093cfcc5, type: 3}
   m_PrefabInstance: {fileID: 1396987305}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1397494077
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1280267879}
+    m_Modifications:
+    - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_text
+      value: 'Sora / Idle
+
+        <size=14>Drive 0.9 Know 0.4 Load 1
+
+        Service
+        0.3 Endurance 0.4 Safety 0.3</size>'
+      objectReference: {fileID: 0}
+    - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_fontSize
+      value: 17
+      objectReference: {fileID: 0}
+    - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 17
+      objectReference: {fileID: 0}
+    - target: {fileID: 7637024485555530630, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_Name
+      value: CourierPreview_Sora
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7637024485555530630, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1397494080}
+  m_SourcePrefab: {fileID: 100100000, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+--- !u!224 &1397494078 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 7738148643852691666, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+  m_PrefabInstance: {fileID: 1397494077}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1397494079 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7637024485555530630, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
+  m_PrefabInstance: {fileID: 1397494077}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1397494080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1397494079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
+  m_IgnoreLayout: 0
+  m_MinWidth: -1
+  m_MinHeight: 52
+  m_PreferredWidth: -1
+  m_PreferredHeight: 52
+  m_FlexibleWidth: -1
+  m_FlexibleHeight: -1
+  m_LayoutPriority: 1
 --- !u!1 &1404697809
 GameObject:
   m_ObjectHideFlags: 0
@@ -6224,11 +6380,33 @@ MonoBehaviour:
   clock: {fileID: 1404697819}
   deliveryPeople:
   - Name: Minato
-    SkillLevel: 0.9
+    Driving: 0.8
+    LocalKnowledge: 0.9
+    Capacity: 1
+    Service: 0.4
+    Endurance: 0.6
+    Safety: 0.7
   - Name: Aoi
-    SkillLevel: 0.6
+    Driving: 0.6
+    LocalKnowledge: 0.6
+    Capacity: 2
+    Service: 0.8
+    Endurance: 0.7
+    Safety: 0.8
   - Name: Ren
-    SkillLevel: 0.3
+    Driving: 0.5
+    LocalKnowledge: 0.3
+    Capacity: 2
+    Service: 0.5
+    Endurance: 0.9
+    Safety: 0.4
+  - Name: Sora
+    Driving: 0.9
+    LocalKnowledge: 0.4
+    Capacity: 1
+    Service: 0.3
+    Endurance: 0.4
+    Safety: 0.3
 --- !u!114 &1404697814
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8879,17 +9057,20 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_text
-      value: 'Minato / Skill 0.9
+      value: 'Minato / Idle
 
-        <size=17>Idle</size>'
+        <size=14>Drive 0.8 Know 0.9 Load 1
+
+        Service
+        0.4 Endurance 0.6 Safety 0.7</size>'
       objectReference: {fileID: 0}
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_fontSize
-      value: 19
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_fontSizeBase
-      value: 19
+      value: 17
       objectReference: {fileID: 0}
     - target: {fileID: 6952755076858688784, guid: 6412bb844fff64614bca5a3378558ce7, type: 3}
       propertyPath: m_RaycastTarget
@@ -9011,9 +9192,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
   m_MinWidth: -1
-  m_MinHeight: 62
+  m_MinHeight: 52
   m_PreferredWidth: -1
-  m_PreferredHeight: 62
+  m_PreferredHeight: 52
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1

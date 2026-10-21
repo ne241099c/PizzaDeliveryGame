@@ -80,13 +80,13 @@ public static class RoadPathfinder
             foreach (string goal in sequence.Concat(new[] { map.StoreNodeId }))
             {
                 List<string> segment = FindShortestPath(map.Edges, current, goal,
-                    e => map.GetTravelTime(e.Id, person.SkillLevel));
+                    e => map.GetTravelTime(e.Id, person));
                 if (segment == null) { reachable = false; break; }
                 path.AddRange(segment);
                 current = goal;
             }
             if (!reachable) continue;
-            float total = path.Sum(id => map.GetTravelTime(id, person.SkillLevel));
+            float total = path.Sum(id => map.GetTravelTime(id, person));
             if (best == null || total < best.TotalTime) best = new RouteSuggestion(path, total);
         }
         return best;
@@ -101,11 +101,11 @@ public static class RoadPathfinder
         foreach (Order order in orders)
         {
             List<string> outbound = FindShortestPath(map.Edges, map.StoreNodeId, order.DestinationNodeId,
-                e => map.GetTravelTime(e.Id, person.SkillLevel));
+                e => map.GetTravelTime(e.Id, person));
             List<string> inbound = FindShortestPath(map.Edges, order.DestinationNodeId, map.StoreNodeId,
-                e => map.GetTravelTime(e.Id, person.SkillLevel));
+                e => map.GetTravelTime(e.Id, person));
             if (outbound == null || inbound == null) return null;
-            total += outbound.Concat(inbound).Sum(id => map.GetTravelTime(id, person.SkillLevel));
+            total += outbound.Concat(inbound).Sum(id => map.GetTravelTime(id, person));
         }
         return total;
     }

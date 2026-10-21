@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum DeliveryStatus { Idle, Delivering, Returning }
 
@@ -7,7 +8,14 @@ public enum DeliveryStatus { Idle, Delivering, Returning }
 public class DeliveryPerson
 {
     public string Name;
-    [Range(0, 1)] public float SkillLevel;
+    [SerializeField, Range(0, 1)] public float Driving = 0.5f;
+    [FormerlySerializedAs("SkillLevel"), SerializeField, Range(0, 1)] public float LocalKnowledge;
+    [SerializeField, Range(1, 2)] public int Capacity = 2;
+    [SerializeField, Range(0, 1)] public float Service = 0.5f;
+    [SerializeField, Range(0, 1)] public float Endurance = 0.5f;
+    [SerializeField, Range(0, 1)] public float Safety = 0.5f;
+    // Compatibility for older route fixtures; runtime calculations use the six abilities.
+    public float SkillLevel { get => LocalKnowledge; set => LocalKnowledge = value; }
     public DeliveryStatus Status { get; internal set; }
     public DeliveryTrip CurrentTrip { get; internal set; }
     public bool IsAvailable
@@ -16,10 +24,16 @@ public class DeliveryPerson
         set => Status = value ? DeliveryStatus.Idle : DeliveryStatus.Delivering;
     }
 
+    public DeliveryPerson(string name, float driving, float knowledge, int capacity, float service, float endurance, float safety)
+        : this(name, knowledge)
+    {
+        Driving = driving; Capacity = capacity; Service = service; Endurance = endurance; Safety = safety;
+    }
+
     public DeliveryPerson(string name, float skillLevel)
     {
         Name = name;
-        SkillLevel = skillLevel;
+        LocalKnowledge = skillLevel;
         Status = DeliveryStatus.Idle;
     }
 }

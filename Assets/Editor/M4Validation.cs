@@ -9,6 +9,8 @@ public static class M4Validation
     [MenuItem("Tools/Pizza Delivery/Validate M4 (Play Mode)")]
     public static void RunFromMenu() => Debug.Log(Run());
 
+    public static int LastCheckCount { get; private set; }
+
     public static string Run()
     {
         var map = UnityEngine.Object.FindFirstObjectByType<MapManager>();
@@ -82,6 +84,7 @@ public static class M4Validation
             Check(stats.DeliveredCount==2 && stats.LateCount==1 && stats.CancelledCount==2 && stats.TotalScore==134,"Daily aggregation");
         }
         finally { UnityEngine.Object.DestroyImmediate(fixture); }
+        LastCheckCount = checks;
         return $"PASS: {checks} M4 deadline, score, trip, clock and statistics checks.";
     }
 }

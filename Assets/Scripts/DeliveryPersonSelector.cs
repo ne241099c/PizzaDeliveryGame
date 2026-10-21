@@ -11,7 +11,10 @@ public class DeliveryPersonSelector : MonoBehaviour
     [SerializeField] private GameClock clock;
     [SerializeField] private List<DeliveryPerson> deliveryPeople = new()
     {
-        new DeliveryPerson("Minato", 0.9f), new DeliveryPerson("Aoi", 0.6f), new DeliveryPerson("Ren", 0.3f)
+        new DeliveryPerson("Minato", 0.8f, 0.9f, 1, 0.4f, 0.6f, 0.7f),
+        new DeliveryPerson("Aoi", 0.6f, 0.6f, 2, 0.8f, 0.7f, 0.8f),
+        new DeliveryPerson("Ren", 0.5f, 0.3f, 2, 0.5f, 0.9f, 0.4f),
+        new DeliveryPerson("Sora", 0.9f, 0.4f, 1, 0.3f, 0.4f, 0.3f)
     };
     private readonly List<Button> buttons = new();
     public DeliveryPerson SelectedPerson { get; private set; }
@@ -25,7 +28,7 @@ public class DeliveryPersonSelector : MonoBehaviour
         {
             var button = Instantiate(deliveryPersonItemPrefab, deliveryPersonListContent);
             var layout = button.GetComponent<LayoutElement>() ?? button.gameObject.AddComponent<LayoutElement>();
-            layout.minHeight = layout.preferredHeight = 62;
+            layout.minHeight = layout.preferredHeight = 52;
             buttons.Add(button);
         }
         for (int i = 0; i < buttons.Count; i++)
@@ -48,8 +51,9 @@ public class DeliveryPersonSelector : MonoBehaviour
             float remaining = Mathf.Max(0, (person.CurrentTrip?.ReturnsAt ?? 0) - clock.ElapsedSeconds);
             string state = person.IsAvailable ? "Idle" : $"{person.Status} / {remaining:F0}s";
             var label = buttons[i].GetComponentInChildren<TextMeshProUGUI>();
-            label.text = $"{person.Name} / Skill {person.SkillLevel:F1}\n<size=17>{state}</size>";
-            label.fontSize = 19;
+            label.text = $"{person.Name} / {state}\n<size=14>Drive {person.Driving:F1}  Know {person.LocalKnowledge:F1}  Load {person.Capacity}"
+                + $"\nService {person.Service:F1}  Endurance {person.Endurance:F1}  Safety {person.Safety:F1}</size>";
+            label.fontSize = 17;
             label.color = new Color(0.1f, 0.14f, 0.2f);
             buttons[i].interactable = person.IsAvailable && clock.Phase == DayPhase.Open;
             buttons[i].GetComponent<Image>().color = SelectedPerson == person ? Color.cyan

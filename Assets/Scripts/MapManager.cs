@@ -9,6 +9,8 @@ public class MapManager : MonoBehaviour
 {
     [SerializeField, Min(0.01f)] private float baseSpeed = 10f;
     [SerializeField, Min(0f)] private float backstreetPenalty = 1f;
+    [SerializeField, Min(0.01f)] private float drivingSpeedBase = 0.7f;
+    [SerializeField, Min(0f)] private float drivingSpeedScale = 0.6f;
     [SerializeField] private NodeView nodeViewPrefab;
     [SerializeField] private EdgeView edgeViewPrefab;
     [SerializeField] private Transform nodesParent;
@@ -111,6 +113,12 @@ public class MapManager : MonoBehaviour
 
     public bool HasNode(string nodeId) => nodeId != null && nodeLookup.ContainsKey(nodeId);
     public IReadOnlyList<MapEdge> GetOutgoingEdges(string nodeId) => outgoing[nodeId];
+
+    public float GetDrivingSpeedFactor(DeliveryPerson person)
+        => drivingSpeedBase + drivingSpeedScale * Mathf.Clamp01(person.Driving);
+
+    public float GetTravelTime(string edgeId, DeliveryPerson person)
+        => GetTravelTime(edgeId, person.LocalKnowledge) / GetDrivingSpeedFactor(person);
 
     public float GetTravelTime(string edgeId, float skillLevel = 1f)
     {

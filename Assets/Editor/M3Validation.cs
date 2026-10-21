@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>Checks the sample graph, manually drawn routes, and optional path suggestion.</summary>
-public static class M3Validation
+public static partial class M3Validation
 {
     [MenuItem("Tools/Pizza Delivery/Validate M3 Sample (Play Mode)")]
     public static void RunFromMenu() => Debug.Log(Run());
@@ -91,6 +91,9 @@ public static class M3Validation
         check(path.SequenceEqual(new[] { "AB", "BC-fast" }), "Arbitrary graph and parallel roads");
         check(RoadPathfinder.FindShortestPath(graph, "Exit", "Depot", e => e.Distance) == null, "One-way road respected");
         check(RoadPathfinder.FindShortestPath(graph, "Depot", "Missing", e => e.Distance) == null, "Unreachable destination");
-        return $"PASS: {checks} manual-route and suggestion checks (default sample settings).";
+        M4Validation.Run();
+        checks += M4Validation.LastCheckCount;
+        ValidateRevision(map, check, near);
+        return $"PASS: {checks} M3/M4 checks (current sample settings).";
     }
 }

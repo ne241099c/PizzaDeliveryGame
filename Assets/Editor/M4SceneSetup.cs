@@ -61,16 +61,17 @@ public static class M4SceneSetup
 
         var left = Panel(root, "Selections", 20, 104, 282, 506);
         Text(left, "OrdersTitle", "1 / ORDERS (select up to 2)", 16, 14, 254, 28, 19, Accent);
-        RectTransform orderContent = ScrollContent(left, "Orders", 16, 53, 250, 192, 8);
+        RectTransform orderContent = ScrollContent(left, "Orders", 16, 53, 250, 160, 8);
         Text(left, "OrdersEmpty", "Waiting for new orders...", 20, 62, 242, 60, 18).gameObject.SetActive(false);
         PreviewButton(oldOrder, orderContent, "OrderPreview1", "Order row / deadline", 62);
         PreviewButton(oldOrder, orderContent, "OrderPreview2", "Order row / deadline", 62);
-        Text(left, "CouriersTitle", "2 / COURIER", 16, 259, 250, 28, 19, Accent);
-        var peopleContent = Rect(left, "PlannerPersonContent", 16, 298, 250, 202);
+        Text(left, "CouriersTitle", "2 / COURIER", 16, 225, 250, 28, 19, Accent);
+        var peopleContent = Rect(left, "PlannerPersonContent", 16, 264, 250, 234);
         Vertical(peopleContent, 7);
         foreach (var person in people.People)
             PreviewButton(oldPerson, peopleContent, "CourierPreview_" + person.Name,
-                person.Name + " / Skill " + person.SkillLevel.ToString("F1") + "\n<size=17>Idle</size>", 62);
+                person.Name + $" / Idle\n<size=14>Drive {person.Driving:F1} Know {person.LocalKnowledge:F1} Load {person.Capacity}"
+                + $"\nService {person.Service:F1} Endurance {person.Endurance:F1} Safety {person.Safety:F1}</size>", 52);
 
         Text(root, "MapTitle", "DRAW YOUR ROUTE", 324, 108, 310, 28, 21, Accent);
         Button(root, "FitMap", "Fit", 646, 106, 68, 32);

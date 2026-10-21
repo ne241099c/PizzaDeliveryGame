@@ -64,6 +64,7 @@ public sealed class ManualDeliveryRoute
     }
 
     public float GetTime(float skillLevel) => edgeIds.Sum(id => map.GetTravelTime(id, skillLevel));
+    public float GetTime(DeliveryPerson person) => edgeIds.Sum(id => map.GetTravelTime(id, person));
     public bool HasVisited(string nodeId) => nodeIds.Contains(nodeId);
 
     public DeliveryPlan BuildCompletion(IReadOnlyList<Order> orders, DeliveryPerson person)
@@ -76,7 +77,7 @@ public sealed class ManualDeliveryRoute
         bool isBatch = orders.Count > 1
             && !nodeIds.Skip(firstDelivery).Take(lastDelivery - firstDelivery + 1).Contains(map.StoreNodeId);
         string title = orders.Count == 1 ? "Single delivery" : isBatch ? "Combined route" : "Individual route";
-        return new DeliveryPlan(title, string.Join(" > ", nodeIds), GetTime(person.SkillLevel),
+        return new DeliveryPlan(title, string.Join(" > ", nodeIds), GetTime(person),
             isBatch, orders, edgeIds);
     }
 }
