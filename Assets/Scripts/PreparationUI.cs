@@ -34,7 +34,7 @@ public sealed class PreparationUI : MonoBehaviour
         while(rows.Count<count)rows.Add(Instantiate(rowTemplate,parent));
         for(int i=0;i<rows.Count;i++)rows[i].SetActive(i<count);
     }
-    private string Profile(DeliveryPerson p) => $"{p.Name} / Wage {economy.DailyWage(p):F2}\n"
+    private string Profile(DeliveryPerson p) => $"{p.Name} / {p.Archetype} / Wage {economy.DailyWage(p):F2}\n"
         +$"Drive {p.Driving:F2}  Know {p.LocalKnowledge:F2}  Load {p.Capacity}\n"
         +$"Service {p.Service:F2}  Endurance {p.Endurance:F2}  Safety {p.Safety:F2}";
     public void Refresh()
@@ -60,7 +60,7 @@ public sealed class PreparationUI : MonoBehaviour
         for(int i=0;i<recruitment.Applicants.Count;i++)
         {
             var applicant=recruitment.Applicants[i];var row=applicantRows[i];row.transform.Find("TrainingControls").gameObject.SetActive(false);row.transform.Find("CancelTraining").gameObject.SetActive(false);row.GetComponent<CourierAbilitiesView>()?.Show(applicant.Person);
-            row.transform.Find("Profile").GetComponent<TextMeshProUGUI>().text=Profile(applicant.Person)+$"\nHiring: {recruitment.HiringCost(applicant.Person):F2}";
+            row.transform.Find("Profile").GetComponent<TextMeshProUGUI>().text=Profile(applicant.Person)+$"\nHire: {recruitment.HiringCost(applicant.Person):F2} / Strong: "+string.Join("/",applicant.Strengths.Select(i=>((CourierAbility)i).ToString()));
             var button=row.GetComponentInChildren<Button>();button.GetComponentInChildren<TextMeshProUGUI>().text="Hire";
             button.onClick.RemoveAllListeners();button.onClick.AddListener(()=>recruitment.Hire(applicant));
         }

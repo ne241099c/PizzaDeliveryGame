@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 public static partial class M6Validation
@@ -8,6 +9,32 @@ public static partial class M6Validation
     public static void Near(float actual,float expected,string name) => Check(Mathf.Abs(actual-expected)<.001f,name+" actual "+actual+" expected "+expected);
     [MenuItem("Tools/Pizza Delivery/Validate M6 (Play Mode)")]
     public static void Menu() => Debug.Log(Run());
+    private static void ValidateRecruitment()
+    {
+        var generator=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();generator.SeedOverride=123;generator.ResetRandom();
+        Check(generator.TypeForDraw(0)==RecruitArchetype.Newcomer && generator.TypeForDraw(.299)==RecruitArchetype.Newcomer && generator.TypeForDraw(.301)==RecruitArchetype.Experienced && generator.TypeForDraw(.601)==RecruitArchetype.Standard,"type probability thresholds 30/30/40");
+        var profiles=Enumerable.Range(0,2000).Select(i=>generator.GenerateApplicant("Profile"+i)).ToArray();
+        foreach(var type in (RecruitArchetype[])Enum.GetValues(typeof(RecruitArchetype)))
+        {
+            var people=profiles.Where(a=>a.Type==type).ToArray();float expected=type==RecruitArchetype.Standard?.4f:.3f;
+            Check(Mathf.Abs(people.Length/2000f-expected)<.05f,"fixed sample type frequency "+type);
+            float low=type==RecruitArchetype.Newcomer?.2f:type==RecruitArchetype.Experienced?.5f:.3f;
+            float high=type==RecruitArchetype.Newcomer?.5f:type==RecruitArchetype.Experienced?.8f:.7f;
+            Check(people.All(a=>a.Baselines.All(v=>v>=low && v<=high)),"type baseline range "+type);
+            float min=type==RecruitArchetype.Newcomer?.3f:type==RecruitArchetype.Experienced?.05f:.15f;
+            float max=type==RecruitArchetype.Newcomer?.5f:type==RecruitArchetype.Experienced?.15f:.3f;
+            Check(people.All(a=>Enumerable.Range(0,5).All(i=>
+            {
+                float ability=a.Person.Ability((CourierAbility)i),potential=a.Person.Potential((CourierAbility)i);
+                return potential>=ability && potential<=1 && potential>=Mathf.Min(1,ability+min)-.0001f && potential<=Mathf.Min(1,ability+max)+.0001f;
+            })),"type potential range "+type);
+        }
+        var newcomer=profiles.First(a=>a.Type==RecruitArchetype.Newcomer).Person;
+        Check(newcomer.Capacity==1 && generator.HiringCost(newcomer)>UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>().DailyWage(newcomer)*3,"newcomer has training room premium");
+        Check(profiles.Where(a=>a.Type==RecruitArchetype.Newcomer).All(a=>a.Person.Capacity==1),"newcomers begin with capacity one");
+        var copy=newcomer.Clone();Check(copy.Archetype==newcomer.Archetype && Enumerable.Range(0,6).All(i=>copy.Potential((CourierAbility)i)==newcomer.Potential((CourierAbility)i)),"hired profile copy preserves type and ceilings");
+        UnityEngine.Object.FindFirstObjectByType<CampaignManager>().NewGame();
+    }
     private static void ValidateTraining()
     {
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
@@ -88,7 +115,7 @@ public static partial class M6Validation
         var fixture=new GameObject("Busy fixture");fixture.SetActive(false);
         try {var stats=fixture.AddComponent<DayStats>();Near(stats.BusyRatio(2,300),0,"zero busy ratio");}
         finally {UnityEngine.Object.DestroyImmediate(fixture);}
-        ValidatePotentials();ValidateExperience();ValidateTraining();
+        ValidatePotentials();ValidateExperience();ValidateTraining();ValidateRecruitment();
         return previous+$" / PASS: {Checks} M6 checks.";
     }
 }

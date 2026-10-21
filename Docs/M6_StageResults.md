@@ -21,3 +21,8 @@ M5をmainへfast-forward統合し、m6を作成。pushしない。式と初期�
 変更: TrainingManagerとTrainingAssignmentを追加。BusinessEconomy, CampaignManager, RecruitmentManager, DeliveryPersonSelector, DeliveryFlowController, PreparationUI, M6SceneSetup, M6Validation, SampleScene。
 検証: 244既存+67 M6+496自動プレイ=807項目PASS。訓練費、資金・素質・同日2回制限、取消全額返金、解雇禁止、半日/全日完了、成長後の選択と日給を検証。
 判断: 能力別Trainボタンで能力選択と指示を同時に行う。開始前の取消は1日1回の枠を戻す。訓練中は配達の稼働率へ含めない。日給は他の成長と同様に翌日から上昇。
+
+## M6-4
+変更: RecruitmentManager, DeliveryPerson, PreparationUI, M5Validation, M6Validation, CSV。新人/即戦力/標準の3タイプ、タイプ別能力/素質/積載量、素質の平均差による採用費、タイプと得意能力の表示を追加。
+検証: 244既存+80 M6+496自動プレイ=820項目PASS。固定シード2000候補のタイプ閾値・比率・範囲、伸びしろの価格、素質保持と既存の採用/配達を検証。
+判断: 新人型以外の積載量素質の確率は指定がないため、1件の候補でも積載量素質は2とする。新人型のみ指定どおり70%で2。タイプ名は既存英語UIに合わせNewcomer/Experienced/Standardで表示。

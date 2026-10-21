@@ -111,7 +111,7 @@ public static class M5Validation
             var generator=fixture.AddComponent<RecruitmentManager>();generator.SeedOverride=17;generator.ResetRandom();
             var profiles=Enumerable.Range(0,100).Select(i=>generator.GenerateApplicant("Test"+i)).ToArray();
             check(profiles.All(a=>a.Strengths.Count==2 && a.Weaknesses.Count==2 && !a.Strengths.Intersect(a.Weaknesses).Any()),"two disjoint strengths and weaknesses");
-            check(profiles.All(a=>a.Baselines.All(v=>v>=.3f && v<=.7f)),"baseline generation range");
+            check(profiles.All(a=>a.Baselines.All(v=>v>=.2f && v<=.8f)),"baseline generation range");
             Func<Applicant,float[]> abilities=a=>new[]{a.Person.Driving,a.Person.LocalKnowledge,a.Person.Service,a.Person.Endurance,a.Person.Safety};
             check(profiles.All(a=>Enumerable.Range(0,5).All(i=>
             {
@@ -131,7 +131,7 @@ public static class M5Validation
         funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
         decimal beforeHire=economy.Cash,fee=recruitment.HiringCost(candidate.Person);
         check(recruitment.Hire(candidate) && roster.People.Contains(candidate.Person) && economy.Cash==beforeHire-fee,"hiring updates roster and charges three wage days");
-        check(economy.Ledger.PreparationCosts==fee && fee==economy.DailyWage(candidate.Person)*3,"hiring cost recorded separately from business profit");
+        check(economy.Ledger.PreparationCosts==fee && fee==BusinessEconomy.Money(economy.DailyWage(candidate.Person)*3+400*Enumerable.Range(0,5).Average(i=>(decimal)candidate.Person.Potential((CourierAbility)i)-(decimal)candidate.Person.Ability((CourierAbility)i))),"hiring cost includes potential premium and is recorded separately");
         decimal hiredWages=roster.People.Sum(p=>economy.DailyWage(p));
         campaign.StartBusiness();orders.AddOrder(new Order("Goal1","New hire",0,100));orders.SelectOnly(orders.Orders[0]);
         check(roster.SelectForDispatch(candidate.Person),"new hire selectable on the same day");

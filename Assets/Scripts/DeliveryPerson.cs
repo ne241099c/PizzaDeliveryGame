@@ -3,12 +3,14 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 public enum DeliveryStatus { Idle, Delivering, Returning, Training }
+public enum RecruitArchetype { Newcomer, Experienced, Standard }
 public enum CourierAbility { Driving, LocalKnowledge, Service, Endurance, Safety, Capacity }
 
 [Serializable]
 public class DeliveryPerson : ISerializationCallbackReceiver
 {
     public string Name;
+    public RecruitArchetype Archetype=RecruitArchetype.Standard;
     [SerializeField] private string id;
     [FormerlySerializedAs("Driving"),SerializeField,Range(0,1)] private float driving=.5f;
     [FormerlySerializedAs("SkillLevel"),FormerlySerializedAs("LocalKnowledge"),SerializeField,Range(0,1)] private float localKnowledge;
