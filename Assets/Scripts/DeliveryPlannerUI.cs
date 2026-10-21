@@ -140,7 +140,12 @@ public class DeliveryPlannerUI : MonoBehaviour
         if(campaign!=null)campaign.NewGame();
         else SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
-    private void NextDay() => FindFirstObjectByType<CampaignManager>()?.NextDay();
+    private void NextDay()
+    {
+        var campaign=FindFirstObjectByType<CampaignManager>();
+        if(campaign==null)return;
+        if(campaign.IsBankrupt)campaign.NewGame();else campaign.NextDay();
+    }
     public void PrepareDay()
     {
         resultsPanel.SetActive(false); route?.Clear(); dispatchedPlan=null; dispatchedReference=null;
@@ -150,7 +155,10 @@ public class DeliveryPlannerUI : MonoBehaviour
     private void OnClosed() { route?.Clear(); RefreshRoute(); }
     private void ShowResults()
     {
-        resultText.text = ResultSummary;
+        var campaign=FindFirstObjectByType<CampaignManager>();
+        resultText.text = (campaign!=null ? campaign.FinancialSummary+"\n" : "")+ResultSummary;
+        replayButton.GetComponentInChildren<TextMeshProUGUI>().text=campaign!=null && campaign.IsBankrupt ? "Start over" : "Next day";
+        var scroll=resultText.GetComponentInParent<ScrollRect>();if(scroll!=null){Canvas.ForceUpdateCanvases();scroll.verticalNormalizedPosition=1;}
         resultsPanel.transform.SetAsLastSibling();
         resultsPanel.SetActive(true);
     }

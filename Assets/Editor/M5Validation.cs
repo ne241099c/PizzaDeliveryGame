@@ -29,6 +29,9 @@ public static class M5Validation
         check(clock.Phase==DayPhase.Open,"opening button starts business");
         spawner.enabled=false;
         check(economy.Cash==300 && economy.DailyRevenue==0,"initial cash 300");
+        // Finance integration needs a solvent scenario; defaults are checked before temporary test funding.
+        var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=3000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
+        funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
         foreach(bool late in new[]{false,true})
         {
             var person=roster.People.First(p=>p.Name=="Aoi");
@@ -85,6 +88,18 @@ public static class M5Validation
         check(orders.OrderCount==0 && orders.SelectedOrders.Count==0,"orders and selection reset");
         check(score.Score==0 && stats.TotalScore==0 && stats.DeliveredCount==0 && clock.ElapsedSeconds==0,"daily statistics and clock reset");
         campaign.StartBusiness();check(clock.Phase==DayPhase.Open,"second business can start");
+        check(!campaign.IsBankrupt && campaign.TotalRevenue==ledger.Revenue && campaign.BestDailyRevenue==ledger.Revenue,"solvent day and cumulative revenue records");
+        check(!campaign.ShouldDeclareBankruptcy(0,1) && campaign.ShouldDeclareBankruptcy(-1,1),"bankruptcy is strictly below zero at settlement");
+        var grace=new SerializedObject(campaign);grace.FindProperty("bankruptcyGraceDays").intValue=1;grace.ApplyModifiedPropertiesWithoutUndo();
+        check(!campaign.ShouldDeclareBankruptcy(-1,1) && campaign.ShouldDeclareBankruptcy(-1,2),"configurable consecutive-day grace");
+        grace.FindProperty("bankruptcyGraceDays").intValue=0;grace.ApplyModifiedPropertiesWithoutUndo();
+        campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();clock.Advance(clock.BusinessDuration+1);
+        check(campaign.IsBankrupt && economy.Cash<0 && clock.Phase==DayPhase.Ended,"actual empty business becomes bankrupt only at settlement");
+        int bankruptDay=campaign.DayNumber;campaign.NextDay();check(campaign.DayNumber==bankruptDay,"bankruptcy blocks next day");
+        check(campaign.FinancialSummary.Contains("BANKRUPT") && campaign.FinancialSummary.Contains("Materials:") && campaign.FinancialSummary.Contains("Best day:"),"bankruptcy summary includes costs and records");
+        campaign.NewGame();
+        check(campaign.DayNumber==1 && !campaign.IsBankrupt && campaign.TotalRevenue==0 && economy.Cash==300 && rep.Value==50,"start over resets campaign money reputation records");
+        check(roster.People.Select(p=>p.Name).SequenceEqual(new[]{"Aoi","Ren"}) && roster.People.All(p=>p.CurrentStamina==1),"start over restores two-person roster and stamina");
         return legacy+$" / PASS: {checks} M5 checks.";
     }
 }

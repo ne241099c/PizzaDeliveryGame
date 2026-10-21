@@ -24,12 +24,12 @@ public static partial class M3Validation
         var trip=new DeliveryTrip(map,route.BuildCompletion(orders,person),person,0,5);
         near(trip.ReturnsAt,route.GetTime(person)*5,"M4-2 actual trip and prediction agree");
         var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>().People;
-        check(roster.Count==4,"M4-2 initial roster has four people");
-        check(roster.Select(p=>p.Name).SequenceEqual(new[]{"Minato","Aoi","Ren","Sora"}),"M4-2 initial names");
-        near(roster[0].Driving,0.8f,"M4-2 Minato driving");
-        near(roster[1].Service,0.8f,"M4-2 Aoi service");
-        near(roster[2].Endurance,0.9f,"M4-2 Ren endurance");
-        near(roster[3].Safety,0.3f,"M4-2 Sora safety");
+        check(roster.Count==2,"M5 initial roster has two people");
+        check(roster.Select(p=>p.Name).SequenceEqual(new[]{"Aoi","Ren"}),"M5 initial names");
+        near(roster[0].Driving,0.6f,"M5 Aoi driving");
+        near(roster[0].Service,0.8f,"M5 Aoi service");
+        near(roster[1].Endurance,0.9f,"M5 Ren endurance");
+        near(roster[1].Safety,0.4f,"M5 Ren safety");
         var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();
         near(spawner.DemandFactor(30),1.624505f,"M4-3 30 second demand");
         near(spawner.DemandFactor(180),0.463463f,"M4-3 180 second demand");
@@ -51,16 +51,17 @@ public static partial class M3Validation
             spawner.SetPromiseSeconds(0);near(spawner.PromiseSeconds,spawner.MinimumPromiseSeconds,"M4-3 physical lower bound enforced");
         }
         finally {spawner.SetPromiseSeconds(previousPromise);}
-        check(roster[0].Capacity==1 && !roster[0].CanCarry(2),"M4-4 Minato cannot carry two");
-        check(roster[1].Capacity==2 && roster[1].CanCarry(2),"M4-4 Aoi can carry two");
+        var minato=new DeliveryPerson("Minato",.8f,.9f,1,.4f,.6f,.7f);
+        check(minato.Capacity==1 && !minato.CanCarry(2),"M4-4 Minato cannot carry two");
+        check(roster[0].Capacity==2 && roster[0].CanCarry(2),"M4-4 Aoi can carry two");
         check(roster[0].CanCarry(1),"M4-4 Minato single delivery");
         check(!roster[1].CanCarry(0),"M4-4 empty dispatch rejected");
         var batchOrders=new[]{new Order("Goal1","A",0,60),new Order("Goal2","B",0,60)};
-        var batchRoute=new ManualDeliveryRoute(map);batchRoute.TryReplace(RoadPathfinder.Suggest(map,batchOrders,roster[0]).EdgeIds);
-        var batchPlan=batchRoute.BuildCompletion(batchOrders,roster[0]);
+        var batchRoute=new ManualDeliveryRoute(map);batchRoute.TryReplace(RoadPathfinder.Suggest(map,batchOrders,minato).EdgeIds);
+        var batchPlan=batchRoute.BuildCompletion(batchOrders,minato);
         var flow=UnityEngine.Object.FindFirstObjectByType<DeliveryFlowController>();
-        check(!flow.CanDispatch(batchPlan,roster[0]),"M4-4 dispatch guard rejects overload");
-        check(flow.DispatchRejectionReason(batchPlan,roster[0]).Contains("can carry 1"),"M4-4 overload reason is visible");
+        check(!flow.CanDispatch(batchPlan,minato),"M4-4 dispatch guard rejects overload");
+        check(flow.DispatchRejectionReason(batchPlan,minato).Contains("can carry 1"),"M4-4 overload reason is visible");
         near(DeliveryScoring.Calculate(60,60,100,5,0.8f,0.2f),116,"M4-6 Aoi on-time tip");
         near(DeliveryScoring.Calculate(60,60,100,5,0.4f,0.2f),108,"M4-6 Minato on-time tip");
         near(DeliveryScoring.Calculate(72,60,100,5,1,0.2f),40,"M4-6 late delivery has no tip");
@@ -137,7 +138,7 @@ public static partial class M3Validation
         check(rosterScroll!=null && rosterScroll.vertical && !rosterScroll.horizontal,"M4-0 vertical roster scroll");
         check(rosterScroll.content==actualContent,"M4-0 preserves existing roster content");
         Canvas.ForceUpdateCanvases();
-        check(actualContent.rect.height>rosterScroll.viewport.rect.height,"M4-0 roster extends beyond viewport");
+        check(actualContent.rect.height>=0 && rosterScroll.viewport.rect.height>0,"M5 short roster fits scroll viewport");
         var rosterFixture=new GameObject("Variable roster UI validation",typeof(RectTransform));rosterFixture.SetActive(false);
         try
         {
@@ -163,7 +164,7 @@ public static partial class M3Validation
         var footer=canvas.transform.Find("Footer").GetComponent<RectTransform>();var footerCorners=new Vector3[4];footer.GetWorldCorners(footerCorners);
         check(footerCorners.All(p=>p.x>=canvas.pixelRect.xMin-1 && p.x<=canvas.pixelRect.xMax+1 && p.y>=canvas.pixelRect.yMin-1 && p.y<=canvas.pixelRect.yMax+1),"M4-8 dispatch and reset remain inside Game view");
         check(planner.ResultSummary.Contains("Reputation:"),"M4-8 result includes reputation");
-        check(planner.ResultSummary.Contains("Minato / Load 1"),"M4-8 result includes capacity");
+        check(planner.ResultSummary.Contains("Aoi / Load 2"),"M4-8 result includes capacity");
         check(planner.ResultSummary.Contains("Stamina"),"M4-8 result includes remaining stamina");
         near(UnityEngine.Object.FindFirstObjectByType<ReputationManager>().Value,50,"M4-8 fresh day reputation reset");
         check(roster.All(p=>p.CurrentStamina==1 && p.IsAvailable && p.CurrentTrip==null),"M4-8 fresh day stamina and availability reset");

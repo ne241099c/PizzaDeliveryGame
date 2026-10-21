@@ -11,10 +11,8 @@ public class DeliveryPersonSelector : MonoBehaviour
     [SerializeField] private GameClock clock;
     [SerializeField] private List<DeliveryPerson> deliveryPeople = new()
     {
-        new DeliveryPerson("Minato", 0.8f, 0.9f, 1, 0.4f, 0.6f, 0.7f),
         new DeliveryPerson("Aoi", 0.6f, 0.6f, 2, 0.8f, 0.7f, 0.8f),
-        new DeliveryPerson("Ren", 0.5f, 0.3f, 2, 0.5f, 0.9f, 0.4f),
-        new DeliveryPerson("Sora", 0.9f, 0.4f, 1, 0.3f, 0.4f, 0.3f)
+        new DeliveryPerson("Ren", 0.5f, 0.3f, 2, 0.5f, 0.9f, 0.4f)
     };
     [SerializeField, Min(52)] private float rowHeight = 88f;
     private readonly Dictionary<Button,RectTransform> staminaBars = new();
@@ -23,7 +21,14 @@ public class DeliveryPersonSelector : MonoBehaviour
     public IReadOnlyList<DeliveryPerson> People => deliveryPeople;
     public event Action SelectionChanged;
 
+    private List<DeliveryPerson> startingRoster;
+    private static DeliveryPerson Copy(DeliveryPerson p) => new(p.Name,p.Driving,p.LocalKnowledge,p.Capacity,p.Service,p.Endurance,p.Safety);
+    private void Awake() => startingRoster=deliveryPeople.ConvertAll(Copy);
     private void Start() => RebuildRoster();
+    public void ResetToInitialRoster()
+    {
+        deliveryPeople=startingRoster.ConvertAll(Copy);RebuildRoster();ResetDailyState();
+    }
     public void ResetDailyState()
     {
         foreach(var p in deliveryPeople) { p.Status=DeliveryStatus.Idle; p.CurrentTrip=null; p.LastReturnedAt=0; }

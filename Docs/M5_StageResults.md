@@ -26,3 +26,8 @@
 変更: DayLedgerを追加。BusinessEconomy, DeliveryTrip, CampaignManager, M5SceneSetup, M5Validation, SampleSceneに材料費即時引落し・帰還時距離の集計・精算処理を追加。
 検証: 169既存+31 M5=200項目通過。Aoi220/Ren184、遠回りの距離増、事故停止中の距離不変、損益と所持金の一致、精算の重複防止を検証。
 判断: 距離は道路定義の距離を使用し、全員帰還時点で燃料費を確定。通貨は小数第2位・四捨五入(AwayFromZero)。材料費を精算時に二重控除しない。
+
+## M5-4
+変更: CampaignManager, DeliveryPlannerUI, DeliveryPersonSelector, M5SceneSetup, M3Validation.Revision, M5Validation, SampleScene。スクロール可能な精算明細・破産表示・通算売上/最高売上・最初からを実装。初期名簿をAoi/Renの2人に変更。
+検証: 169既存+39 M5=208項目通過。所持金0は破産しない、マイナス精算と猶予日数、翌日禁止、新規ゲームで初期資金・評判・名簿・体力・記録の初期化。
+判断: 猶予は連続したマイナス精算の日数で数え、回復した日は0へ戻す。破産時は精算画面にGAME OVERと通算記録を同時表示し、ボタンをStart overにする。
