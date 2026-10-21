@@ -2,6 +2,8 @@
 
 更新: 2026-10-21
 
+M3の締め判断・Play結果・M4の優先順位は [M3_Closeout.md](M3_Closeout.md) を参照。
+
 ## 現在の遊び方
 
 正式Scene: `Assets/Scenes/SampleScene.unity`。Playで新しい画面を生成する。
