@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.UI;
+using TMPro;
 
 public static partial class M3Validation
 {
@@ -127,6 +129,32 @@ public static partial class M3Validation
             check(Enumerable.Range(0,10).All(_=>firstRoll()==secondRoll()),"M4-7 fixed seed reproduces draws");
         }
         finally {UnityEngine.Object.DestroyImmediate(dynamicsFixture);}
+        var actualSelector=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();
+        var actualSettings=new SerializedObject(actualSelector);
+        var actualContent=(RectTransform)actualSettings.FindProperty("deliveryPersonListContent").objectReferenceValue;
+        var rosterScroll=actualContent.GetComponentInParent<ScrollRect>();
+        check(rosterScroll!=null && rosterScroll.vertical && !rosterScroll.horizontal,"M4-0 vertical roster scroll");
+        check(rosterScroll.content==actualContent,"M4-0 preserves existing roster content");
+        Canvas.ForceUpdateCanvases();
+        check(actualContent.rect.height>rosterScroll.viewport.rect.height,"M4-0 roster extends beyond viewport");
+        var rosterFixture=new GameObject("Variable roster UI validation",typeof(RectTransform));rosterFixture.SetActive(false);
+        try
+        {
+            var selector=rosterFixture.AddComponent<DeliveryPersonSelector>();var settings=new SerializedObject(selector);
+            settings.FindProperty("deliveryPersonListContent").objectReferenceValue=rosterFixture.transform;
+            settings.FindProperty("deliveryPersonItemPrefab").objectReferenceValue=actualSettings.FindProperty("deliveryPersonItemPrefab").objectReferenceValue;
+            settings.FindProperty("clock").objectReferenceValue=UnityEngine.Object.FindFirstObjectByType<GameClock>();
+            var entries=settings.FindProperty("deliveryPeople");entries.arraySize=5;entries.GetArrayElementAtIndex(4).FindPropertyRelative("Name").stringValue="Extra";
+            settings.ApplyModifiedPropertiesWithoutUndo();rosterFixture.SetActive(true);selector.RebuildRoster();
+            var rows=rosterFixture.GetComponentsInChildren<Button>(true);
+            check(rows.Length==5,"M4-0 fifth inspector courier gets a row");
+            rows[4].onClick.Invoke();check(selector.SelectedPerson==selector.People[4],"M4-0 fifth courier is selectable");
+            string abilities=rows[4].GetComponentInChildren<TextMeshProUGUI>().text;
+            check(new[]{"Drive","Know","Load","Service","Endurance","Safety"}.All(abilities.Contains),"M4-0 six abilities shown on extra row");
+            check(rows.All(r=>r.transform.Find("StaminaBar/Fill")!=null),"M4-0 every row has a stamina bar");
+        }
+        finally {UnityEngine.Object.DestroyImmediate(rosterFixture);}
+
 
 
 

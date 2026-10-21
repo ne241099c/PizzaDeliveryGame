@@ -15,7 +15,8 @@
 
 | M4-7 | 148 | DeliveryDynamics、DeliveryPerson、DeliveryTrip、DeliveryFlowController、MapManager、DeliveryPersonSelector、DeliveryPlannerUI、M4StageSceneSetup、M4SceneSetup、SampleScene、M3Validation.Revision、M4PlayValidationと対応meta |
 | M4-5 | 153 | DeliveryMarkerView、M3Validation.Revision |
-| M4-0 / M4-8 | 未着手 | 指定順に進める |
+| M4-0 | 160 | DeliveryPersonSelector、M4StageSceneSetup、M4SceneSetup、SampleScene、M3Validation.Revision |
+| M4-8 | 未着手 | 指定順に進める |
 
 ## 判断した点
 
@@ -44,3 +45,5 @@
 - 乱数は配達ごとの独立ストリームとし、Inspectorで固定シードを指定できる構成にした。
 
 - M4-5: 移動表示は既存のPositionAt参照をそのまま使い、停止中の赤表示・残り停止秒を追加。事故で変わった同じ到着予定を移動と採点で共有する。
+
+- M4-0: 既存の名簿内容とInspector参照を維持し、表示枠・マスク・スクロールと行高を追加。5人目の表示と選択も検証する。

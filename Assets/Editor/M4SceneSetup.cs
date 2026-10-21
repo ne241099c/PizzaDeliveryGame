@@ -132,6 +132,7 @@ public static class M4SceneSetup
         M4StageSceneSetup.AddPromiseUI();
         M4StageSceneSetup.AddReputationUI();
         M4StageSceneSetup.AddDynamics();
+        M4StageSceneSetup.AddRosterScroll();
         Canvas.ForceUpdateCanvases();
         Undo.CollapseUndoOperations(group);
         EditorSceneManager.MarkSceneDirty(scene);

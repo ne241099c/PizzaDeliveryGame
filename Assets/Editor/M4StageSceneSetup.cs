@@ -63,6 +63,41 @@ public static class M4StageSceneSetup
         EditorSceneManager.MarkSceneDirty(manager.scene);
     }
 
+    public static void AddRosterScroll()
+    {
+        var selector=Object.FindFirstObjectByType<DeliveryPersonSelector>();
+        var content=(RectTransform)new SerializedObject(selector).FindProperty("deliveryPersonListContent").objectReferenceValue;
+        if(content.parent.name=="CourierViewport")return;
+        var viewport=Rect(content.parent,"CourierViewport",content.anchoredPosition.x,-content.anchoredPosition.y,content.sizeDelta.x,content.sizeDelta.y);
+        viewport.gameObject.AddComponent<Image>().color=new Color(0,0,0,0.01f);
+        viewport.gameObject.AddComponent<RectMask2D>();
+        Undo.SetTransformParent(content,viewport,"Keep roster inside scroll viewport");Undo.RecordObject(content,"Roster scroll content");
+        content.anchorMin=new Vector2(0,1);content.anchorMax=Vector2.one;content.pivot=new Vector2(0,1);
+        content.anchoredPosition=Vector2.zero;content.sizeDelta=Vector2.zero;
+        var fitter=content.GetComponent<ContentSizeFitter>()??Undo.AddComponent<ContentSizeFitter>(content.gameObject);
+        fitter.verticalFit=ContentSizeFitter.FitMode.PreferredSize;
+        var scroll=Undo.AddComponent<ScrollRect>(viewport.gameObject);scroll.content=content;scroll.viewport=viewport;
+        scroll.horizontal=false;scroll.vertical=true;scroll.movementType=ScrollRect.MovementType.Clamped;scroll.scrollSensitivity=28;
+        foreach(var button in content.GetComponentsInChildren<Button>(true))
+        {
+            var layout=button.GetComponent<LayoutElement>();Undo.RecordObject(layout,"Readable courier row");layout.minHeight=layout.preferredHeight=88;
+            var label=button.GetComponentInChildren<TextMeshProUGUI>();Undo.RecordObject(label.rectTransform,"Courier text padding");
+            label.rectTransform.anchorMin=Vector2.zero;label.rectTransform.anchorMax=Vector2.one;
+            label.rectTransform.offsetMin=new Vector2(8,8);label.rectTransform.offsetMax=new Vector2(-8,-4);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(label.rectTransform);
+            if(button.transform.Find("StaminaBar")==null)
+            {
+                var bar=Rect(button.transform,"StaminaBar",12,80,226,4);bar.gameObject.AddComponent<Image>().color=new Color(0.2f,0.25f,0.3f);
+                bar.GetComponent<Image>().raycastTarget=false;
+                var fill=Rect(bar,"Fill",0,0,226,4);fill.anchorMin=Vector2.zero;fill.anchorMax=Vector2.one;fill.offsetMin=fill.offsetMax=Vector2.zero;
+                fill.gameObject.AddComponent<Image>().color=new Color(0.2f,0.75f,0.45f);fill.GetComponent<Image>().raycastTarget=false;
+            }
+        }
+        var title=GameObject.Find("CouriersTitle").GetComponent<TextMeshProUGUI>();Undo.RecordObject(title,"Roster scroll hint");title.text="2 / COURIERS (scroll)";
+        Canvas.ForceUpdateCanvases();scroll.verticalNormalizedPosition=1;
+        EditorSceneManager.MarkSceneDirty(selector.gameObject.scene);
+    }
+
     public static void Bind(Object target,params object[] pairs)
     {
         Undo.RecordObject(target,"Assign M4 scene references");var so=new SerializedObject(target);

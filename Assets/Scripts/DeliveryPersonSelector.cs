@@ -16,26 +16,33 @@ public class DeliveryPersonSelector : MonoBehaviour
         new DeliveryPerson("Ren", 0.5f, 0.3f, 2, 0.5f, 0.9f, 0.4f),
         new DeliveryPerson("Sora", 0.9f, 0.4f, 1, 0.3f, 0.4f, 0.3f)
     };
+    [SerializeField, Min(52)] private float rowHeight = 88f;
     private readonly Dictionary<Button,RectTransform> staminaBars = new();
     private readonly List<Button> buttons = new();
     public DeliveryPerson SelectedPerson { get; private set; }
     public IReadOnlyList<DeliveryPerson> People => deliveryPeople;
     public event Action SelectionChanged;
 
-    private void Start()
+    private void Start() => RebuildRoster();
+    public void RebuildRoster()
     {
-        buttons.AddRange(deliveryPersonListContent.GetComponentsInChildren<Button>(true));
+        if(buttons.Count==0)buttons.AddRange(deliveryPersonListContent.GetComponentsInChildren<Button>(true));
         while (buttons.Count < deliveryPeople.Count)
         {
             var button = Instantiate(deliveryPersonItemPrefab, deliveryPersonListContent);
             var layout = button.GetComponent<LayoutElement>() ?? button.gameObject.AddComponent<LayoutElement>();
-            layout.minHeight = layout.preferredHeight = 52;
+            layout.minHeight = layout.preferredHeight = rowHeight;
             buttons.Add(button);
         }
         for (int i = 0; i < buttons.Count; i++)
         {
             buttons[i].gameObject.SetActive(i < deliveryPeople.Count);
             if (i >= deliveryPeople.Count) continue;
+            var rowLayout=buttons[i].GetComponent<LayoutElement>()??buttons[i].gameObject.AddComponent<LayoutElement>();
+            rowLayout.minHeight=rowLayout.preferredHeight=rowHeight;
+            var labelRect=buttons[i].GetComponentInChildren<TextMeshProUGUI>().rectTransform;
+            labelRect.anchorMin=Vector2.zero;labelRect.anchorMax=Vector2.one;
+            labelRect.offsetMin=new Vector2(8,8);labelRect.offsetMax=new Vector2(-8,-4);
             EnsureStaminaBar(buttons[i]);
             DeliveryPerson person = deliveryPeople[i];
             buttons[i].onClick.RemoveAllListeners();
