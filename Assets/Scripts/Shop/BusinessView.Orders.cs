@@ -78,7 +78,7 @@ public sealed partial class BusinessView
         foreach(var (o,card,detail,countdown,state) in dispatchOrderRows)
         {
             var (text,fill,ink)=OrderState(o);UiKit.SetBadge(state,text,fill,ink);state.anchoredPosition=new Vector2(316-10-state.sizeDelta.x,-8);
-            detail.text=o.PizzaName+" ・ "+OrderProgress(o);
+            detail.text=o.PizzaName+" ["+o.Ingredients+"] ・ "+OrderProgress(o);
             string time=OrderCountdown(o);
             if(o.Status==OrderStatus.Dispatched){var delivery=flow.ActiveTrips.SelectMany(t=>t.Deliveries).FirstOrDefault(d=>d.Order==o);if(delivery!=null)time=$"到着まで {Mathf.Max(0,Mathf.CeilToInt(delivery.ArrivesAt-clock.ElapsedSeconds))}秒 ・ "+time;}
             countdown.text=time;countdown.color=o.Deadline<=clock.ElapsedSeconds && o.Status!=OrderStatus.Delivered?T.berry:T.inkSub;

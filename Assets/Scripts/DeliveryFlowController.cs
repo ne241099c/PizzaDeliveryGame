@@ -87,7 +87,7 @@ public class DeliveryFlowController : MonoBehaviour
                 delivery.Order.Status = OrderStatus.Delivered;
                 float late = Mathf.Max(0, delivery.ArrivesAt - delivery.Order.Deadline);
                 int bonus=cooking!=null?cooking.BonusForArrival(delivery.Order,delivery.ArrivesAt):0;
-                int points = scoreManager.ScoreArrival(delivery.ArrivesAt, delivery.Order.Deadline, trip.ServiceAtDispatch)+bonus;
+                int points = scoreManager.ScoreArrival(delivery.Order, delivery.ArrivesAt, trip.ServiceAtDispatch)+bonus;
                 scoreManager.AddScore(points);
                 RevenueEarned?.Invoke(points);
                 if(bonus>0)QualityBonusEarned?.Invoke(bonus);
@@ -95,7 +95,7 @@ public class DeliveryFlowController : MonoBehaviour
                 stats.RecordQuality(delivery.Order.Stars,late<=0);
                 reputation.RecordArrival(late,trip.ServiceAtDispatch);
                 if(cooking!=null)reputation.AddBonus(cooking.ReputationForArrival(delivery.Order,delivery.ArrivesAt));
-                int tip=scoreManager.TipForArrival(delivery.ArrivesAt,delivery.Order.Deadline,trip.ServiceAtDispatch);
+                int tip=scoreManager.TipForArrival(delivery.Order,delivery.ArrivesAt,trip.ServiceAtDispatch);
                 Message?.Invoke($"{trip.Person.Name}: {delivery.Order.DestinationNodeId} +{points}"
                     + (late > 0 ? $" ({late:F1}s late)" : $" (on time / tip +{tip})"));
             }

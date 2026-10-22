@@ -280,7 +280,7 @@ public sealed class HubView : MonoBehaviour
     }
     private void BuildFacilities()
     {
-        var items=new[]{(FacilityType.Oven,"fac_oven"),(FacilityType.Workbench,"fac_bench"),(FacilityType.Bike,"fac_bike"),(FacilityType.Advertising,"fac_ad")};
+        var items=new[]{(FacilityType.Oven,"fac_oven"),(FacilityType.Workbench,"fac_bench"),(FacilityType.Bike,"fac_bike"),(FacilityType.Menu,"fac_bench"),(FacilityType.Advertising,"fac_ad")};
         float w=300;for(int i=0;i<items.Length;i++)FacilityCard(content,items[i].Item1,items[i].Item2,i*(w+22),w);
     }
     private void FacilityCard(Transform parent,FacilityType type,string picture,float x,float w)
@@ -291,13 +291,13 @@ public sealed class HubView : MonoBehaviour
         string level=type switch
         {
             FacilityType.Oven=>$"いま {facilities.Ovens}台",FacilityType.Workbench=>$"いま {facilities.Workbenches}台",FacilityType.Bike=>$"Lv {facilities.BikeLevel}",
-            FacilityType.Expansion=>$"上限 {facilities.MaximumPeople}人",_=>facilities.Advertisement>0?$"今日 x{facilities.AdvertisingDemand(facilities.Advertisement):0.00}":"今日はなし"
+            FacilityType.Menu=>$"いま {facilities.MenuUpgrades+1}種類",FacilityType.Expansion=>$"上限 {facilities.MaximumPeople}人",_=>facilities.Advertisement>0?$"今日 x{facilities.AdvertisingDemand(facilities.Advertisement):0.00}":"今日はなし"
         };
         var levelBadge=UiKit.Badge(card,"Level",level,0,196,T.cheeseLight,T.line,32,18,120);levelBadge.anchoredPosition=new Vector2((w-levelBadge.sizeDelta.x)/2f,-196);
         string effect=type switch
         {
             FacilityType.Oven=>"窯を1台増やす\n同時に焼ける枚数 +1",FacilityType.Workbench=>"作業台を1台増やす\n同時に作れる枚数 +1",
-            FacilityType.Bike=>$"速さ x{facilities.NextBikeSpeed:0.00}\n事故率 x{facilities.NextBikeRisk:0.00}",FacilityType.Expansion=>"雇える人数 +1",_=>"今日の注文が増える\n(その日だけ)"
+            FacilityType.Bike=>$"速さ x{facilities.NextBikeSpeed:0.00}\n事故率 x{facilities.NextBikeRisk:0.00}",FacilityType.Menu=>facilities.MenuUpgrades==0?"ペパロニを解禁\n基本の得点 120":"シーフードを解禁\n基本の得点 150",FacilityType.Expansion=>"雇える人数 +1",_=>"今日の注文が増える\n(その日だけ)"
         };
         UiKit.Label(card,"Effect",effect,20,244,w-40,80,19,T.line,FontRole.Bold,TextAlignmentOptions.Top,true);
         bool prep=clock.Phase==DayPhase.BeforeOpening;

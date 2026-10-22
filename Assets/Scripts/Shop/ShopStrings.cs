@@ -7,9 +7,9 @@ public static class ShopStrings
     public static readonly string[] AbilityNames={"運転","土地勘","接客","体力","安全性","積載量"};
     public static string Ability(CourierAbility a)=>AbilityNames[(int)a];
     public static string Archetype(RecruitArchetype a)=>a switch{RecruitArchetype.Newcomer=>"新人",RecruitArchetype.Experienced=>"即戦力",_=>"標準"};
-    public static string Topping(Topping t)=>t switch{global::Topping.Pepperoni=>"ペパロニ",global::Topping.Shrimp=>"えび",_=>"バジル"};
+    public static string Topping(Topping t)=>t switch{global::Topping.Pepperoni=>"ペパロニ",global::Topping.Shrimp=>"えび",global::Topping.Squid=>"いか",_=>"バジル"};
     public static string Status(DeliveryStatus s)=>s switch{DeliveryStatus.Delivering=>"配達中",DeliveryStatus.Returning=>"帰還中",DeliveryStatus.Training=>"訓練中",_=>"待機"};
-    public static string Facility(FacilityType f)=>f switch{FacilityType.Oven=>"窯",FacilityType.Bike=>"バイク",FacilityType.Expansion=>"店舗の拡張",FacilityType.Workbench=>"作業台",_=>"広告"};
+    public static string Facility(FacilityType f)=>f switch{FacilityType.Oven=>"窯",FacilityType.Bike=>"バイク",FacilityType.Expansion=>"店舗の拡張",FacilityType.Workbench=>"作業台",FacilityType.Menu=>"メニュー拡張",_=>"広告"};
 
     private static readonly string[] Houses={"田中さん宅","佐藤さん宅","鈴木荘","高橋さん宅","伊藤さん宅","山田さん宅","中村さん宅","小林ハイツ"};
     private static readonly Dictionary<string,string> houseByNode=new();

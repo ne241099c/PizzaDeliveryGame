@@ -4,8 +4,10 @@ public enum BakingState { Waiting, Cooking, Ready }
 
 public enum OrderStatus { Pending, Dispatched, Delivered, Cancelled }
 
-/// <summary>Toppings on the ingredient shelf. Every current order is a margherita (basil).</summary>
-public enum Topping { Basil, Pepperoni, Shrimp }
+/// <summary>Toppings on the ingredient shelf. Seafood requires shrimp and squid.</summary>
+public enum Topping { Basil, Pepperoni, Shrimp, Squid }
+
+public enum PizzaKind { Margherita, Pepperoni, Seafood }
 
 [Serializable]
 public class Order
@@ -20,15 +22,19 @@ public class Order
     public BakingState Baking {get;internal set;}
     /// <summary>Quality stars 1-3 decided when the box is closed; 0 until then. Pre-packed orders count as one star.</summary>
     public int Stars {get;internal set;}
-    public Topping RequiredTopping {get;} = Topping.Basil;
-    public string PizzaName => "マルゲリータ";
+    public PizzaKind Kind;
+    public Topping[] RequiredToppings=>Kind==PizzaKind.Seafood?new[]{Topping.Shrimp,Topping.Squid}:new[]{Kind==PizzaKind.Pepperoni?Topping.Pepperoni:Topping.Basil};
+    public Topping RequiredTopping=>RequiredToppings[0];
+    public string PizzaName=>Kind==PizzaKind.Seafood?"シーフード":Kind==PizzaKind.Pepperoni?"ペパロニ":"マルゲリータ";
+    public string Ingredients=>string.Join("・",System.Array.ConvertAll(RequiredToppings,ShopStrings.Topping));
     public bool IsReady => Baking==BakingState.Ready;
     // Compatibility for M3 callers; all timestamps now use GameClock's seconds.
     public float OrderedAt => SpawnedAt;
     public float TimeLimit => Deadline - SpawnedAt;
 
-    public Order(string destinationNodeId, string destinationName, float orderedAt, float timeLimit, BakingState baking=BakingState.Waiting)
+    public Order(string destinationNodeId, string destinationName, float orderedAt, float timeLimit, BakingState baking=BakingState.Waiting, PizzaKind kind=PizzaKind.Margherita)
     {
+        Kind=kind;
         Id = Guid.NewGuid().ToString();
         DestinationNodeId = destinationNodeId;
         DestinationName = destinationName;

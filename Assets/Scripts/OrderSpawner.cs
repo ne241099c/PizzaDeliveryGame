@@ -99,7 +99,11 @@ public sealed class OrderSpawner : MonoBehaviour
         return clock.ToRealSeconds(outbound.Concat(inbound).Sum(id=>map.GetTravelTime(id,perfect)));
     }
     public Order CreateOrder(string destination, float spawnedAt)
-        => new Order(destination,"Delivery to "+destination,spawnedAt,PromiseSeconds);
+        {
+        if(random==null)ResetRandom();
+        int unlocked=facilities!=null?facilities.MenuUpgrades:0;
+        return new Order(destination,"Delivery to "+destination,spawnedAt,PromiseSeconds,kind:(PizzaKind)random.Next(unlocked+1));
+    }
     private void NextJitter() { if(random==null)ResetRandom();jitter=Mathf.Lerp(1f-intervalVariation,1f+intervalVariation,(float)random.NextDouble()); }
     private void ScheduleFirst()
     {

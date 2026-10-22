@@ -46,7 +46,7 @@ public sealed class SettlementScreenUI : MonoBehaviour
     public void Refresh()
     {
         var l=economy.Ledger;
-        int tips=trips.Sum(t=>t.Deliveries.Where(d=>d.Resolved).Sum(d=>score.TipForArrival(d.ArrivesAt,d.Order.Deadline,t.ServiceAtDispatch)));
+        int tips=trips.Sum(t=>t.Deliveries.Where(d=>d.Resolved).Sum(d=>score.TipForArrival(d.Order,d.ArrivesAt,t.ServiceAtDispatch)));
         string[] pages={
             $"SALES\nRevenue {l.Revenue:F2}\nDelivered {stats.DeliveredCount} / Late {stats.LateCount}\nTips included: {tips}\nQuality bonus (included): {l.QualityBonus:F2}",
             $"COSTS\nMaterials {l.Materials:F2}\nFuel {l.Fuel:F2}\nWages {l.Wages:F2}\nRepairs {l.Repairs:F2}\nFixed {l.FixedCosts:F2}\nEquipment maintenance (included) {l.EquipmentMaintenance:F2}\nFacility purchases (preparation) {l.FacilityPurchases:F2}\nPreparation {l.PreparationCosts:F2}",

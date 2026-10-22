@@ -7,14 +7,14 @@ using UnityEngine.UI;
 /// <summary>A pizza drawn in layers (dough, sauce, cheese, topping, burn).</summary>
 public sealed class PizzaVisual
 {
-    public RectTransform Root;private Image dough,sauce,cheese,topping,burnt;public RectTransform Blobs;
+    public RectTransform Root;private Image dough,sauce,cheese,topping,secondTopping,burnt;public RectTransform Blobs;
     public static PizzaVisual Make(Transform parent,string name,float x,float y,float size)
     {
         var v=new PizzaVisual{Root=UiKit.Box(parent,name,x,y,size,size)};
         v.dough=Layer(v.Root,"Dough","pizza_base");
         var mask=UiKit.Stretch(v.Root,"SauceMask",size*.12f,size*.12f,size*.12f,size*.12f);var m=mask.gameObject.AddComponent<Image>();m.sprite=UiKit.Circle;m.raycastTarget=false;
         mask.gameObject.AddComponent<Mask>().showMaskGraphic=false;v.Blobs=mask;
-        v.sauce=Layer(v.Root,"Sauce","pizza_sauce");v.cheese=Layer(v.Root,"Cheese","pizza_cheese");v.topping=Layer(v.Root,"Topping","pizza_basil");v.burnt=Layer(v.Root,"Burnt","pizza_burnt");
+        v.sauce=Layer(v.Root,"Sauce","pizza_sauce");v.cheese=Layer(v.Root,"Cheese","pizza_cheese");v.topping=Layer(v.Root,"Topping","pizza_basil");v.secondTopping=Layer(v.Root,"Squid","pizza_squid");v.burnt=Layer(v.Root,"Burnt","pizza_burnt");
         return v;
     }
     private static Image Layer(RectTransform root,string name,string sprite){var i=UiKit.Stretch(root,name).gameObject.AddComponent<Image>();i.sprite=UiKit.Art(sprite);i.raycastTarget=false;i.preserveAspect=true;return i;}
@@ -30,6 +30,7 @@ public sealed class PizzaVisual
         cheese.enabled=visible>=3;
         topping.enabled=visible>=4 && job.AddedTopping.HasValue || staffAssembling && visible>=4;
         var t=job.AddedTopping??job.Order.RequiredTopping;topping.sprite=UiKit.Art(t==Topping.Pepperoni?"pizza_pepperoni":t==Topping.Shrimp?"pizza_shrimp":"pizza_basil");
+        secondTopping.enabled=visible>=4 && job.AddedToppings.Contains(Topping.Squid);
         bool baked=stage>=PizzaStage.Baked;var warm=new Color(.93f,.80f,.62f);dough.color=baked?warm:Color.white;
         burnt.enabled=job.Burnt;
     }
@@ -54,7 +55,7 @@ public sealed partial class BusinessView
     private static readonly (string sprite,string label,DragKind kind,Topping topping)[] Trays=
     {
         ("tray_dough","生地",DragKind.Dough,Topping.Basil),("tray_sauce","ソース",DragKind.Ladle,Topping.Basil),("tray_cheese","チーズ",DragKind.Cheese,Topping.Basil),
-        ("tray_basil","バジル",DragKind.Topping,Topping.Basil),("tray_pepperoni","ペパロニ",DragKind.Topping,Topping.Pepperoni),("tray_shrimp","えび",DragKind.Topping,Topping.Shrimp)
+        ("tray_basil","バジル",DragKind.Topping,Topping.Basil),("tray_pepperoni","ペパロニ",DragKind.Topping,Topping.Pepperoni),("tray_shrimp","えび",DragKind.Topping,Topping.Shrimp),("tray_squid","いか",DragKind.Topping,Topping.Squid)
     };
 
     private void BuildKitchen()
@@ -66,9 +67,9 @@ public sealed partial class BusinessView
         UiKit.Fill(UiKit.Box(wood,"Lip",0,166,1100,24),T.woodDark,0);
         for(int i=0;i<Trays.Length;i++)
         {
-            var tray=Trays[i];var r=UiKit.Box(wood,"Tray_"+tray.label,40+i*176,14,150,120);
+            var tray=Trays[i];var r=UiKit.Box(wood,"Tray_"+tray.label,24+i*152,14,136,120);
             var img=r.gameObject.AddComponent<Image>();img.sprite=UiKit.Art(tray.sprite);img.preserveAspect=true;
-            UiKit.Label(wood,"TrayLabel"+i,tray.label,40+i*176,130,150,30,20,T.paper,FontRole.Black,TextAlignmentOptions.Center);
+            UiKit.Label(wood,"TrayLabel"+i,tray.label,24+i*152,130,136,30,20,T.paper,FontRole.Black,TextAlignmentOptions.Center);
             var source=r.gameObject.AddComponent<DragSource>();var t=tray;
             source.Payload=()=>cooking.ManualControlEnabled?new DragPayload{Kind=t.kind,Topping=t.topping,Sprite=t.kind==DragKind.Ladle?"ladle":t.sprite,Size=t.kind==DragKind.Ladle?new Vector2(120,120):new Vector2(130,104)}:null;
             source.Clicked=()=>ClickTray(t.kind,t.topping);
@@ -228,7 +229,7 @@ public sealed partial class BusinessView
                     case PizzaStage.Ticket:v.HintText.text="① 生地を置く";v.HintBar.Set(0);break;
                     case PizzaStage.Dough:{float c=Coverage(v);v.HintText.text=$"② ソースをなぞる {c*100:F0}% / 70%で★";v.HintBar.Set(c,cooking.SauceThreshold,c>=cooking.SauceThreshold?T.basil:T.cheese);break;}
                     case PizzaStage.Sauce:v.HintText.text="③ チーズをのせる";v.HintBar.Set(.5f,-1,T.cheese);break;
-                    case PizzaStage.Cheese:v.HintText.text="④ 具をのせる: "+ShopStrings.Topping(job.Order.RequiredTopping);v.HintBar.Set(.7f,-1,T.cheese);break;
+                    case PizzaStage.Cheese:v.HintText.text="④ 具をのせる: "+ShopStrings.Topping(job.Order.RequiredToppings[Mathf.Min(job.AddedToppings.Count,job.Order.RequiredToppings.Length-1)]);v.HintBar.Set(.7f,-1,T.cheese);break;
                     default:v.HintText.text="⑤ 窯へ入れる";v.HintBar.Set(1,-1,T.basil);break;
                 }
             }
@@ -248,10 +249,10 @@ public sealed partial class BusinessView
             v.Title.text=$"窯{v.Index+1}（待ち{cooking.OvenQueue.Count()}） ・ "+(job==null?"あいている":player?"焼いている":(job.Staff!=null?job.Staff.Name:"内勤")+"が見ている");
             if(job!=null)
             {
-                float range=cooking.BurnAt;float progress=Mathf.Clamp01(elapsed/range);
-                bool burnt=elapsed>=cooking.BurnAt,inBand=elapsed>=cooking.BandStart && elapsed<=cooking.BandEnd,over=elapsed>cooking.BandEnd;
+                float range=cooking.BurnAtFor(job.Order);float progress=Mathf.Clamp01(elapsed/range);
+                bool burnt=elapsed>=cooking.BurnAtFor(job.Order),inBand=elapsed>=cooking.BandStartFor(job.Order) && elapsed<=cooking.BandEndFor(job.Order),over=elapsed>cooking.BandEndFor(job.Order);
                 v.GaugeBar.Set(progress,-1,burnt?T.line:over?T.berry:inBand?T.basil:T.cheese);
-                float w=((RectTransform)v.GaugeBar.transform).sizeDelta.x;v.Band.anchoredPosition=new Vector2(cooking.BandStart/range*w,0);v.Band.sizeDelta=new Vector2((cooking.BandEnd-cooking.BandStart)/range*w,18);
+                float w=((RectTransform)v.GaugeBar.transform).sizeDelta.x;v.Band.anchoredPosition=new Vector2(cooking.BandStartFor(job.Order)/range*w,0);v.Band.sizeDelta=new Vector2((cooking.BandEndFor(job.Order)-cooking.BandStartFor(job.Order))/range*w,18);
                 v.GaugeText.text=!player?"焼き具合 (自動で取り出し)":burnt?"焦げた!":over?"焦げそう!":inBand?"いま! 取り出す":"焼き具合 あと少し";
                 v.GaugeText.color=inBand && player?T.basil:over && player?T.berry:T.line;
             }

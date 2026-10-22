@@ -47,9 +47,9 @@ public sealed class DeliveryFeedback : MonoBehaviour
             if(!shown.Add(delivery.Order.Id) || !Animate)continue;
             var node=map.Nodes.First(n=>n.Id==delivery.Order.DestinationNodeId);
             bool late=delivery.ArrivesAt>delivery.Order.Deadline;
-            int points=score.ScoreArrival(delivery.ArrivesAt,delivery.Order.Deadline,trip.ServiceAtDispatch)+cooking.BonusForArrival(delivery.Order,delivery.ArrivesAt);
-            int tip=score.TipForArrival(delivery.ArrivesAt,delivery.Order.Deadline,trip.ServiceAtDispatch);
-            int penalty=score.ScorePerDelivery-score.ScoreArrival(delivery.ArrivesAt,delivery.Order.Deadline,trip.ServiceAtDispatch);
+            int points=score.ScoreArrival(delivery.Order,delivery.ArrivesAt,trip.ServiceAtDispatch)+cooking.BonusForArrival(delivery.Order,delivery.ArrivesAt);
+            int tip=score.TipForArrival(delivery.Order,delivery.ArrivesAt,trip.ServiceAtDispatch);
+            int penalty=score.BasePoints(delivery.Order)-score.ScoreArrival(delivery.Order,delivery.ArrivesAt,trip.ServiceAtDispatch);
             string caption=(late?"遅れ ":"配達完了 ")+points.ToString("+0;-0;0");
             if(tip>0)caption+="\n<color=#"+ColorUtility.ToHtmlStringRGB(UITheme.Active.money)+">+チップ "+tip+"</color>";
             if(late)caption+="\n減点 -"+Mathf.Max(0,penalty);

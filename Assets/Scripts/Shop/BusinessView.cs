@@ -139,6 +139,7 @@ public sealed partial class BusinessView : MonoBehaviour
         UiKit.Label(card,"Number","#"+Number(order),16,14,80,30,20,T.line,FontRole.Bold);
         UiKit.Badge(card,"Status","順番待ち",96,14,T.disabled,T.line,28,15);
         UiKit.Label(card,"Pizza",order.PizzaName,16,48,200,40,28,T.line,FontRole.Display);
+        for(int i=0;i<order.RequiredToppings.Length;i++){var t=order.RequiredToppings[i];UiKit.Icon(card,"Ingredient"+i,t==Topping.Squid?"tray_squid":t==Topping.Shrimp?"tray_shrimp":t==Topping.Pepperoni?"tray_pepperoni":"tray_basil",168+i*24,86,24,Color.white);}
         UiKit.Label(card,"Destination","→ "+ShopStrings.House(map,order.DestinationNodeId),16,88,200,30,19,T.inkSub,FontRole.Black);
         UiKit.Bar(card,"Deadline",16,134,200,14,T.basil);
         UiKit.Label(card,"Seconds","",16,112,200,24,T.captionSize,T.line,FontRole.Black);

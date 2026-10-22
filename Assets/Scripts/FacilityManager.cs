@@ -1,8 +1,8 @@
 using System;
 using UnityEngine;
 
-public enum FacilityType { Oven, Bike, Advertising, Expansion, Workbench }
-[Serializable] public sealed class FacilitySaveData {public int oven,bike,expansion,workbench;}
+public enum FacilityType { Oven, Bike, Advertising, Expansion, Workbench, Menu }
+[Serializable] public sealed class FacilitySaveData {public int oven,bike,expansion,workbench,menu;}
 
 public sealed class FacilityManager : MonoBehaviour
 {
@@ -12,6 +12,8 @@ public sealed class FacilityManager : MonoBehaviour
     [SerializeField] private float[] bikePrices={500,900};
     [SerializeField] private float[] expansionPrices={800,1400};
     [SerializeField] private float[] workbenchPrices={400,700};
+    [SerializeField] private float[] menuPrices={400,700};
+    [SerializeField, Min(0)] private float menuMaintenance=10;
     [SerializeField] private float[] advertisingPrices={100,200,350};
     [SerializeField] private float[] advertisingDemand={1,1.10f,1.20f,1.30f};
     [SerializeField] private float[] bikeSpeed={1,1.08f,1.16f};
@@ -24,6 +26,8 @@ public sealed class FacilityManager : MonoBehaviour
     public int BikeUpgrades {get;private set;}
     public int ShopUpgrades {get;private set;}
     public int WorkbenchUpgrades {get;private set;}
+    public int MenuUpgrades {get;private set;}
+    public bool IsUnlocked(PizzaKind kind)=>(int)kind<=MenuUpgrades;
     public int Workbenches=>initialWorkbenches+WorkbenchUpgrades;
     public int Advertisement {get;private set;}
     public int Ovens=>initialOvens+OvenUpgrades;
@@ -32,13 +36,13 @@ public sealed class FacilityManager : MonoBehaviour
     public float SpeedMultiplier=>bikeSpeed[BikeUpgrades];
     public float RiskMultiplier=>bikeRisk[BikeUpgrades];
     public float DemandMultiplier=>clock.Phase==DayPhase.Closed || clock.Phase==DayPhase.Ended?1:advertisingDemand[Advertisement];
-    public decimal Maintenance=>BusinessEconomy.Money((decimal)ovenMaintenance*OvenUpgrades+(decimal)bikeMaintenance*BikeUpgrades+(decimal)expansionMaintenance*ShopUpgrades+(decimal)workbenchMaintenance*WorkbenchUpgrades);
+    public decimal Maintenance=>BusinessEconomy.Money((decimal)ovenMaintenance*OvenUpgrades+(decimal)bikeMaintenance*BikeUpgrades+(decimal)expansionMaintenance*ShopUpgrades+(decimal)workbenchMaintenance*WorkbenchUpgrades+(decimal)menuMaintenance*MenuUpgrades);
     public FacilitySaveData LastOperatingState {get;private set;}=new FacilitySaveData();
     public void BeginBusiness()=>LastOperatingState=Capture();
     public string LastMessage {get;private set;}="";
     public event Action Changed;
-    public bool IsMaximum(FacilityType type)=>type switch {FacilityType.Oven=>OvenUpgrades>=ovenPrices.Length,FacilityType.Bike=>BikeUpgrades>=bikePrices.Length,FacilityType.Expansion=>ShopUpgrades>=expansionPrices.Length,FacilityType.Workbench=>WorkbenchUpgrades>=workbenchPrices.Length,_=>Advertisement>0};
-    public float MaintenanceOf(FacilityType type)=>type switch{FacilityType.Oven=>ovenMaintenance,FacilityType.Bike=>bikeMaintenance,FacilityType.Expansion=>expansionMaintenance,FacilityType.Workbench=>workbenchMaintenance,_=>0};
+    public bool IsMaximum(FacilityType type)=>type switch {FacilityType.Oven=>OvenUpgrades>=ovenPrices.Length,FacilityType.Bike=>BikeUpgrades>=bikePrices.Length,FacilityType.Expansion=>ShopUpgrades>=expansionPrices.Length,FacilityType.Workbench=>WorkbenchUpgrades>=workbenchPrices.Length,FacilityType.Menu=>MenuUpgrades>=menuPrices.Length,_=>Advertisement>0};
+    public float MaintenanceOf(FacilityType type)=>type switch{FacilityType.Oven=>ovenMaintenance,FacilityType.Bike=>bikeMaintenance,FacilityType.Expansion=>expansionMaintenance,FacilityType.Workbench=>workbenchMaintenance,FacilityType.Menu=>menuMaintenance,_=>0};
     public float NextBikeSpeed=>bikeSpeed[Mathf.Min(BikeUpgrades+1,bikeSpeed.Length-1)];
     public float NextBikeRisk=>bikeRisk[Mathf.Min(BikeUpgrades+1,bikeRisk.Length-1)];
     public int AdvertisingTiers=>advertisingPrices.Length;
@@ -46,7 +50,7 @@ public sealed class FacilityManager : MonoBehaviour
     public decimal Price(FacilityType type,int advertisementTier=1)
     {
         if(IsMaximum(type))return 0;
-        float value=type switch{FacilityType.Oven=>ovenPrices[OvenUpgrades],FacilityType.Bike=>bikePrices[BikeUpgrades],FacilityType.Expansion=>expansionPrices[ShopUpgrades],FacilityType.Workbench=>workbenchPrices[WorkbenchUpgrades],_=>advertisingPrices[Mathf.Clamp(advertisementTier,1,advertisingPrices.Length)-1]};
+        float value=type switch{FacilityType.Oven=>ovenPrices[OvenUpgrades],FacilityType.Bike=>bikePrices[BikeUpgrades],FacilityType.Expansion=>expansionPrices[ShopUpgrades],FacilityType.Workbench=>workbenchPrices[WorkbenchUpgrades],FacilityType.Menu=>menuPrices[MenuUpgrades],_=>advertisingPrices[Mathf.Clamp(advertisementTier,1,advertisingPrices.Length)-1]};
         return BusinessEconomy.Money((decimal)value);
     }
     public string Description(FacilityType type)
@@ -56,6 +60,7 @@ public sealed class FacilityManager : MonoBehaviour
         {
             FacilityType.Oven=>$"OVENS / {Ovens}\nNext {Price(type):F2} / +1 oven / maintenance +{ovenMaintenance:F2}/day\n"+Rejection(type),
             FacilityType.Bike=>$"BIKES / Lv {BikeLevel}\nNext {Price(type):F2} / speed x{bikeSpeed[nextBike]:F2} / risk x{bikeRisk[nextBike]:F2}\nMaintenance +{bikeMaintenance:F2}/day\n"+Rejection(type),
+            FacilityType.Menu=>$"メニュー拡張 / {MenuUpgrades+1}種類 / 次 {Price(type):F0} / 維持費 +{menuMaintenance}/日",
             FacilityType.Expansion=>"SHOP / Staff hiring has no limit. Legacy expansion data is retained.",
             FacilityType.Workbench=>$"WORKBENCHES / {Workbenches}\nNext {Price(type):F2} / +1 workbench / maintenance +{workbenchMaintenance:F2}/day\n"+Rejection(type),
             _=>$"ADVERTISING / Today {Advertisement}\n"+string.Join(" / ",System.Linq.Enumerable.Select(System.Linq.Enumerable.Range(0,advertisingPrices.Length),i=>$"{advertisingPrices[i]:F2}: x{advertisingDemand[i+1]:F2}"))+"\nToday only\n"+Rejection(type)
@@ -73,13 +78,13 @@ public sealed class FacilityManager : MonoBehaviour
     {
         LastMessage=Rejection(type,advertisementTier);if(LastMessage.Length>0){Changed?.Invoke();return false;}
         decimal fee=Price(type,advertisementTier);economy.SpendPreparation(fee);economy.Ledger.FacilityPurchases+=fee;
-        switch(type){case FacilityType.Oven:OvenUpgrades++;break;case FacilityType.Bike:BikeUpgrades++;break;case FacilityType.Expansion:ShopUpgrades++;break;case FacilityType.Workbench:WorkbenchUpgrades++;break;default:Advertisement=advertisementTier;break;}
+        switch(type){case FacilityType.Oven:OvenUpgrades++;break;case FacilityType.Bike:BikeUpgrades++;break;case FacilityType.Expansion:ShopUpgrades++;break;case FacilityType.Workbench:WorkbenchUpgrades++;break;case FacilityType.Menu:MenuUpgrades++;break;default:Advertisement=advertisementTier;break;}
         LastMessage="Purchased: "+type;Changed?.Invoke();return true;
     }
-    public void NewGame(){OvenUpgrades=BikeUpgrades=ShopUpgrades=WorkbenchUpgrades=Advertisement=0;LastMessage="";}
+    public void NewGame(){OvenUpgrades=BikeUpgrades=ShopUpgrades=WorkbenchUpgrades=MenuUpgrades=Advertisement=0;LastMessage="";}
     public void PrepareDay(){Advertisement=0;LastMessage="";}
-    public FacilitySaveData Capture()=>new FacilitySaveData{oven=OvenUpgrades,bike=BikeUpgrades,expansion=ShopUpgrades,workbench=WorkbenchUpgrades};
-    public bool Valid(FacilitySaveData data)=>data!=null && data.oven>=0 && data.oven<=ovenPrices.Length && data.bike>=0 && data.bike<=bikePrices.Length && data.expansion>=0 && data.expansion<=expansionPrices.Length && data.workbench>=0 && data.workbench<=workbenchPrices.Length;
+    public FacilitySaveData Capture()=>new FacilitySaveData{oven=OvenUpgrades,bike=BikeUpgrades,expansion=ShopUpgrades,workbench=WorkbenchUpgrades,menu=MenuUpgrades};
+    public bool Valid(FacilitySaveData data)=>data!=null && data.oven>=0 && data.oven<=ovenPrices.Length && data.bike>=0 && data.bike<=bikePrices.Length && data.expansion>=0 && data.expansion<=expansionPrices.Length && data.workbench>=0 && data.workbench<=workbenchPrices.Length && data.menu>=0 && data.menu<=menuPrices.Length;
     public int MaximumPeopleFor(FacilitySaveData data)=>int.MaxValue;
-    public void Restore(FacilitySaveData data){if(!Valid(data))throw new ArgumentException("Invalid facility levels.");OvenUpgrades=data.oven;BikeUpgrades=data.bike;ShopUpgrades=data.expansion;WorkbenchUpgrades=data.workbench;Advertisement=0;Changed?.Invoke();}
+    public void Restore(FacilitySaveData data){if(!Valid(data))throw new ArgumentException("Invalid facility levels.");OvenUpgrades=data.oven;BikeUpgrades=data.bike;ShopUpgrades=data.expansion;WorkbenchUpgrades=data.workbench;MenuUpgrades=data.menu;Advertisement=0;Changed?.Invoke();}
 }

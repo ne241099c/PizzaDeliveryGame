@@ -77,7 +77,7 @@ public sealed class SettlementView : MonoBehaviour
         var save=FindFirstObjectByType<CampaignSaveManager>();
         if(!campaign.IsBankrupt && save!=null && save.NewRecords.Count>0)UiKit.SetBadge(titleBadge,"新記録！ "+string.Join("・",save.NewRecords),T.cheese,T.line);
         receipt=UiKit.Card(root,"Receipt",120,204,800,660,T.paper,16,8,3);
-        int tips=trips.Sum(t=>t.Deliveries.Where(d=>d.Resolved).Sum(d=>score.TipForArrival(d.ArrivesAt,d.Order.Deadline,t.ServiceAtDispatch)));
+        int tips=trips.Sum(t=>t.Deliveries.Where(d=>d.Resolved).Sum(d=>score.TipForArrival(d.Order,d.ArrivesAt,t.ServiceAtDispatch)));
         decimal quality=l.QualityBonus,basePoints=l.Revenue-tips-quality;
         float y=26;
         Row(receipt,ref y,0,"売上",$"配達 {stats.DeliveredCount}件(期限内 {stats.DeliveredCount-stats.LateCount} / 遅れ {stats.LateCount})",l.Revenue,false,true);

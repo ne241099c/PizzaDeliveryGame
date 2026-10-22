@@ -23,6 +23,7 @@ public sealed class PizzaJob
     public float PackingStartedAt {get;internal set;}
     public float SauceCoverage {get;internal set;}
     public Topping? AddedTopping {get;internal set;}
+    public readonly List<Topping> AddedToppings=new();
     public bool SaucePoint {get;internal set;}
     public bool ToppingPoint {get;internal set;}
     public bool BakePoint {get;internal set;}
@@ -47,6 +48,11 @@ public sealed class CookingManager : MonoBehaviour
     [SerializeField,Min(1)] private int initialOvens=1;
     [SerializeField,Min(1)] private int initialBenches=2;
     [SerializeField,Min(.01f)] private float doughSeconds=2,sauceSeconds=4,assemblySeconds=6,bakeSeconds=6;
+    [SerializeField,Min(0)] private float seafoodExtraBakeSeconds=1,extraToppingSeconds=2;
+    public float BakeDuration(Order order)=>bakeSeconds+(order.Kind==PizzaKind.Seafood?seafoodExtraBakeSeconds:0);
+    public float BandStartFor(Order order)=>BakeDuration(order)-bakeBandHalfWidth;
+    public float BandEndFor(Order order)=>BakeDuration(order)+bakeBandHalfWidth;
+    public float BurnAtFor(Order order)=>BandEndFor(order)+burnAfterBand;
     [Tooltip("Boxing time after baking. 0 = packed the moment it leaves the oven (2026-10-23 request: ignore packing time).")]
     [SerializeField,Min(0)] private float packSeconds=0;
     [SerializeField,Min(0)] private float bakeBandHalfWidth=.4f,burnAfterBand=5;
@@ -75,7 +81,7 @@ public sealed class CookingManager : MonoBehaviour
     public bool ManualControlEnabled {get;set;}=true;
     public int? SeedOverride {get;set;}
     /// <summary>Standard time for one pizza by staff with speed 0.5 (assembly + oven + packing). Used for the delivery promise minimum.</summary>
-    public float CookSeconds=>(doughSeconds+sauceSeconds+assemblySeconds)*(staffTimeBase-staffTimeScale*.5f)+bakeSeconds+packSeconds;
+    public float CookSeconds=>(doughSeconds+sauceSeconds+assemblySeconds+(facilities!=null && facilities.IsUnlocked(PizzaKind.Seafood)?extraToppingSeconds:0))*(staffTimeBase-staffTimeScale*.5f)+bakeSeconds+(facilities!=null && facilities.IsUnlocked(PizzaKind.Seafood)?seafoodExtraBakeSeconds:0)+packSeconds;
     public float BakeSeconds=>bakeSeconds;
     public float BandStart=>bakeSeconds-bakeBandHalfWidth;
     public float BandEnd=>bakeSeconds+bakeBandHalfWidth;
@@ -106,6 +112,7 @@ public sealed class CookingManager : MonoBehaviour
     /// <summary>Packed boxes waiting at the counter (not yet in a courier's bag).</summary>
     public int RackCount=>orders.Orders.Count(o=>o.IsReady && (handover==null || !handover.IsBagged(o)))+jobs.Count(j=>j.Stage==PizzaStage.Boxed);
     public float StaffWorkSeconds(KitchenStaff member)=>(doughSeconds+sauceSeconds+assemblySeconds)*StaffFactor(member);
+    public float StaffWorkSeconds(KitchenStaff member,Order order)=>StaffWorkSeconds(member)+Mathf.Max(0,order.RequiredToppings.Length-1)*extraToppingSeconds*StaffFactor(member);
     public float StaffPackSeconds(KitchenStaff member)=>packSeconds*StaffFactor(member);
     private float StaffFactor(KitchenStaff member)=>Mathf.Max(.05f,staffTimeBase-staffTimeScale*member.Speed);
     public float StaffSuccessChance(KitchenStaff member)=>Mathf.Clamp01(staffSuccessBase+staffSuccessScale*member.Care);
@@ -137,7 +144,7 @@ public sealed class CookingManager : MonoBehaviour
         {
             PizzaStage.Ticket=>.05f,PizzaStage.Dough=>.15f,PizzaStage.Sauce=>.3f,PizzaStage.Cheese=>.4f,
             PizzaStage.Topping=>job.Worker==PizzaWorker.Staff && StaffBusyWith(job)?Mathf.Lerp(.05f,.5f,StaffFraction(job,now)):.5f,
-            PizzaStage.Baking=>Mathf.Lerp(.5f,.8f,Mathf.Clamp01((now-job.OvenStartedAt)/bakeSeconds)),
+            PizzaStage.Baking=>Mathf.Lerp(.5f,.8f,Mathf.Clamp01((now-job.OvenStartedAt)/BakeDuration(order))),
             PizzaStage.Baked=>.82f,PizzaStage.Boxed=>job.Worker==PizzaWorker.Staff?Mathf.Lerp(.85f,.98f,StaffFraction(job,now)):.9f,_=>1
         };
     }
@@ -145,7 +152,7 @@ public sealed class CookingManager : MonoBehaviour
     private float StaffFraction(PizzaJob job,float now)
     {
         var slot=staff.FirstOrDefault(s=>s.Task==job);if(slot==null)return 1;
-        float length=slot.Packing?StaffPackSeconds(slot.Staff):StaffWorkSeconds(slot.Staff);
+        float length=slot.Packing?StaffPackSeconds(slot.Staff):StaffWorkSeconds(slot.Staff,job.Order);
         return Mathf.Clamp01(1-(slot.Until-now)/Mathf.Max(.01f,length));
     }
     public string StageCaption(Order order)
@@ -165,16 +172,17 @@ public sealed class CookingManager : MonoBehaviour
     {
         if(order==null || clock==null)return null;if(order.IsReady)return 0;
         float now=clock.ElapsedSeconds;
-        float ovenFree=float.PositiveInfinity;foreach(var o in ovens)ovenFree=Mathf.Min(ovenFree,o==null?0:Mathf.Max(0,o.OvenStartedAt+bakeSeconds-now));
+        float ovenFree=float.PositiveInfinity;foreach(var o in ovens)ovenFree=Mathf.Min(ovenFree,o==null?0:Mathf.Max(0,o.OvenStartedAt+BakeDuration(o.Order)-now));
         if(float.IsInfinity(ovenFree))ovenFree=0;
         var job=JobFor(order);
         if(job!=null)
         {
-            if(job.Stage==PizzaStage.Baking)return Mathf.Max(0,job.OvenStartedAt+bakeSeconds-now)+packSeconds;
+            if(job.Stage==PizzaStage.Baking)return Mathf.Max(0,job.OvenStartedAt+BakeDuration(job.Order)-now)+packSeconds;
             if(job.Stage>=PizzaStage.Baked)return packSeconds;
+            if(job.QueuedForOven)return ovenFree+OvenQueue.TakeWhile(j=>j!=job).Sum(j=>BakeDuration(j.Order))/Mathf.Max(1,OvenCount)+BakeDuration(order)+packSeconds;
             if(job.Worker!=PizzaWorker.Staff)return null;
             var slot=staff.FirstOrDefault(s=>s.Task==job);
-            return Mathf.Max(slot!=null?Mathf.Max(0,slot.Until-now):0,ovenFree)+bakeSeconds+packSeconds;
+            return Mathf.Max(slot!=null?Mathf.Max(0,slot.Until-now):0,ovenFree)+BakeDuration(order)+packSeconds;
         }
         if(staff.Count==0 || order.Baking!=BakingState.Waiting)return null;
         var waiting=orders.Orders.Where(o=>o.Baking==BakingState.Waiting && JobFor(o)==null && !expired.Contains(o)).OrderBy(o=>o.SpawnedAt).ToList();
@@ -182,7 +190,7 @@ public sealed class CookingManager : MonoBehaviour
         float work=staff.Average(s=>StaffWorkSeconds(s.Staff));
         float firstFree=staff.Min(s=>s.Task==null?0:Mathf.Max(0,s.Until-now));
         float cycle=Mathf.Max(work/Mathf.Max(1,Mathf.Min(staff.Count,BenchCount)),bakeSeconds/Mathf.Max(1,ovens.Length));
-        return Mathf.Max(firstFree+ahead*cycle+work,ovenFree)+bakeSeconds+packSeconds;
+        return Mathf.Max(firstFree+ahead*cycle+work,ovenFree)+BakeDuration(order)+packSeconds;
     }
 
     // ---- automatic staff simulation on exact timestamps ----
@@ -212,7 +220,7 @@ public sealed class CookingManager : MonoBehaviour
     {
         float next=float.PositiveInfinity;
         foreach(var slot in staff)if(slot.Task!=null)next=Mathf.Min(next,slot.Until);
-        foreach(var job in ovens)if(job!=null && job.Worker==PizzaWorker.Staff)next=Mathf.Min(next,job.OvenStartedAt+bakeSeconds);
+        foreach(var job in ovens)if(job!=null && job.Worker==PizzaWorker.Staff)next=Mathf.Min(next,job.OvenStartedAt+BakeDuration(job.Order));
         foreach(var job in jobs)
         {
             if(job.Stage!=PizzaStage.Packed)next=Mathf.Min(next,Expires(job.Order));
@@ -234,15 +242,15 @@ public sealed class CookingManager : MonoBehaviour
             else
             {
                 bool success(){return random.NextDouble()<StaffSuccessChance(slot.Staff);}
-                job.SauceCoverage=1;job.SaucePoint=success();job.AddedTopping=job.Order.RequiredTopping;job.ToppingPoint=success();job.Stage=PizzaStage.Topping;
+                job.SauceCoverage=1;job.SaucePoint=success();job.AddedTopping=job.Order.RequiredTopping;job.AddedToppings.AddRange(job.Order.RequiredToppings);job.ToppingPoint=success();job.Stage=PizzaStage.Topping;
                 QueueOven(job,at);
             }
             slot.Task=null;slot.Packing=false;slot.Staff.IsWorking=false;slot.FreeSince=at;
         }
         for(int i=0;i<ovens.Length;i++)
         {
-            var job=ovens[i];if(job==null || job.Worker!=PizzaWorker.Staff || job.OvenStartedAt+bakeSeconds>t)continue;
-            float at=job.OvenStartedAt+bakeSeconds;FinishOven(job,at);job.BakePoint=true;
+            var job=ovens[i];if(job==null || job.Worker!=PizzaWorker.Staff || job.OvenStartedAt+BakeDuration(job.Order)>t)continue;
+            float at=job.OvenStartedAt+BakeDuration(job.Order);FinishOven(job,at);job.BakePoint=true;
             if(packSeconds<=0 && RackCount<rackCapacity)Pack(job); // no packing time: boxed as it leaves the oven
 
         }
@@ -277,7 +285,7 @@ public sealed class CookingManager : MonoBehaviour
             float begin=Mathf.Min(t,Mathf.Max(order.SpawnedAt,Mathf.Max(slot.FreeSince,benchFreeSince[bench])));
             var job=new PizzaJob(order,PizzaWorker.Staff){Staff=slot.Staff,Bench=bench,Stage=PizzaStage.Topping,StartedAt=begin};
             jobs.Add(job);benches[bench]=job;order.Baking=BakingState.Cooking;
-            slot.Task=job;slot.Packing=false;slot.Until=begin+StaffWorkSeconds(slot.Staff);slot.Staff.IsWorking=true;
+            slot.Task=job;slot.Packing=false;slot.Until=begin+StaffWorkSeconds(slot.Staff,job.Order);slot.Staff.IsWorking=true;
         }
     }
     private int FreeOven(){for(int i=0;i<ovens.Length;i++)if(ovens[i]==null)return i;return -1;}
@@ -341,7 +349,11 @@ public sealed class CookingManager : MonoBehaviour
     public bool AddDough(int bench)=>Step(bench,PizzaStage.Ticket,j=>j.Stage=PizzaStage.Dough);
     public bool AddSauce(int bench,float coverage)=>Step(bench,PizzaStage.Dough,j=>{j.SauceCoverage=Mathf.Clamp01(coverage);j.SaucePoint=j.SauceCoverage>=sauceThreshold;j.Stage=PizzaStage.Sauce;});
     public bool AddCheese(int bench)=>Step(bench,PizzaStage.Sauce,j=>j.Stage=PizzaStage.Cheese);
-    public bool AddTopping(int bench,Topping topping)=>Step(bench,PizzaStage.Cheese,j=>{j.AddedTopping=topping;j.ToppingPoint=topping==j.Order.RequiredTopping;j.Stage=PizzaStage.Topping;});
+    public bool AddTopping(int bench,Topping topping)=>Step(bench,PizzaStage.Cheese,j=>
+    {
+        j.AddedToppings.Add(topping);j.AddedTopping=j.AddedToppings[0];
+        if(j.AddedToppings.Count>=j.Order.RequiredToppings.Length){j.ToppingPoint=j.AddedToppings.SequenceEqual(j.Order.RequiredToppings);j.Stage=PizzaStage.Topping;}
+    });
     public bool PutInOven(int bench,int oven)
     {
         if(!Ready())return false;var job=PlayerBench(bench);
@@ -349,12 +361,12 @@ public sealed class CookingManager : MonoBehaviour
         QueueOven(job,clock.ElapsedSeconds);return Done();
     }
     public float OvenElapsed(int oven)=>OvenJob(oven) is PizzaJob job?clock.ElapsedSeconds-job.OvenStartedAt:0;
-    public bool CanTakeOut(int oven)=>ManualControlEnabled && clock.Phase==DayPhase.Open && OvenJob(oven) is PizzaJob job && job.Worker==PizzaWorker.Player && OvenElapsed(oven)>=BandStart;
+    public bool CanTakeOut(int oven)=>ManualControlEnabled && clock.Phase==DayPhase.Open && OvenJob(oven) is PizzaJob job && job.Worker==PizzaWorker.Player && OvenElapsed(oven)>=BandStartFor(job.Order);
     public bool TakeOut(int oven)
     {
         if(!Ready() || !CanTakeOut(oven))return false;
         var job=ovens[oven];float elapsed=OvenElapsed(oven);
-        job.BakePoint=elapsed<=BandEnd;job.Burnt=elapsed>=BurnAt;FinishOven(job,clock.ElapsedSeconds);return Done();
+        job.BakePoint=elapsed<=BandEndFor(job.Order);job.Burnt=elapsed>=BurnAtFor(job.Order);FinishOven(job,clock.ElapsedSeconds);return Done();
     }
     public bool Box(PizzaJob job)
     {
