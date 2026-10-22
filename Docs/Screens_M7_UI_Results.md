@@ -1,0 +1,10 @@
+# 画面再構成・M7・見た目 実装記録
+
+ユーザーの2026-10-22の一括指示に従う。S-0/V-0で止まらない。C-5後は数値変更を保留し、許可された後続の見た目作業を続ける。pushなし。Packages、.DS_Store、.codex、_Recoveryは対象外。
+
+| 段階 | 変更 | 全検証通過数 |
+|---|---|---:|
+| m6→main | m4/m5統合済みを確認し、m6をfast-forward | 2328 |
+| S-0 | 既存部品の対応・名前/並び/有効状態の依存調査、4画面before画像 | 2328 |
+
+詳細な調査：[ScreenInventory.md](UI_Screens/ScreenInventory.md)。
