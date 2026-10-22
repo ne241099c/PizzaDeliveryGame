@@ -48,6 +48,17 @@ public static class ScreenValidation
             list.SelectOnly(order);roster.SelectForDispatch(roster.People[0]);business.Refresh();planner.DispatchWithSuggestion();business.Refresh();Check(!business.IsPlanningPanelOpen,"dispatch closes panel");
             campaign.NewGame();
         }
+        if(router.ImplementationStage>=4)
+        {
+            var ui=UnityEngine.Object.FindFirstObjectByType<SettlementScreenUI>();var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();
+            campaign.StartBusiness();UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().enabled=false;clock.Advance(clock.BusinessDuration+1000);
+            Check(ui.Page==0 && !ui.IsShowingAll,"settlement starts with revenue page");
+            UIVisibility.Find(canvas.transform,"AdvancePage").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(ui.Page==1,"click advances settlement page");
+            UIVisibility.Find(canvas.transform,"ShowAll").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(ui.IsShowingAll && UIVisibility.Find(canvas.transform,"ResultText").GetComponent<TMPro.TextMeshProUGUI>().text.Contains(campaign.FinancialSummary),"show all reuses real ledger summary");
+            UIVisibility.Find(canvas.transform,"SkipPages").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(ui.Page==4 && !ui.IsShowingAll,"skip reaches final page");
+            UIVisibility.Find(canvas.transform,"ToGameOver").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(router.Current==ScreenId.GameOver,"bankrupt settlement opens game over");
+            UIVisibility.Find(canvas.transform,"RetryCampaign").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(router.Current==ScreenId.Hub && campaign.DayNumber==1 && !campaign.IsBankrupt,"retry uses existing new-game reset");
+        }
         return $"PASS: {count} screen checks.";
     }
 }

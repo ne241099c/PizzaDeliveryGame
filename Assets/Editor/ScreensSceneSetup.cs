@@ -114,4 +114,17 @@ public static class ScreensSceneSetup
         var ob=Find("Selections").GetComponent<CanvasGroup>();if(ob==null)ob=Find("Selections").gameObject.AddComponent<CanvasGroup>();var cb=band.GetComponent<CanvasGroup>();if(cb==null)cb=band.gameObject.AddComponent<CanvasGroup>();Bind(ui,"ordersBand",ob);Bind(ui,"couriersBand",cb);UIVisibility.Set(drawer.gameObject,false);
         var stage=new SerializedObject(Manager.GetComponent<ScreenRouter>());stage.FindProperty("implementationStage").intValue=3;stage.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(Manager.scene);
     }
+    public static void Settlement()
+    {
+        var panel=Find("DayResults");Full(panel.parent,"DayResults");
+        var card=Find("ResultCard");Place(card,210,130,1500,820);Place(Find("LedgerViewport"),48,70,1404,590);Place(Find("ReplayDay"),1020,720,420,64);
+        var advance=M5SceneSetup.MakeButton(card,"AdvancePage","Continue",1020,720,420,64);var skip=M5SceneSetup.MakeButton(card,"SkipPages","Skip",48,720,230,64);var all=M5SceneSetup.MakeButton(card,"ShowAll","Show all",302,720,270,64);
+        var over=M5SceneSetup.MakeButton(card,"ToGameOver","Game over",1020,720,420,64);
+        var root=Find("GameOverScreen");var backdrop=root.gameObject.AddComponent<Image>();backdrop.color=new Color(.06f,.10f,.16f,1);
+        var summary=Text(root,"GameOverSummary","GAME OVER",128,140,1664,640,28);var retry=M5SceneSetup.MakeButton(root,"RetryCampaign","Start new",1020,880,330,72);var title=M5SceneSetup.MakeButton(root,"GameOverTitle","Title",1374,880,330,72);
+        var ui=Manager.GetComponent<SettlementScreenUI>()??Undo.AddComponent<SettlementScreenUI>(Manager);
+        Bind(ui,"router",Manager.GetComponent<ScreenRouter>());Bind(ui,"clock",Manager.GetComponent<GameClock>());Bind(ui,"campaign",Manager.GetComponent<CampaignManager>());Bind(ui,"economy",Manager.GetComponent<BusinessEconomy>());Bind(ui,"stats",Manager.GetComponent<DayStats>());Bind(ui,"roster",Manager.GetComponent<DeliveryPersonSelector>());Bind(ui,"flow",Manager.GetComponent<DeliveryFlowController>());Bind(ui,"score",Manager.GetComponent<ScoreManager>());Bind(ui,"reputation",Manager.GetComponent<ReputationManager>());Bind(ui,"progression",Manager.GetComponent<CourierProgression>());Bind(ui,"planner",Manager.GetComponent<DeliveryPlannerUI>());
+        Bind(ui,"pageText",Find("ResultText").GetComponent<TextMeshProUGUI>());Bind(ui,"gameOverText",summary);Bind(ui,"advance",advance);Bind(ui,"skip",skip);Bind(ui,"all",all);Bind(ui,"replay",Find("ReplayDay").GetComponent<Button>());Bind(ui,"gameOver",over);Bind(ui,"retry",retry);Bind(ui,"title",title);
+        var stage=new SerializedObject(Manager.GetComponent<ScreenRouter>());stage.FindProperty("implementationStage").intValue=4;stage.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(Manager.scene);
+    }
 }
