@@ -10,7 +10,7 @@ public sealed class UIThemeDriver : MonoBehaviour
     [SerializeField] private Canvas canvas;
     [SerializeField] private int implementationStage=1;
     public int ImplementationStage=>implementationStage;
-    private static readonly string[] primary={"OpenBusiness","Dispatch","DispatchSuggestion","Replay","Continue","AdvancePage"};
+    private static readonly string[] primary={"StartBusiness","DispatchRoute","DispatchSuggestion","ReplayDay","Continue","AdvancePage"};
     private static readonly string[] danger={"NewGame","RetryCampaign","Fire","ConfirmTitle"};
     public static bool RenderingSuspended {get;set;}
     private void LateUpdate(){if(!RenderingSuspended)Refresh();}
@@ -33,7 +33,7 @@ public sealed class UIThemeDriver : MonoBehaviour
             string name=image.name;
             if(name.Contains("Fill") || name.Contains("Limit") || name.Contains("Band") || name.Contains("Handle"))
             {
-                image.color=name.Contains("Experience")?theme.money:name.Contains("Limit")?theme.ink:name.Contains("Perfect")?theme.money:theme.good;continue;
+                image.color=name.Contains("Handle")?theme.accent:name.Contains("Experience")?theme.money:name.Contains("Limit")?theme.ink:name.Contains("Perfect")?theme.money:theme.good;continue;
             }
             var panel=image.GetComponent<ThemedPanel>();if(panel==null){panel=image.gameObject.AddComponent<ThemedPanel>();panel.secondary=name.Contains("Card") || name.Contains("Viewport") || name.Contains("Bar");}panel.Apply(theme);
         }
@@ -53,7 +53,10 @@ public sealed class UIThemeDriver : MonoBehaviour
     public static ThemeTextSize SizeFor(TMP_Text text)
     {
         if(text.text=="PIZZA DELIVERY" || text.text=="ピザ配達ゲーム")return ThemeTextSize.Heading;
-        var button=text.GetComponentInParent<Button>();if(button!=null)return button.GetComponent<RectTransform>().rect.width<200?ThemeTextSize.Caption:ThemeTextSize.Body;
+        // Compact rows inside cards (abilities, bake quality) must win over the button rule.
+        if(text.name.StartsWith("Ability") || text.name.Contains("Profile") || text.name=="BakeQuality")return ThemeTextSize.Caption;
+        // Narrow buttons and the two-line training/suggestion buttons use caption; tabs and other buttons stay readable at 720p.
+        var button=text.GetComponentInParent<Button>();if(button!=null)return button.name=="UseSuggestedRoute" || button.name.StartsWith("Train") || button.GetComponent<RectTransform>().rect.width<150?ThemeTextSize.Caption:ThemeTextSize.Body;
         if(text.name.Contains("Title") || text.name.Contains("Heading"))return ThemeTextSize.Heading;
         if(text.name.Contains("Ability") || text.name.Contains("Profile") || text.fontSize<18)return ThemeTextSize.Caption;
         if(text.fontSize>=22)return ThemeTextSize.Subheading;return ThemeTextSize.Body;

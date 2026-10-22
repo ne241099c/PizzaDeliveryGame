@@ -65,7 +65,7 @@ public class DeliveryPersonSelector : MonoBehaviour
             rowLayout.minHeight=rowLayout.preferredHeight=rowHeight;
             var labelRect=buttons[i].GetComponentInChildren<TextMeshProUGUI>().rectTransform;
             labelRect.anchorMin=Vector2.zero;labelRect.anchorMax=Vector2.one;
-            labelRect.offsetMin=new Vector2(8,rowHeight-64);labelRect.offsetMax=new Vector2(-8,-4);
+            labelRect.offsetMin=new Vector2(8,rowHeight-68);labelRect.offsetMax=new Vector2(-8,-2); // 66 tall: name + two caption lines, above the ability rows at 68
             EnsureStaminaBar(buttons[i]);
             DeliveryPerson person = deliveryPeople[i];
             buttons[i].onClick.RemoveAllListeners();

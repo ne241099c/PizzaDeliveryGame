@@ -36,3 +36,10 @@
 - [タイトル相当 before](before-screens/title.png)：旧SaveChoice。変更前には独立したタイトル画面はない。
 
 ユーザーの最新指示によりS-0の報告停止を省略し、続けてS-1へ進める。
+
+## V-4で増えた依存
+
+- `ScreenClearCamera`：地図カメラ（Camera.main、depth -1）より小さいdepth -2の全画面カメラ。cullingMask 0で何も描かず、背景を消すだけ。MainCameraタグは付けない（Camera.mainを変えない）。
+- 訓練の選択肢 `TrainingControls`：位置と背景だけ変更し、兄弟順は維持。`PreparationUI`は行の最初のButtonを解雇/採用として扱い、M6Validationは `TrainingControls/Train0` のパスを使う。
+- `TrainingPickerUI`：行のTrainingControlsが非アクティブ（求人行）のとき「訓練を選ぶ」をCanvasGroupで隠す。
+- 配達員カードの見出しの高さは実行時に `DeliveryPersonSelector.RebuildRoster` が決める（66）。能力行は68から25間隔で、`VisualSceneSetup.FinishLayout`がPrefabとシーン内のカードに配置する。
