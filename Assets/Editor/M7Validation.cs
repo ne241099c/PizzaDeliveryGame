@@ -10,6 +10,7 @@ public static class M7Validation
     public static void Menu()=>Debug.Log(Run());
     public static string Run()
     {
+        using var sampleMap=new SampleMapValidationScope();
         int count=0;void Check(bool ok,string name){if(!ok)throw new Exception("M7: "+name);count++;}
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var scope=save.SuppressSaving();
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();

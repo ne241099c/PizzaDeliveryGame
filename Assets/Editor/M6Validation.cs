@@ -155,6 +155,7 @@ public static partial class M6Validation
     }
     public static string Run()
     {
+        using var sampleMap=new SampleMapValidationScope();
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var savingScope=save?.SuppressSaving();
         Checks=0;string previous=M5Validation.Run()+" / "+M4PlayValidation.CheckReset();
         var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();

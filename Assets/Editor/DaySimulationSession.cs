@@ -31,6 +31,11 @@ public sealed class SimulationDayRecord
 
 public sealed class DaySimulationSession : IDisposable
 {
+    private readonly MapManager map;
+    private readonly int? originalCitySeed,originalBlocks;
+    private readonly bool originalSample;
+    private readonly int? targetKitchenStaff;
+    private readonly bool substituteKitchen;
     private readonly CampaignManager campaign;
     private readonly GameClock clock;
     private readonly OrderSpawner spawner;
@@ -75,8 +80,12 @@ public sealed class DaySimulationSession : IDisposable
     public event Action<SimulationDayRecord> DayCompleted;
     private static T Find<T>() where T:UnityEngine.Object => UnityEngine.Object.FindFirstObjectByType<T>()
         ?? throw new InvalidOperationException("Missing scene component: "+typeof(T).Name);
-    public DaySimulationSession(DaySimulationSettings settings,bool? batchOverride=null,bool? hireOverride=null,bool? adjustOverride=null,string name="comparison",int? daysOverride=null,float[] promisesOverride=null,bool? trainOverride=null,float? initialCashOverride=null,bool? facilityOverride=null)
+    public DaySimulationSession(DaySimulationSettings settings,bool? batchOverride=null,bool? hireOverride=null,bool? adjustOverride=null,string name="comparison",int? daysOverride=null,float[] promisesOverride=null,bool? trainOverride=null,float? initialCashOverride=null,bool? facilityOverride=null,int? citySeedOverride=null,int? cityBlocksOverride=null,int? kitchenStaffOverride=null,bool substituteKitchen=false)
     {
+        map=Find<MapManager>();originalCitySeed=map.SeedOverride;originalBlocks=map.BlocksOverride;originalSample=map.UseSampleForValidation;
+        if(citySeedOverride.HasValue){map.UseSampleForValidation=false;map.SeedOverride=citySeedOverride;}
+        if(cityBlocksOverride.HasValue)map.BlocksOverride=cityBlocksOverride;
+        targetKitchenStaff=kitchenStaffOverride;this.substituteKitchen=substituteKitchen;
         buyFacilities=facilityOverride??settings.BuyFacilities;facilities=Find<FacilityManager>();
         this.initialCashOverride=initialCashOverride;
         this.settings=settings;batch=batchOverride??settings.BatchDispatch;hire=hireOverride??settings.HireApplicants;adjust=adjustOverride??settings.AdjustPromise;policyName=name;train=trainOverride??settings.TrainCouriers;
@@ -110,6 +119,7 @@ public sealed class DaySimulationSession : IDisposable
         {
             if (initialCashOverride.HasValue) { initial.floatValue=initialCashOverride.Value;funding.ApplyModifiedPropertiesWithoutUndo(); }
             campaign.NewGame();
+            if(substituteKitchen)Find<KitchenCrew>().Restore(new[]{new KitchenStaff("Simulation cook",.5f,.5f)});
         }
         finally { initial.floatValue=originalCash;funding.ApplyModifiedPropertiesWithoutUndo(); }
         previousTrend=trendStreak=0;
@@ -125,12 +135,17 @@ public sealed class DaySimulationSession : IDisposable
             facilityPurchase="";
             if(buyFacilities)
             {
-                foreach(var type in new[]{FacilityType.Oven,FacilityType.Bike,FacilityType.Advertising,FacilityType.Expansion})
+                foreach(var type in new[]{FacilityType.Oven,FacilityType.Workbench,FacilityType.Bike,FacilityType.Menu,FacilityType.Advertising})
                 {
                     if(facilities.IsMaximum(type) || economy.Cash<facilities.Price(type)+settings.FacilityReserve)continue;
                     if(!facilities.Purchase(type))throw new InvalidOperationException(facilities.LastMessage);
                     facilityPurchase=type.ToString();break;
                 }
+            }
+            if(targetKitchenStaff.HasValue)
+            {
+                var kitchen=Find<KitchenCrew>();
+                foreach(var candidate in recruitment.KitchenApplicants.ToArray())if(kitchen.Count<targetKitchenStaff.Value && economy.Cash>=recruitment.HiringCost(candidate.Staff)+settings.HiringReserve)recruitment.Hire(candidate);
             }
             operatingMinimum=spawner.MinimumPromiseSeconds;
             if(hire)
@@ -204,6 +219,9 @@ public sealed class DaySimulationSession : IDisposable
     public void Dispose()
     {
         if(disposed)return;disposed=true;
+        // Cleanup remains inside suppression, including frames between batches.
+        campaign.NewGame();clock.AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();
+        map.SeedOverride=originalCitySeed;map.BlocksOverride=originalBlocks;map.UseSampleForValidation=originalSample;
         savingScope?.Dispose();
         cooking.ManualControlEnabled=originalManualCooking;
         clock.AutomaticTick=originalAutomaticTick;spawner.enabled=originalSpawnerEnabled;

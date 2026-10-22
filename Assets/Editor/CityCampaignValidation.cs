@@ -28,7 +28,7 @@ public static class CityCampaignValidation
                 string f=CityGenerationValidation.Fingerprint(map.City);campaign.RestorePreparation(data);Check(CityGenerationValidation.Fingerprint(map.City)==f,"same day and seed reproduce construction "+day);
                 Check(map.City.metrics.failures.Count==0,"daily traffic remains safe "+day);
             }
-            data.city=null;campaign.RestorePreparation(data);Check(map.City==null && map.Nodes.Count==5,"old save retains original town");
+            data.city=null;Check(save.TryParse(JsonUtility.ToJson(data),out var legacyData,out _),"legacy null city JSON round trip");campaign.RestorePreparation(legacyData);Check(map.City==null && map.Nodes.Count==5,"old save retains original town");
             return $"PASS: {checks} city campaign and save checks.";
         }
         finally{map.UseSampleForValidation=legacy;map.SeedOverride=original;save.StartNewGame();clock.AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();}

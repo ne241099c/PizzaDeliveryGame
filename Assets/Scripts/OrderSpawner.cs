@@ -36,7 +36,8 @@ public sealed class OrderSpawner : MonoBehaviour
     public float MinimumPromiseSeconds { get; private set; }
     public float MaximumPromiseSeconds => Mathf.Max(maximumPromiseSeconds, MinimumPromiseSeconds);
     public float ReputationFactor => reputation != null ? reputation.DemandFactor : 1f;
-    public float ExpectedInterval => interval / (DemandFactor(PromiseSeconds) * ReputationFactor * (facilities!=null?facilities.DemandMultiplier:1));
+    public float CityDemandFactor=>map.City==null?1:map.City.blocks.Average(b=>b.template.demand);
+    public float ExpectedInterval => interval / (DemandFactor(PromiseSeconds) * ReputationFactor * CityDemandFactor * (facilities!=null?facilities.DemandMultiplier:1));
 
     private void Awake()
     {
@@ -102,7 +103,17 @@ public sealed class OrderSpawner : MonoBehaviour
         {
         if(random==null)ResetRandom();
         int unlocked=facilities!=null?facilities.MenuUpgrades:0;
-        return new Order(destination,"Delivery to "+destination,spawnedAt,PromiseSeconds,kind:(PizzaKind)random.Next(unlocked+1));
+        var district=map.City?.DistrictFor(destination);var weights=district?.pizzaWeights??Vector3.one;
+        float total=weights.x+(unlocked>=1?weights.y:0)+(unlocked>=2?weights.z:0);double roll=random.NextDouble()*Mathf.Max(.01f,total);
+        PizzaKind kind=roll<weights.x?PizzaKind.Margherita:unlocked>=2 && roll>=weights.x+weights.y?PizzaKind.Seafood:PizzaKind.Pepperoni;
+        if(!System.Enum.IsDefined(typeof(PizzaKind),kind) || (int)kind>unlocked)kind=PizzaKind.Margherita;
+        return new Order(destination,"Delivery to "+destination,spawnedAt,PromiseSeconds,kind:kind);
+    }
+    private string PickDestination(MapNode[] destinations)
+    {
+        float Weight(MapNode node)=>Mathf.Max(.01f,map.City?.DistrictFor(node.Id)?.demand??1);
+        double roll=random.NextDouble()*destinations.Sum(Weight);
+        foreach(var node in destinations){roll-=Weight(node);if(roll<=0)return node.Id;}return destinations[destinations.Length-1].Id;
     }
     private void NextJitter() { if(random==null)ResetRandom();jitter=Mathf.Lerp(1f-intervalVariation,1f+intervalVariation,(float)random.NextDouble()); }
     private void ScheduleFirst()
@@ -118,7 +129,7 @@ public sealed class OrderSpawner : MonoBehaviour
         if (!openingPlaced)
         {
             openingPlaced=true;
-            for (int i=0;i<openingOrders;i++) { orders.AddOrder(CreateOrder(destinations[random.Next(destinations.Length)].Id,before)); stats?.RecordSpawn(); }
+            for (int i=0;i<openingOrders;i++) { orders.AddOrder(CreateOrder(PickDestination(destinations),before)); stats?.RecordSpawn(); }
         }
         float cursor=before;
         // Preserve progress through the current interval when the policy changes.
@@ -129,7 +140,7 @@ public sealed class OrderSpawner : MonoBehaviour
             if (untilSpawn>now-cursor) {progress+=(now-cursor)/duration;break;}
             cursor+=untilSpawn;
             if(cursor>=clock.BusinessDuration)break;
-            orders.AddOrder(CreateOrder(destinations[random.Next(destinations.Length)].Id,cursor));
+            orders.AddOrder(CreateOrder(PickDestination(destinations),cursor));
             stats?.RecordSpawn();
             progress=0;NextJitter();
         }

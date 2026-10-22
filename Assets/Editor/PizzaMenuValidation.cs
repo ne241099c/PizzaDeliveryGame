@@ -7,6 +7,7 @@ public static class PizzaMenuValidation
 {
     public static string Run()
     {
+        using var sampleMap=new SampleMapValidationScope();
         if(!Application.isPlaying)throw new InvalidOperationException("Play required");
         T Find<T>() where T:UnityEngine.Object=>UnityEngine.Object.FindFirstObjectByType<T>();
         var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var crew=Find<KitchenCrew>();var cook=Find<CookingManager>();var list=Find<OrderListUI>();var f=Find<FacilityManager>();var spawner=Find<OrderSpawner>();var score=Find<ScoreManager>();
@@ -20,7 +21,7 @@ public static class PizzaMenuValidation
             Check(f.Price(FacilityType.Menu)==700 && f.Purchase(FacilityType.Menu) && f.IsUnlocked(PizzaKind.Seafood) && f.Maintenance==20,"second unlock and maintenance");
             Check(f.IsMaximum(FacilityType.Menu) && !f.Purchase(FacilityType.Menu),"no third unlock");
             var kinds=Enumerable.Range(0,60).Select(i=>spawner.CreateOrder("Goal1",i).Kind).Distinct().ToArray();Check(kinds.Length==3,"spawner uses unlocked menu");
-            var data=save.Capture();Check(save.TryParse(JsonUtility.ToJson(data),out var parsed,out _) && parsed.facilities.menu==2,"menu round trips in save");
+            var data=save.Capture();Check(save.TryParse(JsonUtility.ToJson(data),out var parsed,out var reason) && parsed.facilities.menu==2,"menu round trips in save: "+reason);
             campaign.NewGame();campaign.RestorePreparation(data);Check(f.MenuUpgrades==2,"restore menu");
             crew.Restore(Array.Empty<KitchenStaff>());campaign.StartBusiness();
             foreach(PizzaKind kind in Enum.GetValues(typeof(PizzaKind)))

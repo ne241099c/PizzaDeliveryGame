@@ -11,6 +11,7 @@ public static class ShopValidation
     private static T Find<T>() where T:UnityEngine.Object=>UnityEngine.Object.FindFirstObjectByType<T>();
     public static string Run()
     {
+        using var sampleMap=new SampleMapValidationScope();
         int count=0;void Check(bool ok,string name){if(!ok)throw new Exception("Shop: "+name);count++;}
         var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();
         var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var list=Find<OrderListUI>();var cook=Find<CookingManager>();var spawner=Find<OrderSpawner>();

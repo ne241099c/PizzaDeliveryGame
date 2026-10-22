@@ -11,6 +11,7 @@ public static partial class M3Validation
 
     public static string Run()
     {
+        using var sampleMap=new SampleMapValidationScope();
         MapManager map = UnityEngine.Object.FindFirstObjectByType<MapManager>();
         if (!Application.isPlaying || map == null || !map.IsReady)
             throw new InvalidOperationException("Open SampleScene and enter Play Mode first.");

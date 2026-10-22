@@ -1,0 +1,2 @@
+PASS: 100 towns x 3 days completed; four 30-day-limit balance runs recorded (bankruptcy ends a run).
+Safety uses 10000 experimental cash to isolate map completion; balance uses normal cash and rules.

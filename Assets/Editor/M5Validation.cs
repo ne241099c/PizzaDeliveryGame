@@ -9,6 +9,7 @@ public static class M5Validation
     public static void RunMenu() => Debug.Log(Run());
     public static string Run()
     {
+        using var sampleMap=new SampleMapValidationScope();
         if(!Application.isPlaying)throw new InvalidOperationException("Enter Play first.");
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var savingScope=save?.SuppressSaving();save?.StartNewGame();
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();

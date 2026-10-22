@@ -13,6 +13,7 @@ public static class M4Validation
 
     public static string Run()
     {
+        using var sampleMap=new SampleMapValidationScope();
         var map = UnityEngine.Object.FindFirstObjectByType<MapManager>();
         if (!Application.isPlaying || map == null || !map.IsReady)
             throw new InvalidOperationException("Enter Play in SampleScene first.");

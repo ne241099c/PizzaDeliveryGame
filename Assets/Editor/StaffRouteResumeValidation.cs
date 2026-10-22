@@ -13,6 +13,7 @@ public static class StaffRouteResumeValidation
     private static bool Same(byte[] a,byte[] b)=>a==null?b==null:b!=null && a.SequenceEqual(b);
     public static string Run()
     {
+        using var sampleMap=new SampleMapValidationScope();
         if(!Application.isPlaying)throw new InvalidOperationException("Play required.");
         int count=0;void Check(bool ok,string message){if(!ok)throw new Exception(message);count++;}
         var save=Find<CampaignSaveManager>();var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var menu=Find<TitleMenuUI>();var router=Find<ScreenRouter>();

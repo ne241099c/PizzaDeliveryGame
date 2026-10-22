@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-[Serializable] public sealed class CitySaveState {public int version=1,seed,blocks,day;}
+[Serializable] public sealed class CitySaveState {public bool generated;public int version=1,seed,blocks,day;}
 
 public class MapManager : MonoBehaviour
 {
@@ -37,13 +37,13 @@ public class MapManager : MonoBehaviour
     public string TomorrowCityInfo(int day)=>City!=null && citySettings.Blocks(day+1)>City.blocks.Count?"あした、新しい街区が開きます。":"あしたも同じ街で営業します。";
     public void NewCampaignCity()
     {
-        CityState=generateCampaignCity && !UseSampleForValidation?new CitySaveState{seed=SeedOverride??Guid.NewGuid().GetHashCode(),day=1}:null;
+        CityState=generateCampaignCity && !UseSampleForValidation?new CitySaveState{generated=true,seed=SeedOverride??Guid.NewGuid().GetHashCode(),day=1}:null;
     }
-    public CitySaveState CaptureCity()=>CityState==null?null:new CitySaveState{seed=CityState.seed,blocks=CityState.blocks,day=CityState.day};
-    public bool ValidCity(CitySaveState state,int day)=>state==null || state.version==1 && state.day==day && state.blocks==citySettings.Blocks(day);
+    public CitySaveState CaptureCity()=>CityState==null?null:new CitySaveState{generated=true,seed=CityState.seed,blocks=CityState.blocks,day=CityState.day};
+    public bool ValidCity(CitySaveState state,int day)=>state==null || !state.generated || state.version==1 && state.day==day && state.blocks==citySettings.Blocks(day);
     public void RestoreCity(CitySaveState state)
     {
-        CityState=state==null?null:new CitySaveState{seed=state.seed,blocks=state.blocks,day=state.day};
+        CityState=state==null || !state.generated?null:new CitySaveState{generated=true,seed=state.seed,blocks=state.blocks,day=state.day};
         PrepareCity(state?.day??1);
     }
     public void PrepareCity(int day)
