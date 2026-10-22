@@ -24,5 +24,7 @@ public sealed class ReputationManager : MonoBehaviour
     public void Restore(float value) => Value=Mathf.Clamp(value,0,maximumReputation);
     public void RecordArrival(float lateSeconds,float service) => Apply(ArrivalChange(lateSeconds,service));
     public void RecordCancellation(int count, bool closing = false) => Apply(-(closing ? closingCancellationLoss : cancellationLoss)*count);
+    /// <summary>Extra reputation, e.g. +0.5 for an on-time three-star pizza.</summary>
+    public void AddBonus(float delta) { if(delta>0) Apply(delta); }
     private void Apply(float delta) => Value=Mathf.Clamp(Value+delta,0,maximumReputation);
 }

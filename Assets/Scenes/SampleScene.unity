@@ -13287,10 +13287,10 @@ Camera:
   m_LensShift: {x: 0, y: 0}
   m_NormalizedViewPortRect:
     serializedVersion: 2
-    x: 0.25625
-    y: -0.097222224
-    width: 1.225
-    height: 0.8472222
+    x: 0.1373898
+    y: 0.26851854
+    width: 0.65679014
+    height: 0.5648148
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 34
@@ -36249,6 +36249,8 @@ GameObject:
   - component: {fileID: 1404697838}
   - component: {fileID: 1404697839}
   - component: {fileID: 1404697840}
+  - component: {fileID: 1404697842}
+  - component: {fileID: 1404697841}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -36605,6 +36607,9 @@ MonoBehaviour:
   score: {fileID: 1404697810}
   stats: {fileID: 1404697818}
   planner: {fileID: 1404697815}
+  crew: {fileID: 1404697842}
+  cooking: {fileID: 1404697835}
+  handover: {fileID: 1404697841}
   preparationPanel: {fileID: 1750198639}
   openButton: {fileID: 1342885315}
   dayText: {fileID: 2080579020}
@@ -36626,6 +36631,9 @@ MonoBehaviour:
   clock: {fileID: 1404697819}
   flow: {fileID: 1404697814}
   roster: {fileID: 1404697813}
+  crew: {fileID: 1404697842}
+  kitchenWageBase: 40
+  kitchenWageAbilityFactor: 50
   materialCostPerOrder: 20
   fuelCostPerDistance: 0.4
   wageBase: 50
@@ -36652,6 +36660,18 @@ MonoBehaviour:
   training: {fileID: 1404697828}
   clock: {fileID: 1404697819}
   roster: {fileID: 1404697813}
+  crew: {fileID: 1404697842}
+  kitchenApplicantChance: 0.6
+  kitchenAbilityRange: {x: 0.3, y: 0.8}
+  kitchenNamePool:
+  - Sakura
+  - Tsumugi
+  - Kanata
+  - Hiro
+  - Asahi
+  - Ema
+  - Shion
+  - Ritsu
   economy: {fileID: 1404697824}
   maximumPeople: 4
   minimumApplicants: 2
@@ -36795,13 +36815,14 @@ MonoBehaviour:
   recruitment: {fileID: 1404697825}
   training: {fileID: 1404697828}
   spawner: {fileID: 1404697817}
+  crew: {fileID: 1404697842}
   choicePanel: {fileID: 1148409191}
   continueButton: {fileID: 2018630986}
   newButton: {fileID: 186225408}
   notice: {fileID: 1757959472}
   choiceText: {fileID: 54180254}
   filename: campaign.json
-  formatVersion: 2
+  formatVersion: 3
 --- !u!114 &1404697830
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36967,11 +36988,30 @@ MonoBehaviour:
   facilities: {fileID: 1404697836}
   clock: {fileID: 1404697819}
   orders: {fileID: 1404697812}
+  crew: {fileID: 1404697842}
+  handover: {fileID: 1404697841}
   cookSeconds: 12
   initialOvens: 1
-  perfectStart: 0.85
-  perfectEnd: 0.95
-  perfectBakeBonus: 15
+  initialBenches: 2
+  doughSeconds: 1
+  sauceSeconds: 2
+  assemblySeconds: 3
+  bakeSeconds: 4
+  packSeconds: 2
+  bakeBandHalfWidth: 0.4
+  burnAfterBand: 5
+  staffTimeBase: 1.3
+  staffTimeScale: 0.6
+  sauceThreshold: 0.7
+  staffSuccessBase: 0.3
+  staffSuccessScale: 0.5
+  twoStarBonus: 8
+  threeStarBonus: 20
+  threeStarReputation: 0.5
+  rackCapacity: 6
+  packingSlots: 2
+  useFixedSeed: 0
+  randomSeed: 5113
 --- !u!114 &1404697836
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36995,6 +37035,9 @@ MonoBehaviour:
   expansionPrices:
   - 800
   - 1400
+  workbenchPrices:
+  - 400
+  - 700
   advertisingPrices:
   - 100
   - 200
@@ -37015,9 +37058,11 @@ MonoBehaviour:
   ovenMaintenance: 30
   bikeMaintenance: 20
   expansionMaintenance: 40
+  workbenchMaintenance: 15
   initialOvens: 1
   initialBikeLevel: 1
   initialMaximumPeople: 4
+  initialWorkbenches: 2
   implementationStage: 4
 --- !u!114 &1404697837
 MonoBehaviour:
@@ -37160,6 +37205,39 @@ MonoBehaviour:
   settlementLabel: {fileID: 131738270}
   courierContent: {fileID: 1280267879}
   timerFill: {fileID: 823322052}
+--- !u!114 &1404697841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1404697809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48419bcec540440a68a9a74d5e8ff137, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandoverManager
+  orders: {fileID: 1404697812}
+  roster: {fileID: 1404697813}
+  flow: {fileID: 1404697814}
+  clock: {fileID: 1404697819}
+--- !u!114 &1404697842
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1404697809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 704259c50f5de4b3c9367d7f80828203, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KitchenCrew
+  crew:
+  - Name: Mio
+    id: 
+    speed: 0.4
+    care: 0.4
 --- !u!1 &1408363483
 GameObject:
   m_ObjectHideFlags: 0

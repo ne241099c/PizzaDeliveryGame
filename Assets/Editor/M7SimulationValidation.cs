@@ -51,7 +51,7 @@ public static class M7SimulationValidation
                 Check(row.EquipmentMaintenance>=0 && row.EquipmentMaintenance<=180,"equipment maintenance bounds");
                 Check(row.OvenLevel>=1 && row.OvenLevel<=3 && row.BikeLevel>=1 && row.BikeLevel<=3 && row.ShopLevel>=0 && row.ShopLevel<=2,"equipment levels");
                 Check(row.OvenUtilization>=0 && row.OvenUtilization<=1.0001f && row.MaximumCookingQueue>=0,"queue and clipped oven utilization");
-                Check(row.PerfectBakeBonus==0,"autoplay uses standard pizzas");Check(row.Promise>=row.MinimumPromise-.001f,"physical promise lower bound");
+                var kitchen=UnityEngine.Object.FindFirstObjectByType<CookingManager>();Check(row.QualityBonus==row.TwoStarOnTime*kitchen.TwoStarBonus+row.ThreeStarOnTime*kitchen.ThreeStarBonus,"autoplay quality bonus reconciles with stars");Check(row.Promise>=row.MinimumPromise-.001f,"physical promise lower bound");
                 Check(row.Spawned==row.Delivered+row.Cancelled,"all orders resolved");
                 Check(index!=0 || row.FacilityPurchases==0,"F buys no equipment");
                 Check(row.FacilityPurchases<=row.PreparationCosts && (row.FacilityPurchases==0)==string.IsNullOrEmpty(row.FacilityPurchase),"one preparation purchase recorded");

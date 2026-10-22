@@ -53,7 +53,7 @@ public sealed class DeliveryFeedback : MonoBehaviour
             string caption=(late?"遅れ ":"配達完了 ")+points.ToString("+0;-0;0");
             if(tip>0)caption+="\n<color=#"+ColorUtility.ToHtmlStringRGB(UITheme.Active.money)+">+チップ "+tip+"</color>";
             if(late)caption+="\n減点 -"+Mathf.Max(0,penalty);
-            if(delivery.Order.Quality==BakeQuality.Perfect && !late)caption+="\n完璧 +"+cooking.BonusForArrival(delivery.Order,delivery.ArrivesAt);
+            if(cooking.BonusForArrival(delivery.Order,delivery.ArrivesAt)>0)caption+="\n"+new string('★',delivery.Order.Stars)+" +"+cooking.BonusForArrival(delivery.Order,delivery.ArrivesAt);
             StartCoroutine(Float(caption,node.Position,late?UITheme.Active.bad:UITheme.Active.good));
         }
     }

@@ -5,7 +5,7 @@ public sealed class DayLedger
     public decimal PreparationCosts { get; internal set; }
     public decimal FacilityPurchases {get;internal set;}
     public decimal EquipmentMaintenance {get;internal set;}
-    public decimal PerfectBakeBonus {get;internal set;}
+    public decimal QualityBonus {get;internal set;}
     public decimal Revenue { get; internal set; }
     public decimal Materials { get; internal set; }
     public decimal Distance { get; internal set; }

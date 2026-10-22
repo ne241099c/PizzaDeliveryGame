@@ -14,16 +14,22 @@ public static class M7Validation
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var scope=save.SuppressSaving();
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         campaign.NewGame();clock.AutomaticTick=false;spawner.enabled=false;campaign.StartBusiness();
+        // One apprentice (speed 0.4): assembly 6x1.06, oven 4, packing 2x1.06. Two benches, one oven.
+        var mio=UnityEngine.Object.FindFirstObjectByType<KitchenCrew>().People[0];float work=cook.StaffWorkSeconds(mio),pack=cook.StaffPackSeconds(mio),bake=cook.BakeSeconds;
+        Check(Mathf.Abs(work-6.36f)<.001f && Mathf.Abs(pack-2.12f)<.001f && bake==4,"apprentice step times");
+        var reference=new KitchenStaff("Reference",.5f,.5f);Check(Mathf.Abs(cook.StaffWorkSeconds(reference)+bake+cook.StaffPackSeconds(reference)-cook.CookSeconds)<.001f,"standard staff total equals cook seconds for the promise minimum");
         var first=new Order("Goal1","First pizza",0,100);var second=new Order("Goal2","Second pizza",0,100);list.AddOrder(first);list.AddOrder(second);
-        Check(first.Baking==BakingState.Cooking && second.Baking==BakingState.Waiting,"single oven FIFO queue");
+        Check(first.Baking==BakingState.Cooking && second.Baking==BakingState.Waiting,"single staff takes the oldest ticket first");
         Check(!list.SelectOnly(first) && !list.SelectOnly(second),"uncooked orders cannot be selected");Check(economy.Ledger.Materials==0,"no materials charged while cooking");
-        clock.Advance(12);Check(first.IsReady && second.Baking==BakingState.Cooking && Mathf.Abs(second.CookStartedAt-12)<.001f,"first completion starts second at exact time");
-        Check(list.SelectOnly(first),"baked order can be selected");Check(first.Deadline==100,"cooking does not rewrite deadline");
-        clock.Advance(12);Check(second.IsReady,"second pizza completes");
+        clock.Advance(work+.001f);Check(cook.JobFor(first).Stage==PizzaStage.Baking && second.Baking==BakingState.Cooking && Mathf.Abs(cook.JobFor(second).StartedAt-work)<.001f,"assembled pizza enters the oven and the next ticket starts at the exact time");
+        clock.Advance(2*work+pack-.01f-clock.ElapsedSeconds);Check(!first.IsReady,"packing waits for the staff member");
+        clock.Advance(.02f);Check(first.IsReady && first.Stars>=2 && cook.JobFor(second).Stage==PizzaStage.Baking && Mathf.Abs(cook.JobFor(second).OvenStartedAt-2*work)<.001f,"first pizza packed after the second assembly; staff always earn the bake point");
+        Check(list.SelectOnly(first),"packed order can be selected");Check(first.Deadline==100,"cooking does not rewrite deadline");
+        clock.Advance(2*work+bake+pack+.01f-clock.ElapsedSeconds);Check(second.IsReady,"second pizza completes");
         campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();
-        var expired=new Order("Goal1","Expires in oven",0,5);var next=new Order("Goal2","Next pizza",0,100);list.AddOrder(expired);list.AddOrder(next);clock.Advance(5);
+        var expired=new Order("Goal1","Expires on the bench",0,5);var next=new Order("Goal2","Next pizza",0,100);list.AddOrder(expired);list.AddOrder(next);clock.Advance(5);
         Check(expired.Status==OrderStatus.Cancelled && !list.Contains(expired),"cooking order expires at deadline");
-        Check(next.Baking==BakingState.Cooking && Mathf.Abs(next.CookStartedAt-5)<.001f,"expired pizza frees oven at expiry");clock.Advance(12);Check(next.IsReady,"replacement cooking completes");
+        Check(cook.JobFor(next)!=null && Mathf.Abs(cook.JobFor(next).StartedAt-5)<.001f,"expired pizza frees the staff member at expiry");clock.Advance(work+bake+pack+.01f);Check(next.IsReady,"replacement cooking completes");
         campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var closing=new Order("Goal1","Closing cooking",299,100);clock.Advance(299);list.AddOrder(closing);clock.Advance(1);
         Check(closing.Status==OrderStatus.Cancelled && list.OrderCount==0,"closing cancels cooking and queue");
         Check(Mathf.Abs(spawner.MinimumPromiseSeconds-(spawner.ShortestRoundTripSeconds("Goal2")*1.1f+cook.CookSeconds))<.001f,"round trip and cooking minimum");
@@ -33,23 +39,41 @@ public static class M7Validation
     }
     private static void ValidateQuality(Action<bool,string> check)
     {
-        var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
-        check(!cook.IsPerfectProgress(.8499f) && cook.IsPerfectProgress(.85f) && cook.IsPerfectProgress(.95f) && !cook.IsPerfectProgress(.9501f),"perfect-band exact formula boundaries");
+        var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();var crew=UnityEngine.Object.FindFirstObjectByType<KitchenCrew>();var stats=UnityEngine.Object.FindFirstObjectByType<DayStats>();var reputation=UnityEngine.Object.FindFirstObjectByType<ReputationManager>();
         cook.ManualControlEnabled=true;
+        // Hand-made pizzas only: no kitchen staff today.
+        Order Start(float promise){campaign.NewGame();crew.Restore(new KitchenStaff[0]);spawner.enabled=false;campaign.StartBusiness();var order=new Order("Goal1","Hand made",0,promise);list.AddOrder(order);return order;}
+        void Assemble(Order order,float sauce,Topping topping){check(cook.Claim(order,0) && cook.AddDough(0) && cook.AddSauce(0,sauce) && cook.AddCheese(0) && cook.AddTopping(0,topping),"manual assembly steps in order");}
         foreach(bool late in new[]{false,true})
         {
-            campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var order=new Order("Goal1","Perfect delivery",0,late?12:1000);list.AddOrder(order);clock.Advance(cook.CookSeconds*.84f);
-            check(!cook.TryTakeOut(order) && order.Baking==BakingState.Cooking,"early press leaves pizza cooking");clock.Advance(cook.CookSeconds*.06f);
-            list.RefreshCookingUI();var content=(Transform)new SerializedObject(list).FindProperty("orderListContent").objectReferenceValue;
-            var card=content.GetComponentsInChildren<CookingCardUI>(true).First(v=>v.BoundOrder==order);var takeOut=(UnityEngine.UI.Button)new SerializedObject(card).FindProperty("takeOut").objectReferenceValue;
-            check(takeOut.interactable,"real take-out button enables during band");takeOut.onClick.Invoke();check(order.IsReady && order.Quality==BakeQuality.Perfect,"real card button performs timed perfect extraction");
-            check(cook.BonusForArrival(order,order.Deadline)==15 && cook.BonusForArrival(order,order.Deadline+.01f)==0,"perfect bonus only on-time inclusive");
+            var order=Start(late?6:1000);Assemble(order,.75f,Topping.Basil);
+            check(cook.PutInOven(0,0) && !cook.CanTakeOut(0),"raw pizza cannot be taken out");clock.Advance(cook.BakeSeconds);
+            check(cook.TakeOut(0) && cook.Box(cook.JobFor(order)) && cook.CloseBox(cook.JobFor(order)) && order.IsReady && order.Stars==3,"sauce, correct topping and bake in the band give three stars");
+            check(cook.BonusForArrival(order,order.Deadline)==20 && cook.BonusForArrival(order,order.Deadline+.01f)==0,"three-star bonus only on time inclusive");
+            float before=reputation.Value;
             list.SelectOnly(order);roster.SelectForDispatch(roster.People[0]);planner.DispatchWithSuggestion();var trip=roster.People[0].CurrentTrip;
-            check(trip!=null,"perfect pizza dispatched through real flow");clock.Advance(trip.ReturnsAt-clock.ElapsedSeconds+1);
-            check(economy.Ledger.PerfectBakeBonus==(late?0:15),"real ledger perfect bonus without double credit");
+            check(trip!=null,"hand-made pizza dispatched through real flow");clock.Advance(trip.ReturnsAt-clock.ElapsedSeconds+1);
+            check(economy.Ledger.QualityBonus==(late?0:20) && stats.ThreeStarOnTime==(late?0:1),"real ledger quality bonus without double credit");
+            check(late || reputation.Value>=before+1.5f-.001f,"on-time three-star adds the quality reputation bonus");
         }
-        campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var automatic=new Order("Goal1","Automatic",0,100);list.AddOrder(automatic);clock.Advance(cook.CookSeconds);check(automatic.IsReady && automatic.Quality==BakeQuality.Standard && cook.BonusForArrival(automatic,12)==0,"ignored baking automatically standard without penalty");
-        campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var last=new Order("Goal1","Late extraction",0,100);list.AddOrder(last);clock.Advance(cook.CookSeconds*.97f);check(cook.TryTakeOut(last) && last.Quality==BakeQuality.Standard,"press after perfect band yields standard");
+        var two=Start(1000);Assemble(two,.5f,Topping.Pepperoni);check(cook.PutInOven(0,0),"oven accepts assembled pizza");clock.Advance(cook.BakeSeconds);cook.TakeOut(0);
+        var job=cook.JobFor(two);check(!job.SaucePoint && !job.ToppingPoint && job.BakePoint && job.Stars==2,"thin sauce and wrong topping leave one point and two stars");
+        check(cook.Box(job) && cook.CloseBox(job) && two.Stars==2 && cook.BonusForArrival(two,5)==8,"two-star bonus");
+        var burnt=Start(1000);Assemble(burnt,1,Topping.Basil);cook.PutInOven(0,0);clock.Advance(cook.BurnAt+.01f);check(cook.TakeOut(0) && cook.JobFor(burnt).Burnt && cook.JobFor(burnt).Stars==1,"forgotten pizza burns to one star");
+        var a=Start(1000);var b=new Order("Goal2","Second",0,1000);list.AddOrder(b);
+        check(cook.Claim(a,0) && cook.ClaimRejection(b,0).Length>0 && !cook.Claim(b,0) && cook.Claim(b,1),"a workbench holds one pizza");
+        cook.AddDough(0);cook.AddSauce(0,1);cook.AddCheese(0);cook.AddTopping(0,Topping.Basil);cook.AddDough(1);cook.AddSauce(1,1);cook.AddCheese(1);cook.AddTopping(1,Topping.Basil);
+        check(cook.PutInOven(0,0) && !cook.PutInOven(1,0),"an oven holds one pizza");
+        // Staff do not take a ticket the player claimed.
+        campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();
+        var busy=new Order("Goal1","Staff first",0,1000);list.AddOrder(busy);check(cook.JobFor(busy).Worker==PizzaWorker.Staff,"staff take tickets by default");
+        var mine=new Order("Goal2","Mine",0,1000);list.AddOrder(mine);check(mine.Baking==BakingState.Waiting && cook.Claim(mine,1),"player claims a waiting ticket on a free bench");
+        var theirs=new Order("Goal1","Theirs",0,1000);list.AddOrder(theirs);clock.Advance(cook.StaffWorkSeconds(crew.People[0])+.01f);
+        check(cook.JobFor(mine).Worker==PizzaWorker.Player && cook.JobFor(theirs)!=null && cook.JobFor(theirs).Worker==PizzaWorker.Staff,"staff skip the ticket the player claimed");
+        // The counter rack holds six packed boxes.
+        var full=Start(1000);for(int i=0;i<cook.RackCapacity;i++)list.AddOrder(ReadyOrder("Goal2","Rack "+i,0,1000));Assemble(full,1,Topping.Basil);cook.PutInOven(0,0);clock.Advance(cook.BakeSeconds);cook.TakeOut(0);cook.Box(cook.JobFor(full));
+        check(!cook.CloseBox(cook.JobFor(full)) && cook.CloseRejection(cook.JobFor(full)).Contains("いっぱい"),"full counter rack blocks closing a box");
+        cook.ManualControlEnabled=false;check(!cook.Claim(new Order("Goal1","Off",0,10),1),"manual cooking can be disabled for autoplay");cook.ManualControlEnabled=true;
         campaign.NewGame();
     }
     private static void ValidateFacilities(Action<bool,string> check)
@@ -63,7 +87,7 @@ public static class M7Validation
         check(facilities.Purchase(FacilityType.Advertising,2) && !facilities.Purchase(FacilityType.Advertising,1),"one advertising choice per day");
         string json=save.SnapshotJson();check(save.TryParse(json,out var data,out _) && data.facilities.oven==1 && data.facilities.bike==1 && data.facilities.expansion==1,"facility save schema validates");
         campaign.NewGame();campaign.RestorePreparation(data);check(facilities.Ovens==2 && facilities.BikeLevel==2 && facilities.MaximumPeople==5 && facilities.Advertisement==0,"restore equipment but not advertising");check(economy.Ledger.FacilityPurchases==CampaignSaveManager.Decimal(data.facilityPurchaseCosts) && economy.Cash==CampaignSaveManager.Decimal(data.cash),"facility spending and preparation money round trip");
-        var legacy=save.Capture();legacy.version=1;legacy.facilities=null;legacy.facilityPurchaseCosts=null;check(save.TryParse(JsonUtility.ToJson(legacy),out var migrated,out _) && migrated.version==2 && migrated.facilities.oven==0,"old version one migrates in memory");
+        var legacy=save.Capture();legacy.version=1;legacy.facilities=null;legacy.facilityPurchaseCosts=null;check(save.TryParse(JsonUtility.ToJson(legacy),out var migrated,out _) && migrated.version==3 && migrated.facilities.oven==0 && migrated.facilities.workbench==0 && migrated.crew.Count==1 && migrated.crew[0].Name=="Mio","old version one migrates in memory to version three with the starting apprentice");
         campaign.StartBusiness();check(!facilities.Purchase(FacilityType.Oven) && facilities.LastMessage.Contains("preparation"),"business blocks purchases");UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().enabled=false;clock.Advance(clock.BusinessDuration+1000);check(economy.Ledger.EquipmentMaintenance==90 && economy.Ledger.FixedCosts==240,"maintenance in real settlement");
         campaign.NewGame();check(facilities.Ovens==1 && facilities.BikeLevel==1 && facilities.MaximumPeople==4,"new game resets facilities");
     }
@@ -76,11 +100,16 @@ public static class M7Validation
         check(Mathf.Abs(map.GetTravelTime("Store-N1",roster.People[0])*1.08f-baseTime)<.0001f,"bike level two speed formula");check(Mathf.Abs(dynamics.EquipmentRiskMultiplier-.9f)<.0001f,"bike level two risk formula");check(recruitment.MaximumPeople==5,"shop level one team limit");check(spawner.MinimumPromiseSeconds<minimum && order.Deadline==deadline,"upgrades update minimum without rewriting old deadlines");
         f.Restore(new FacilitySaveData{oven=2,bike=2,expansion=2});check(Mathf.Abs(map.GetTravelTime("Store-N1",roster.People[0])*1.16f-baseTime)<.0001f && Mathf.Abs(dynamics.EquipmentRiskMultiplier-.8f)<.0001f,"bike level three absolute multipliers");check(recruitment.MaximumPeople==6 && f.Maintenance==180,"maximum slots and maintenance");
         var funding=new SerializedObject(economy);float initial=funding.FindProperty("initialCash").floatValue;funding.FindProperty("initialCash").floatValue=10000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=initial;funding.ApplyModifiedPropertiesWithoutUndo();
-        var people=roster.People.ToList();while(roster.People.Count<6){if(recruitment.Applicants.Count==0)recruitment.GenerateDay();check(recruitment.Hire(recruitment.Applicants[0]),"actual hire into expanded team");}check(recruitment.HireRejection(recruitment.Applicants.FirstOrDefault()).Length>0,"expanded maximum still rejects overflow");
+        var people=roster.People.ToList();while(recruitment.TeamCount<6){if(recruitment.Applicants.Count==0)recruitment.GenerateDay();check(recruitment.Hire(recruitment.Applicants[0]),"actual hire into expanded team");}check(recruitment.HireRejection(recruitment.Applicants.FirstOrDefault()).Length>0,"expanded maximum still rejects overflow");
         float interval=spawner.ExpectedInterval;check(f.Purchase(FacilityType.Advertising,3) && Mathf.Abs(spawner.ExpectedInterval*1.3f-interval)<.001f,"advertising demand applied once");
         campaign.StartBusiness();spawner.enabled=false;
         var pizzas=Enumerable.Range(0,4).Select(i=>new Order("Goal1","Oven "+i,0,200)).ToArray();foreach(var pizza in pizzas)list.AddOrder(pizza);
-        check(cook.OvenCount==3 && pizzas.Count(o=>o.Baking==BakingState.Cooking)==3 && pizzas[3].Baking==BakingState.Waiting,"three simultaneous ovens and FIFO overflow");clock.Advance(cook.CookSeconds);check(pizzas.Take(3).All(o=>o.IsReady) && pizzas[3].Baking==BakingState.Cooking,"multi-oven completion starts next pizza");
+        // The apprentice takes pizza 0; the player bakes pizzas 1 and 2 by hand; pizza 3 waits for a free cook.
+        check(cook.OvenCount==3 && cook.JobFor(pizzas[0]).Worker==PizzaWorker.Staff && pizzas[3].Baking==BakingState.Waiting,"one staff member, three ovens");
+        foreach(int i in new[]{1,2}){check(cook.Claim(pizzas[i],1) && cook.AddDough(1) && cook.AddSauce(1,1) && cook.AddCheese(1) && cook.AddTopping(1,Topping.Basil) && cook.PutInOven(1,i-1),"hand-made pizza "+i+" enters oven "+(i-1));}
+        clock.Advance(cook.StaffWorkSeconds(UnityEngine.Object.FindFirstObjectByType<KitchenCrew>().People[0])+.01f);
+        check(Enumerable.Range(0,3).All(i=>cook.OvenJob(i)!=null) && cook.JobFor(pizzas[0]).Oven==2,"three ovens bake at the same time");
+        check(cook.JobFor(pizzas[3])!=null && cook.JobFor(pizzas[3]).Worker==PizzaWorker.Staff,"freed staff member starts the waiting ticket");
         var route=new ManualDeliveryRoute(map);route.TryReplace(RoadPathfinder.Suggest(map,new[]{pizzas[0]},roster.People[0]).EdgeIds);var plan=route.BuildCompletion(new[]{pizzas[0]},roster.People[0]);var trip=new DeliveryTrip(map,plan,roster.People[0],clock.ElapsedSeconds,clock.ToRealSeconds(1),dynamics,()=>0);
         float returns=trip.ReturnsAt;f.Restore(new FacilitySaveData());check(trip.ReturnsAt==returns && Mathf.Abs(trip.EquipmentRiskAtDispatch-.8f)<.0001f,"speed and risk frozen at dispatch");
         check(economy.RepairCost(0)==0 && economy.RepairCost(3)==90,"repair cost exact formula");stats.RecordAccident();stats.RecordAccident();clock.Advance(clock.BusinessDuration+1000);check(economy.Ledger.Repairs==60,"real settlement charges repairs");check(f.DemandMultiplier==1,"advertising ends on closing");

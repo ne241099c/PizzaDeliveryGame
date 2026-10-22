@@ -12,9 +12,9 @@ public sealed class CookingCardUI : MonoBehaviour
     public void Show(Order order)
     {
         if(cooking==null)cooking=FindFirstObjectByType<CookingManager>();
-        if(bound!=order){bound=order;takeOut.onClick.RemoveAllListeners();takeOut.onClick.AddListener(()=>cooking.TryTakeOut(bound));}
-        float progress=cooking.Progress(order);fill.anchorMax=new Vector2(progress,1);perfectBand.anchorMin=new Vector2(cooking.PerfectStart,0);perfectBand.anchorMax=new Vector2(cooking.PerfectEnd,1);
-        UIVisibility.Set(takeOut.gameObject,order.Baking==BakingState.Cooking);takeOut.interactable=cooking.ManualControlEnabled && progress>=cooking.PerfectStart && progress<1;
-        quality.text=order.IsReady?(order.Quality==BakeQuality.Perfect?"Perfect":"Standard"):$"{progress:P0}";
+        bound=order;takeOut.onClick.RemoveAllListeners();
+        float progress=cooking.Progress(order);fill.anchorMax=new Vector2(progress,1);perfectBand.anchorMin=perfectBand.anchorMax=Vector2.zero;
+        UIVisibility.Set(takeOut.gameObject,false);
+        quality.text=order.IsReady?new string('★',Mathf.Max(1,order.Stars)):cooking.StageCaption(order);
     }
 }

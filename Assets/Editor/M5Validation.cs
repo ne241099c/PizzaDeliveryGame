@@ -73,7 +73,7 @@ public static class M5Validation
         clock.Advance(clock.BusinessDuration+1);
         check(clock.Phase==DayPhase.Ended && flow.ActiveTrips.Count==0,"settlement after close and all returns");
         var ledger=economy.Ledger;
-        check(ledger.Settled && ledger.FixedCosts==150 && ledger.Wages==roster.People.Sum(p=>economy.DailyWage(p)),"settlement pays all wages and fixed cost");
+        check(ledger.Settled && ledger.FixedCosts==150 && ledger.Wages==economy.TeamWages && economy.KitchenWages>0,"settlement pays all courier and kitchen wages and fixed cost");
         check(ledger.Fuel==economy.FuelCost(ledger.Distance),"fuel uses actual distance");
         check(economy.Cash==beforeSettlement-ledger.Fuel-ledger.Wages-ledger.FixedCosts-ledger.Repairs,"materials are not deducted twice");
         check(economy.Cash==ledger.OpeningCash+ledger.Profit,"profit reconciles to cash");
@@ -133,7 +133,7 @@ public static class M5Validation
         decimal beforeHire=economy.Cash,fee=recruitment.HiringCost(candidate.Person);
         check(recruitment.Hire(candidate) && roster.People.Contains(candidate.Person) && economy.Cash==beforeHire-fee,"hiring updates roster and charges three wage days");
         check(economy.Ledger.PreparationCosts==fee && fee==BusinessEconomy.Money(economy.DailyWage(candidate.Person)*3+400*Enumerable.Range(0,5).Average(i=>(decimal)candidate.Person.Potential((CourierAbility)i)-(decimal)candidate.Person.Ability((CourierAbility)i))),"hiring cost includes potential premium and is recorded separately");
-        decimal hiredWages=roster.People.Sum(p=>economy.DailyWage(p));
+        decimal hiredWages=economy.TeamWages; // couriers and kitchen staff on the roster
         campaign.StartBusiness();orders.AddOrder(M7Validation.ReadyOrder("Goal1","New hire",0,100));orders.SelectOnly(orders.Orders[0]);
         check(roster.SelectForDispatch(candidate.Person),"new hire selectable on the same day");
         var hireRoute=new ManualDeliveryRoute(map);hireRoute.TryReplace(RoadPathfinder.Suggest(map,orders.SelectedOrders,candidate.Person).EdgeIds);
@@ -141,12 +141,13 @@ public static class M5Validation
         check(!recruitment.Fire(roster.People[0]) && recruitment.LastMessage.Contains("preparation"),"firing blocked during business");
         check(!recruitment.Hire(recruitment.Applicants.FirstOrDefault()) && recruitment.LastMessage.Contains("preparation"),"hiring blocked during business");
         clock.Advance(clock.BusinessDuration+1000);
-        check(economy.Ledger.Wages==hiredWages,"hired courier wage included at settlement");
+        check(economy.Ledger.Wages==hiredWages && hiredWages>roster.People.Sum(p=>economy.DailyWage(p)),"hired courier and kitchen staff wages included at settlement");
         check(economy.Cash==economy.OpeningCash+economy.Ledger.Profit-economy.Ledger.PreparationCosts,"cash reconciles including preparation fees");
         var oldApplicants=recruitment.Applicants.ToArray();campaign.NextDay();
         check(clock.Phase==DayPhase.BeforeOpening && !recruitment.Applicants.Intersect(oldApplicants).Any(),"unhired applicants expire next morning");
         check(roster.People.Contains(candidate.Person) && candidate.Person.CurrentStamina==1,"hired courier carried with full stamina");
-        check(recruitment.Hire(recruitment.Applicants[0]) && roster.People.Count==4,"fourth courier can be hired");
+        // The team limit counts couriers and kitchen staff together: three couriers plus the starting apprentice fill four.
+        check(recruitment.TeamCount==4 && roster.People.Count==3,"three couriers and the kitchen apprentice fill the team of four");
         recruitment.GenerateDay();check(!recruitment.Hire(recruitment.Applicants[0]) && recruitment.LastMessage.Contains("limit"),"team limit rejects fifth hire with reason");
         decimal beforeFire=economy.Cash,severance=recruitment.SeveranceCost(roster.People[0]);
         check(recruitment.Fire(roster.People[0]) && economy.Cash==beforeFire-severance,"firing charges one daily wage and removes courier");

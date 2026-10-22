@@ -3,6 +3,13 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>A kitchen staff candidate (内勤). Separate from courier applicants so courier generation is unchanged.</summary>
+public sealed class KitchenApplicant
+{
+    public KitchenStaff Staff { get; }
+    public KitchenApplicant(KitchenStaff staff) => Staff=staff;
+}
+
 public sealed class Applicant
 {
     public DeliveryPerson Person { get; }
@@ -22,6 +29,10 @@ public sealed class RecruitmentManager : MonoBehaviour
     [SerializeField] private TrainingManager training;
     [SerializeField] private GameClock clock;
     [SerializeField] private DeliveryPersonSelector roster;
+    [SerializeField] private KitchenCrew crew;
+    [SerializeField,Range(0,1)] private float kitchenApplicantChance=.6f;
+    [SerializeField] private Vector2 kitchenAbilityRange=new(.3f,.8f);
+    [SerializeField] private string[] kitchenNamePool={"Sakura","Tsumugi","Kanata","Hiro","Asahi","Ema","Shion","Ritsu"};
     [SerializeField] private BusinessEconomy economy;
     [SerializeField, Min(1)] private int maximumPeople = 4;
     [SerializeField, Min(1)] private int minimumApplicants = 2;
@@ -49,15 +60,19 @@ public sealed class RecruitmentManager : MonoBehaviour
     [SerializeField] private string[] namePool = {"Minato","Sora","Haru","Yui","Kai","Riku","Mei","Rio","Nagi","Hina","Itsuki","Towa","Akari","Kohaku"};
     [SerializeField] private bool useFixedSeed;
     [SerializeField] private int randomSeed = 4351;
-    private System.Random random;
+    private System.Random random,kitchenRandom;
     private readonly List<Applicant> applicants=new();
+    private readonly List<KitchenApplicant> kitchenApplicants=new();
+    public IReadOnlyList<KitchenApplicant> KitchenApplicants => kitchenApplicants;
+    /// <summary>Couriers and kitchen staff together count against the team limit.</summary>
+    public int TeamCount => roster.People.Count+(crew!=null?crew.Count:0);
     public int? SeedOverride { get; set; }
     public IReadOnlyList<Applicant> Applicants => applicants;
     public int MaximumPeople => facilities!=null?facilities.MaximumPeople:maximumPeople;
     public string LastMessage { get; private set; }="";
     public event Action Changed;
     private void Awake() => ResetRandom();
-    public void ResetRandom() => random=new System.Random(SeedOverride ?? (useFixedSeed ? randomSeed : Environment.TickCount));
+    public void ResetRandom() {int seed=SeedOverride ?? (useFixedSeed ? randomSeed : Environment.TickCount);random=new System.Random(seed);kitchenRandom=new System.Random(unchecked(seed*31+7));}
     private float Range(Vector2 range) => Mathf.Lerp(range.x,range.y,(float)random.NextDouble());
     private void Shuffle<T>(T[] values)
     {
@@ -87,12 +102,14 @@ public sealed class RecruitmentManager : MonoBehaviour
     }
     public void RestoreApplicants(IEnumerable<Applicant> restored)
     {applicants.Clear();applicants.AddRange(restored);LastMessage="Applicants restored.";Changed?.Invoke();}
+    public void RestoreKitchenApplicants(IEnumerable<KitchenApplicant> restored){kitchenApplicants.Clear();kitchenApplicants.AddRange(restored);Changed?.Invoke();}
     public void GenerateDay()
     {
         if(random==null)ResetRandom();applicants.Clear();
         var names=namePool.Where(n=>!string.IsNullOrWhiteSpace(n)).Distinct().Except(roster.People.Select(p=>p.Name)).ToArray();Shuffle(names);
         int count=Mathf.Min(names.Length,random.Next(minimumApplicants,Mathf.Max(minimumApplicants,maximumApplicants)+1));
         foreach(string name in names.Take(count))applicants.Add(GenerateApplicant(name));
+        GenerateKitchenDay();
         LastMessage=count<minimumApplicants ? "Not enough unique names in the applicant name pool." : "Choose your team, then start business.";
         Changed?.Invoke();
     }
@@ -103,7 +120,7 @@ public sealed class RecruitmentManager : MonoBehaviour
     {
         if(clock.Phase!=DayPhase.BeforeOpening)return "Hiring is available only during preparation.";
         if(applicant==null || !applicants.Contains(applicant))return "This applicant is no longer available.";
-        if(roster.People.Count>=MaximumPeople)return $"Team limit: {MaximumPeople}.";
+        if(TeamCount>=MaximumPeople)return $"Team limit: {MaximumPeople}.";
         if(economy.Cash<HiringCost(applicant.Person))return $"Not enough cash. Need {HiringCost(applicant.Person):F2}.";
         return "";
     }
@@ -124,6 +141,41 @@ public sealed class RecruitmentManager : MonoBehaviour
         if(!person.IsAvailable)return Reject("This courier is travelling.");
         economy.SpendPreparation(SeveranceCost(person));roster.RemovePerson(person);
         LastMessage=$"Dismissed {person.Name}; severance paid.";Changed?.Invoke();return true;
+    }
+
+    // ---- kitchen staff (内勤) ----
+    private void GenerateKitchenDay()
+    {
+        if(kitchenRandom==null)ResetRandom();kitchenApplicants.Clear();
+        if(kitchenRandom.NextDouble()>=kitchenApplicantChance)return;
+        var used=new HashSet<string>(roster.People.Select(p=>p.Name).Concat(applicants.Select(a=>a.Person.Name)));if(crew!=null)used.UnionWith(crew.People.Select(c=>c.Name));
+        var names=kitchenNamePool.Where(n=>!string.IsNullOrWhiteSpace(n) && !used.Contains(n)).ToArray();if(names.Length==0)return;
+        float Ability()=>Mathf.Lerp(kitchenAbilityRange.x,kitchenAbilityRange.y,(float)kitchenRandom.NextDouble());
+        kitchenApplicants.Add(new KitchenApplicant(new KitchenStaff(names[kitchenRandom.Next(names.Length)],Ability(),Ability())));
+    }
+    public decimal HiringCost(KitchenStaff staff) => BusinessEconomy.Money(economy.DailyWage(staff)*(decimal)hiringWageDays);
+    public decimal SeveranceCost(KitchenStaff staff) => BusinessEconomy.Money(economy.DailyWage(staff)*(decimal)severanceWageDays);
+    public string HireRejection(KitchenApplicant applicant)
+    {
+        if(clock.Phase!=DayPhase.BeforeOpening)return "Hiring is available only during preparation.";
+        if(crew==null || applicant==null || !kitchenApplicants.Contains(applicant))return "This applicant is no longer available.";
+        if(TeamCount>=MaximumPeople)return $"Team limit: {MaximumPeople}.";
+        if(economy.Cash<HiringCost(applicant.Staff))return $"Not enough cash. Need {HiringCost(applicant.Staff):F2}.";
+        return "";
+    }
+    public bool Hire(KitchenApplicant applicant)
+    {
+        string reason=HireRejection(applicant);if(reason.Length>0)return Reject(reason);
+        if(!crew.Add(applicant.Staff))return Reject("A staff member with this name already exists.");
+        economy.SpendPreparation(HiringCost(applicant.Staff));kitchenApplicants.Remove(applicant);
+        LastMessage=$"Hired {applicant.Staff.Name}. Available today.";Changed?.Invoke();return true;
+    }
+    public bool Fire(KitchenStaff staff)
+    {
+        if(clock.Phase!=DayPhase.BeforeOpening)return Reject("Firing is available only during preparation.");
+        if(crew==null || !crew.People.Contains(staff))return Reject("Staff member is not in the team.");
+        economy.SpendPreparation(SeveranceCost(staff));crew.Remove(staff);
+        LastMessage=$"Dismissed {staff.Name}; severance paid.";Changed?.Invoke();return true;
     }
     private bool Reject(string reason) { LastMessage=reason;Changed?.Invoke();return false; }
 }

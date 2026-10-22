@@ -25,7 +25,7 @@ def code(s):
  x=call('execute_code',dict(code=s,skip_refresh=True));data=x.get('data',{})
  if data.get('logged_error_count',0):raise RuntimeError(x)
  return data.get('result',x.get('message',''))
-results=[code('return M6Validation.Run()+" / "+ScreenValidation.Run()+" / "+M7Validation.Run()+" / "+VisualValidation.Run();')];print(label,results[-1],flush=True)
+results=[code('return M6Validation.Run()+" / "+ScreenValidation.Run()+" / "+M7Validation.Run()+" / "+VisualValidation.Run()+" / "+ShopValidation.Run();')];print(label,results[-1],flush=True)
 code('UIThemeDriver.RenderingSuspended=true;return "Visual frame styling suspended only during accounting simulations";')
 try:
  for cls,start in [('M5SimulationValidation','Begin'),('M6SimulationValidation','Begin'),('M6SimulationValidation','BeginComparisons'),('M7SimulationValidation','Begin')]:

@@ -13,6 +13,7 @@ public class OrderListUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI emptyMessage;
     [SerializeField, Min(62)] private float rowHeight=110;
     [SerializeField, Min(0f)] private float urgentSeconds = 15f;
+    private CookingManager cooking;
     private readonly List<Order> orders = new();
     private readonly List<Button> orderButtons = new();
     private readonly List<Order> selectedOrders = new();
@@ -92,7 +93,8 @@ public class OrderListUI : MonoBehaviour
         float remaining = order.Deadline - clock.ElapsedSeconds;
         string deadline = remaining >= 0 ? $"{remaining:F0}s left" : $"LATE {-remaining:F0}s";
         var label = button.GetComponentInChildren<TextMeshProUGUI>();
-        string baking=order.Baking==BakingState.Waiting?"Waiting for oven":order.Baking==BakingState.Cooking?$"Cooking {Mathf.Max(0,order.CookFinishesAt-clock.ElapsedSeconds):F1}s":"Ready";
+        if(cooking==null)cooking=FindFirstObjectByType<CookingManager>();
+        string baking=order.Baking==BakingState.Waiting?"Waiting for oven":order.Baking==BakingState.Cooking?(cooking!=null?cooking.StageCaption(order):"Cooking"):"Ready";
         label.text = $"{order.DestinationName}\n<size=17>{deadline} / {baking}</size>";
         label.rectTransform.anchorMin=Vector2.zero;label.rectTransform.anchorMax=Vector2.one;label.rectTransform.offsetMin=new Vector2(8,48);label.rectTransform.offsetMax=new Vector2(-8,-8);
         label.fontSize = 20;

@@ -14,8 +14,18 @@ public sealed class DayStats : MonoBehaviour
     public int LateCount { get; private set; }
     public int CancelledCount { get; private set; }
     public int TotalScore { get; private set; }
+    /// <summary>Delivered pizzas by quality stars (index 1-3), and how many of the 2/3-star ones were on time.</summary>
+    public int[] StarCounts { get; } = new int[4];
+    public int TwoStarOnTime { get; private set; }
+    public int ThreeStarOnTime { get; private set; }
+    public void RecordQuality(int stars,bool onTime)
+    {
+        stars=Mathf.Clamp(stars,1,3);StarCounts[stars]++;
+        if(onTime && stars==2)TwoStarOnTime++;
+        if(onTime && stars==3)ThreeStarOnTime++;
+    }
 
-    public void ResetForDay() { SpawnedCount=ClosingCancelledCount=AccidentCount=DeliveredCount=LateCount=CancelledCount=TotalScore=0;BusySeconds=0; }
+    public void ResetForDay() { SpawnedCount=ClosingCancelledCount=AccidentCount=DeliveredCount=LateCount=CancelledCount=TotalScore=0;BusySeconds=0;TwoStarOnTime=ThreeStarOnTime=0;System.Array.Clear(StarCounts,0,StarCounts.Length); }
 
     public void RecordDelivery(int points, float lateSeconds)
     {

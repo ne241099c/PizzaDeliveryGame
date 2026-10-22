@@ -8,9 +8,9 @@ using UnityEditor;
 /// <summary>Autoplay drives the real UI selection/dispatch and GameClock; it contains no economic formulas.</summary>
 public sealed class SimulationDayRecord
 {
-    public const string Header="seed,day,promise_seconds,revenue,materials,fuel,wages,fixed_costs,profit,cash,reputation,delivered,late,cancelled,accidents,bankrupt,stock,spawned,busy_ratio,hired,roster_size,preparation_costs,policy,couriers,daily_growth,growth_count,training,training_costs,experience_growth,potentials,requested_promise_seconds,perfect_bake_bonus,repairs,oven_level,bike_level,shop_level,maximum_cooking_queue,oven_utilization,equipment_maintenance,facility_purchases,minimum_promise_seconds,facility_purchase";
+    public const string Header="seed,day,promise_seconds,revenue,materials,fuel,wages,fixed_costs,profit,cash,reputation,delivered,late,cancelled,accidents,bankrupt,stock,spawned,busy_ratio,hired,roster_size,preparation_costs,policy,couriers,daily_growth,growth_count,training,training_costs,experience_growth,potentials,requested_promise_seconds,quality_bonus,repairs,oven_level,bike_level,shop_level,maximum_cooking_queue,oven_utilization,equipment_maintenance,facility_purchases,minimum_promise_seconds,facility_purchase,two_star_on_time,three_star_on_time,kitchen_staff";
     public int Seed,Day,Delivered,Late,Cancelled,Accidents,Stock,Spawned,Hired,RosterSize;
-    public int OvenLevel,BikeLevel,ShopLevel,MaximumCookingQueue;
+    public int OvenLevel,BikeLevel,ShopLevel,MaximumCookingQueue,TwoStarOnTime,ThreeStarOnTime,KitchenStaff;
     public float OvenUtilization,MinimumPromise;
     public decimal EquipmentMaintenance,FacilityPurchases;
     public string FacilityPurchase="";
@@ -19,11 +19,11 @@ public sealed class SimulationDayRecord
     public string Policy="legacy",Couriers="",DailyGrowth="";
     public int GrowthCount;
     public string Training="",ExperienceGrowth="",Potentials="";
-    public decimal TrainingCosts,PerfectBakeBonus,Repairs;
+    public decimal TrainingCosts,QualityBonus,Repairs;
     public float Promise,Reputation,RequestedPromise;
     public decimal Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash;
     public bool Bankrupt;
-    public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy,Couriers,DailyGrowth,GrowthCount,Training,TrainingCosts,ExperienceGrowth,Potentials,RequestedPromise,PerfectBakeBonus,Repairs,OvenLevel,BikeLevel,ShopLevel,MaximumCookingQueue,OvenUtilization,EquipmentMaintenance,FacilityPurchases,MinimumPromise,FacilityPurchase}
+    public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy,Couriers,DailyGrowth,GrowthCount,Training,TrainingCosts,ExperienceGrowth,Potentials,RequestedPromise,QualityBonus,Repairs,OvenLevel,BikeLevel,ShopLevel,MaximumCookingQueue,OvenUtilization,EquipmentMaintenance,FacilityPurchases,MinimumPromise,FacilityPurchase,TwoStarOnTime,ThreeStarOnTime,KitchenStaff}
         .Select(Cell));
     private static string Cell(object value)
     {string s=value is IFormattable f?f.ToString(null,CultureInfo.InvariantCulture):value.ToString();return s.IndexOfAny(new[]{',','"','\n'})>=0 ? "\""+s.Replace("\"","\"\"")+"\"" : s;}
@@ -53,7 +53,7 @@ public sealed class DaySimulationSession : IDisposable
     private readonly bool originalManualCooking;
     private readonly bool train;private string trained;private decimal trainingCost;
     private readonly bool originalAutomaticTick,originalSpawnerEnabled;
-    private readonly int? originalOrderSeed,originalDynamicsSeed,originalRecruitmentSeed;
+    private readonly int? originalOrderSeed,originalDynamicsSeed,originalRecruitmentSeed,originalCookingSeed;
     private readonly CanvasGroup canvasGroup;
     private readonly bool originalInteractable,originalRaycasts;
     private readonly IDisposable savingScope;
@@ -89,7 +89,7 @@ public sealed class DaySimulationSession : IDisposable
         economy=Find<BusinessEconomy>();flow=Find<DeliveryFlowController>();roster=Find<DeliveryPersonSelector>();orders=Find<OrderListUI>();stats=Find<DayStats>();reputation=Find<ReputationManager>();planner=Find<DeliveryPlannerUI>();progression=Find<CourierProgression>();training=Find<TrainingManager>();
         cooking=Find<CookingManager>();originalManualCooking=cooking.ManualControlEnabled;cooking.ManualControlEnabled=false;
         originalAutomaticTick=clock.AutomaticTick;originalSpawnerEnabled=spawner.enabled;
-        originalOrderSeed=spawner.SeedOverride;originalDynamicsSeed=dynamics.SeedOverride;originalRecruitmentSeed=recruitment.SeedOverride;
+        originalOrderSeed=spawner.SeedOverride;originalDynamicsSeed=dynamics.SeedOverride;originalRecruitmentSeed=recruitment.SeedOverride;originalCookingSeed=cooking.SeedOverride;
         var canvas=Find<Canvas>();canvasGroup=canvas.GetComponent<CanvasGroup>();
         if(canvasGroup==null){canvasGroup=canvas.gameObject.AddComponent<CanvasGroup>();canvasGroup.hideFlags=HideFlags.DontSave;}
         originalInteractable=canvasGroup.interactable;originalRaycasts=canvasGroup.blocksRaycasts;
@@ -101,7 +101,7 @@ public sealed class DaySimulationSession : IDisposable
     private void StartPolicy()
     {
         // Separate sources prevent UI rendering/recruitment from consuming order/accident randomness.
-        spawner.SeedOverride=seed;dynamics.SeedOverride=seed;recruitment.SeedOverride=seed;
+        spawner.SeedOverride=seed;dynamics.SeedOverride=seed;recruitment.SeedOverride=seed;cooking.SeedOverride=seed;
         // E2 is an experimental initial condition only; never change the game's configured cash.
         var funding = new SerializedObject(economy);
         var initial = funding.FindProperty("initialCash");
@@ -135,7 +135,7 @@ public sealed class DaySimulationSession : IDisposable
             operatingMinimum=spawner.MinimumPromiseSeconds;
             if(hire)
             {
-                while(roster.People.Count<recruitment.MaximumPeople)
+                while(recruitment.TeamCount<recruitment.MaximumPeople)
                 {
                     var applicant=recruitment.Applicants.Where(a=>economy.Cash>=recruitment.HiringCost(a.Person)+settings.HiringReserve)
                         .OrderByDescending(a=>(a.Person.Driving+a.Person.LocalKnowledge+a.Person.Service+a.Person.Endurance+a.Person.Safety+a.Person.Capacity)/(double)economy.DailyWage(a.Person)).FirstOrDefault();
@@ -176,13 +176,14 @@ public sealed class DaySimulationSession : IDisposable
             throw new InvalidOperationException("Simulation exceeded maximum day time; inspect active trips.");
         if(clock.Phase!=DayPhase.Ended)return;
         var ledger=economy.Ledger;
-        var record=new SimulationDayRecord { Seed=seed,Day=campaign.DayNumber,Promise=spawner.PromiseSeconds,RequestedPromise=promises[policy],PerfectBakeBonus=ledger.PerfectBakeBonus,Repairs=ledger.Repairs,
+        var record=new SimulationDayRecord { Seed=seed,Day=campaign.DayNumber,Promise=spawner.PromiseSeconds,RequestedPromise=promises[policy],QualityBonus=ledger.QualityBonus,Repairs=ledger.Repairs,
             OvenLevel=facilities.LastOperatingState.oven+1,BikeLevel=facilities.LastOperatingState.bike+1,ShopLevel=facilities.LastOperatingState.expansion,MaximumCookingQueue=cooking.MaximumQueueLength,OvenUtilization=cooking.Utilization,EquipmentMaintenance=ledger.EquipmentMaintenance,FacilityPurchases=ledger.FacilityPurchases,MinimumPromise=operatingMinimum,FacilityPurchase=facilityPurchase,
             Revenue=ledger.Revenue,Materials=ledger.Materials,Fuel=ledger.Fuel,Wages=ledger.Wages,FixedCosts=ledger.FixedCosts,
             Profit=ledger.Profit,Cash=economy.Cash,Reputation=reputation.Value,Delivered=stats.DeliveredCount,Late=stats.LateCount,
             Cancelled=stats.CancelledCount,Accidents=stats.AccidentCount,Bankrupt=campaign.IsBankrupt,Stock=stats.ClosingCancelledCount,Spawned=stats.SpawnedCount,
             BusyRatio=stats.BusyRatio(roster.People.Count,clock.BusinessDuration),Hired=hired,RosterSize=roster.People.Count,
-            PreparationCosts=ledger.PreparationCosts,Policy=policyName,Couriers=progression.AbilitiesCsv(),DailyGrowth=progression.GrowthCsv(),GrowthCount=progression.GrowthCount,Training=trained,TrainingCosts=trainingCost,ExperienceGrowth=progression.ExperienceGrowthCsv(),Potentials=progression.PotentialsCsv() };
+            PreparationCosts=ledger.PreparationCosts,Policy=policyName,Couriers=progression.AbilitiesCsv(),DailyGrowth=progression.GrowthCsv(),GrowthCount=progression.GrowthCount,Training=trained,TrainingCosts=trainingCost,ExperienceGrowth=progression.ExperienceGrowthCsv(),Potentials=progression.PotentialsCsv(),
+            TwoStarOnTime=stats.TwoStarOnTime,ThreeStarOnTime=stats.ThreeStarOnTime,KitchenStaff=recruitment.TeamCount-roster.People.Count };
         Records.Add(record);DayCompleted?.Invoke(record);
         if(campaign.IsBankrupt || campaign.DayNumber>=days)
         {
@@ -206,7 +207,7 @@ public sealed class DaySimulationSession : IDisposable
         savingScope?.Dispose();
         cooking.ManualControlEnabled=originalManualCooking;
         clock.AutomaticTick=originalAutomaticTick;spawner.enabled=originalSpawnerEnabled;
-        spawner.SeedOverride=originalOrderSeed;dynamics.SeedOverride=originalDynamicsSeed;recruitment.SeedOverride=originalRecruitmentSeed;
+        spawner.SeedOverride=originalOrderSeed;dynamics.SeedOverride=originalDynamicsSeed;recruitment.SeedOverride=originalRecruitmentSeed;cooking.SeedOverride=originalCookingSeed;
         canvasGroup.interactable=originalInteractable;canvasGroup.blocksRaycasts=originalRaycasts;
         // Keep the temporary DontSave group reusable: delayed Destroy would invalidate a second run started this frame.
     }

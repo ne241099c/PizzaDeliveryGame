@@ -18,7 +18,7 @@ public class DeliveryFlowController : MonoBehaviour
     public event Action<DeliveryTrip> Dispatched;
     public event Action<DeliveryTrip> Returned;
     public event Action<int> RevenueEarned;
-    public event Action<int> PerfectBakeBonusEarned;
+    public event Action<int> QualityBonusEarned;
     public event Action<string> Message;
     public event Action TripsCleared;
     public void ResetForNewGame()
@@ -90,9 +90,11 @@ public class DeliveryFlowController : MonoBehaviour
                 int points = scoreManager.ScoreArrival(delivery.ArrivesAt, delivery.Order.Deadline, trip.ServiceAtDispatch)+bonus;
                 scoreManager.AddScore(points);
                 RevenueEarned?.Invoke(points);
-                if(bonus>0)PerfectBakeBonusEarned?.Invoke(bonus);
+                if(bonus>0)QualityBonusEarned?.Invoke(bonus);
                 stats.RecordDelivery(points, late);
+                stats.RecordQuality(delivery.Order.Stars,late<=0);
                 reputation.RecordArrival(late,trip.ServiceAtDispatch);
+                if(cooking!=null)reputation.AddBonus(cooking.ReputationForArrival(delivery.Order,delivery.ArrivesAt));
                 int tip=scoreManager.TipForArrival(delivery.ArrivesAt,delivery.Order.Deadline,trip.ServiceAtDispatch);
                 Message?.Invoke($"{trip.Person.Name}: {delivery.Order.DestinationNodeId} +{points}"
                     + (late > 0 ? $" ({late:F1}s late)" : $" (on time / tip +{tip})"));
