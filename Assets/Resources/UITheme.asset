@@ -268,15 +268,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a8ba3755fa334417b87e9091f60e0030, type: 3}
   m_Name: UITheme
   m_EditorClassIdentifier: Assembly-CSharp::UITheme
-  background: {r: 0.9843137, g: 0.9529412, b: 0.89411765, a: 1}
-  ink: {r: 0.16862746, g: 0.12941177, b: 0.09411765, a: 1}
-  accent: {r: 0.84705883, g: 0.27058825, b: 0.16862746, a: 1}
-  good: {r: 0.29803923, g: 0.54901963, b: 0.2901961, a: 1}
-  money: {r: 0.9490196, g: 0.7137255, b: 0.19607843, a: 1}
+  background: {r: 1, g: 0.9647059, b: 0.8980392, a: 1}
+  ink: {r: 0.22745098, g: 0.16470589, b: 0.1254902, a: 1}
+  accent: {r: 0.8784314, g: 0.29411766, b: 0.1764706, a: 1}
+  good: {r: 0.29803923, g: 0.6039216, b: 0.32156864, a: 1}
+  money: {r: 0.96862745, g: 0.74509805, b: 0.23921569, a: 1}
   bad: {r: 0.7019608, g: 0.14901961, b: 0.11764706, a: 1}
-  muted: {r: 0.5411765, g: 0.47843137, b: 0.4, a: 1}
-  block: {r: 0.9019608, g: 0.8352941, b: 0.72156864, a: 1}
-  park: {r: 0.7490196, g: 0.84705883, b: 0.65882355, a: 1}
+  muted: {r: 0.47843137, g: 0.4, b: 0.32156864, a: 1}
+  block: {r: 0.90588236, g: 0.88235295, b: 0.827451, a: 1}
+  park: {r: 0.7882353, g: 0.8901961, b: 0.7058824, a: 1}
   heading: 28
   subheading: 22
   body: 18
@@ -289,12 +289,12 @@ MonoBehaviour:
   font: {fileID: 11400000, guid: ce32a4130d85548658d2a569898e8eba, type: 2}
   roundedPanel: {fileID: -7732186575839875303}
   courierColors:
-  - {r: 0.15294118, g: 0.39607844, b: 0.5411765, a: 1}
-  - {r: 0.5137255, g: 0.31764707, b: 0.5686275, a: 1}
-  - {r: 0.58431375, g: 0.38039216, b: 0.16078432, a: 1}
-  - {r: 0.24313726, g: 0.46666667, b: 0.4392157, a: 1}
-  - {r: 0.6745098, g: 0.30588236, b: 0.44705883, a: 1}
-  - {r: 0.32941177, g: 0.39607844, b: 0.21176471, a: 1}
+  - {r: 0.23529412, g: 0.4745098, b: 0.7607843, a: 1}
+  - {r: 0.29803923, g: 0.6039216, b: 0.32156864, a: 1}
+  - {r: 0.5568628, g: 0.35686275, b: 0.70980394, a: 1}
+  - {r: 0.8784314, g: 0.5058824, b: 0.1764706, a: 1}
+  - {r: 0.18039216, g: 0.56078434, b: 0.5411765, a: 1}
+  - {r: 0.7607843, g: 0.2784314, b: 0.47843137, a: 1}
   mainRoadWidth: 0.18
   backstreetWidth: 0.1
   routeWidth: 0.24
@@ -304,3 +304,62 @@ MonoBehaviour:
   congestionWidthScale: 0.35
   worldIconScale: 0.35
   routeArrowSize: 4
+  paper: {r: 1, g: 0.9647059, b: 0.8980392, a: 1}
+  paperDeep: {r: 0.9529412, g: 0.8901961, b: 0.7647059, a: 1}
+  line: {r: 0.22745098, g: 0.16470589, b: 0.1254902, a: 1}
+  inkSub: {r: 0.47843137, g: 0.4, b: 0.32156864, a: 1}
+  tomato: {r: 0.8784314, g: 0.29411766, b: 0.1764706, a: 1}
+  tomatoShadow: {r: 0.65882355, g: 0.21176471, b: 0.12156863, a: 1}
+  basil: {r: 0.29803923, g: 0.6039216, b: 0.32156864, a: 1}
+  basilLight: {r: 0.8862745, g: 0.94509804, b: 0.8745098, a: 1}
+  cheese: {r: 0.96862745, g: 0.74509805, b: 0.23921569, a: 1}
+  cheeseLight: {r: 1, g: 0.9411765, b: 0.7607843, a: 1}
+  berry: {r: 0.7019608, g: 0.14901961, b: 0.11764706, a: 1}
+  berryLight: {r: 0.9764706, g: 0.8745098, b: 0.85490197, a: 1}
+  info: {r: 0.23529412, g: 0.4745098, b: 0.7607843, a: 1}
+  infoLight: {r: 0.89411765, g: 0.93333334, b: 0.98039216, a: 1}
+  disabled: {r: 0.7882353, g: 0.73333335, b: 0.6392157, a: 1}
+  wood: {r: 0.7882353, g: 0.54509807, b: 0.35686275, a: 1}
+  woodDark: {r: 0.6117647, g: 0.41568628, b: 0.2627451, a: 1}
+  plaster: {r: 0.94509804, g: 0.89411765, b: 0.8117647, a: 1}
+  steel: {r: 0.78431374, g: 0.8156863, b: 0.8392157, a: 1}
+  steelShadow: {r: 0.56078434, g: 0.60784316, b: 0.64705884, a: 1}
+  floorA: {r: 0.9137255, g: 0.7882353, b: 0.6117647, a: 1}
+  floorB: {r: 0.8666667, g: 0.7176471, b: 0.5137255, a: 1}
+  barFill: {r: 0.94509804, g: 0.6431373, b: 0.22745098, a: 1}
+  titleSize: 56
+  headingSize: 32
+  subheadingSize: 24
+  bodySize: 20
+  captionSize: 16
+  edge: 3
+  stickerShadow: 6
+  cardRadius: 16
+  outerMargin: 32
+  buttonFeedbackSeconds: 0.08
+  displayFont: {fileID: 11400000, guid: 0ea3fdffb6deb4da39e6b517f23cc7d7, type: 2}
+  boldFont: {fileID: 11400000, guid: b5200794e2a954066a16e93d01e45951, type: 2}
+  blackFont: {fileID: 11400000, guid: d8f3190cdfc9a4970a4ef1d20f72c23d, type: 2}
+  mapGround: {r: 0.9372549, g: 0.92156863, b: 0.8862745, a: 1}
+  mapBlock: {r: 0.90588236, g: 0.88235295, b: 0.827451, a: 1}
+  mapPark: {r: 0.7882353, g: 0.8901961, b: 0.7058824, a: 1}
+  mapTree: {r: 0.62352943, g: 0.7882353, b: 0.5411765, a: 1}
+  mapWater: {r: 0.7254902, g: 0.8666667, b: 0.9411765, a: 1}
+  mainRoadEdge: {r: 0.8509804, g: 0.6627451, b: 0.22745098, a: 1}
+  mainRoadFill: {r: 0.99215686, g: 0.8784314, b: 0.5411765, a: 1}
+  backRoadEdge: {r: 0.7254902, g: 0.68235296, b: 0.59607846, a: 1}
+  backRoadFill: {r: 1, g: 0.99215686, b: 0.9647059, a: 1}
+  congestion: {r: 0.8784314, g: 0.29411766, b: 0.1764706, a: 1}
+  mapMainRoad: 0.42
+  mapBackRoad: 0.22
+  mapRoute: 0.3
+  mapRoadEdge: 0.07
+  mapPinScale: 0.012
+  effectSeconds: 0.9
+  effectRise: 0.6
+  deadlineWarning: 0.5
+  deadlineUrgent: 0.2
+  lowStamina: 0.25
+  closingWarning: 0.2
+  shakeDistance: 0.04
+  shakeFrequency: 22

@@ -79,6 +79,10 @@ public sealed class CookingManager : MonoBehaviour
     public int OvenCount=>facilities!=null?facilities.Ovens:initialOvens;
     public int BenchCount=>facilities!=null?facilities.Workbenches:initialBenches;
     public int MaximumQueueLength {get;private set;}
+    /// <summary>Pizzas packed today by the player and by each kitchen staff member.</summary>
+    public int PackedByPlayer {get;private set;}
+    private readonly Dictionary<string,int> packedByStaff=new();
+    public IReadOnlyDictionary<string,int> PackedByStaff=>packedByStaff;
     public float BusySeconds {get;private set;}
     public int OperatingOvenCount {get;private set;}=1;
     public float Utilization=>BusySeconds/(OperatingOvenCount*clock.BusinessDuration);
@@ -111,7 +115,7 @@ public sealed class CookingManager : MonoBehaviour
         OperatingOvenCount=OvenCount;jobs.Clear();expired.Clear();staff.Clear();
         ovens=new PizzaJob[OvenCount];benches=new PizzaJob[BenchCount];ovenFreeSince=new float[OvenCount];benchFreeSince=new float[BenchCount];
         if(crew!=null){crew.ResetDailyState();foreach(var member in crew.People)staff.Add(new StaffSlot{Staff=member});}
-        MaximumQueueLength=0;BusySeconds=0;processed=clock!=null?clock.ElapsedSeconds:0;
+        MaximumQueueLength=0;BusySeconds=0;PackedByPlayer=0;packedByStaff.Clear();processed=clock!=null?clock.ElapsedSeconds:0;
     }
     private void Synchronize()=>AdvanceTo(clock.ElapsedSeconds);
     private void Tick(float before,float now)=>AdvanceTo(now);
@@ -243,7 +247,11 @@ public sealed class CookingManager : MonoBehaviour
         if(job.Oven>=0 && job.Oven<ovens.Length && ovens[job.Oven]==job){ovens[job.Oven]=null;ovenFreeSince[job.Oven]=at;}
         job.Oven=-1;job.Stage=PizzaStage.Baked;job.TakenOutAt=at;
     }
-    private void Pack(PizzaJob job){job.Stage=PizzaStage.Packed;job.Order.Stars=job.Stars;job.Order.Baking=BakingState.Ready;}
+    private void Pack(PizzaJob job)
+    {
+        job.Stage=PizzaStage.Packed;job.Order.Stars=job.Stars;job.Order.Baking=BakingState.Ready;
+        if(job.Worker==PizzaWorker.Player)PackedByPlayer++;else{string name=job.Staff!=null?job.Staff.Name:"Staff";packedByStaff[name]=packedByStaff.TryGetValue(name,out int n)?n+1:1;}
+    }
     private void Release(PizzaJob job,float at)
     {
         if(job.Stage==PizzaStage.Baking)BusySeconds+=Mathf.Max(0,Mathf.Min(at,clock.BusinessDuration)-job.OvenStartedAt);

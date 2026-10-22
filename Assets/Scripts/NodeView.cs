@@ -24,6 +24,9 @@ public class NodeView : MonoBehaviour
         {
             var icon=new GameObject(node.IsStore?"PizzaSlice":"HouseRoof");icon.transform.SetParent(transform,false);var line=icon.AddComponent<LineRenderer>();line.sharedMaterial=spriteRenderer.sharedMaterial;line.useWorldSpace=false;line.positionCount=3;line.SetPosition(0,new Vector3(-.45f,.15f,0));line.SetPosition(1,new Vector3(0,.65f,0));line.SetPosition(2,new Vector3(.45f,.15f,0));line.startWidth=line.endWidth=.12f;line.startColor=line.endColor=node.IsStore?theme.money:theme.ink;line.sortingOrder=6;
         }
+        // Shops and delivery addresses are drawn as pins and labels by the dispatch board; intersections stay small dots.
+        if(node.IsStore || node.NodeType==NodeType.DeliveryAddress){spriteRenderer.enabled=false;foreach(var line in GetComponentsInChildren<LineRenderer>())line.enabled=false;}
+        else{spriteRenderer.color=theme.backRoadEdge;transform.localScale=Vector3.one*theme.nodeSize*.45f;}
         baseColor = spriteRenderer.color;
         baseScale = transform.localScale;
         var labelObject = new GameObject("NodeLabel");
@@ -38,6 +41,7 @@ public class NodeView : MonoBehaviour
         label.alignment = TextAlignmentOptions.Center;
         label.rectTransform.sizeDelta = new Vector2(2f, 0.7f);
         label.GetComponent<MeshRenderer>().sortingOrder = 10;
+        label.enabled = false;
     }
 
     public void SetCurrent(bool current)
@@ -46,6 +50,7 @@ public class NodeView : MonoBehaviour
         transform.localScale = current ? baseScale * 1.25f : baseScale;
         nodeLabel.text = caption + (current ? " *" : "");
         nodeLabel.color = current ? UITheme.Active.accent : UITheme.Active.ink;
+        spriteRenderer.color = current ? UITheme.Active.tomato : baseColor;
     }
 
 }

@@ -43,3 +43,12 @@
 - 訓練の選択肢 `TrainingControls`：位置と背景だけ変更し、兄弟順は維持。`PreparationUI`は行の最初のButtonを解雇/採用として扱い、M6Validationは `TrainingControls/Train0` のパスを使う。
 - `TrainingPickerUI`：行のTrainingControlsが非アクティブ（求人行）のとき「訓練を選ぶ」をCanvasGroupで隠す。
 - 配達員カードの見出しの高さは実行時に `DeliveryPersonSelector.RebuildRoster` が決める（66）。能力行は68から25間隔で、`VisualSceneSetup.FinishLayout`がPrefabとシーン内のカードに配置する。
+
+## 2026-10-23 店内UIの接続
+
+- `ShopUI`配下にHubView / BusinessView / SettlementView / GameOverViewを追加。ScreenRouterの対応ルートを差し替える。タイトルは既存ルートを継続。
+- 旧UIを削除せずCanvasGroupで隠す。既存の検証や操作処理が名前で参照する旧部品を維持する。DayResultsの旧SettlementRoot内の並びも維持。
+- `OverlayScreens`は新UIより後の兄弟へ移動し、メニュー/ヘルプ/確認を前面へ描く（描画順としては後の兄弟が前）。
+- UIThemeDriverはShopUiRoot配下を再装飾せず、新しいUiKit/StickerButtonが担当する。文字表は新画面ShopStrings、旧画面UiStrings。
+- 地図カメラは再利用。MapViewportUIはBusinessViewのMapAreaを参照し、全画面の指示盤に重ねる。元のMapDefinition、ManualDeliveryRoute、RoadPathfinderは変更しない。
+- Kitchen/受け渡しのパンは引き継いだUGUI空間で行う。SpriteRenderer+Collider2Dの店内ワールドへの移行は未実施であり、S2全条件完了として扱わない。

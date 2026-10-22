@@ -47,14 +47,15 @@ public class EdgeView : MonoBehaviour
         return Vector2.Distance(point, a + t * segment);
     }
 
+    // Map look (設計書_画面デザイン 3-3): main roads wide and yellow, backstreets narrow and white, the chosen route
+    // in tomato with a dark edge, and roads you can take next outlined in tomato. Congestion is drawn by MapVisuals as dots.
     public void SetRouteStyle(bool used, bool available, bool last)
     {
-        var theme=UITheme.Active;
-        Color traffic=Color.Lerp(theme.good,theme.bad,Mathf.Clamp01(1-road.TrafficFactor));
-        Color color=used || last?theme.accent:road.RoadType==RoadType.Backstreet?Color.Lerp(theme.ink,traffic,.3f):Color.Lerp(theme.background,traffic,.6f);
-        float width=(used || last?theme.routeWidth:road.RoadType==RoadType.Backstreet?theme.backstreetWidth:theme.mainRoadWidth)*(1+(1-Mathf.Clamp01(road.TrafficFactor))*theme.congestionWidthScale);
-        lineRenderer.startWidth=lineRenderer.endWidth=width;lineRenderer.startColor=lineRenderer.endColor=color;
-        if(border!=null){border.startWidth=border.endWidth=width+theme.roadBorder;border.startColor=border.endColor=theme.ink;}
-
+        var theme=UITheme.Active;bool main=road.RoadType==RoadType.Main;bool route=used || last;
+        float width=main?theme.mapMainRoad:theme.mapBackRoad;
+        Color fill=route?theme.tomato:main?theme.mainRoadFill:theme.backRoadFill;
+        Color edge=route?theme.line:available?theme.tomato:main?theme.mainRoadEdge:theme.backRoadEdge;
+        lineRenderer.numCapVertices=6;lineRenderer.startWidth=lineRenderer.endWidth=width;lineRenderer.startColor=lineRenderer.endColor=fill;
+        if(border!=null){border.numCapVertices=6;border.startWidth=border.endWidth=width+theme.mapRoadEdge*(available && !route?1.6f:1);border.startColor=border.endColor=edge;}
     }
 }

@@ -21,3 +21,22 @@ python3 Tools/Review/capture_views.py after
 元の一時ツールから移設しPython構文を確認済み。移設後のEditor状態取得は成功。移設版の全検証・撮影は未実行。旧ツールの9085固定を引き継がず、現在のローカル設定を利用する。最後のゲーム検証成功はDocs/Handoff/V3_Validation.jsonを参照。
 
 長期計算中に装飾更新だけを抑えるRenderingSuspendedはfinallyで解除する。撮影は通常セーブ抑制下のfixture操作を含むため、ユーザーが営業プレイ中のときに同時実行しない。
+
+
+## 店内UIの復旧確認（2026-10-23）
+
+元プロジェクトのSampleSceneをPlayしてから、現在のUnity操作担当が順番に実行する。通常セーブを抑制したfixtureで、メモリ上の営業を初期化する。
+
+```sh
+python3 Tools/Review/validate_shop_stations.py
+python3 Tools/Review/validate_shop_ui.py
+python3 Tools/Review/capture_shop_views.py
+python3 Tools/Review/capture_shop_views.py --720
+python3 Tools/Review/run_suite.py shop_resume_verified
+```
+
+- stations：設備増設とやり直しをフレームをまたいで操作し、古いラベル/窯ゲージが残らないことを確認。
+- ui：画面で使うハンドラーから伝票・生地・ソース・具・窯・箱・バッグ・配達・精算を確認。マウスの物理入力や、人間による面白さの評価の代わりにはしない。
+- capture：店/厨房/指示盤/精算の4画面を撮影する。指示盤に個別配達の参考時間が出ること、PNG寸法も確認。720pの一時Gameビューサイズを最後に削除し、元のプリセットへ戻す。撮影データはfixtureであり、ゲームの数値調整の測定には使わない。
+- 長期計算中のRenderingSuspendedは、新UIの描画更新と通知にも適用。ゲーム時計・調理・配達・得点・会計の更新は続く。終了時はfinallyで描画を戻す。
+- ソース変更はPlayを終了してから行う。

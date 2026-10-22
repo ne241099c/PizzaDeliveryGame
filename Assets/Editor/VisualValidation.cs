@@ -27,8 +27,16 @@ public static class VisualValidation
             Check(UiStrings.Japanese("Start business")=="営業開始" && UiStrings.Japanese("Delivery promise: 60s").StartsWith("お届け目安"),"central Japanese table");
             Check(UiStrings.Japanese("Aoi / Drive 0.6 / Goal1").Contains("Aoi / 運転 0.6 / Goal1"),"presentation preserves names IDs and numbers");
             var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();driver.Refresh();
-            Check(canvas.GetComponentsInChildren<TMP_Text>(true).All(t=>t.font==theme.font && t.fontSize>=theme.caption),"all screens use readable Japanese theme font");
-            Check(canvas.GetComponentsInChildren<Button>(true).All(b=>b.GetComponent<ThemedButton>()!=null),"all button actions retain themed component");
+            var shop=canvas.GetComponentInChildren<ShopUiRoot>(true);
+            bool Redesigned(Component c)=>shop!=null && c.transform.IsChildOf(shop.transform);
+            var shopFonts=new[]{theme.font,theme.displayFont,theme.boldFont,theme.blackFont};
+            Check(canvas.GetComponentsInChildren<TMP_Text>(true).All(t=>Redesigned(t)?t.font!=null && shopFonts.Contains(t.font) && t.fontSize>=theme.captionSize:t.font==theme.font && t.fontSize>=theme.caption),"all screens use their readable licensed Japanese theme fonts");
+            Check(canvas.GetComponentsInChildren<Button>(true).All(b=>Redesigned(b)?(b.GetComponent<StickerButton>()!=null && b.GetComponent<StickerButton>().Label!=null) || (b.GetComponent<StickerCardAction>()!=null && b.targetGraphic!=null && b.transition==Selectable.Transition.ColorTint && b.colors.highlightedColor==theme.cheeseLight):b.GetComponent<ThemedButton>()!=null),"all button actions retain their themed component");
+            if(shop!=null)
+            {
+                Check(shopFonts.All(f=>f!=null) && theme.captionSize>=16 && theme.bodySize==20,"redesign font family and minimum readable size");
+                foreach(FontRole role in Enum.GetValues(typeof(FontRole)))Check(shopFonts.Contains(UiKit.Font(role)),"redesign role uses theme font "+role);
+            }
             foreach(var view in canvas.GetComponentsInChildren<CourierAbilitiesView>(true).Where(v=>v==v.GetComponent<CourierAbilitiesView>()))
             {
                 var labels=new SerializedObject(view).FindProperty("labels");

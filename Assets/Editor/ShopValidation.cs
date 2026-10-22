@@ -19,6 +19,30 @@ public static class ShopValidation
         bool tick=clock.AutomaticTick,spawning=spawner.enabled;clock.AutomaticTick=false;
         try
         {
+            // Generated control references must participate in Unity serialization (script reload).
+            var business=Find<BusinessView>();
+            if(business!=null)
+            {
+                var controls=new SerializedObject(business);
+                var tabs=controls.FindProperty("zoneTabs");
+                Check(tabs!=null && tabs.arraySize==3 && Enumerable.Range(0,3).All(i=>tabs.GetArrayElementAtIndex(i).objectReferenceValue!=null),"zone controls survive Unity serialization");
+                var steps=controls.FindProperty("steps");
+                Check(steps!=null && steps.arraySize==4 && Enumerable.Range(0,4).All(i=>steps.GetArrayElementAtIndex(i).objectReferenceValue!=null),"dispatch steps survive Unity serialization");
+                var previous=business.Zone;
+                foreach(ShopZone zone in Enum.GetValues(typeof(ShopZone)))
+                {
+                    business.ShowZone(zone,true);
+                    var middle=(StickerButton)tabs.GetArrayElementAtIndex(1).objectReferenceValue;
+                    Check(business.Zone==zone && middle.gameObject.activeSelf && middle.GetComponent<CanvasGroup>().alpha==(zone==ShopZone.Dispatch?0:1),"zone switch uses CanvasGroup "+zone);
+                }
+                business.ShowZone(previous,true);
+                var hub=Find<HubView>();var hubControls=new SerializedObject(hub);
+                foreach(string name in new[]{"tabs","tabBadges"})
+                {
+                    var values=hubControls.FindProperty(name);
+                    Check(values!=null && values.arraySize==4 && Enumerable.Range(0,name=="tabs"?4:2).All(i=>values.GetArrayElementAtIndex(i).objectReferenceValue!=null),"hub controls survive Unity serialization "+name);
+                }
+            }
             // ---- handover bags ----
             campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();
             var aoi=roster.People[0];var ren=roster.People[1];

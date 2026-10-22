@@ -47,6 +47,15 @@ public class DeliveryPlannerUI : MonoBehaviour
     public DeliveryPlan SelectedPlan { get; private set; }
     public ManualDeliveryRoute Route => route;
     public float? IndividualReferenceTime { get; private set; }
+    public RouteSuggestion Suggestion => suggestion;
+    /// <summary>Replace the drawn route (e.g. built by tapping delivery pins in order).</summary>
+    public bool ReplaceRoute(IEnumerable<string> edges)
+    {
+        if (route == null || clock.Phase != DayPhase.Open) return false;
+        bool ok = route.TryReplace(edges);
+        RefreshRoute();
+        return ok;
+    }
 
     private static readonly Color AccentColor = new(0.32f, 0.88f, 0.69f, 1f);
 

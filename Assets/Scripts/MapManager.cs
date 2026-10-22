@@ -35,6 +35,8 @@ public class MapManager : MonoBehaviour
     public event Action<string> EdgeClicked;
     public RouteState CurrentRouteState => routeState;
     public bool IsReady { get; private set; }
+    /// <summary>The shop's dispatch board handles pointer input itself (drag, zoom, pin taps).</summary>
+    public bool PointerInputEnabled { get; set; } = true;
     public string StoreNodeId { get; private set; }
     public IReadOnlyList<MapNode> Nodes => nodes;
     public IReadOnlyList<MapEdge> Edges => edges;
@@ -62,7 +64,7 @@ public class MapManager : MonoBehaviour
 
     private void Update()
     {
-        if (!IsReady || Mouse.current == null) return;
+        if (!IsReady || Mouse.current == null || !PointerInputEnabled) return;
         if (!Mouse.current.leftButton.wasPressedThisFrame && !Mouse.current.middleButton.isPressed
             && Mouse.current.scroll.ReadValue().y == 0) return;
         Vector2 position = Mouse.current.position.ReadValue();
