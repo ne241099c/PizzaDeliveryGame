@@ -18,6 +18,6 @@ python3 Tools/Review/run_suite.py v4
 python3 Tools/Review/capture_views.py after
 ```
 
-元の一時ツールから移設しPython構文を確認済み。移設後のUnity接続と全検証はサーバー復旧待ちで未確認。最後のゲーム検証成功はDocs/Handoff/V3_Validation.jsonを参照。
+元の一時ツールから移設しPython構文を確認済み。移設後のEditor状態取得は成功。移設版の全検証・撮影は未実行。旧ツールの9085固定を引き継がず、現在のローカル設定を利用する。最後のゲーム検証成功はDocs/Handoff/V3_Validation.jsonを参照。
 
 長期計算中に装飾更新だけを抑えるRenderingSuspendedはfinallyで解除する。撮影は通常セーブ抑制下のfixture操作を含むため、ユーザーが営業プレイ中のときに同時実行しない。

@@ -8,7 +8,7 @@
 - 現在 `ui`、実装HEAD `5758de0`（V-3）。この後の共同開発資料のコミットは実装完了を意味しない。
 - `main` は `498a114`（C-5）。m4/m5/m6/screens/m7はmainに統合済み。uiはまだ未統合。
 - 最後の全検証は **3656項目すべて成功**。記録は [V3_Validation.json](V3_Validation.json)。V-4は未実装、未検証、未コミット。
-- 最新の接続確認ではUnityのプロセスは起動しているが、KitWright HTTPポート9085は接続拒否。Playの現在状態を取得できていない。接続復旧したと断言しない。
+- **接続確認成功**：現在のローカル設定を読む `Tools/Review/unity_call.py get_editor_state` からUnityのPlay中・一時停止なし・コンパイル/更新なしを取得。初回の失敗は、旧一時ツールが古い9085ポートへ固定していたため。現在の設定を使用し、ポートを決め打ちしない。
 - Claude Code CLI 2.1.79がインストール済み。Claudeをこちらから起動・依頼送信したわけではない。
 
 ## ユーザーが依頼した順番と現在位置
@@ -84,13 +84,13 @@ M7SimulationValidation.Begin(); // Status (F/G/H)
 
 長期シミュレーション中だけ `UIThemeDriver.RenderingSuspended=true` で毎フレーム装飾を止め、finallyでfalseへ戻す。時計・計算・ボタン操作は実行する。Play終了時にfalse復帰を確認する。これをゲームロジック停止と混同しない。
 
-`Tools/Review/run_suite.py <label>` はこの順序を実行し、結果を `/private/tmp/pizza_suite_<label>.json` に保存する。Python 3.11+。MCP接続とPlayは呼び出す側が先に確認する。新しい環境でこの移設ツールによるUnity実行はまだ確認できていない。
+`Tools/Review/run_suite.py <label>` はこの順序を実行し、結果を `/private/tmp/pizza_suite_<label>.json` に保存する。Python 3.11+。MCP接続とPlayは呼び出す側が先に確認する。移設した接続ツールでEditor状態取得は確認済み。移設版の全検証と撮影はまだ未実行。
 
 ## Unity接続と撮影の注意
 
 - KitWright既存MCPを使う。Claudeには既存CLAUDE.mdの管理ブロックとローカル設定がある。接続秘密をコピーしない。
 - `Tools/Review/unity_call.py get_editor_state` が読み取り確認。ネイティブMCPツールが使えればそれを優先。補助ツールはローカル設定またはPIZZA_MCP_URL環境変数を使い、サーバーを起動しない。
-- 9085は最後に使ったポート。環境ごとに設定を確認。再コンパイルはPlayを終了してから。リロード中の切断は結果不明として、再接続/コンパイル/実値を確認する。
+- 9085は旧一時ツールの固定値で、現在の接続先ではない。ローカルの最新設定を確認し、固定値へ戻さない。再コンパイルはPlayを終了してから。リロード中の切断は結果不明として、再接続/コンパイル/実値を確認する。
 - 前回の復旧用InitializeOnLoadスクリプトは自動承認レビューに「通信待受追加」で拒否され**未作成**。他経路での強行や安全設定の解除はしない。ユーザーに既存MCP Windowの起動を依頼済み。HTTP実装はloopback限定と確認済み。
 - 撮影はFull HD固定GameView + `ReviewFrameCapture.Begin(path)`。描画完了後のCaptureScreenshotAsTextureで保存する。supersize2やMCPのCanvas/cameraモード切替はTMPの文字崩れが出たので避ける。
 - Screen.widthはMCP実行ウィンドウを指す場合がある。Canvas.pixelRect / GameViewのm_TargetSize / 実PNG寸法を確認する。
@@ -108,5 +108,7 @@ Hは30秒指定が37.81秒へ補正され、最大調理待ち0で行列目標�
 元フォルダにユーザー由来の `.DS_Store`、Packages/manifest.json、Packages/packages-lock.jsonの変更と、未追跡 `.codex/`、Assets/_Recovery(.meta含む)がある。消さず、今回のコミットへ混ぜない。git statusで毎回確認。
 
 主要コミット：screens最終801a22c、C-1 4d31400、C-2 d9b3260、C-3 6b8b309、C-4 bd064fe、C-5 498a114、V-0 508119a、V-1 550ef93、V-2 fd37228、V-3 5758de0。
+
+接続成功後もゲームコードやPlay状態は変更していない。共同開発資料とツールのみ追加した。
 
 今後、最終報告用の `Docs/Screens_M7_UI_Results.md` は停止履歴を整理し、段階ごとの変更/実測通過数/判断/画像リンクをまとめ直す必要がある。`Docs/UI_Screens/README.md`に最終11画面の比較リンクを足す。V-4未完を完了表記にしない。

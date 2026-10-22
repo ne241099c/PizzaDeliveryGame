@@ -4,7 +4,7 @@
 
 | 担当 | 作業 | 変更可能な範囲 | 状態 |
 |---|---|---|---|
-| Codex | Unity接続確認、V-4の実装・2解像度での撮影・全検証・ui→main統合 | UI表示コード、Editor配置/検証、シーン/Prefab/テーマ、最終画像・実装報告 | V-3完了。MCP 9085が接続拒否でV-4未着手 |
+| Codex | Unity接続確認、V-4の実装・2解像度での撮影・全検証・ui→main統合 | UI表示コード、Editor配置/検証、シーン/Prefab/テーマ、最終画像・実装報告 | V-3完了。最新設定でMCP接続確認済み、Play中。V-4未着手 |
 | Claude Code | V-4候補、既存UI、検証漏れ、資料の整合性の読み取りレビュー | `Docs/Handoff/Claude_Review.md` のみ | 参加用worktreeを準備。Claudeの実行・レビュー完了は未確認 |
 
 ## Claude Codeへ渡す最初の依頼
@@ -35,3 +35,5 @@ Docs/計画書_見た目.mdのV-4と、Docs/Handoff/V4_candidate.py.txt（未適
 - `.worktrees/`はGit対象外。専用worktreeの`.git`は元リポジトリへの参照なので、フォルダ内のgit操作は専用ブランチに限る。
 - Claude起動例：上の専用フォルダで `claude` を実行し、「Claude Codeへ渡す最初の依頼」を貼る。既に起動しているClaudeは元フォルダで編集せず、この専用フォルダから新しいセッションを開始する。
 - 最初のレビューにMCP接続設定は不要。認証付き設定をworktreeへコピーしない。
+
+接続確認の訂正：旧一時ツールの9085固定が失敗原因。移設版ツールは現在の設定を読み、Editor状態取得に成功。現在のPlay状態には触れていない。
