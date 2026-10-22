@@ -49,9 +49,21 @@ public sealed class CampaignSaveManager : MonoBehaviour
     {campaign.PreparationEntered-=SavePreparation;recruitment.Changed-=SavePreparation;training.Changed-=SavePreparation;spawner.PolicyChanged-=SavePreparation;}
     private void Update() {if(notice!=null)notice.text=LastMessage;}
     public static decimal Decimal(string value)=>decimal.Parse(value,NumberStyles.Number,CultureInfo.InvariantCulture);
+    public bool HasUsableSave => TryRead(out _,out _);
+    public string TitleDescription
+    {
+        get
+        {
+            if(TryRead(out var data,out var reason))return $"Day {data.day} / Cash {data.cash} / Reputation {data.reputation:F1}";
+            return File.Exists(SavePath)?"Cannot load save: "+reason+" Start new.":"Start a new campaign.";
+        }
+    }
     public void Startup()
     {
         if(!listenersRegistered){continueButton.onClick.AddListener(Continue);newButton.onClick.AddListener(StartNewGame);listenersRegistered=true;}
+        var router=FindFirstObjectByType<ScreenRouter>();
+        if(router!=null && router.StartAtTitle)
+        {ready=false;AwaitingChoice=true;UIVisibility.Set(choicePanel,true);choiceText.text=TitleDescription;return;}
         if(File.Exists(SavePath) && TryRead(out var data,out var reason))
         {ready=false;AwaitingChoice=true;UIVisibility.Set(choicePanel,true);choiceText.text=$"CONTINUE CAMPAIGN?\nDay {data.day} / Cash {data.cash} / Reputation {data.reputation:F1}";return;}
         if(File.Exists(SavePath))LastMessage="Cannot load save: "+ReadFailure()+" Starting a new game.";

@@ -59,6 +59,18 @@ public static class ScreenValidation
             UIVisibility.Find(canvas.transform,"ToGameOver").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(router.Current==ScreenId.GameOver,"bankrupt settlement opens game over");
             UIVisibility.Find(canvas.transform,"RetryCampaign").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(router.Current==ScreenId.Hub && campaign.DayNumber==1 && !campaign.IsBankrupt,"retry uses existing new-game reset");
         }
+        if(router.ImplementationStage>=5)
+        {
+            var menu=UnityEngine.Object.FindFirstObjectByType<TitleMenuUI>();var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();
+            bool automatic=clock.AutomaticTick;clock.AutomaticTick=true;campaign.StartBusiness();
+            UIVisibility.Find(canvas.transform,"HeaderMenu").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(menu.MenuOpen && !clock.AutomaticTick,"menu button pauses automatic clock");
+            menu.ShowHelp();Check(menu.HelpOpen,"help opens over menu");menu.CloseHelp();Check(menu.MenuOpen && !clock.AutomaticTick,"closing help keeps menu pause");
+            menu.RequestTitle();Check(menu.ConfirmationOpen,"title during business requires confirmation");UIVisibility.Find(canvas.transform,"CancelTitle").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(!menu.ConfirmationOpen && router.Current==ScreenId.Business,"cancel preserves current business");
+            menu.Resume();Check(!menu.MenuOpen && clock.AutomaticTick,"resume restores original ticking");
+            menu.ReturnTitle();Check(router.Current==ScreenId.Title && !clock.AutomaticTick,"confirmed title stops business ticking");
+            UIVisibility.Find(canvas.transform,"NewGame").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(router.Current==ScreenId.Hub && clock.Phase==DayPhase.BeforeOpening,"title new game opens preparation");
+            Check(router.StartAtTitle,"startup configured for title");clock.AutomaticTick=automatic;
+        }
         return $"PASS: {count} screen checks.";
     }
 }

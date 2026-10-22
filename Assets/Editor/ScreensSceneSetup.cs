@@ -127,4 +127,24 @@ public static class ScreensSceneSetup
         Bind(ui,"pageText",Find("ResultText").GetComponent<TextMeshProUGUI>());Bind(ui,"gameOverText",summary);Bind(ui,"advance",advance);Bind(ui,"skip",skip);Bind(ui,"all",all);Bind(ui,"replay",Find("ReplayDay").GetComponent<Button>());Bind(ui,"gameOver",over);Bind(ui,"retry",retry);Bind(ui,"title",title);
         var stage=new SerializedObject(Manager.GetComponent<ScreenRouter>());stage.FindProperty("implementationStage").intValue=4;stage.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(Manager.scene);
     }
+    private static CanvasGroup Overlay(Transform parent,string name)
+    {
+        var r=Full(parent,name);var image=r.gameObject.AddComponent<Image>();image.color=new Color(.04f,.07f,.12f,.98f);var group=r.gameObject.AddComponent<CanvasGroup>();UIVisibility.Set(r.gameObject,false);return group;
+    }
+    public static void TitleAndMenu()
+    {
+        var root=Find("TitleScreen");var choice=Find("SaveChoice");Full(choice.parent,"SaveChoice");choice.GetComponent<Image>().color=new Color(.04f,.07f,.12f,1);
+        Text(choice,"GameName","PIZZA DELIVERY",360,150,1200,96,56);Place(Find("ChoiceText"),560,304,880,130);Place(Find("Continue"),720,500,480,72);Place(Find("NewGame"),720,588,480,72);
+        var th=M5SceneSetup.MakeButton(choice,"TitleHelp","How to play",720,676,480,72);var quit=M5SceneSetup.MakeButton(choice,"Quit","Quit",720,764,480,72);
+        var shared=Find("SharedHeader");Place(Find("CampaignDay"),1060,16,620,32);var hm=M5SceneSetup.MakeButton(shared,"HeaderMenu","Menu / Esc",1730,14,158,44);UIVisibility.Set(Find("PlannerScore").gameObject,false);
+        var overlays=Full(Canvas.transform,"OverlayScreens");var menu=Overlay(overlays,"PauseMenu");var help=Overlay(overlays,"HelpOverlay");var confirm=Overlay(overlays,"ReturnTitleConfirmation");
+        Text(menu.transform,"MenuTitle","MENU",620,230,680,76,36);var resume=M5SceneSetup.MakeButton(menu.transform,"Resume","Resume",720,360,480,72);var mh=M5SceneSetup.MakeButton(menu.transform,"MenuHelp","How to play",720,456,480,72);var mt=M5SceneSetup.MakeButton(menu.transform,"MenuTitleButton","Title",720,552,480,72);
+        var ht=Text(help.transform,"HelpText","How to play",300,180,1320,560,28);var hp=M5SceneSetup.MakeButton(help.transform,"HelpPrevious","Previous",300,820,300,64);var hn=M5SceneSetup.MakeButton(help.transform,"HelpNext","Next",620,820,300,64);var hc=M5SceneSetup.MakeButton(help.transform,"HelpClose","Close",1320,820,300,64);
+        Text(confirm.transform,"ConfirmText","Return to title?\nCurrent business progress will be lost.\nContinue resumes from the saved preparation.",400,300,1120,260,30);var yes=M5SceneSetup.MakeButton(confirm.transform,"ConfirmTitle","Return to title",800,650,380,72);var no=M5SceneSetup.MakeButton(confirm.transform,"CancelTitle","Cancel",1200,650,320,72);
+        var ui=Manager.GetComponent<TitleMenuUI>()??Undo.AddComponent<TitleMenuUI>(Manager);
+        Bind(ui,"router",Manager.GetComponent<ScreenRouter>());Bind(ui,"clock",Manager.GetComponent<GameClock>());Bind(ui,"save",Manager.GetComponent<CampaignSaveManager>());Bind(ui,"menu",menu);Bind(ui,"help",help);Bind(ui,"confirmation",confirm);Bind(ui,"choice",choice.gameObject);Bind(ui,"helpText",ht);Bind(ui,"titleStatus",Find("ChoiceText").GetComponent<TextMeshProUGUI>());
+        Bind(ui,"resume",resume);Bind(ui,"menuHelp",mh);Bind(ui,"menuTitle",mt);Bind(ui,"confirmYes",yes);Bind(ui,"confirmNo",no);Bind(ui,"helpNext",hn);Bind(ui,"helpPrevious",hp);Bind(ui,"helpClose",hc);Bind(ui,"titleHelp",th);Bind(ui,"quit",quit);Bind(ui,"headerMenu",hm);Bind(ui,"continueGame",Find("Continue").GetComponent<Button>());Bind(ui,"newGame",Find("NewGame").GetComponent<Button>());
+        var stage=new SerializedObject(Manager.GetComponent<ScreenRouter>());stage.FindProperty("implementationStage").intValue=5;stage.FindProperty("startAtTitle").boolValue=true;stage.ApplyModifiedProperties();
+        UIVisibility.Set(root.gameObject,true);UIVisibility.Set(Find("HubScreen").gameObject,false);UIVisibility.Set(shared.gameObject,false);UIVisibility.Set(choice.gameObject,true);EditorSceneManager.MarkSceneDirty(Manager.scene);
+    }
 }
