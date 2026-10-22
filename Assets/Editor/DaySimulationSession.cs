@@ -8,18 +8,18 @@ using UnityEditor;
 /// <summary>Autoplay drives the real UI selection/dispatch and GameClock; it contains no economic formulas.</summary>
 public sealed class SimulationDayRecord
 {
-    public const string Header="seed,day,promise_seconds,revenue,materials,fuel,wages,fixed_costs,profit,cash,reputation,delivered,late,cancelled,accidents,bankrupt,stock,spawned,busy_ratio,hired,roster_size,preparation_costs,policy,couriers,daily_growth,growth_count,training,training_costs,experience_growth,potentials,requested_promise_seconds,perfect_bake_bonus";
+    public const string Header="seed,day,promise_seconds,revenue,materials,fuel,wages,fixed_costs,profit,cash,reputation,delivered,late,cancelled,accidents,bankrupt,stock,spawned,busy_ratio,hired,roster_size,preparation_costs,policy,couriers,daily_growth,growth_count,training,training_costs,experience_growth,potentials,requested_promise_seconds,perfect_bake_bonus,repairs";
     public int Seed,Day,Delivered,Late,Cancelled,Accidents,Stock,Spawned,Hired,RosterSize;
     public float BusyRatio;
     public decimal PreparationCosts;
     public string Policy="legacy",Couriers="",DailyGrowth="";
     public int GrowthCount;
     public string Training="",ExperienceGrowth="",Potentials="";
-    public decimal TrainingCosts,PerfectBakeBonus;
+    public decimal TrainingCosts,PerfectBakeBonus,Repairs;
     public float Promise,Reputation,RequestedPromise;
     public decimal Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash;
     public bool Bankrupt;
-    public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy,Couriers,DailyGrowth,GrowthCount,Training,TrainingCosts,ExperienceGrowth,Potentials,RequestedPromise,PerfectBakeBonus}
+    public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy,Couriers,DailyGrowth,GrowthCount,Training,TrainingCosts,ExperienceGrowth,Potentials,RequestedPromise,PerfectBakeBonus,Repairs}
         .Select(Cell));
     private static string Cell(object value)
     {string s=value is IFormattable f?f.ToString(null,CultureInfo.InvariantCulture):value.ToString();return s.IndexOfAny(new[]{',','"','\n'})>=0 ? "\""+s.Replace("\"","\"\"")+"\"" : s;}
@@ -156,7 +156,7 @@ public sealed class DaySimulationSession : IDisposable
             throw new InvalidOperationException("Simulation exceeded maximum day time; inspect active trips.");
         if(clock.Phase!=DayPhase.Ended)return;
         var ledger=economy.Ledger;
-        var record=new SimulationDayRecord { Seed=seed,Day=campaign.DayNumber,Promise=spawner.PromiseSeconds,RequestedPromise=promises[policy],PerfectBakeBonus=ledger.PerfectBakeBonus,
+        var record=new SimulationDayRecord { Seed=seed,Day=campaign.DayNumber,Promise=spawner.PromiseSeconds,RequestedPromise=promises[policy],PerfectBakeBonus=ledger.PerfectBakeBonus,Repairs=ledger.Repairs,
             Revenue=ledger.Revenue,Materials=ledger.Materials,Fuel=ledger.Fuel,Wages=ledger.Wages,FixedCosts=ledger.FixedCosts,
             Profit=ledger.Profit,Cash=economy.Cash,Reputation=reputation.Value,Delivered=stats.DeliveredCount,Late=stats.LateCount,
             Cancelled=stats.CancelledCount,Accidents=stats.AccidentCount,Bankrupt=campaign.IsBankrupt,Stock=stats.ClosingCancelledCount,Spawned=stats.SpawnedCount,

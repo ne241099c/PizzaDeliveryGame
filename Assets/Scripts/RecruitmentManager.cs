@@ -17,6 +17,7 @@ public sealed class Applicant
 /// <summary>Preparation-only hiring, with reproducible constrained applicant generation.</summary>
 public sealed class RecruitmentManager : MonoBehaviour
 {
+    [SerializeField] private FacilityManager facilities;
     [SerializeField] private DeliveryDynamics dynamics;
     [SerializeField] private TrainingManager training;
     [SerializeField] private GameClock clock;
@@ -52,7 +53,7 @@ public sealed class RecruitmentManager : MonoBehaviour
     private readonly List<Applicant> applicants=new();
     public int? SeedOverride { get; set; }
     public IReadOnlyList<Applicant> Applicants => applicants;
-    public int MaximumPeople => maximumPeople;
+    public int MaximumPeople => facilities!=null?facilities.MaximumPeople:maximumPeople;
     public string LastMessage { get; private set; }="";
     public event Action Changed;
     private void Awake() => ResetRandom();
@@ -102,7 +103,7 @@ public sealed class RecruitmentManager : MonoBehaviour
     {
         if(clock.Phase!=DayPhase.BeforeOpening)return "Hiring is available only during preparation.";
         if(applicant==null || !applicants.Contains(applicant))return "This applicant is no longer available.";
-        if(roster.People.Count>=maximumPeople)return $"Team limit: {maximumPeople}.";
+        if(roster.People.Count>=MaximumPeople)return $"Team limit: {MaximumPeople}.";
         if(economy.Cash<HiringCost(applicant.Person))return $"Not enough cash. Need {HiringCost(applicant.Person):F2}.";
         return "";
     }

@@ -12,7 +12,8 @@ public sealed class DayLedger
     public decimal Fuel { get; internal set; }
     public decimal Wages { get; internal set; }
     public decimal FixedCosts { get; internal set; }
-    public decimal Profit => Revenue-Materials-Fuel-Wages-FixedCosts;
+    public decimal Repairs {get;internal set;}
+    public decimal Profit => Revenue-Materials-Fuel-Wages-FixedCosts-Repairs;
     public bool Settled { get; internal set; }
     public DayLedger(decimal openingCash) => OpeningCash=openingCash;
 }

@@ -18572,6 +18572,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbce3d843e3274112bf48b90a0874ed0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapManager
+  facilities: {fileID: 1404697836}
   baseSpeed: 10
   backstreetPenalty: 1
   sampleBackstreetDistance: 11
@@ -27659,6 +27660,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65b5a637f8ba4cf08a5aa220ea2cacd9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OrderSpawner
+  facilities: {fileID: 1404697836}
   cooking: {fileID: 1404697835}
   stats: {fileID: 1404697818}
   clock: {fileID: 1404697819}
@@ -27761,6 +27763,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5efaaf8e55024c2697dc26d15900e8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryDynamics
+  facilities: {fileID: 1404697836}
   roster: {fileID: 1404697813}
   initialStamina: 1
   depletionPerSecond: 0.004
@@ -27819,6 +27822,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BusinessEconomy
   facilities: {fileID: 1404697836}
+  stats: {fileID: 1404697818}
+  accidentRepairCost: 30
   clock: {fileID: 1404697819}
   flow: {fileID: 1404697814}
   roster: {fileID: 1404697813}
@@ -27843,6 +27848,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d8dc3286de2a43a9a03c0a01949cd6d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RecruitmentManager
+  facilities: {fileID: 1404697836}
   dynamics: {fileID: 1404697822}
   training: {fileID: 1404697828}
   clock: {fileID: 1404697819}
@@ -28157,6 +28163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a8c119f490da41c382363f0fc3902cd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CookingManager
+  facilities: {fileID: 1404697836}
   clock: {fileID: 1404697819}
   orders: {fileID: 1404697812}
   cookSeconds: 12
@@ -28210,7 +28217,7 @@ MonoBehaviour:
   initialOvens: 1
   initialBikeLevel: 1
   initialMaximumPeople: 4
-  implementationStage: 3
+  implementationStage: 4
 --- !u!114 &1404697837
 MonoBehaviour:
   m_ObjectHideFlags: 0

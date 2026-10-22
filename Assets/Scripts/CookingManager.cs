@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 [DefaultExecutionOrder(-40)]
 public sealed class CookingManager : MonoBehaviour
 {
+    [SerializeField] private FacilityManager facilities;
     [SerializeField] private GameClock clock;
     [SerializeField] private OrderListUI orders;
     [SerializeField,Min(.01f)] private float cookSeconds=12;
@@ -37,7 +38,7 @@ public sealed class CookingManager : MonoBehaviour
     private sealed class Oven {public Order Active;public float FreeAt;}
     private readonly List<Oven> ovens=new();
     public float CookSeconds=>cookSeconds;
-    public int OvenCount=>initialOvens;
+    public int OvenCount=>facilities!=null?facilities.Ovens:initialOvens;
     public int MaximumQueueLength {get;private set;}
     public float BusySeconds {get;private set;}
     public float Utilization=>BusySeconds/(OvenCount*clock.BusinessDuration);

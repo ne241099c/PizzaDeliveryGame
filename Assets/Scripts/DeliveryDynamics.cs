@@ -3,6 +3,7 @@ using UnityEngine;
 
 public sealed class DeliveryDynamics : MonoBehaviour
 {
+    [SerializeField] private FacilityManager facilities;
     [SerializeField] private DeliveryPersonSelector roster;
     [SerializeField, Range(0,1)] private float initialStamina = 1f;
     [SerializeField, Min(0)] private float depletionPerSecond = 0.004f;
@@ -18,6 +19,7 @@ public sealed class DeliveryDynamics : MonoBehaviour
     [SerializeField] private int randomSeed = 2718;
     public int? SeedOverride { get; set; }
     private System.Random seedSource;
+    public float EquipmentRiskMultiplier=>facilities!=null?facilities.RiskMultiplier:1;
     public float AccidentStopSeconds => accidentStopSeconds;
     private void Awake() => ResetForDay();
     public void ResetForDay()

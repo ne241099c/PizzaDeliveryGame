@@ -57,7 +57,7 @@ public static class M5SimulationValidation
                 decimal cash=300;
                 foreach(var r in rows)
                 {
-                    Check(r.Profit==r.Revenue-r.Materials-r.Fuel-r.Wages-r.FixedCosts,"ledger profit "+promise+" day "+r.Day);
+                    Check(r.Profit==r.Revenue-r.Materials-r.Fuel-r.Wages-r.FixedCosts-r.Repairs,"ledger profit "+promise+" day "+r.Day);
                     cash+=r.Profit-r.PreparationCosts;Check(cash==r.Cash,"cash carry "+promise+" day "+r.Day);
                     Check(r.Delivered>=r.Late && r.Delivered>=0 && r.Cancelled>=0 && r.Accidents>=0 && r.Reputation>=0 && r.Reputation<=100,"daily counters and reputation bounds");
                 }

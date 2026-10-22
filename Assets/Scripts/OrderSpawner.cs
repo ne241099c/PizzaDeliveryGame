@@ -4,6 +4,7 @@ using UnityEngine;
 [DefaultExecutionOrder(-50)]
 public sealed class OrderSpawner : MonoBehaviour
 {
+    [SerializeField] private FacilityManager facilities;
     [SerializeField] private CookingManager cooking;
     [SerializeField] private DayStats stats;
     [SerializeField] private GameClock clock;
@@ -32,14 +33,24 @@ public sealed class OrderSpawner : MonoBehaviour
     public float MinimumPromiseSeconds { get; private set; }
     public float MaximumPromiseSeconds => Mathf.Max(maximumPromiseSeconds, MinimumPromiseSeconds);
     public float ReputationFactor => reputation != null ? reputation.DemandFactor : 1f;
-    public float ExpectedInterval => interval / (DemandFactor(PromiseSeconds) * ReputationFactor);
+    public float ExpectedInterval => interval / (DemandFactor(PromiseSeconds) * ReputationFactor * (facilities!=null?facilities.DemandMultiplier:1));
 
-    private void Awake() { PromiseSeconds=initialPromiseSeconds;ResetRandom(); }
+    private void Awake()
+    {
+        PromiseSeconds=initialPromiseSeconds;ResetRandom();
+        // Policy bounds remain current while only automatic order generation is disabled.
+        if(facilities!=null)facilities.Changed+=RefreshMinimumPromise;
+    }
+    private void OnDestroy()
+    {
+        if(facilities!=null)facilities.Changed-=RefreshMinimumPromise;
+    }
     private void OnEnable()
     {
         clock.OnDayStarted += ScheduleFirst;
         clock.Advanced += Tick;
         map.MapReady += MapReady;
+        RefreshMinimumPromise();
     }
     private void OnDisable()
     {
@@ -50,10 +61,15 @@ public sealed class OrderSpawner : MonoBehaviour
     private void Start() { if (map.IsReady) MapReady(); }
     private void MapReady()
     {
+        RefreshMinimumPromise();
+        if (clock.Phase == DayPhase.Open) ScheduleFirst();
+    }
+    public void RefreshMinimumPromise()
+    {
+        if(!map.IsReady)return;
         MinimumPromiseSeconds = map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress && !n.IsStore)
             .Select(n=>ShortestRoundTripSeconds(n.Id)).DefaultIfEmpty(0).Max() * minimumPromiseMargin + (cooking!=null?cooking.CookSeconds:0);
         SetPromiseSeconds(PromiseSeconds);
-        if (clock.Phase == DayPhase.Open) ScheduleFirst();
     }
     public void ResetForDay() { progress=0; jitter=1; scheduled=false; }
     public void ResetPolicy() => SetPromiseSeconds(initialPromiseSeconds);
@@ -79,7 +95,6 @@ public sealed class OrderSpawner : MonoBehaviour
         if(outbound==null || inbound==null)throw new System.InvalidOperationException("Unreachable round trip: "+destination);
         return clock.ToRealSeconds(outbound.Concat(inbound).Sum(id=>map.GetTravelTime(id,perfect)));
     }
-    public void RefreshMinimumPromise()=>MapReady();
     public Order CreateOrder(string destination, float spawnedAt)
         => new Order(destination,"Delivery to "+destination,spawnedAt,PromiseSeconds);
     private void NextJitter() { if(random==null)ResetRandom();jitter=Mathf.Lerp(1f-intervalVariation,1f+intervalVariation,(float)random.NextDouble()); }

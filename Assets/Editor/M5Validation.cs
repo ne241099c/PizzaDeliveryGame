@@ -75,7 +75,7 @@ public static class M5Validation
         var ledger=economy.Ledger;
         check(ledger.Settled && ledger.FixedCosts==150 && ledger.Wages==roster.People.Sum(p=>economy.DailyWage(p)),"settlement pays all wages and fixed cost");
         check(ledger.Fuel==economy.FuelCost(ledger.Distance),"fuel uses actual distance");
-        check(economy.Cash==beforeSettlement-ledger.Fuel-ledger.Wages-ledger.FixedCosts,"materials are not deducted twice");
+        check(economy.Cash==beforeSettlement-ledger.Fuel-ledger.Wages-ledger.FixedCosts-ledger.Repairs,"materials are not deducted twice");
         check(economy.Cash==ledger.OpeningCash+ledger.Profit,"profit reconciles to cash");
         decimal carriedCash=economy.Cash;economy.SettleDay();
         check(economy.Cash==carriedCash,"settlement is applied only once");

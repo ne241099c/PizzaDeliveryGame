@@ -43,4 +43,11 @@ public static class M7SceneSetup
         var message=M4StageSceneSetup.Text(tab,"FacilityMessage","",0,620,1450,38,20);ScreensSceneSetup.Bind(ui,"message",message);ScreensSceneSetup.Bind(ui,"oven",oven);ScreensSceneSetup.Bind(ui,"bike",bike);ScreensSceneSetup.Bind(ui,"shop",shop);ScreensSceneSetup.Bind(ui,"small",small);ScreensSceneSetup.Bind(ui,"medium",medium);ScreensSceneSetup.Bind(ui,"large",large);
         var so=new SerializedObject(ui);var descriptions=so.FindProperty("descriptions");descriptions.arraySize=4;for(int n=0;n<4;n++)descriptions.GetArrayElementAtIndex(n).objectReferenceValue=labels[n];so.ApplyModifiedProperties();UIVisibility.Set(tab.gameObject,false);EditorSceneManager.MarkSceneDirty(go.scene);
     }
+    public static void Effects()
+    {
+        var go=GameObject.Find("GameManager");var facilities=go.GetComponent<FacilityManager>();
+        foreach(var component in new UnityEngine.Object[]{go.GetComponent<CookingManager>(),UnityEngine.Object.FindFirstObjectByType<MapManager>(),go.GetComponent<DeliveryDynamics>(),go.GetComponent<OrderSpawner>(),go.GetComponent<RecruitmentManager>()})ScreensSceneSetup.Bind(component,"facilities",facilities);
+        ScreensSceneSetup.Bind(go.GetComponent<BusinessEconomy>(),"stats",go.GetComponent<DayStats>());
+        var so=new SerializedObject(facilities);so.FindProperty("implementationStage").intValue=4;so.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(go.scene);
+    }
 }

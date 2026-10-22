@@ -26,6 +26,7 @@ public sealed class DeliveryTrip
     private int nextEdgeToCheck;
     public int BackstreetCount=>roads.Count(r=>r.RoadType==RoadType.Backstreet);
     public int SafeRoadCount=>roads.Length-AccidentCount;
+    public float EquipmentRiskAtDispatch {get;}
     public float StartingStamina { get; }
     public float EnduranceAtDispatch { get; }
     public float SafetyAtDispatch { get; }
@@ -44,7 +45,7 @@ public sealed class DeliveryTrip
     {
         if (plan == null || plan.EdgeIds.Count == 0 || plan.Orders.Count == 0 || multiplier <= 0)
             throw new ArgumentException("A valid route, orders, and positive multiplier are required.");
-        this.dynamics=dynamics;
+        this.dynamics=dynamics;EquipmentRiskAtDispatch=dynamics!=null?dynamics.EquipmentRiskMultiplier:1;
         this.roll=roll ?? dynamics?.CreateRoller();
         StartingStamina=person.CurrentStamina;
         EnduranceAtDispatch=person.Endurance;
@@ -102,7 +103,7 @@ public sealed class DeliveryTrip
         while(nextEdgeToCheck<roads.Length && segmentStartTimes[nextEdgeToCheck]<=now)
         {
             int index=nextEdgeToCheck++;
-            float probability=dynamics.AccidentProbability(SafetyAtDispatch,StartingStamina,roads[index].RoadType);
+            float probability=Mathf.Clamp01(dynamics.AccidentProbability(SafetyAtDispatch,StartingStamina,roads[index].RoadType)*EquipmentRiskAtDispatch);
             if(roll()>=probability)continue;
             float delay=dynamics.AccidentStopSeconds;
             stopSeconds[index]+=delay;

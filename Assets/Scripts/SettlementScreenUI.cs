@@ -49,7 +49,7 @@ public sealed class SettlementScreenUI : MonoBehaviour
         int tips=trips.Sum(t=>t.Deliveries.Where(d=>d.Resolved).Sum(d=>score.TipForArrival(d.ArrivesAt,d.Order.Deadline,t.ServiceAtDispatch)));
         string[] pages={
             $"SALES\nRevenue {l.Revenue:F2}\nDelivered {stats.DeliveredCount} / Late {stats.LateCount}\nTips included: {tips}\nPerfect bake bonus (included): {l.PerfectBakeBonus:F2}",
-            $"COSTS\nMaterials {l.Materials:F2}\nFuel {l.Fuel:F2}\nWages {l.Wages:F2}\nFixed {l.FixedCosts:F2}\nEquipment maintenance (included) {l.EquipmentMaintenance:F2}\nFacility purchases (preparation) {l.FacilityPurchases:F2}\nPreparation {l.PreparationCosts:F2}",
+            $"COSTS\nMaterials {l.Materials:F2}\nFuel {l.Fuel:F2}\nWages {l.Wages:F2}\nRepairs {l.Repairs:F2}\nFixed {l.FixedCosts:F2}\nEquipment maintenance (included) {l.EquipmentMaintenance:F2}\nFacility purchases (preparation) {l.FacilityPurchases:F2}\nPreparation {l.PreparationCosts:F2}",
             $"PROFIT\n{l.Profit:+0.00;-0.00;0.00}\nCash {l.OpeningCash:F2} -> {economy.Cash:F2}",
             progression.DailySummary+$"\nReputation {openingReputation:F1} -> {reputation.Value:F1}",
             campaign.IsBankrupt?"BUSINESS CLOSED\nContinue to game over.":"DAY COMPLETE\nReady for the next day."};

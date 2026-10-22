@@ -72,7 +72,7 @@ public static class M6SimulationValidation
                 previousTrend=settings.PromiseTrend(r.Late,r.Reputation);
                 if(c.Adjust)expectedPromise=settings.AdjustedPromise(r.Promise,r.Late,r.Reputation,streak);
                 Check(r.FixedCosts==economy.FixedCost(r.Day),"rising fixed costs");
-                Check(r.Profit==r.Revenue-r.Materials-r.Fuel-r.Wages-r.FixedCosts,"profit");
+                Check(r.Profit==r.Revenue-r.Materials-r.Fuel-r.Wages-r.FixedCosts-r.Repairs,"profit");
                 cash+=r.Profit-r.PreparationCosts;Check(cash==r.Cash,"cash including preparation costs");
                 Check(r.Spawned==r.Delivered+r.Cancelled && r.Stock<=r.Cancelled,"spawned and closing stock");
                 Check(r.BusyRatio>=0 && r.BusyRatio<=1.0001f,"busy ratio clips overtime");

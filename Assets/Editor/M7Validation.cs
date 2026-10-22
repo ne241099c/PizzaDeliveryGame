@@ -28,7 +28,7 @@ public static class M7Validation
         Check(closing.Status==OrderStatus.Cancelled && list.OrderCount==0,"closing cancels cooking and queue");
         Check(Mathf.Abs(spawner.MinimumPromiseSeconds-(spawner.ShortestRoundTripSeconds("Goal2")*1.1f+cook.CookSeconds))<.001f,"round trip and cooking minimum");
         spawner.SetPromiseSeconds(30);Check(spawner.PromiseSeconds>=spawner.MinimumPromiseSeconds,"requested 30 respects physical minimum");campaign.NewGame();
-        ValidateQuality(Check);ValidateFacilities(Check);
+        ValidateQuality(Check);ValidateFacilities(Check);ValidateEffects(Check);
         return $"PASS: {count} M7 checks.";
     }
     private static void ValidateQuality(Action<bool,string> check)
@@ -66,5 +66,24 @@ public static class M7Validation
         var legacy=save.Capture();legacy.version=1;legacy.facilities=null;legacy.facilityPurchaseCosts=null;check(save.TryParse(JsonUtility.ToJson(legacy),out var migrated,out _) && migrated.version==2 && migrated.facilities.oven==0,"old version one migrates in memory");
         campaign.StartBusiness();check(!facilities.Purchase(FacilityType.Oven) && facilities.LastMessage.Contains("preparation"),"business blocks purchases");UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().enabled=false;clock.Advance(clock.BusinessDuration+1000);check(economy.Ledger.EquipmentMaintenance==90 && economy.Ledger.FixedCosts==240,"maintenance in real settlement");
         campaign.NewGame();check(facilities.Ovens==1 && facilities.BikeLevel==1 && facilities.MaximumPeople==4,"new game resets facilities");
+    }
+    private static void ValidateEffects(Action<bool,string> check)
+    {
+        var f=UnityEngine.Object.FindFirstObjectByType<FacilityManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var dynamics=UnityEngine.Object.FindFirstObjectByType<DeliveryDynamics>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var recruitment=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var stats=UnityEngine.Object.FindFirstObjectByType<DayStats>();
+        campaign.NewGame();float baseTime=map.GetTravelTime("Store-N1",roster.People[0]),minimum=spawner.MinimumPromiseSeconds;
+        var order=spawner.CreateOrder("Goal1",0);float deadline=order.Deadline;
+        f.Restore(new FacilitySaveData{oven=1,bike=1,expansion=1});
+        check(Mathf.Abs(map.GetTravelTime("Store-N1",roster.People[0])*1.08f-baseTime)<.0001f,"bike level two speed formula");check(Mathf.Abs(dynamics.EquipmentRiskMultiplier-.9f)<.0001f,"bike level two risk formula");check(recruitment.MaximumPeople==5,"shop level one team limit");check(spawner.MinimumPromiseSeconds<minimum && order.Deadline==deadline,"upgrades update minimum without rewriting old deadlines");
+        f.Restore(new FacilitySaveData{oven=2,bike=2,expansion=2});check(Mathf.Abs(map.GetTravelTime("Store-N1",roster.People[0])*1.16f-baseTime)<.0001f && Mathf.Abs(dynamics.EquipmentRiskMultiplier-.8f)<.0001f,"bike level three absolute multipliers");check(recruitment.MaximumPeople==6 && f.Maintenance==180,"maximum slots and maintenance");
+        var funding=new SerializedObject(economy);float initial=funding.FindProperty("initialCash").floatValue;funding.FindProperty("initialCash").floatValue=10000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=initial;funding.ApplyModifiedPropertiesWithoutUndo();
+        var people=roster.People.ToList();while(roster.People.Count<6){if(recruitment.Applicants.Count==0)recruitment.GenerateDay();check(recruitment.Hire(recruitment.Applicants[0]),"actual hire into expanded team");}check(recruitment.HireRejection(recruitment.Applicants.FirstOrDefault()).Length>0,"expanded maximum still rejects overflow");
+        float interval=spawner.ExpectedInterval;check(f.Purchase(FacilityType.Advertising,3) && Mathf.Abs(spawner.ExpectedInterval*1.3f-interval)<.001f,"advertising demand applied once");
+        campaign.StartBusiness();spawner.enabled=false;
+        var pizzas=Enumerable.Range(0,4).Select(i=>new Order("Goal1","Oven "+i,0,200)).ToArray();foreach(var pizza in pizzas)list.AddOrder(pizza);
+        check(cook.OvenCount==3 && pizzas.Count(o=>o.Baking==BakingState.Cooking)==3 && pizzas[3].Baking==BakingState.Waiting,"three simultaneous ovens and FIFO overflow");clock.Advance(cook.CookSeconds);check(pizzas.Take(3).All(o=>o.IsReady) && pizzas[3].Baking==BakingState.Cooking,"multi-oven completion starts next pizza");
+        var route=new ManualDeliveryRoute(map);route.TryReplace(RoadPathfinder.Suggest(map,new[]{pizzas[0]},roster.People[0]).EdgeIds);var plan=route.BuildCompletion(new[]{pizzas[0]},roster.People[0]);var trip=new DeliveryTrip(map,plan,roster.People[0],clock.ElapsedSeconds,clock.ToRealSeconds(1),dynamics,()=>0);
+        float returns=trip.ReturnsAt;f.Restore(new FacilitySaveData());check(trip.ReturnsAt==returns && Mathf.Abs(trip.EquipmentRiskAtDispatch-.8f)<.0001f,"speed and risk frozen at dispatch");
+        check(economy.RepairCost(0)==0 && economy.RepairCost(3)==90,"repair cost exact formula");stats.RecordAccident();stats.RecordAccident();clock.Advance(clock.BusinessDuration+1000);check(economy.Ledger.Repairs==60,"real settlement charges repairs");check(f.DemandMultiplier==1,"advertising ends on closing");
+        campaign.NewGame();f.Restore(new FacilitySaveData{oven=1,bike=1,expansion=1});campaign.StartBusiness();spawner.enabled=false;clock.Advance(clock.BusinessDuration+1000);check(campaign.IsBankrupt && f.Ovens==1 && f.BikeLevel==1 && f.MaximumPeople==4 && f.LastOperatingState.oven==1,"bankruptcy resets equipment after recording operating levels");campaign.NewGame();
     }
 }

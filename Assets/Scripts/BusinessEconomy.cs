@@ -5,6 +5,9 @@ using TMPro;
 public sealed class BusinessEconomy : MonoBehaviour
 {
     [SerializeField] private FacilityManager facilities;
+    [SerializeField] private DayStats stats;
+    [SerializeField,Min(0)] private float accidentRepairCost=30;
+    public decimal RepairCost(int accidents)=>Money((decimal)accidentRepairCost*System.Math.Max(0,accidents));
     [SerializeField] private GameClock clock;
     private readonly System.Collections.Generic.Dictionary<string,decimal> openingWages=new();
     [SerializeField] private DeliveryFlowController flow;
@@ -57,11 +60,12 @@ public sealed class BusinessEconomy : MonoBehaviour
     public void SettleDay()
     {
         if(Ledger.Settled)return;
+        Ledger.Repairs=RepairCost(stats.AccidentCount);
         Ledger.Fuel=FuelCost(Ledger.Distance);
         foreach(var person in roster.People)Ledger.Wages+=openingWages.TryGetValue(person.Id,out var wage)?wage:DailyWage(person);
         Ledger.EquipmentMaintenance=facilities!=null?facilities.Maintenance:0;
         Ledger.FixedCosts=FixedCost(dayNumber);
-        Cash-=Ledger.Fuel+Ledger.Wages+Ledger.FixedCosts;
+        Cash-=Ledger.Fuel+Ledger.Wages+Ledger.FixedCosts+Ledger.Repairs;
         Ledger.Settled=true;
     }
 }
