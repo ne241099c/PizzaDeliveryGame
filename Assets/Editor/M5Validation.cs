@@ -36,7 +36,7 @@ public static class M5Validation
         foreach(bool late in new[]{false,true})
         {
             var person=roster.People.First(p=>p.Name=="Aoi");
-            var order=new Order("Goal1","Revenue test",clock.ElapsedSeconds,late?0:100);
+            var order=M7Validation.ReadyOrder("Goal1","Revenue test",clock.ElapsedSeconds,late?1:100);
             orders.AddOrder(order);orders.SelectOnly(order);roster.SelectForDispatch(person);
             var suggestion=RoadPathfinder.Suggest(map,orders.SelectedOrders,person);
             decimal beforeCash=economy.Cash,beforeRevenue=economy.DailyRevenue;
@@ -52,7 +52,7 @@ public static class M5Validation
         check(economy.DailyWage(roster.People.First(p=>p.Name=="Aoi"))==220,"Aoi wage formula");
         check(economy.DailyWage(roster.People.First(p=>p.Name=="Ren"))==184,"Ren wage formula");
         check(economy.Ledger.Materials==40 && economy.Ledger.Distance>0,"actual dispatched materials and completed road distance");
-        var sampleOrder=new[]{new Order("Goal1","Distance",0,100)};
+        var sampleOrder=new[]{M7Validation.ReadyOrder("Goal1","Distance",0,100)};
         var samplePerson=roster.People.First(p=>p.Name=="Aoi");
         var suggested=RoadPathfinder.Suggest(map,sampleOrder,samplePerson);
         var shortRoute=new ManualDeliveryRoute(map);shortRoute.TryReplace(suggested.EdgeIds);
@@ -67,7 +67,7 @@ public static class M5Validation
         check(Mathf.Abs(paused.DistanceAt(paused.ReturnsAt)-clean.DistanceAt(clean.ReturnsAt))<.001f,"accidents do not increase total fuel distance");
         decimal beforeSettlement=economy.Cash;
         var retained=roster.People.ToArray();rep.RecordArrival(0,0);
-        orders.AddOrder(new Order("Goal1","Wait",clock.ElapsedSeconds,60));
+        orders.AddOrder(M7Validation.ReadyOrder("Goal1","Wait",clock.ElapsedSeconds,60));
         score.AddScore(10);stats.RecordDelivery(10,0);
         dynamics.ApplyTripFatigue(retained[0],1,retained[0].Endurance,100);
         clock.Advance(clock.BusinessDuration+1);
@@ -134,7 +134,7 @@ public static class M5Validation
         check(recruitment.Hire(candidate) && roster.People.Contains(candidate.Person) && economy.Cash==beforeHire-fee,"hiring updates roster and charges three wage days");
         check(economy.Ledger.PreparationCosts==fee && fee==BusinessEconomy.Money(economy.DailyWage(candidate.Person)*3+400*Enumerable.Range(0,5).Average(i=>(decimal)candidate.Person.Potential((CourierAbility)i)-(decimal)candidate.Person.Ability((CourierAbility)i))),"hiring cost includes potential premium and is recorded separately");
         decimal hiredWages=roster.People.Sum(p=>economy.DailyWage(p));
-        campaign.StartBusiness();orders.AddOrder(new Order("Goal1","New hire",0,100));orders.SelectOnly(orders.Orders[0]);
+        campaign.StartBusiness();orders.AddOrder(M7Validation.ReadyOrder("Goal1","New hire",0,100));orders.SelectOnly(orders.Orders[0]);
         check(roster.SelectForDispatch(candidate.Person),"new hire selectable on the same day");
         var hireRoute=new ManualDeliveryRoute(map);hireRoute.TryReplace(RoadPathfinder.Suggest(map,orders.SelectedOrders,candidate.Person).EdgeIds);
         check(flow.Dispatch(hireRoute.BuildCompletion(orders.SelectedOrders,candidate.Person),candidate.Person),"new hire dispatches through existing flow");
@@ -155,14 +155,14 @@ public static class M5Validation
         campaign.NewGame();
         check(roster.People.Count==2 && economy.Cash==300 && economy.Ledger.PreparationCosts==0,"new game clears hired roster and preparation expenses");
         spawner.enabled=false;campaign.StartBusiness();clock.Advance(clock.BusinessDuration-1);
-        var lastOrder=new Order("Goal1","Closing trip",clock.ElapsedSeconds,100);orders.AddOrder(lastOrder);orders.SelectOnly(lastOrder);roster.SelectForDispatch(roster.People[0]);
+        var lastOrder=M7Validation.ReadyOrder("Goal1","Closing trip",clock.ElapsedSeconds,100);orders.AddOrder(lastOrder);orders.SelectOnly(lastOrder);roster.SelectForDispatch(roster.People[0]);
         UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>().DispatchWithSuggestion();
         check(flow.ActiveTrips.Count==1,"late departure uses actual suggested route dispatch");
         clock.Advance(1);
         check(clock.Phase==DayPhase.Closed && flow.ActiveTrips.Count==1,"closing waits for courier before settlement");
         clock.Advance(10000);check(clock.Phase==DayPhase.Ended && flow.ActiveTrips.Count==0 && economy.Ledger.Settled,"last return triggers settlement");
         campaign.NewGame();campaign.StartBusiness();
-        var resetOrder=new Order("Goal1","Reset in flight",0,100);orders.AddOrder(resetOrder);orders.SelectOnly(resetOrder);roster.SelectForDispatch(roster.People[0]);
+        var resetOrder=M7Validation.ReadyOrder("Goal1","Reset in flight",0,100);orders.AddOrder(resetOrder);orders.SelectOnly(resetOrder);roster.SelectForDispatch(roster.People[0]);
         UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>().DispatchWithSuggestion();
         check(flow.ActiveTrips.Count==1,"trip exists before new game reset");
         campaign.NewGame();check(flow.ActiveTrips.Count==0 && orders.OrderCount==0 && clock.Phase==DayPhase.BeforeOpening,"new game clears active trips without scene reload");

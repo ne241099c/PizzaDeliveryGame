@@ -41,7 +41,7 @@ public static class ScreenValidation
             var business=UnityEngine.Object.FindFirstObjectByType<BusinessScreenUI>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();
             var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>();
             campaign.StartBusiness();business.Refresh();Check(!business.IsPlanningPanelOpen,"no planning panel without selections");
-            var order=new Order("Goal1","Screen route",0,100);list.AddOrder(order);list.SelectOnly(order);roster.SelectForDispatch(roster.People[0]);business.Refresh();
+            var order=M7Validation.ReadyOrder("Goal1","Screen route",0,100);list.AddOrder(order);list.SelectOnly(order);roster.SelectForDispatch(roster.People[0]);business.Refresh();
             Check(business.IsPlanningPanelOpen,"order and courier open route panel");
             float before=clock.ElapsedSeconds;clock.Advance(1);Check(clock.ElapsedSeconds>before,"planning does not pause game time");
             UIVisibility.Find(canvas.transform,"Deselect").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();business.Refresh();Check(!business.IsPlanningPanelOpen && list.SelectedOrders.Count==0,"deselect closes planning panel");

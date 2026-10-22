@@ -11,5 +11,5 @@ public static class DeliveryScoring
     }
 
     public static float CancellationAt(float deadline, int basePoints, float penaltyPerSecond)
-        => penaltyPerSecond > 0 ? deadline + basePoints / penaltyPerSecond : float.PositiveInfinity;
+        => deadline; // Pending orders now expire at the promise deadline, including cooking.
 }

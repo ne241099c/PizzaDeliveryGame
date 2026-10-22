@@ -24,7 +24,7 @@ public static partial class M3Validation
             check(Mathf.Abs(actual - expected) < 0.001f, $"{name}: actual {actual}, expected {expected}");
         var expert = new DeliveryPerson("Expert", 1f);
         var rookie = new DeliveryPerson("Ren", 0.3f);
-        var orders = new[] { new Order("Goal1", "Test1", 0, 60), new Order("Goal2", "Test2", 0, 60) };
+        var orders = new[] { M7Validation.ReadyOrder("Goal1", "Test1", 0, 60), M7Validation.ReadyOrder("Goal2", "Test2", 0, 60) };
         var route = new ManualDeliveryRoute(map);
         check(route.CurrentNodeId == map.StoreNodeId && route.EdgeIds.Count == 0, "Starts at Store");
         check(!route.TryAppend("Goal1-Goal2", out _), "Disconnected road rejected");

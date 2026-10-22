@@ -20,7 +20,7 @@ public static class M4Validation
         void Check(bool ok, string name) { if (!ok) throw new Exception("M4: " + name); checks++; }
         void Near(float a, float b, string name) => Check(Mathf.Abs(a-b)<0.001f, name + $" ({a}, expected {b})");
         Near(UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().CreateOrder("Goal1",10).Deadline,10+UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().PromiseSeconds,"Deadline snapshots delivery promise");
-        var order = new Order("Goal1","Test",10,60);
+        var order = M7Validation.ReadyOrder("Goal1","Test",10,60);
         Near(order.SpawnedAt,10,"Spawn timestamp"); Near(order.Deadline,70f,"Absolute deadline");
         Check(order.Status == OrderStatus.Pending,"New order pending");
         Check(DeliveryScoring.Calculate(50,60,100,5)==100,"Early full score");
@@ -29,11 +29,11 @@ public static class M4Validation
         Check(DeliveryScoring.Calculate(80,60,100,5)==0,"20 seconds late");
         Check(DeliveryScoring.Calculate(90,60,100,5)==0,"Never negative");
         Check(DeliveryScoring.Calculate(60.5f,60,100,5)==98,"Fractional score rounding");
-        Near(DeliveryScoring.CancellationAt(60,100,5),80,"Pending cancellation threshold");
-        Check(float.IsPositiveInfinity(DeliveryScoring.CancellationAt(60,100,0)),"No expiry without late penalty");
+        Near(DeliveryScoring.CancellationAt(60,100,5),60,"Pending cancellation threshold");
+        Near(DeliveryScoring.CancellationAt(60,100,0),60,"Pending expiry is independent of scoring penalty");
 
         var person = new DeliveryPerson("Test",1);
-        var orders = new[] { order, new Order("Goal2","Test2",10,60) };
+        var orders = new[] { order, M7Validation.ReadyOrder("Goal2","Test2",10,60) };
         var route = new ManualDeliveryRoute(map);
         route.TryReplace(new[] {"Store-N1","N1-N2-Main","N2-Goal1","Goal1-Goal2","N2-Goal2","N1-N2-Main","Store-N1"});
         var plan = route.BuildCompletion(orders,person);
@@ -52,7 +52,7 @@ public static class M4Validation
         float returnsAt=trip.ReturnsAt; person.SkillLevel=0.3f; route.Clear();
         Near(trip.ReturnsAt,returnsAt,"Dispatch timing is frozen");
         Check(trip.EdgeIds.Count==7,"Editing next route leaves dispatched route intact");
-        var duplicateDestination = new[] {order,new Order("Goal1","Same address",10,60)};
+        var duplicateDestination = new[] {order,M7Validation.ReadyOrder("Goal1","Same address",10,60)};
         route.TryReplace(new[] {"Store-N1","N1-N2-Main","N2-Goal1","N2-Goal1","N1-N2-Main","Store-N1"});
         var same = new DeliveryTrip(map,route.BuildCompletion(duplicateDestination,person),person,0,5);
         Near(same.Deliveries[0].ArrivesAt,same.Deliveries[1].ArrivesAt,"Two orders at same address arrive together");

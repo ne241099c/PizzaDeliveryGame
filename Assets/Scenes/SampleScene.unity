@@ -25652,6 +25652,7 @@ GameObject:
   - component: {fileID: 1404697832}
   - component: {fileID: 1404697833}
   - component: {fileID: 1404697834}
+  - component: {fileID: 1404697835}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -25707,6 +25708,7 @@ MonoBehaviour:
   orderItemPrefab: {fileID: 6263185544063156782, guid: b574e3d5988464134933ee45b93abdc5, type: 3}
   clock: {fileID: 1404697819}
   emptyMessage: {fileID: 1636679146}
+  rowHeight: 110
   urgentSeconds: 15
 --- !u!114 &1404697813
 MonoBehaviour:
@@ -25860,6 +25862,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 65b5a637f8ba4cf08a5aa220ea2cacd9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OrderSpawner
+  cooking: {fileID: 1404697835}
   stats: {fileID: 1404697818}
   clock: {fileID: 1404697819}
   map: {fileID: 937587058}
@@ -26118,7 +26121,7 @@ MonoBehaviour:
   extendLateCount: 3
   promiseTrendDays: 2
   comparisonExtraInitialCash: 600
-  resultsDirectory: Docs/M6_Adjustment_Simulations
+  resultsDirectory: Docs/M7_Simulations/legacy
   trainingPriority: 00000000050000000400000002000000
 --- !u!114 &1404697827
 MonoBehaviour:
@@ -26340,6 +26343,22 @@ MonoBehaviour:
   headerMenu: {fileID: 1744147328}
   continueGame: {fileID: 2018630986}
   newGame: {fileID: 186225408}
+--- !u!114 &1404697835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1404697809}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a8c119f490da41c382363f0fc3902cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CookingManager
+  clock: {fileID: 1404697819}
+  orders: {fileID: 1404697812}
+  cookSeconds: 12
+  initialOvens: 1
 --- !u!1 &1408363483
 GameObject:
   m_ObjectHideFlags: 0

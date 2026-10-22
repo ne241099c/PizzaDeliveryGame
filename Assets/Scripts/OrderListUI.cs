@@ -11,6 +11,7 @@ public class OrderListUI : MonoBehaviour
     [SerializeField] private Button orderItemPrefab;
     [SerializeField] private GameClock clock;
     [SerializeField] private TextMeshProUGUI emptyMessage;
+    [SerializeField, Min(62)] private float rowHeight=110;
     [SerializeField, Min(0f)] private float urgentSeconds = 15f;
     private readonly List<Order> orders = new();
     private readonly List<Button> orderButtons = new();
@@ -67,7 +68,7 @@ public class OrderListUI : MonoBehaviour
         {
             Button button = Instantiate(orderItemPrefab, orderListContent);
             var layout = button.GetComponent<LayoutElement>() ?? button.gameObject.AddComponent<LayoutElement>();
-            layout.preferredHeight = layout.minHeight = 62f;
+            layout.preferredHeight = layout.minHeight = rowHeight;
             button.GetComponentInChildren<TextMeshProUGUI>().raycastTarget = false;
             orderButtons.Add(button);
         }
@@ -83,28 +84,32 @@ public class OrderListUI : MonoBehaviour
         }
         if (emptyMessage != null) emptyMessage.gameObject.SetActive(orders.Count == 0);
     }
+    public bool CanSelect(Order order)=>Contains(order) && order.IsReady && clock.ElapsedSeconds<order.Deadline;
     private void UpdateLabel(Button button, Order order)
     {
+        var layout=button.GetComponent<LayoutElement>();if(layout!=null)layout.minHeight=layout.preferredHeight=rowHeight;
         float remaining = order.Deadline - clock.ElapsedSeconds;
         string deadline = remaining >= 0 ? $"{remaining:F0}s left" : $"LATE {-remaining:F0}s";
         var label = button.GetComponentInChildren<TextMeshProUGUI>();
-        label.text = $"{order.DestinationName}\n<size=17>{deadline}</size>";
+        string baking=order.Baking==BakingState.Waiting?"Waiting for oven":order.Baking==BakingState.Cooking?$"Cooking {Mathf.Max(0,order.CookFinishesAt-clock.ElapsedSeconds):F1}s":"Ready";
+        label.text = $"{order.DestinationName}\n<size=17>{deadline} / {baking}</size>";
+        label.rectTransform.anchorMin=Vector2.zero;label.rectTransform.anchorMax=Vector2.one;label.rectTransform.offsetMin=new Vector2(8,8);label.rectTransform.offsetMax=new Vector2(-8,-8);
         label.fontSize = 20;
         label.color = new Color(0.1f, 0.14f, 0.2f);
         button.GetComponent<Image>().color = selectedOrders.Contains(order) ? Color.yellow
             : remaining <= urgentSeconds ? new Color(1f, 0.62f, 0.48f) : Color.white;
-        button.interactable = clock.Phase == DayPhase.Open;
+        button.interactable = clock.Phase == DayPhase.Open && CanSelect(order);
     }
     public bool SelectOnly(Order order) => SelectForDispatch(new[]{order});
     public bool SelectForDispatch(IEnumerable<Order> selection)
     {
         var chosen=selection?.ToArray();
-        if(clock.Phase!=DayPhase.Open || chosen==null || chosen.Length<1 || chosen.Length>2 || chosen.Distinct().Count()!=chosen.Length || chosen.Any(o=>!Contains(o)))return false;
+        if(clock.Phase!=DayPhase.Open || chosen==null || chosen.Length<1 || chosen.Length>2 || chosen.Distinct().Count()!=chosen.Length || chosen.Any(o=>!CanSelect(o)))return false;
         selectedOrders.Clear();selectedOrders.AddRange(chosen);Refresh();SelectionChanged?.Invoke();return true;
     }
     private void ToggleOrder(Order order)
     {
-        if (clock.Phase != DayPhase.Open || !Contains(order)) return;
+        if (clock.Phase != DayPhase.Open || !CanSelect(order)) return;
         if (!selectedOrders.Remove(order))
         {
             if (selectedOrders.Count >= 2) return;

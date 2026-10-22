@@ -84,7 +84,7 @@ public static partial class M6Validation
         rules.AwardExperience(p,CourierAbility.Driving,200);Near(p.Driving,.55f,"growth clamps to potential");Near(p.Experience(CourierAbility.Driving),0,"XP cleared at potential");
         rules.AwardExperience(p,CourierAbility.Driving,1000);Near(p.Experience(CourierAbility.Driving),0,"capped ability cannot accumulate XP");
         rules.AwardExperience(p,CourierAbility.Capacity,10000);Check(p.Capacity==2,"capacity does not gain XP");
-        var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var orders=new[]{new Order("Goal1","XP",0,100)};
+        var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var orders=new[]{M7Validation.ReadyOrder("Goal1","XP",0,100)};
         var route=new ManualDeliveryRoute(map);route.TryReplace(new[]{"Store-N1","N1-N2-Backstreet","N2-Goal1","N2-Goal1","N1-N2-Backstreet","Store-N1"});
         var trip=new DeliveryTrip(map,route.BuildCompletion(orders,p),p,0,5);
         Near(rules.ExperienceEarned(trip,CourierAbility.Driving),trip.DistanceAt(trip.ReturnsAt)*.3f,"driving XP distance");
@@ -96,7 +96,7 @@ public static partial class M6Validation
         var accident=new DeliveryTrip(map,route.BuildCompletion(orders,p),p,0,5,dynamics,()=>0);accident.AdvanceAccidents(10000);
         Near(rules.ExperienceEarned(accident,CourierAbility.Safety),0,"accident roads give no safety XP");
         Near(rules.ExperienceEarned(accident,CourierAbility.Endurance),accident.ReturnsAt*.35f,"accident stop included in endurance XP");
-        var lateOrders=new[]{new Order("Goal1","Late",0,0)};var late=new DeliveryTrip(map,route.BuildCompletion(lateOrders,p),p,0,5);Near(rules.ExperienceEarned(late,CourierAbility.Service),5,"late service XP");
+        var lateOrders=new[]{M7Validation.ReadyOrder("Goal1","Late",0,0)};var late=new DeliveryTrip(map,route.BuildCompletion(lateOrders,p),p,0,5);Near(rules.ExperienceEarned(late,CourierAbility.Service),5,"late service XP");
         rules.PrepareDay();
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();spawner.enabled=false;
@@ -145,7 +145,7 @@ public static partial class M6Validation
             var p=new DeliveryPerson("Knowledge",.5f,knowledge,2,.5f,.5f,.5f);
             foreach(string goal in new[]{"Goal1","Goal2"})
             {
-                var route=RoadPathfinder.Suggest(map,new[]{new Order(goal,"Knowledge",0,60)},p);
+                var route=RoadPathfinder.Suggest(map,new[]{M7Validation.ReadyOrder(goal,"Knowledge",0,60)},p);
                 bool usesBackstreet=route.EdgeIds.Any(id=>map.GetEdge(id).RoadType==RoadType.Backstreet);
                 Check(usesBackstreet==(knowledge>.5f),"knowledge chooses road at "+knowledge+" / "+goal);
                 float expected=knowledge<.5f?6.833333f:knowledge<.8f?6.58f:5.92f;

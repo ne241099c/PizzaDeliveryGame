@@ -16,7 +16,7 @@ public static partial class M3Validation
         var ren=new DeliveryPerson("Ren",0.5f,0.3f,2,0.5f,0.9f,0.4f);
         check(map.GetTravelTime("Store-N1",person)<map.GetTravelTime("Store-N1",ren),"M4-2 faster driving wins on main road");
         check(map.GetTravelTime("N1-N2-Backstreet",ren)>map.GetTravelTime("N1-N2-Main",ren),"M4-2 Ren avoids backstreet");
-        var orders=new[]{new Order("Goal1","Test",0,60)};
+        var orders=new[]{M7Validation.ReadyOrder("Goal1","Test",0,60)};
         var suggested=RoadPathfinder.Suggest(map,orders,person);
         var route=new ManualDeliveryRoute(map);route.TryReplace(suggested.EdgeIds);
         near(suggested.TotalTime,route.GetTime(person),"M4-2 suggestion and manual timing agree");
@@ -36,16 +36,16 @@ public static partial class M3Validation
         near(spawner.DemandFactor(1),2,"M4-3 demand upper clamp");
         near(spawner.DemandFactor(10000),0.4f,"M4-3 demand lower clamp");
         near(spawner.ShortestArrivalSeconds("Goal1"),2.85f/1.3f*5,"M4-3 fastest one-way Goal1");
-        near(spawner.MinimumPromiseSeconds,3.05f/1.3f*5*1.1f,"M4-3 farthest one-way lower bound");
+        near(spawner.MinimumPromiseSeconds,2*3.05f/1.3f*5*1.1f+12,"M7 round-trip lower bound plus cooking");
         near(spawner.ReputationFactor,1,"M4-6 initial reputation gives factor one");
         float previousPromise=spawner.PromiseSeconds;
         try
         {
             spawner.SetPromiseSeconds(30);var existing=spawner.CreateOrder("Goal1",12);
-            near(existing.Deadline,42,"M4-3 deadline at birth");
-            near(spawner.ExpectedInterval,25/Mathf.Pow(2,0.7f),"M4-3 short promise raises frequency");
+            near(existing.Deadline,12+spawner.PromiseSeconds,"M7 deadline snapshots physically clamped promise");
+            near(spawner.ExpectedInterval,25/spawner.DemandFactor(spawner.PromiseSeconds),"M7 clamped short promise controls frequency");
             spawner.SetPromiseSeconds(180);
-            near(existing.Deadline,42,"M4-3 slider cannot rewrite an existing deadline");
+            near(existing.Deadline,12+Mathf.Max(30,spawner.MinimumPromiseSeconds),"M7 slider cannot rewrite an existing deadline");
             near(spawner.CreateOrder("Goal2",13).Deadline,193,"M4-3 only new orders get new promise");
             near(spawner.ExpectedInterval,25/Mathf.Pow(1f/3f,0.7f),"M4-3 long promise reduces frequency");
             spawner.SetPromiseSeconds(0);near(spawner.PromiseSeconds,spawner.MinimumPromiseSeconds,"M4-3 physical lower bound enforced");
@@ -56,7 +56,7 @@ public static partial class M3Validation
         check(roster[0].Capacity==2 && roster[0].CanCarry(2),"M4-4 Aoi can carry two");
         check(roster[0].CanCarry(1),"M4-4 Minato single delivery");
         check(!roster[1].CanCarry(0),"M4-4 empty dispatch rejected");
-        var batchOrders=new[]{new Order("Goal1","A",0,60),new Order("Goal2","B",0,60)};
+        var batchOrders=new[]{M7Validation.ReadyOrder("Goal1","A",0,60),M7Validation.ReadyOrder("Goal2","B",0,60)};
         var batchRoute=new ManualDeliveryRoute(map);batchRoute.TryReplace(RoadPathfinder.Suggest(map,batchOrders,minato).EdgeIds);
         var batchPlan=batchRoute.BuildCompletion(batchOrders,minato);
         var flow=UnityEngine.Object.FindFirstObjectByType<DeliveryFlowController>();

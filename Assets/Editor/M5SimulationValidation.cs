@@ -49,7 +49,7 @@ public static class M5SimulationValidation
             Check(firstCsv==session.ToCsv(),"same seed reproduces all daily CSV values");
             foreach(float promise in settings.PromiseSeconds)
             {
-                var rows=firstRecords.Where(r=>Mathf.Abs(r.Promise-promise)<.01f).ToArray();
+                var rows=firstRecords.Where(r=>Mathf.Abs(r.RequestedPromise-promise)<.01f).ToArray();
                 Check(rows.Length>0 && rows.Length<=settings.DaysPerPolicy,"record count for promise "+promise);
                 Check(rows.Length==settings.DaysPerPolicy || rows.Last().Bankrupt,"only bankruptcy may stop early "+promise);
                 Check(rows.Select(r=>r.Day).SequenceEqual(Enumerable.Range(1,rows.Length)),"consecutive days "+promise);
@@ -71,7 +71,7 @@ public static class M5SimulationValidation
             string path=Path.Combine(directory,"seed-"+settings.RandomSeed+".csv");File.WriteAllText(path,firstCsv);
             LastSummary=string.Join("\n",settings.PromiseSeconds.Select(p=>
             {
-                var rows=firstRecords.Where(r=>Mathf.Abs(r.Promise-p)<.01f).ToArray();var last=rows.Last();
+                var rows=firstRecords.Where(r=>Mathf.Abs(r.RequestedPromise-p)<.01f).ToArray();var last=rows.Last();
                 return $"Promise {p:F0}s: {rows.Length} days / revenue {rows.Sum(r=>r.Revenue):F2} / profit {rows.Sum(r=>r.Profit):F2} / cash {last.Cash:F2} / reputation {last.Reputation:F1} / bankrupt {last.Bankrupt} / delivered {rows.Sum(r=>r.Delivered)} / late {rows.Sum(r=>r.Late)} / accidents {rows.Sum(r=>r.Accidents)}";
             }));
             File.WriteAllText(Path.Combine(directory,"README.md"),"# M5 自動プレイ結果\n\nSeed: "+settings.RandomSeed+"; step: "+settings.ClockStepSeconds+"秒。"+string.Join("/",settings.PromiseSeconds)+"秒を各"+settings.DaysPerPolicy+"日上限、Aoi/Ren固定、雇用なし。破産した設定は早期終了。\n\n```text\n"+LastSummary+"\n```\n\n同じ条件で2回走らせ、CSV全フィールドが一致。既存の注文・推奨出発・事故・到着採点・精算を使用。M4-9の人による調整の代わりにはしない。\n");

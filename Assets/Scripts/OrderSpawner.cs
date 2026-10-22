@@ -4,6 +4,7 @@ using UnityEngine;
 [DefaultExecutionOrder(-50)]
 public sealed class OrderSpawner : MonoBehaviour
 {
+    [SerializeField] private CookingManager cooking;
     [SerializeField] private DayStats stats;
     [SerializeField] private GameClock clock;
     [SerializeField] private MapManager map;
@@ -50,7 +51,7 @@ public sealed class OrderSpawner : MonoBehaviour
     private void MapReady()
     {
         MinimumPromiseSeconds = map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress && !n.IsStore)
-            .Select(n=>ShortestArrivalSeconds(n.Id)).DefaultIfEmpty(0).Max() * minimumPromiseMargin;
+            .Select(n=>ShortestRoundTripSeconds(n.Id)).DefaultIfEmpty(0).Max() * minimumPromiseMargin + (cooking!=null?cooking.CookSeconds:0);
         SetPromiseSeconds(PromiseSeconds);
         if (clock.Phase == DayPhase.Open) ScheduleFirst();
     }
@@ -70,6 +71,15 @@ public sealed class OrderSpawner : MonoBehaviour
         if (path==null) throw new System.InvalidOperationException("Unreachable delivery address: "+destination);
         return clock.ToRealSeconds(path.Sum(id=>map.GetTravelTime(id,perfect)));
     }
+    public float ShortestRoundTripSeconds(string destination)
+    {
+        var perfect=new DeliveryPerson("Reference",1,1,2,1,1,1);
+        var outbound=RoadPathfinder.FindShortestPath(map.Edges,map.StoreNodeId,destination,e=>map.GetTravelTime(e.Id,perfect));
+        var inbound=RoadPathfinder.FindShortestPath(map.Edges,destination,map.StoreNodeId,e=>map.GetTravelTime(e.Id,perfect));
+        if(outbound==null || inbound==null)throw new System.InvalidOperationException("Unreachable round trip: "+destination);
+        return clock.ToRealSeconds(outbound.Concat(inbound).Sum(id=>map.GetTravelTime(id,perfect)));
+    }
+    public void RefreshMinimumPromise()=>MapReady();
     public Order CreateOrder(string destination, float spawnedAt)
         => new Order(destination,"Delivery to "+destination,spawnedAt,PromiseSeconds);
     private void NextJitter() { if(random==null)ResetRandom();jitter=Mathf.Lerp(1f-intervalVariation,1f+intervalVariation,(float)random.NextDouble()); }
