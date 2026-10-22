@@ -1,0 +1,2 @@
+PASS: 1000 seeds, retries 0, fallback 0; forced fallback PASS.
+Columns include scale, shortcut value, distance distribution, pairs and bridges.
