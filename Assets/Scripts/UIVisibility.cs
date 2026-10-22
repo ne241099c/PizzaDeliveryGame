@@ -7,7 +7,8 @@ public static class UIVisibility
     public static void Set(GameObject target, bool visible)
     {
         if (target == null) return;
-        var group = target.GetComponent<CanvasGroup>() ?? target.AddComponent<CanvasGroup>();
+        var group = target.GetComponent<CanvasGroup>();
+        if (group == null) group = target.AddComponent<CanvasGroup>();
         group.alpha = visible ? 1 : 0;
         group.interactable = group.blocksRaycasts = visible;
     }

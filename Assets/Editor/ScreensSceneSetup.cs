@@ -48,4 +48,36 @@ public static class ScreensSceneSetup
         UIVisibility.Set(Find("DayResults").gameObject,false);UIVisibility.Set(Find("SaveChoice").gameObject,false);
         EditorSceneManager.MarkSceneDirty(Manager.scene);
     }
+    private static void Grid(Transform viewport)
+    {
+        var scroll=viewport.GetComponent<ScrollRect>();var content=scroll.content;
+        var old=content.GetComponent<VerticalLayoutGroup>();if(old!=null)Undo.DestroyObjectImmediate(old);
+        var grid=content.GetComponent<GridLayoutGroup>()??Undo.AddComponent<GridLayoutGroup>(content.gameObject);
+        grid.constraint=GridLayoutGroup.Constraint.FixedColumnCount;grid.constraintCount=2;grid.cellSize=new Vector2(680,330);grid.spacing=new Vector2(24,24);
+        content.anchorMin=new Vector2(0,1);content.anchorMax=new Vector2(1,1);content.pivot=new Vector2(.5f,1);content.anchoredPosition=Vector2.zero;content.sizeDelta=new Vector2(0,0);
+    }
+    public static void Hub()
+    {
+        var canvas=Canvas;canvas.GetComponent<CanvasScaler>().referenceResolution=new Vector2(1920,1080);
+        var panel=Find("Preparation");Place(panel,0,88,1920,992);
+        Place(Find("PreparationTitle"),32,16,1520,44);Place(Find("PreparationOverview"),32,68,1520,40);
+        Place(Find("StartBusiness"),1500,900,370,64);Place(Find("EmploymentMessage"),256,812,1600,72);
+        var staff=Full(panel,"StaffTab");var applicants=Full(panel,"ApplicantsTab");var management=Full(panel,"ManagementTab");
+        foreach(var tab in new[]{staff,applicants,management}){Place(tab,256,150,1500,650);if(tab.GetComponent<CanvasGroup>()==null)tab.gameObject.AddComponent<CanvasGroup>();}
+        Move(Find("TeamViewport"),staff);Place(Find("TeamViewport"),0,0,1440,650);Grid(Find("TeamViewport"));
+        Move(Find("ApplicantsViewport"),applicants);Place(Find("ApplicantsViewport"),0,0,1440,650);Grid(Find("ApplicantsViewport"));
+        UIVisibility.Set(Find("TeamTitle").gameObject,false);UIVisibility.Set(Find("ApplicantsTitle").gameObject,false);
+        var buttons=new[]{M5SceneSetup.MakeButton(panel,"StaffButton","Staff",32,160,190,56),M5SceneSetup.MakeButton(panel,"ApplicantsButton","Applicants",32,232,190,56),M5SceneSetup.MakeButton(panel,"ManagementButton","Management",32,304,190,56)};
+        var forecast=Text(panel,"Forecast","Today",32,902,1430,56,24);var history=Text(management,"DayHistory","Previous days",0,152,1400,490,24);
+        var slot=Full(Find("BusinessScreen"),"BusinessPolicySlot");Place(slot,320,16,1280,100);
+        var ui=Manager.GetComponent<HubScreenUI>()??Undo.AddComponent<HubScreenUI>(Manager);
+        Bind(ui,"router",Manager.GetComponent<ScreenRouter>());Bind(ui,"campaign",Manager.GetComponent<CampaignManager>());Bind(ui,"clock",Manager.GetComponent<GameClock>());Bind(ui,"economy",Manager.GetComponent<BusinessEconomy>());Bind(ui,"roster",Manager.GetComponent<DeliveryPersonSelector>());Bind(ui,"forecast",forecast);Bind(ui,"history",history);Bind(ui,"policy",Find("DeliveryPolicy"));Bind(ui,"businessPolicySlot",slot);
+        var so=new SerializedObject(ui);var tabs=so.FindProperty("tabs");tabs.arraySize=3;var bs=so.FindProperty("tabButtons");bs.arraySize=3;
+        var groups=new[]{staff,applicants,management};for(int i=0;i<3;i++){tabs.GetArrayElementAtIndex(i).objectReferenceValue=groups[i].GetComponent<CanvasGroup>();bs.GetArrayElementAtIndex(i).objectReferenceValue=buttons[i];}so.ApplyModifiedProperties();
+        var template=Find("EmploymentRowTemplate");var picker=template.gameObject.AddComponent<TrainingPickerUI>();var controls=template.Find("TrainingControls");var group=controls.GetComponent<CanvasGroup>();if(group==null)group=controls.gameObject.AddComponent<CanvasGroup>();
+        var toggle=M5SceneSetup.MakeButton(template,"ChooseTraining","Training...",12,278,230,40);Bind(picker,"choices",group);Bind(picker,"toggle",toggle);
+        Place(Find("Cash"),32,16,900,32);Place(Find("CampaignDay"),1100,16,720,32);
+        foreach(var tab in groups)UIVisibility.Set(tab.gameObject,tab==staff);
+        var stage=new SerializedObject(Manager.GetComponent<ScreenRouter>());stage.FindProperty("implementationStage").intValue=2;stage.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(Manager.scene);
+    }
 }

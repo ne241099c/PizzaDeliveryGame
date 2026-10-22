@@ -25,6 +25,17 @@ public static class ScreenValidation
         campaign.StartBusiness();Check(router.Current==ScreenId.Business,"business event opens map");
         UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().enabled=false;
         clock.Advance(clock.BusinessDuration+1000);Check(router.Current==ScreenId.Settlement,"last return and settlement event");
-        campaign.NewGame();return $"PASS: {count} screen checks.";
+        campaign.NewGame();
+        if(router.ImplementationStage>=2)
+        {
+            var hub=UnityEngine.Object.FindFirstObjectByType<HubScreenUI>();var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();
+            UIVisibility.Find(canvas.transform,"ApplicantsButton").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Check(hub.SelectedTab==1,"applicant button opens applicant tab");
+            Check(UIVisibility.Find(canvas.transform,"ApplicantsTab").GetComponent<CanvasGroup>().blocksRaycasts,"applicants receive input");
+            Check(!UIVisibility.Find(canvas.transform,"StaffTab").GetComponent<CanvasGroup>().blocksRaycasts,"hidden staff tab does not intercept input");
+            UIVisibility.Find(canvas.transform,"ManagementButton").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(hub.SelectedTab==2,"management button opens management tab");
+            UIVisibility.Find(canvas.transform,"StaffButton").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(hub.SelectedTab==0,"staff button returns to team");
+        }
+        return $"PASS: {count} screen checks.";
     }
 }
