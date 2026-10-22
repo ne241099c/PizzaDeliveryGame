@@ -25,7 +25,7 @@ public class OrderListUI : MonoBehaviour
 
     private void Start()
     {
-        orderButtons.AddRange(orderListContent.GetComponentsInChildren<Button>(true));
+        orderButtons.AddRange(orderListContent.GetComponentsInChildren<Button>(true).Where(b=>b.transform.parent==orderListContent));
         Refresh();
     }
     private void Update()
@@ -62,6 +62,7 @@ public class OrderListUI : MonoBehaviour
         Refresh();
         SelectionChanged?.Invoke();
     }
+    public void RefreshCookingUI()=>Refresh();
     private void Refresh()
     {
         while (orderButtons.Count < orders.Count)
@@ -93,12 +94,13 @@ public class OrderListUI : MonoBehaviour
         var label = button.GetComponentInChildren<TextMeshProUGUI>();
         string baking=order.Baking==BakingState.Waiting?"Waiting for oven":order.Baking==BakingState.Cooking?$"Cooking {Mathf.Max(0,order.CookFinishesAt-clock.ElapsedSeconds):F1}s":"Ready";
         label.text = $"{order.DestinationName}\n<size=17>{deadline} / {baking}</size>";
-        label.rectTransform.anchorMin=Vector2.zero;label.rectTransform.anchorMax=Vector2.one;label.rectTransform.offsetMin=new Vector2(8,8);label.rectTransform.offsetMax=new Vector2(-8,-8);
+        label.rectTransform.anchorMin=Vector2.zero;label.rectTransform.anchorMax=Vector2.one;label.rectTransform.offsetMin=new Vector2(8,48);label.rectTransform.offsetMax=new Vector2(-8,-8);
         label.fontSize = 20;
         label.color = new Color(0.1f, 0.14f, 0.2f);
         button.GetComponent<Image>().color = selectedOrders.Contains(order) ? Color.yellow
             : remaining <= urgentSeconds ? new Color(1f, 0.62f, 0.48f) : Color.white;
         button.interactable = clock.Phase == DayPhase.Open && CanSelect(order);
+        button.GetComponent<CookingCardUI>()?.Show(order);
     }
     public bool SelectOnly(Order order) => SelectForDispatch(new[]{order});
     public bool SelectForDispatch(IEnumerable<Order> selection)

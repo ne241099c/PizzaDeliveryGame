@@ -19,9 +19,9 @@ public sealed class TitleMenuUI : MonoBehaviour
     public bool HelpOpen=>help.alpha>.5f;
     public bool ConfirmationOpen=>confirmation.alpha>.5f;
     private static readonly string[] Pages={
-        "ONE DAY AT THE SHOP\nDuring preparation, hire or train your team, set the delivery promise, then start business. After closing, all couriers return before settlement.",
+        "ONE DAY AT THE SHOP\nDuring preparation, hire or train your team, set the delivery promise, then start business. Orders bake automatically in the oven. Only ready pizzas can be dispatched. After closing, all couriers return before settlement.",
         "DELIVERY PROMISE\nA shorter promise attracts more orders. A longer promise reduces demand. Existing order deadlines do not change when the promise changes.",
-        "CHOOSE YOUR ROADS\nSelect up to two orders and an available courier. Click connected roads through the destinations and back to the shop. Compare against individual trips. The suggested route is optional.",
+        "CHOOSE YOUR ROADS\nSelect up to two orders and an available courier. Click connected roads through the destinations and back to the shop. Compare against individual trips. The suggested route is optional. Press Take out or Space at 85-95% baking for a perfect pizza; on-time delivery adds 15. Ignoring baking gives a standard pizza without penalty.",
         "MONEY AND REPUTATION\nOn-time deliveries earn tips and reputation. Late deliveries earn less. Materials, fuel, wages and fixed costs reduce cash. Rest couriers to recover stamina."};
     private void Start()
     {

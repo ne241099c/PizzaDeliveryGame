@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 using UnityEditor;
 public static class M7Validation
@@ -27,6 +28,28 @@ public static class M7Validation
         Check(closing.Status==OrderStatus.Cancelled && list.OrderCount==0,"closing cancels cooking and queue");
         Check(Mathf.Abs(spawner.MinimumPromiseSeconds-(spawner.ShortestRoundTripSeconds("Goal2")*1.1f+cook.CookSeconds))<.001f,"round trip and cooking minimum");
         spawner.SetPromiseSeconds(30);Check(spawner.PromiseSeconds>=spawner.MinimumPromiseSeconds,"requested 30 respects physical minimum");campaign.NewGame();
+        ValidateQuality(Check);
         return $"PASS: {count} M7 checks.";
+    }
+    private static void ValidateQuality(Action<bool,string> check)
+    {
+        var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
+        check(!cook.IsPerfectProgress(.8499f) && cook.IsPerfectProgress(.85f) && cook.IsPerfectProgress(.95f) && !cook.IsPerfectProgress(.9501f),"perfect-band exact formula boundaries");
+        cook.ManualControlEnabled=true;
+        foreach(bool late in new[]{false,true})
+        {
+            campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var order=new Order("Goal1","Perfect delivery",0,late?12:1000);list.AddOrder(order);clock.Advance(cook.CookSeconds*.84f);
+            check(!cook.TryTakeOut(order) && order.Baking==BakingState.Cooking,"early press leaves pizza cooking");clock.Advance(cook.CookSeconds*.06f);
+            list.RefreshCookingUI();var content=(Transform)new SerializedObject(list).FindProperty("orderListContent").objectReferenceValue;
+            var card=content.GetComponentsInChildren<CookingCardUI>(true).First(v=>v.BoundOrder==order);var takeOut=(UnityEngine.UI.Button)new SerializedObject(card).FindProperty("takeOut").objectReferenceValue;
+            check(takeOut.interactable,"real take-out button enables during band");takeOut.onClick.Invoke();check(order.IsReady && order.Quality==BakeQuality.Perfect,"real card button performs timed perfect extraction");
+            check(cook.BonusForArrival(order,order.Deadline)==15 && cook.BonusForArrival(order,order.Deadline+.01f)==0,"perfect bonus only on-time inclusive");
+            list.SelectOnly(order);roster.SelectForDispatch(roster.People[0]);planner.DispatchWithSuggestion();var trip=roster.People[0].CurrentTrip;
+            check(trip!=null,"perfect pizza dispatched through real flow");clock.Advance(trip.ReturnsAt-clock.ElapsedSeconds+1);
+            check(economy.Ledger.PerfectBakeBonus==(late?0:15),"real ledger perfect bonus without double credit");
+        }
+        campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var automatic=new Order("Goal1","Automatic",0,100);list.AddOrder(automatic);clock.Advance(cook.CookSeconds);check(automatic.IsReady && automatic.Quality==BakeQuality.Standard && cook.BonusForArrival(automatic,12)==0,"ignored baking automatically standard without penalty");
+        campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var last=new Order("Goal1","Late extraction",0,100);list.AddOrder(last);clock.Advance(cook.CookSeconds*.97f);check(cook.TryTakeOut(last) && last.Quality==BakeQuality.Standard,"press after perfect band yields standard");
+        campaign.NewGame();
     }
 }

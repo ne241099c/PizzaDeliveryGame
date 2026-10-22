@@ -5,6 +5,7 @@ using UnityEngine;
 
 public class DeliveryFlowController : MonoBehaviour
 {
+    [SerializeField] private CookingManager cooking;
     [SerializeField] private ScoreManager scoreManager;
     [SerializeField] private OrderListUI orderListUI;
     [SerializeField] private DeliveryPersonSelector deliveryPersonSelector;
@@ -17,6 +18,7 @@ public class DeliveryFlowController : MonoBehaviour
     public event Action<DeliveryTrip> Dispatched;
     public event Action<DeliveryTrip> Returned;
     public event Action<int> RevenueEarned;
+    public event Action<int> PerfectBakeBonusEarned;
     public event Action<string> Message;
     public event Action TripsCleared;
     public void ResetForNewGame()
@@ -84,9 +86,11 @@ public class DeliveryFlowController : MonoBehaviour
                 delivery.Resolved = true;
                 delivery.Order.Status = OrderStatus.Delivered;
                 float late = Mathf.Max(0, delivery.ArrivesAt - delivery.Order.Deadline);
-                int points = scoreManager.ScoreArrival(delivery.ArrivesAt, delivery.Order.Deadline, trip.ServiceAtDispatch);
+                int bonus=cooking!=null?cooking.BonusForArrival(delivery.Order,delivery.ArrivesAt):0;
+                int points = scoreManager.ScoreArrival(delivery.ArrivesAt, delivery.Order.Deadline, trip.ServiceAtDispatch)+bonus;
                 scoreManager.AddScore(points);
                 RevenueEarned?.Invoke(points);
+                if(bonus>0)PerfectBakeBonusEarned?.Invoke(bonus);
                 stats.RecordDelivery(points, late);
                 reputation.RecordArrival(late,trip.ServiceAtDispatch);
                 int tip=scoreManager.TipForArrival(delivery.ArrivesAt,delivery.Order.Deadline,trip.ServiceAtDispatch);

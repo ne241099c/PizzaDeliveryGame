@@ -1,5 +1,7 @@
 using System;
 
+public enum BakeQuality { Standard, Perfect }
+
 public enum BakingState { Waiting, Cooking, Ready }
 
 public enum OrderStatus { Pending, Dispatched, Delivered, Cancelled }
@@ -13,6 +15,7 @@ public class Order
     public float SpawnedAt;
     public float Deadline;
     public OrderStatus Status { get; internal set; }
+    public BakeQuality Quality {get;internal set;}
     public BakingState Baking {get;internal set;}
     public float CookStartedAt {get;internal set;}=-1;
     public float CookFinishesAt {get;internal set;}

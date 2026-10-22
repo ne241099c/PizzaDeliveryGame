@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>FIFO automatic cooking on the same GameClock as orders and deliveries.</summary>
 [DefaultExecutionOrder(-40)]
@@ -11,6 +12,28 @@ public sealed class CookingManager : MonoBehaviour
     [SerializeField] private OrderListUI orders;
     [SerializeField,Min(.01f)] private float cookSeconds=12;
     [SerializeField,Min(1)] private int initialOvens=1;
+    [SerializeField,Range(0,1)] private float perfectStart=.85f;
+    [SerializeField,Range(0,1)] private float perfectEnd=.95f;
+    [SerializeField,Min(0)] private int perfectBakeBonus=15;
+    public bool ManualControlEnabled {get;set;}=true;
+    public float PerfectStart=>perfectStart;
+    public float PerfectEnd=>perfectEnd;
+    public bool IsPerfectProgress(float value)=>value>=perfectStart && value<=perfectEnd;
+    public int BonusForArrival(Order order,float arrivedAt)=>order.Quality==BakeQuality.Perfect && arrivedAt<=order.Deadline?perfectBakeBonus:0;
+    private void Update()
+    {
+        if(!ManualControlEnabled || Keyboard.current==null || !Keyboard.current.spaceKey.wasPressedThisFrame)return;
+        var order=CookingOrders.FirstOrDefault(o=>Progress(o)>=perfectStart);
+        if(order!=null)TryTakeOut(order);
+    }
+    public bool TryTakeOut(Order order)
+    {
+        if(!ManualControlEnabled || clock.Phase!=DayPhase.Open || order==null || order.Baking!=BakingState.Cooking || clock.ElapsedSeconds>=order.Deadline)return false;
+        float progress=Progress(order);if(progress<perfectStart || progress>=1)return false;
+        var oven=ovens.FirstOrDefault(o=>o.Active==order);if(oven==null)return false;
+        Release(oven,clock.ElapsedSeconds);order.Quality=IsPerfectProgress(progress)?BakeQuality.Perfect:BakeQuality.Standard;order.Baking=BakingState.Ready;order.CookFinishesAt=clock.ElapsedSeconds;
+        AdvanceTo(clock.ElapsedSeconds);return true;
+    }
     private sealed class Oven {public Order Active;public float FreeAt;}
     private readonly List<Oven> ovens=new();
     public float CookSeconds=>cookSeconds;

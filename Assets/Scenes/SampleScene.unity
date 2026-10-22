@@ -25708,7 +25708,7 @@ MonoBehaviour:
   orderItemPrefab: {fileID: 6263185544063156782, guid: b574e3d5988464134933ee45b93abdc5, type: 3}
   clock: {fileID: 1404697819}
   emptyMessage: {fileID: 1636679146}
-  rowHeight: 110
+  rowHeight: 146
   urgentSeconds: 15
 --- !u!114 &1404697813
 MonoBehaviour:
@@ -25787,6 +25787,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8015589fe4ec34c539e8effa53d307d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DeliveryFlowController
+  cooking: {fileID: 1404697835}
   scoreManager: {fileID: 1404697810}
   orderListUI: {fileID: 1404697812}
   deliveryPersonSelector: {fileID: 1404697813}
@@ -26359,6 +26360,9 @@ MonoBehaviour:
   orders: {fileID: 1404697812}
   cookSeconds: 12
   initialOvens: 1
+  perfectStart: 0.85
+  perfectEnd: 0.95
+  perfectBakeBonus: 15
 --- !u!1 &1408363483
 GameObject:
   m_ObjectHideFlags: 0

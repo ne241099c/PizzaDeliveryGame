@@ -78,6 +78,7 @@ public static class M6SimulationValidation
                 Check(r.BusyRatio>=0 && r.BusyRatio<=1.0001f,"busy ratio clips overtime");
                 Check(!string.IsNullOrEmpty(r.Couriers) && !string.IsNullOrEmpty(r.ExperienceGrowth) && !string.IsNullOrEmpty(r.Potentials),"daily abilities experience and ceilings");
                 Check(c.Train?r.TrainingCosts>=0:r.TrainingCosts==0,"training policy and costs");
+                Check(r.PerfectBakeBonus==0,"automatic cooking stays standard");
                 hired+=r.Hired;Check(r.RosterSize==2+hired && r.RosterSize<=4,"roster growth");
             }
             Check(economy.InitialCash==300,"E2 does not change configured starting cash");

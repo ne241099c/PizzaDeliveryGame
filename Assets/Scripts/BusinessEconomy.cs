@@ -24,9 +24,10 @@ public sealed class BusinessEconomy : MonoBehaviour
     public decimal DailyRevenue => Ledger.Revenue;
     public decimal OpeningCash => Ledger.OpeningCash;
     private void Awake() => NewGame();
-    private void OnEnable() { flow.RevenueEarned+=CreditArrival; flow.Dispatched+=ChargeMaterials; flow.Returned+=RecordDistance;clock.OnDayStarted+=CaptureWages; }
-    private void OnDisable() { flow.RevenueEarned-=CreditArrival; flow.Dispatched-=ChargeMaterials; flow.Returned-=RecordDistance;clock.OnDayStarted-=CaptureWages; }
+    private void OnEnable() { flow.RevenueEarned+=CreditArrival;flow.PerfectBakeBonusEarned+=RecordPerfectBonus; flow.Dispatched+=ChargeMaterials; flow.Returned+=RecordDistance;clock.OnDayStarted+=CaptureWages; }
+    private void OnDisable() { flow.RevenueEarned-=CreditArrival;flow.PerfectBakeBonusEarned-=RecordPerfectBonus; flow.Dispatched-=ChargeMaterials; flow.Returned-=RecordDistance;clock.OnDayStarted-=CaptureWages; }
     private void Update() => cashText.text=$"Cash: {Cash:F2} / Sales: {DailyRevenue:F2}";
+    private void RecordPerfectBonus(int amount)=>Ledger.PerfectBakeBonus+=amount;
     private void CreditArrival(int points) { Cash+=points; Ledger.Revenue+=points; }
     public void RestorePreparation(decimal cash,decimal opening,decimal costs,int day)
     {Cash=cash;dayNumber=day;Ledger=new DayLedger(opening){PreparationCosts=costs};openingWages.Clear();}

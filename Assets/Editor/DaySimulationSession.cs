@@ -8,18 +8,18 @@ using UnityEditor;
 /// <summary>Autoplay drives the real UI selection/dispatch and GameClock; it contains no economic formulas.</summary>
 public sealed class SimulationDayRecord
 {
-    public const string Header="seed,day,promise_seconds,revenue,materials,fuel,wages,fixed_costs,profit,cash,reputation,delivered,late,cancelled,accidents,bankrupt,stock,spawned,busy_ratio,hired,roster_size,preparation_costs,policy,couriers,daily_growth,growth_count,training,training_costs,experience_growth,potentials,requested_promise_seconds";
+    public const string Header="seed,day,promise_seconds,revenue,materials,fuel,wages,fixed_costs,profit,cash,reputation,delivered,late,cancelled,accidents,bankrupt,stock,spawned,busy_ratio,hired,roster_size,preparation_costs,policy,couriers,daily_growth,growth_count,training,training_costs,experience_growth,potentials,requested_promise_seconds,perfect_bake_bonus";
     public int Seed,Day,Delivered,Late,Cancelled,Accidents,Stock,Spawned,Hired,RosterSize;
     public float BusyRatio;
     public decimal PreparationCosts;
     public string Policy="legacy",Couriers="",DailyGrowth="";
     public int GrowthCount;
     public string Training="",ExperienceGrowth="",Potentials="";
-    public decimal TrainingCosts;
+    public decimal TrainingCosts,PerfectBakeBonus;
     public float Promise,Reputation,RequestedPromise;
     public decimal Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash;
     public bool Bankrupt;
-    public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy,Couriers,DailyGrowth,GrowthCount,Training,TrainingCosts,ExperienceGrowth,Potentials,RequestedPromise}
+    public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy,Couriers,DailyGrowth,GrowthCount,Training,TrainingCosts,ExperienceGrowth,Potentials,RequestedPromise,PerfectBakeBonus}
         .Select(Cell));
     private static string Cell(object value)
     {string s=value is IFormattable f?f.ToString(null,CultureInfo.InvariantCulture):value.ToString();return s.IndexOfAny(new[]{',','"','\n'})>=0 ? "\""+s.Replace("\"","\"\"")+"\"" : s;}
@@ -41,6 +41,8 @@ public sealed class DaySimulationSession : IDisposable
     private readonly DeliveryPlannerUI planner;
     private readonly CourierProgression progression;
     private readonly TrainingManager training;
+    private readonly CookingManager cooking;
+    private readonly bool originalManualCooking;
     private readonly bool train;private string trained;private decimal trainingCost;
     private readonly bool originalAutomaticTick,originalSpawnerEnabled;
     private readonly int? originalOrderSeed,originalDynamicsSeed,originalRecruitmentSeed;
@@ -76,6 +78,7 @@ public sealed class DaySimulationSession : IDisposable
             throw new ArgumentException("Set valid simulation days, promises and clock step in the Inspector.");
         campaign=Find<CampaignManager>();clock=Find<GameClock>();spawner=Find<OrderSpawner>();dynamics=Find<DeliveryDynamics>();recruitment=Find<RecruitmentManager>();
         economy=Find<BusinessEconomy>();flow=Find<DeliveryFlowController>();roster=Find<DeliveryPersonSelector>();orders=Find<OrderListUI>();stats=Find<DayStats>();reputation=Find<ReputationManager>();planner=Find<DeliveryPlannerUI>();progression=Find<CourierProgression>();training=Find<TrainingManager>();
+        cooking=Find<CookingManager>();originalManualCooking=cooking.ManualControlEnabled;cooking.ManualControlEnabled=false;
         originalAutomaticTick=clock.AutomaticTick;originalSpawnerEnabled=spawner.enabled;
         originalOrderSeed=spawner.SeedOverride;originalDynamicsSeed=dynamics.SeedOverride;originalRecruitmentSeed=recruitment.SeedOverride;
         var canvas=Find<Canvas>();canvasGroup=canvas.GetComponent<CanvasGroup>();
@@ -153,7 +156,7 @@ public sealed class DaySimulationSession : IDisposable
             throw new InvalidOperationException("Simulation exceeded maximum day time; inspect active trips.");
         if(clock.Phase!=DayPhase.Ended)return;
         var ledger=economy.Ledger;
-        var record=new SimulationDayRecord { Seed=seed,Day=campaign.DayNumber,Promise=spawner.PromiseSeconds,RequestedPromise=promises[policy],
+        var record=new SimulationDayRecord { Seed=seed,Day=campaign.DayNumber,Promise=spawner.PromiseSeconds,RequestedPromise=promises[policy],PerfectBakeBonus=ledger.PerfectBakeBonus,
             Revenue=ledger.Revenue,Materials=ledger.Materials,Fuel=ledger.Fuel,Wages=ledger.Wages,FixedCosts=ledger.FixedCosts,
             Profit=ledger.Profit,Cash=economy.Cash,Reputation=reputation.Value,Delivered=stats.DeliveredCount,Late=stats.LateCount,
             Cancelled=stats.CancelledCount,Accidents=stats.AccidentCount,Bankrupt=campaign.IsBankrupt,Stock=stats.ClosingCancelledCount,Spawned=stats.SpawnedCount,
@@ -180,6 +183,7 @@ public sealed class DaySimulationSession : IDisposable
     {
         if(disposed)return;disposed=true;
         savingScope?.Dispose();
+        cooking.ManualControlEnabled=originalManualCooking;
         clock.AutomaticTick=originalAutomaticTick;spawner.enabled=originalSpawnerEnabled;
         spawner.SeedOverride=originalOrderSeed;dynamics.SeedOverride=originalDynamicsSeed;recruitment.SeedOverride=originalRecruitmentSeed;
         canvasGroup.interactable=originalInteractable;canvasGroup.blocksRaycasts=originalRaycasts;
