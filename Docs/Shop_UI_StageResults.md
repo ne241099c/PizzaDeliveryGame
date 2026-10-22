@@ -1,3 +1,5 @@
+> 追加の配達操作・自動梱包・受付猶予は [Dispatch_UX_Results.md](Dispatch_UX_Results.md) を参照。この文書は変更前の復旧結果。
+
 # 店内UI実装の再開記録
 
 2026-10-23。shop / 57c7dbaから、Claudeが未コミットで残したUIを引き継いだ。承認モックはDocs/UI_Mock/。提示された設計書2点・モック7枚がリポジトリと一致することを確認済み。

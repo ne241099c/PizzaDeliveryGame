@@ -29,8 +29,9 @@ public static class M4Validation
         Check(DeliveryScoring.Calculate(80,60,100,5)==0,"20 seconds late");
         Check(DeliveryScoring.Calculate(90,60,100,5)==0,"Never negative");
         Check(DeliveryScoring.Calculate(60.5f,60,100,5)==98,"Fractional score rounding");
-        Near(DeliveryScoring.CancellationAt(60,100,5),60,"Pending cancellation threshold");
-        Near(DeliveryScoring.CancellationAt(60,100,0),60,"Pending expiry is independent of scoring penalty");
+        Near(DeliveryScoring.CancellationAt(60,100,5,20),80,"Pending cancellation includes configurable grace");
+        Near(DeliveryScoring.CancellationAt(60,100,0,20),80,"Grace expiry is independent of scoring penalty");
+        Near(DeliveryScoring.CancellationAt(60,100,5,-1),60,"Negative grace is clamped to zero");
 
         var person = new DeliveryPerson("Test",1);
         var orders = new[] { order, M7Validation.ReadyOrder("Goal2","Test2",10,60) };

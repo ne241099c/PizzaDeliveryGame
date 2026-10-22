@@ -164,7 +164,7 @@ public sealed class DaySimulationSession : IDisposable
         {
             foreach(var person in roster.People.Where(p=>p.IsAvailable && p.CanCarry(1)).ToArray())
             {
-                var selected=orders.Orders.Where(o=>o.IsReady && o.Deadline>clock.ElapsedSeconds).OrderBy(o=>o.Deadline).ThenBy(o=>o.SpawnedAt).Take(batch && person.CanCarry(2)?2:1).ToArray();
+                var selected=orders.Orders.Where(o=>o.IsReady && orders.CanSelect(o)).OrderBy(o=>o.Deadline).ThenBy(o=>o.SpawnedAt).Take(batch && person.CanCarry(2)?2:1).ToArray();
                 if(selected.Length==0)break;
                 if(!orders.SelectForDispatch(selected) || !roster.SelectForDispatch(person))throw new InvalidOperationException("Autoplay could not select a pending order and idle courier.");
                 int before=flow.ActiveTrips.Count;planner.DispatchWithSuggestion();

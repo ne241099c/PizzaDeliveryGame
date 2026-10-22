@@ -30,7 +30,7 @@ public static class ShopStrings
     public const string KitchenInfo="厨房を任せられます。手際が高いほど速く、丁寧さが高いほど★が付きやすくなります。";
     public const string Speed="手際",Care="丁寧さ";
     public const string FindTeammate="仲間を探す",SeeApplicants="求人を見る";
-    public const string KitchenTab="厨房",HandoverTab="受け渡し",DispatchTab="指示盤";
-    public const string Step1="配達員をえらぶ",Step2="箱をバッグに入れる",Step3="地図で届け先を順番にタップ",Step4="出発!";
+    public const string KitchenTab="厨房",HandoverTab="受け渡し",DispatchTab="配達指示";
+    public const string Step1="配達員をえらぶ",Step2="注文の「積む」を押す",Step3="地図で届け先を順番にタップ",Step4="出発!";
     public const string Depart="出発",Suggested="おすすめ経路",Redo="やり直す",Store="お店";
 }

@@ -256,10 +256,10 @@ public sealed partial class BusinessView
                 v.GaugeText.color=inBand && player?T.basil:over && player?T.berry:T.line;
             }
         }
-        var shelfJobs=cooking.Shelf.Concat(cooking.Jobs.Where(j=>j.Stage==PizzaStage.Boxed && j.Worker==PizzaWorker.Staff)).ToList();
+        var shelfJobs=cooking.Shelf.Concat(cooking.Jobs.Where(j=>j.Stage==PizzaStage.Boxed)).ToList();
         string sig=string.Join(",",shelfJobs.Select(j=>j.Order.Id+j.Stage));
         if(sig!=shelfSignature){shelfSignature=sig;RebuildShelf(shelfJobs);}
-        shelfTitle.text=$"保温棚(焼き上がり {cooking.Shelf.Count()}枚)";
+        shelfTitle.text=$"自動梱包中 {shelfJobs.Count}枚 ／ 配達指示で積み込み";
     }
     private readonly List<RectTransform> shelfItems=new();
     private void RebuildShelf(List<PizzaJob> jobs)
@@ -271,14 +271,7 @@ public sealed partial class BusinessView
             if(job.Stage==PizzaStage.Boxed){UiKit.Picture(slot,"Box","box_open",0,0,140,140);UiKit.Badge(slot,"Packing",(job.Staff!=null?job.Staff.Name:"内勤")+" 梱包中",4,104,T.info,Color.white,28,14);continue;}
             var pizza=PizzaVisual.Make(slot,"Pizza",0,0,140);pizza.Show(job);
             UiKit.Badge(slot,"Number","#"+Number(job.Order),0,0,T.paper,T.line,26,14);
-            if(job.Worker==PizzaWorker.Player)
-            {
-                var hit=slot.gameObject.AddComponent<Image>();hit.color=new Color(0,0,0,0);var source=slot.gameObject.AddComponent<DragSource>();var j=job;
-                source.Payload=()=>j.Stage==PizzaStage.Baked?new DragPayload{Kind=DragKind.Pizza,Job=j,Sprite="pizza_base",Size=new Vector2(150,150)}:null;
-                source.Clicked=()=>{if(!cooking.Box(j))Toast("梱包台があいていません。",T.berry,null,"icon_box");};
-                UiKit.Badge(slot,"Mine","梱包台へ",20,108,T.tomato,Color.white,28,14);
-            }
-            else UiKit.Badge(slot,"Wait","梱包待ち",20,108,T.basil,Color.white,28,14);
+            UiKit.Badge(slot,"Wait","箱の空きを待っています",0,108,T.cheese,T.line,28,T.captionSize);
         }
     }
 }

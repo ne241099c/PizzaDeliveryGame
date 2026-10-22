@@ -28,8 +28,9 @@ public static class M7Validation
         clock.Advance(2*work+bake+pack+.01f-clock.ElapsedSeconds);Check(second.IsReady,"second pizza completes");
         campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();
         var expired=new Order("Goal1","Expires on the bench",0,5);var next=new Order("Goal2","Next pizza",0,100);list.AddOrder(expired);list.AddOrder(next);clock.Advance(5);
-        Check(expired.Status==OrderStatus.Cancelled && !list.Contains(expired),"cooking order expires at deadline");
-        Check(cook.JobFor(next)!=null && Mathf.Abs(cook.JobFor(next).StartedAt-5)<.001f,"expired pizza frees the staff member at expiry");clock.Advance(work+bake+pack+.01f);Check(next.IsReady,"replacement cooking completes");
+        Check(expired.Status==OrderStatus.Pending && list.Contains(expired),"cooking continues after the promise deadline during grace");
+        clock.Advance(UnityEngine.Object.FindFirstObjectByType<ScoreManager>().LateAcceptanceSeconds);
+        Check(expired.Status==OrderStatus.Cancelled && !list.Contains(expired),"unshipped order cancels at the end of grace");Check(next.IsReady,"next pizza completes while the first order is late");
         campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var closing=new Order("Goal1","Closing cooking",299,100);clock.Advance(299);list.AddOrder(closing);clock.Advance(1);
         Check(closing.Status==OrderStatus.Cancelled && list.OrderCount==0,"closing cancels cooking and queue");
         Check(Mathf.Abs(spawner.MinimumPromiseSeconds-(spawner.ShortestRoundTripSeconds("Goal2")*1.1f+cook.CookSeconds))<.001f,"round trip and cooking minimum");
@@ -48,7 +49,9 @@ public static class M7Validation
         {
             var order=Start(late?6:1000);Assemble(order,.75f,Topping.Basil);
             check(cook.PutInOven(0,0) && !cook.CanTakeOut(0),"raw pizza cannot be taken out");clock.Advance(cook.BakeSeconds);
-            check(cook.TakeOut(0) && cook.Box(cook.JobFor(order)) && cook.CloseBox(cook.JobFor(order)) && order.IsReady && order.Stars==3,"sauce, correct topping and bake in the band give three stars");
+            check(cook.TakeOut(0) && cook.JobFor(order).Stage==PizzaStage.Boxed && !order.IsReady,"oven takeout starts automatic packing");
+            clock.Advance(cook.PackSeconds);
+            check(order.IsReady && order.Stars==3,"sauce, correct topping and bake in the band give three stars");
             check(cook.BonusForArrival(order,order.Deadline)==20 && cook.BonusForArrival(order,order.Deadline+.01f)==0,"three-star bonus only on time inclusive");
             float before=reputation.Value;
             list.SelectOnly(order);roster.SelectForDispatch(roster.People[0]);planner.DispatchWithSuggestion();var trip=roster.People[0].CurrentTrip;
@@ -58,7 +61,8 @@ public static class M7Validation
         }
         var two=Start(1000);Assemble(two,.5f,Topping.Pepperoni);check(cook.PutInOven(0,0),"oven accepts assembled pizza");clock.Advance(cook.BakeSeconds);cook.TakeOut(0);
         var job=cook.JobFor(two);check(!job.SaucePoint && !job.ToppingPoint && job.BakePoint && job.Stars==2,"thin sauce and wrong topping leave one point and two stars");
-        check(cook.Box(job) && cook.CloseBox(job) && two.Stars==2 && cook.BonusForArrival(two,5)==8,"two-star bonus");
+        clock.Advance(cook.PackSeconds);
+        check(two.IsReady && two.Stars==2 && cook.BonusForArrival(two,5)==8,"two-star bonus");
         var burnt=Start(1000);Assemble(burnt,1,Topping.Basil);cook.PutInOven(0,0);clock.Advance(cook.BurnAt+.01f);check(cook.TakeOut(0) && cook.JobFor(burnt).Burnt && cook.JobFor(burnt).Stars==1,"forgotten pizza burns to one star");
         var a=Start(1000);var b=new Order("Goal2","Second",0,1000);list.AddOrder(b);
         check(cook.Claim(a,0) && cook.ClaimRejection(b,0).Length>0 && !cook.Claim(b,0) && cook.Claim(b,1),"a workbench holds one pizza");
@@ -71,8 +75,9 @@ public static class M7Validation
         var theirs=new Order("Goal1","Theirs",0,1000);list.AddOrder(theirs);clock.Advance(cook.StaffWorkSeconds(crew.People[0])+.01f);
         check(cook.JobFor(mine).Worker==PizzaWorker.Player && cook.JobFor(theirs)!=null && cook.JobFor(theirs).Worker==PizzaWorker.Staff,"staff skip the ticket the player claimed");
         // The counter rack holds six packed boxes.
-        var full=Start(1000);for(int i=0;i<cook.RackCapacity;i++)list.AddOrder(ReadyOrder("Goal2","Rack "+i,0,1000));Assemble(full,1,Topping.Basil);cook.PutInOven(0,0);clock.Advance(cook.BakeSeconds);cook.TakeOut(0);cook.Box(cook.JobFor(full));
-        check(!cook.CloseBox(cook.JobFor(full)) && cook.CloseRejection(cook.JobFor(full)).Contains("いっぱい"),"full counter rack blocks closing a box");
+        var full=Start(1000);for(int i=0;i<cook.RackCapacity;i++)list.AddOrder(ReadyOrder("Goal2","Rack "+i,0,1000));Assemble(full,1,Topping.Basil);cook.PutInOven(0,0);clock.Advance(cook.BakeSeconds);cook.TakeOut(0);
+        clock.Advance(cook.PackSeconds);check(cook.JobFor(full).Stage==PizzaStage.Baked && !full.IsReady,"full rack waits without losing the baked pizza");
+        var handover=UnityEngine.Object.FindFirstObjectByType<HandoverManager>();handover.Bag(handover.RackOrders.First(),roster.People[0]);clock.Advance(cook.PackSeconds+.01f);check(full.IsReady,"automatic packing resumes when a rack slot is freed");
         cook.ManualControlEnabled=false;check(!cook.Claim(new Order("Goal1","Off",0,10),1),"manual cooking can be disabled for autoplay");cook.ManualControlEnabled=true;
         campaign.NewGame();
     }

@@ -40,7 +40,7 @@ public class DeliveryFlowController : MonoBehaviour
         if (count > person.Capacity) return $"{person.Name} can carry {person.Capacity} order(s); {count} selected.";
         if (plan == null || plan.Orders.Count == 0) return "Visit all selected destinations and return to Store.";
         if(plan.Orders.Any(o=>!o.IsReady))return "These orders are still cooking.";
-        if(plan.Orders.Any(o=>clock.ElapsedSeconds>=o.Deadline))return "These orders have expired.";
+        if(plan.Orders.Any(o=>clock.ElapsedSeconds>=scoreManager.CancellationAt(o)))return "These orders have expired.";
         if (!deliveryPersonSelector.People.Contains(person)) return "Courier is not in the roster.";
         if (plan.Orders.Count != orderListUI.SelectedOrders.Count
             || !plan.Orders.All(o=>orderListUI.SelectedOrders.Contains(o) && orderListUI.Contains(o)))

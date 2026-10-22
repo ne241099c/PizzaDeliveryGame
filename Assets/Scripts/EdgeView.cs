@@ -6,6 +6,14 @@ public class EdgeView : MonoBehaviour
     [SerializeField] private EdgeCollider2D edgeCollider;
     private MapEdge road;
     private LineRenderer border;
+    private bool styledUsed,styledAvailable,styledLast;
+    private float styledPixelScale;
+    private void LateUpdate()
+    {
+        var cam=Camera.main;if(road==null || cam==null)return;
+        float scale=cam.orthographicSize*2/Mathf.Max(1,cam.pixelHeight);
+        if(!Mathf.Approximately(scale,styledPixelScale))SetRouteStyle(styledUsed,styledAvailable,styledLast);
+    }
     public string EdgeId { get; private set; }
 
     public void Initialize(MapEdge edge, MapNode nodeA, MapNode nodeB, MapManager mapManager, bool isActive)
@@ -51,11 +59,13 @@ public class EdgeView : MonoBehaviour
     // in tomato with a dark edge, and roads you can take next outlined in tomato. Congestion is drawn by MapVisuals as dots.
     public void SetRouteStyle(bool used, bool available, bool last)
     {
+        styledUsed=used;styledAvailable=available;styledLast=last;
+        var cam=Camera.main;styledPixelScale=cam!=null?cam.orthographicSize*2/Mathf.Max(1,cam.pixelHeight):1;
         var theme=UITheme.Active;bool main=road.RoadType==RoadType.Main;bool route=used || last;
-        float width=main?theme.mapMainRoad:theme.mapBackRoad;
+        float width=Mathf.Min(main?theme.mapMainRoad:theme.mapBackRoad,theme.mapRoadMaxPixels*styledPixelScale);
         Color fill=route?theme.tomato:main?theme.mainRoadFill:theme.backRoadFill;
         Color edge=route?theme.line:available?theme.tomato:main?theme.mainRoadEdge:theme.backRoadEdge;
         lineRenderer.numCapVertices=6;lineRenderer.startWidth=lineRenderer.endWidth=width;lineRenderer.startColor=lineRenderer.endColor=fill;
-        if(border!=null){border.numCapVertices=6;border.startWidth=border.endWidth=width+theme.mapRoadEdge*(available && !route?1.6f:1);border.startColor=border.endColor=edge;}
+        if(border!=null){border.numCapVertices=6;border.startWidth=border.endWidth=width+Mathf.Min(theme.mapRoadEdge,theme.mapRoadBorderPixels*styledPixelScale)*(available && !route?1.6f:1);border.startColor=border.endColor=edge;}
     }
 }

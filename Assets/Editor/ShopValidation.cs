@@ -33,7 +33,7 @@ public static class ShopValidation
                 {
                     business.ShowZone(zone,true);
                     var middle=(StickerButton)tabs.GetArrayElementAtIndex(1).objectReferenceValue;
-                    Check(business.Zone==zone && middle.gameObject.activeSelf && middle.GetComponent<CanvasGroup>().alpha==(zone==ShopZone.Dispatch?0:1),"zone switch uses CanvasGroup "+zone);
+                    Check(business.Zone==(zone==ShopZone.Handover?ShopZone.Dispatch:zone) && middle.gameObject.activeSelf && middle.GetComponent<CanvasGroup>().alpha==0,"zone switch uses CanvasGroup "+zone);
                 }
                 business.ShowZone(previous,true);
                 var hub=Find<HubView>();var hubControls=new SerializedObject(hub);
@@ -59,10 +59,12 @@ public static class ShopValidation
             planner.DispatchWithSuggestion();Check(aoi.CurrentTrip!=null && handover.BagOf(aoi).Count==0 && handover.BagOf(ren).Count==1,"dispatch empties only the departing courier's bag");
             Check(handover.BagRejection(r2,aoi).Length>0,"a travelling courier cannot take boxes");
             var shortBox=M7Validation.ReadyOrder("Goal1","Short",0,5);list.AddOrder(shortBox);Check(handover.Bag(shortBox,ren),"second box for Ren");
-            clock.Advance(5.01f);Check(!list.Contains(shortBox) && !handover.IsBagged(shortBox) && handover.IsBagged(r3),"expired boxes leave the bag");
+            clock.Advance(5.01f);Check(list.Contains(shortBox) && handover.IsBagged(shortBox),"late box remains in bag during grace");
+            clock.Advance(Find<ScoreManager>().LateAcceptanceSeconds);Check(!list.Contains(shortBox) && !handover.IsBagged(shortBox) && handover.IsBagged(r3),"expired boxes leave the bag");
             clock.Advance(clock.BusinessDuration);Check(handover.BagOf(ren).Count==0,"closing clears all bags");
             clock.Advance(1000);
 
+            ValidateGrace(Check);
             // ---- kitchen staff ----
             campaign.NewGame();
             Check(crew.Count==1 && crew.People[0].Name=="Mio" && Mathf.Approximately(crew.People[0].Speed,.4f) && recruitment.TeamCount==3,"start with Aoi, Ren and the apprentice Mio");
@@ -96,4 +98,23 @@ public static class ShopValidation
         finally{clock.AutomaticTick=tick;spawner.enabled=spawning;}
         return $"PASS: {count} shop checks.";
     }
+    private static void ValidateGrace(Action<bool,string> check)
+    {
+        var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var list=Find<OrderListUI>();var cook=Find<CookingManager>();var spawner=Find<OrderSpawner>();var roster=Find<DeliveryPersonSelector>();var handover=Find<HandoverManager>();var score=Find<ScoreManager>();var planner=Find<DeliveryPlannerUI>();var stats=Find<DayStats>();var flow=Find<DeliveryFlowController>();
+        campaign.NewGame();spawner.enabled=false;clock.AutomaticTick=false;campaign.StartBusiness();
+        var order=M7Validation.ReadyOrder("Goal1","Late success",0,5);list.AddOrder(order);
+        float deadline=order.Deadline;clock.Advance(6);
+        check(list.Contains(order) && list.CanSelect(order),"slightly late packed order remains selectable");
+        check(handover.Bag(order,roster.People[0]),"slightly late order can be bagged");planner.ApplySuggestion();
+        check(flow.CanDispatch(planner.SelectedPlan,roster.People[0]),"slightly late order can depart");planner.Dispatch();var trip=roster.People[0].CurrentTrip;
+        check(trip!=null,"late departure creates a real trip");clock.Advance(trip.ReturnsAt-clock.ElapsedSeconds+.01f);
+        check(order.Status==OrderStatus.Delivered && stats.DeliveredCount==1 && stats.CancelledCount==0,"late arrival is a successful delivery, not a cancellation");
+        var arrival=trip.Deliveries[0].ArrivesAt;check(score.ScoreArrival(arrival,deadline,1)<score.ScorePerDelivery && score.TipForArrival(arrival,deadline,1)==0,"late success is discounted and earns no tip");
+        campaign.NewGame();Find<KitchenCrew>().Restore(new KitchenStaff[0]);spawner.enabled=false;campaign.StartBusiness();
+        var raw=new Order("Goal1","Still cooking",0,5);list.AddOrder(raw);check(cook.Claim(raw,0),"manual ticket claimed for grace boundary test");
+        clock.Advance(score.CancellationAt(raw)-.01f);check(list.Contains(raw) && cook.JobFor(raw)!=null,"raw pizza survives until just before grace ends");
+        clock.Advance(.01f);check(raw.Status==OrderStatus.Cancelled && !list.Contains(raw) && cook.JobFor(raw)==null,"exact grace boundary cancels and releases workbench");
+        check(raw.Deadline==5,"grace does not rewrite the snapshotted promise deadline");campaign.NewGame();
+    }
+
 }

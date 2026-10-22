@@ -22,7 +22,7 @@ Codex / Claude Code 共通。ユーザーの最新の指示が優先する。
 ## 継続して守るユーザー指示
 
 - pushしない。`Packages/`変更、`.DS_Store`、`.codex/`、`Assets/_Recovery`とそのmetaをコミットに含めない。既存の変更を消さない。`git add .` / `git add -A`は使わず、ファイルを明示する。
-- 既存実装を調べて差分だけを変更する。現在のUI段階ではゲームのロジックとMapDefinitionを変更しない。ManualDeliveryRoute/RoadPathfinderは必要がない限り変更しない。
+- 既存実装を調べて差分だけを変更する。見た目だけの段階ではゲームのロジックとMapDefinitionを変更しない。2026-10-23の追加依頼では、配達指示UX・自動梱包・受付猶予の範囲のロジック変更が許可されている（Docs/Dispatch_UX_Results.md）。ManualDeliveryRoute/RoadPathfinderは必要がない限り変更しない。
 - 画面の表示/非表示はCanvasGroup。既存部品の再利用を優先。Canvas内の並びへの依存を先に調べる。色/文字サイズ/余白はUITheme、文言はUiStringsへ集める。
 - `.unity` / `.prefab` / `.asset`はUnity Editor APIで編集する。シーンを外部テキスト置換しない。Unityのfake-nullには `??` ではなく明示的null判定を使う。
 - 各段階は全検証が通った後だけ段階名（例 `V-4:`）を先頭にしてローカルコミットする。検証失敗時は次段階へ進まず、原因を報告する。

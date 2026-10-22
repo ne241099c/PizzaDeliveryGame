@@ -1,3 +1,5 @@
+> 2026-10-23 配達UX：`Dispatch/Orders`を既存Dispatchルート内に追加。Canvas直下の並びや旧DayResultsの最後の兄弟依存は変更しない。`zoneTabs`の3スロットはシリアライズ互換のため維持し、受け渡しタブ（スロット1）はCanvasGroupで非表示。`ShowZone(Handover)`はDispatchへ転送する。注文行は名前で参照し、Canvas子のインデックスには依存しない。
+
 # S-0 既存画面の調査
 
 2026-10-22。m4/m5はmainの祖先。m6をfast-forward統合後、M3/M4 169、M5 67、リセット8、M6 135、従来シミュレーション87、8方針745、A〜E/E2比較1117の全2328項目が通過。同じソースでbefore画像を取得。

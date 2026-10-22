@@ -10,6 +10,6 @@ public static class DeliveryScoring
         return (int)Math.Round(points, MidpointRounding.AwayFromZero);
     }
 
-    public static float CancellationAt(float deadline, int basePoints, float penaltyPerSecond)
-        => deadline; // Pending orders now expire at the promise deadline, including cooking.
+    public static float CancellationAt(float deadline, int basePoints, float penaltyPerSecond, float lateAcceptanceSeconds = 0)
+        => deadline + Math.Max(0f, lateAcceptanceSeconds);
 }

@@ -86,7 +86,7 @@ public class OrderListUI : MonoBehaviour
         }
         if (emptyMessage != null) emptyMessage.gameObject.SetActive(orders.Count == 0);
     }
-    public bool CanSelect(Order order)=>Contains(order) && order.IsReady && clock.ElapsedSeconds<order.Deadline;
+    public bool CanSelect(Order order)=>Contains(order) && order.IsReady && clock.ElapsedSeconds<FindFirstObjectByType<ScoreManager>().CancellationAt(order);
     private void UpdateLabel(Button button, Order order)
     {
         var layout=button.GetComponent<LayoutElement>();if(layout!=null)layout.minHeight=layout.preferredHeight=rowHeight;

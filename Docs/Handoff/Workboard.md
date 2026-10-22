@@ -1,15 +1,17 @@
+> 完了：Codexが配達指示UX・自動梱包・目安超過20秒の受付猶予を実装。最終版で全3733項目、操作20段階、設備表示2ケース通過。通常の全体検証2回と12 CSV一致。最新のユーザー依頼により、この範囲のゲーム処理変更も許可済み。
+
 # 共同作業ボード — 現在
 
 更新：2026-10-23。Claudeの利用制限に伴い、ユーザーの指示でCodexが元プロジェクトの実装とUnity操作を引き継いだ。二人とも実装担当になれる運用は継続。
 
 | 担当 | 状態 | 場所 |
 |---|---|---|
-| Codex | 店内UIの途中実装を復旧。全4194項目、操作処理11段階、設備表示の増設/リセット2ケース通過。画像8枚保存 | 元プロジェクト / shop |
+| Codex | 配達UX改善完了。全3733項目・操作20段階・設備2ケース通過。12 CSV再現。画像8枚保存 | 元プロジェクト / shop |
 | Claude Code | 利用制限により待機。再開時はこのボードと最新HEAD/未コミット差分を確認してから担当を交代する | 同じUnityを同時操作しない |
 
 Unity操作の所有者：**Codex**。終了時はPlayを止め、SampleSceneを保存。MCP撮影サイズは512へ復帰済み。mainへの統合・pushは行わない。
 
-現在の結果：[Shop_UI_StageResults.md](../Shop_UI_StageResults.md)、[最終検証](Shop_Resume_Validation.json)、[画像](../UI_Screens/shop-resume/README.md)。
+現在の結果：[配達UX](../Dispatch_UX_Results.md)、[最終検証](Dispatch_UX_Validation.json)、[画像](../UI_Screens/dispatch-ux/README.md)。以前の復旧結果は[Shop_UI_StageResults.md](../Shop_UI_StageResults.md)。
 
 ## 次の作業
 

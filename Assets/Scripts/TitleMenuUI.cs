@@ -19,10 +19,10 @@ public sealed class TitleMenuUI : MonoBehaviour
     public bool HelpOpen=>help.alpha>.5f;
     public bool ConfirmationOpen=>confirmation.alpha>.5f;
     private static readonly string[] Pages={
-        "ONE DAY AT THE SHOP\nDuring preparation, hire or train your team, set the delivery promise, then start business. Orders bake automatically in the oven. Only ready pizzas can be dispatched. After closing, all couriers return before settlement.",
-        "DELIVERY PROMISE\nA shorter promise attracts more orders. A longer promise reduces demand. Existing order deadlines do not change when the promise changes.",
-        "CHOOSE YOUR ROADS\nSelect up to two orders and an available courier. Click connected roads through the destinations and back to the shop. Compare against individual trips. The suggested route is optional. Press Take out or Space at 85-95% baking for a perfect pizza; on-time delivery adds 15. Ignoring baking gives a standard pizza without penalty.",
-        "MONEY AND REPUTATION\nOn-time deliveries earn tips and reputation. Late deliveries earn less. Materials, fuel, wages and fixed costs reduce cash. Rest couriers to recover stamina."};
+        "営業の流れ\n開店準備でスタッフ・設備・お届け目安を決め、営業を始めます。厨房と配達指示は下のボタン、1 / 2、Q / Eで切り替えます。閉店後は全員の帰還を待って精算します。",
+        "厨房と自動梱包\n内勤は自動で調理します。自分で作るときは伝票→生地→ソース→チーズ→指定の具→窯の順です。緑の帯で窯をクリックして取り出すと高品質。取り出した後の梱包は自動です。",
+        "配達指示\n① 左上で配達員の名前を選ぶ ② 注文一覧の「積む」を押す ③ 「届け先へ」か地図のピンを行く順に押す ④ 時間を比べて「出発」。最後の届け先から店へ戻る経路が付きます。道を直接クリックして自分で組むこともできます。「1本戻す」「やり直す」で修正でき、おすすめ経路は任意です。",
+        "目安・遅れ・売上\n注文ごとに残り時間を表示します。目安を過ぎても受付猶予中は出発でき、配達は減点で成功になります。遅れるとチップ・品質ボーナスは付きません。未出発のまま猶予を過ぎるとキャンセル、閉店でも未出発分はキャンセルです。短い目安は注文が増え、長い目安は減ります。既存注文の目安は変更されません。"};
     private void Start()
     {
         resume.onClick.AddListener(Resume);menuHelp.onClick.AddListener(ShowHelp);menuTitle.onClick.AddListener(RequestTitle);

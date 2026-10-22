@@ -21,8 +21,10 @@ public sealed class UITheme : ScriptableObject
     [SerializeField] public float titleSize=56,headingSize=32,subheadingSize=24,bodySize=20,captionSize=16;
     [SerializeField] public float edge=3,stickerShadow=6,cardRadius=16,outerMargin=32;
     [SerializeField, Min(.01f)] public float buttonFeedbackSeconds=.08f;
+    [SerializeField, Min(1)] public float cancelledOrderNoticeSeconds=8f;
     [SerializeField] public TMP_FontAsset displayFont,boldFont,blackFont;
     [SerializeField] public Color mapGround=Hex("#EFEBE2"),mapBlock=Hex("#E7E1D3"),mapPark=Hex("#C9E3B4"),mapTree=Hex("#9FC98A"),mapWater=Hex("#B9DDF0"),mainRoadEdge=Hex("#D9A93A"),mainRoadFill=Hex("#FDE08A"),backRoadEdge=Hex("#B9AE98"),backRoadFill=Hex("#FFFDF6"),congestion=Hex("#E04B2D");
+    [SerializeField, Min(1)] public float mapRoadMaxPixels=24f,mapRoadBorderPixels=3f,mapRouteArrowPixels=22f;
     [SerializeField] public float mapMainRoad=.26f,mapBackRoad=.14f,mapRoute=.22f,mapRoadEdge=.05f,mapPinScale=.012f;
     public Color CourierColor(string name){var roster=Object.FindFirstObjectByType<DeliveryPersonSelector>();if(roster!=null){for(int i=0;i<roster.People.Count;i++)if(roster.People[i].Name==name)return courierColors[i%courierColors.Length];}uint hash=2166136261;foreach(char c in name)hash=unchecked((hash^c)*16777619);return courierColors[hash%(uint)courierColors.Length];}
     [SerializeField] public float effectSeconds=.9f,effectRise=.6f,deadlineWarning=.5f,deadlineUrgent=.2f,lowStamina=.25f,closingWarning=.2f,shakeDistance=.04f,shakeFrequency=22;

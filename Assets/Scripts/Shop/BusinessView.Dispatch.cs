@@ -29,35 +29,38 @@ public sealed partial class BusinessView
             float w=i==2?360:i==3?140:250;var pill=UiKit.Card(stepsBar,"Step"+i,x,0,w,64,T.paper,32,4,3);steps[i]=pill;
             var circle=UiKit.Box(pill,"Circle",10,10,44,44);var c=circle.gameObject.AddComponent<Image>();c.sprite=UiKit.Circle;c.raycastTarget=false;
             UiKit.Label(circle,"Number",(i+1).ToString(),0,0,44,44,22,Color.white,FontRole.Display,TextAlignmentOptions.Center);
-            UiKit.Label(pill,"Text",names[i],62,0,w-70,64,20,T.line,FontRole.Black);x+=w+(i<3?44:0);
+            UiKit.Label(pill,"Text",names[i],62,0,w-70,64,T.captionSize,T.line,FontRole.Black);x+=w+(i<3?44:0);
             if(i<3)UiKit.Icon(stepsBar,"Arrow"+i,"icon_play",x-36,20,24,T.inkSub);UiKit.Icon(circle,"Check","icon_check",8,8,28,Color.white);
         }
         // status chips
         var chips=UiKit.Box(dispatch,"Chips",1490,22,400,72);
         chipTime=Chip(chips,0,140,"icon_clock");chipCash=Chip(chips,150,130,"icon_coin");chipReputation=Chip(chips,290,110,"icon_star");
         // courier card
-        switcher=UiKit.Box(dispatch,"Switcher",40,112,330,60);
-        courierCard=UiKit.Card(dispatch,"CourierCard",40,176,330,330,T.paper);
+        switcher=UiKit.Box(dispatch,"Switcher",32,112,370,60);
+        courierCard=UiKit.Card(dispatch,"CourierCard",32,176,370,176,T.paper);
         courierAvatar=UiKit.Avatar(courierCard,"Avatar",20,18,70,T.info,"?");
         courierName=UiKit.Label(courierCard,"Name","",104,16,140,40,30,T.line,FontRole.Display);
         courierState=UiKit.Label(courierCard,"State","",104,56,200,30,18,T.inkSub,FontRole.Black);
-        readyBadge=UiKit.Badge(courierCard,"Ready","準備OK",230,28,T.basil,Color.white,34,16);
-        bagTitle=UiKit.Label(courierCard,"BagTitle","バッグ 0 / 2",20,108,290,34,22,T.line,FontRole.Black);
-        bagSlots=UiKit.Box(courierCard,"BagSlots",20,148,290,90);
+        readyBadge=UiKit.Badge(courierCard,"Ready","準備OK",246,28,T.basil,Color.white,34,16);
+        bagTitle=UiKit.Label(courierCard,"BagTitle","バッグ 0 / 2",20,94,330,30,22,T.line,FontRole.Black);
+        bagSlots=UiKit.Box(courierCard,"BagSlots",20,126,330,44);
         growthBox=UiKit.Box(courierCard,"Growth",20,248,290,64);UiKit.Dashed(growthBox,T.tomato,10,6,2);
         growthText=UiKit.Label(growthBox,"Text","",12,4,270,56,16,T.tomato,FontRole.Black,TextAlignmentOptions.MidlineLeft,true);
         // guide bubble
         bubble=UiKit.Card(dispatch,"Bubble",1320,140,420,130,T.paper,18,6,3);
         UiKit.Badge(bubble,"Here","いまここ",20,16,T.cheese,T.line,32,16);
-        bubbleText=UiKit.Label(bubble,"Text","",20,56,380,64,19,T.line,FontRole.Black,TextAlignmentOptions.TopLeft,true);
+        bubbleText=UiKit.Label(bubble,"Text","",20,56,380,64,T.captionSize,T.line,FontRole.Black,TextAlignmentOptions.TopLeft,true);
         // map controls
         var zoom=UiKit.Card(dispatch,"Zoom",1808,190,76,150,T.paper,14,6,3);
         UiKit.Button(zoom,"ZoomIn","",StickerKind.Secondary,4,4,68,68,20,()=>Zoom(.8f,Vector2.zero,false),FontRole.Black,"icon_plus");
         UiKit.Button(zoom,"ZoomOut","",StickerKind.Secondary,4,78,68,68,20,()=>Zoom(1.25f,Vector2.zero,false),FontRole.Black,"icon_minus");
         UiKit.Button(dispatch,"Fit","",StickerKind.Secondary,1808,360,76,76,20,FitMap,FontRole.Black,"icon_target");
         trafficButton=UiKit.Button(dispatch,"Traffic","混雑",StickerKind.Selected,1808,454,76,76,16,()=>{ShowCongestion=!ShowCongestion;},FontRole.Black);
+        UiKit.Button(dispatch,"UndoRoad","1本戻す",StickerKind.Secondary,430,834,160,58,T.bodySize,UndoRoad);
+        UiKit.Button(dispatch,"ReturnHome","店へ戻る",StickerKind.Secondary,606,834,160,58,T.bodySize,ReturnHome);
+        UiKit.Label(dispatch,"MapHelp","地図：クリックで道を追加 ／ ドラッグで移動 ／ ホイールで拡大",430,902,1100,32,T.captionSize,T.line,FontRole.Black);
         // minimap
-        var mini=UiKit.Card(dispatch,"Minimap",40,780,248,168,T.paper,14,6,3);
+        var mini=UiKit.Card(dispatch,"Minimap",1176,752,248,168,T.paper,14,6,3);
         minimapImage=UiKit.Stretch(mini,"Image",6,6,6,6).gameObject.AddComponent<RawImage>();minimapImage.raycastTarget=false;
         minimapFrame=UiKit.Box(minimapImage.transform,"Frame",0,0,40,30);
         foreach(var side in new[]{"T","B","L","R"}){var s=UiKit.Box(minimapFrame,side,0,0,1,1);UiKit.Fill(s,T.tomato,0);}
@@ -71,6 +74,7 @@ public sealed partial class BusinessView
         redoButton=UiKit.Button(bottomBar,"Redo",ShopStrings.Redo,StickerKind.Secondary,972,20,164,68,22,()=>planner.ClearRoute());
         suggestButton=UiKit.Button(bottomBar,"Suggest",ShopStrings.Suggested,StickerKind.Secondary,1148,20,188,68,22,()=>planner.ApplySuggestion());
         departButton=UiKit.Button(bottomBar,"Depart",ShopStrings.Depart+" ▶",StickerKind.Primary,1350,8,192,90,34,Depart,FontRole.Display);
+        BuildDispatchOrders();
         UiKit.Show(dispatch,false);
     }
     private TextMeshProUGUI Chip(Transform parent,float x,float w,string icon)
@@ -114,6 +118,7 @@ public sealed partial class BusinessView
     {
         UpdatePins();
         if(Zone!=ShopZone.Dispatch)return;
+        RefreshDispatchOrders();
         Navigate();UpdateMinimap();
         int step=Step();
         for(int i=0;i<4;i++)
@@ -124,10 +129,10 @@ public sealed partial class BusinessView
         }
         bubbleText.text=step switch
         {
-            0=>"受け渡しの配達員を選びましょう。上の顔を押しても選べます。",
-            1=>"受け渡しで箱をバッグに入れましょう。＋を押すと台の箱が入ります。",
-            2=>"届け先のピンを、行く順番にタップ。ルートが引かれます。",
-            _=>"準備OK! 出発を押しましょう。"
+            0=>"左上の名前から、店にいる配達員を選びます。",
+            1=>"左の注文一覧で「積む」を押します。梱包は自動です。",
+            2=>"注文の「届け先へ」か地図のピンを、配達する順に押します。道を直接選んでもOK。",
+            _=>"所要時間と残り時間を確認して「出発」。最後の届け先からは自動で店に戻る経路です。"
         };
         chipTime.text=$"{Mathf.CeilToInt(clock.RemainingSeconds)/60}:{Mathf.CeilToInt(clock.RemainingSeconds)%60:00}";chipCash.text=UiKit.Yen(economy.Cash);chipReputation.text=Mathf.RoundToInt(reputation.Value).ToString();
         trafficButton.Kind=ShowCongestion?StickerKind.Selected:StickerKind.Secondary;
@@ -139,10 +144,10 @@ public sealed partial class BusinessView
     private void RebuildCourierCard()
     {
         for(int i=switcher.childCount-1;i>=0;i--)Destroy(switcher.GetChild(i).gameObject);
-        float x=0;foreach(var p in roster.People)
+        int index=0;foreach(var p in roster.People)
         {
-            var b=UiKit.Button(switcher,"Pick_"+p.Name,p.Name.Substring(0,1),roster.SelectedPerson==p?StickerKind.Selected:StickerKind.Secondary,x,0,56,56,24,null,FontRole.Display);
-            var pp=p;b.Button.onClick.AddListener(()=>handover.Select(pp));b.Interactable=p.IsAvailable;b.Label.color=p.IsAvailable?T.CourierColor(p.Name):T.disabled;x+=64;
+            var b=UiKit.Button(switcher,"Pick_"+p.Name,p.Name,roster.SelectedPerson==p?StickerKind.Selected:StickerKind.Secondary,index*370f/roster.People.Count,0,360f/roster.People.Count,56,T.bodySize,null,FontRole.Display);
+            var pp=p;b.Button.onClick.AddListener(()=>handover.Select(pp));b.Interactable=p.IsAvailable;b.Label.color=p.IsAvailable?T.CourierColor(p.Name):T.disabled;index++;
         }
         var person=roster.SelectedPerson;
         courierCard.gameObject.SetActive(true);
@@ -157,19 +162,19 @@ public sealed partial class BusinessView
             float w=(290-(person.Capacity-1)*10f)/person.Capacity;w=Mathf.Min(w,90);
             if(s<bag.Count)
             {
-                var o=bag[s];var b=UiKit.Button(bagSlots,"Bag_"+Number(o),"#"+Number(o),StickerKind.Selected,s*(w+10),0,w,84,24,()=>handover.Unbag(o),FontRole.Display);
+                var o=bag[s];var b=UiKit.Button(bagSlots,"Bag_"+Number(o),"#"+Number(o),StickerKind.Selected,s*(w+10),0,w,42,T.bodySize,()=>handover.Unbag(o),FontRole.Display);
                 b.transform.Find("Face/Fill").GetComponent<Image>().color=T.cheeseLight;
             }
             else
             {
-                var slot=UiKit.Box(bagSlots,"Empty"+s,s*(w+10),0,w,84);UiKit.Dashed(slot,T.inkSub,10,6,2);
+                var slot=UiKit.Box(bagSlots,"Empty"+s,s*(w+10),0,w,42);UiKit.Dashed(slot,T.inkSub,10,6,2);
                 var add=slot.gameObject.AddComponent<Button>();slot.gameObject.AddComponent<StickerCardAction>().Apply();
-                UiKit.Icon(slot,"Plus","icon_plus",w/2-18,24,36,T.inkSub);var p=person;
-                add.onClick.AddListener(()=>{var next=handover.RackOrders.FirstOrDefault();if(next==null)Toast("受け渡しの台に箱がありません。",T.cheese,null,"icon_box");else handover.Bag(next,p);});
+                UiKit.Icon(slot,"Plus","icon_plus",w/2-12,8,24,T.inkSub);var p=person;
+                add.onClick.AddListener(()=>{var next=handover.RackOrders.FirstOrDefault();if(next==null)Toast("梱包済みの注文がありません。",T.cheese,null,"icon_box");else handover.Bag(next,p);});
             }
         }
         float potential=person.Potential(CourierAbility.Capacity);
-        growthBox.gameObject.SetActive(person.Capacity<potential);((RectTransform)courierCard).sizeDelta=new Vector2(330,person.Capacity<potential?330:258);
+        UiKit.Show(growthBox,false);courierCard.sizeDelta=new Vector2(370,176);
         var training=FindFirstObjectByType<TrainingManager>();
         growthText.text=$"成長で増える\n積載量 {person.Capacity} → {person.Capacity+1}（訓練 {UiKit.Yen(training.Cost(person,CourierAbility.Capacity))}）";
     }
@@ -240,9 +245,9 @@ public sealed partial class BusinessView
         var root=new GameObject("Pin_"+node.Id).transform;root.SetParent(pinRoot,false);
         var s=new GameObject("Pin").AddComponent<SpriteRenderer>();s.transform.SetParent(root,false);s.sortingOrder=40;
         var number=new GameObject("Number").AddComponent<TextMeshPro>();number.transform.SetParent(root,false);number.font=UiKit.Font(FontRole.Display);number.fontSize=220;number.color=T.line;number.alignment=TextAlignmentOptions.Center;number.rectTransform.sizeDelta=new Vector2(40,40);number.GetComponent<MeshRenderer>().sortingOrder=42;
-        var pill=new GameObject("Pill").AddComponent<SpriteRenderer>();pill.transform.SetParent(root,false);pill.sprite=UiKit.Round;pill.drawMode=SpriteDrawMode.Sliced;pill.color=T.paper;pill.sortingOrder=43;pill.transform.localScale=Vector3.one*25;pill.transform.localPosition=new Vector3(0,-22,0);
-        var edge=new GameObject("PillEdge").AddComponent<SpriteRenderer>();edge.transform.SetParent(pill.transform,false);edge.sprite=UiKit.Round;edge.drawMode=SpriteDrawMode.Sliced;edge.color=T.line;edge.sortingOrder=42;
-        var label=new GameObject("Label").AddComponent<TextMeshPro>();label.transform.SetParent(root,false);label.font=UiKit.Font(FontRole.Black);label.fontSize=180;label.color=T.line;label.alignment=TextAlignmentOptions.Center;label.rectTransform.sizeDelta=new Vector2(240,34);label.transform.localPosition=new Vector3(0,-22,0);label.GetComponent<MeshRenderer>().sortingOrder=44;
+        var pill=new GameObject("Pill").AddComponent<SpriteRenderer>();pill.transform.SetParent(root,false);pill.sprite=UiKit.MapLabel;pill.drawMode=SpriteDrawMode.Sliced;pill.color=T.paper;pill.sortingOrder=43;pill.transform.localScale=Vector3.one*25;pill.transform.localPosition=new Vector3(0,node.IsStore?-46:-22,0);
+        var edge=new GameObject("PillEdge").AddComponent<SpriteRenderer>();edge.transform.SetParent(pill.transform,false);edge.sprite=UiKit.MapLabel;edge.drawMode=SpriteDrawMode.Sliced;edge.color=T.line;edge.sortingOrder=42;
+        var label=new GameObject("Label").AddComponent<TextMeshPro>();label.transform.SetParent(root,false);label.font=UiKit.Font(FontRole.Black);label.fontSize=180;label.color=T.line;label.alignment=TextAlignmentOptions.Center;label.rectTransform.sizeDelta=new Vector2(240,34);label.transform.localPosition=new Vector3(0,node.IsStore?-46:-22,0);label.GetComponent<MeshRenderer>().sortingOrder=44;
         label.text=node.IsStore?ShopStrings.Store:ShopStrings.House(map,node.Id);float width=label.GetPreferredValues(label.text).x+20;
         pill.size=new Vector2(width/25f,32/25f);edge.size=new Vector2((width+7)/25f,39/25f);
         return (root,s,number,label,pill);
@@ -281,7 +286,8 @@ public sealed partial class BusinessView
         var cam=Camera.main;if(cam==null)return;
         foreach(var pair in pins)
         {
-            var node=map.Nodes.FirstOrDefault(n=>n.Id==pair.Key);if(node==null || node.IsStore)continue;
+            var node=map.Nodes.FirstOrDefault(n=>n.Id==pair.Key);if(node==null)continue;
+            if(node.IsStore){if(((Vector2)cam.WorldToScreenPoint(node.Position)-screen).magnitude<=36){ReturnHome();return;}continue;}
             Vector2 head=cam.WorldToScreenPoint(pair.Value.sprite.transform.position);
             if((head-screen).magnitude<=36){TapPin(node.Id);return;}
         }

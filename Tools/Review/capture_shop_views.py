@@ -1,5 +1,6 @@
 import contextlib,io,runpy,sys,json,time,pathlib,struct
 small='--720' in sys.argv
+folder=sys.argv[sys.argv.index('--folder')+1] if '--folder' in sys.argv else 'shop-resume'
 root=pathlib.Path(__file__).resolve().parents[2];sys.argv=['helper','get_editor_state']
 with contextlib.redirect_stdout(io.StringIO()):ns=runpy.run_path(str(root/'Tools/Review/unity_mcp.py'))
 def code(source):
@@ -22,7 +23,7 @@ try:
   code(base+action+'router.Show(router.Current,true);Canvas.ForceUpdateCanvases();return "view";');time.sleep(1.1)
   if name=='dispatch':
    result=code(base+'var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>();var fit=business.GetComponentsInChildren<TMPro.TMP_Text>(true).First(t=>t.name=="Fit" && t.transform.parent.name=="Summary");var expected="個別 "+clock.ToRealSeconds(planner.IndividualReferenceTime.Value).ToString("F1")+"秒";if(!fit.text.StartsWith(expected))throw new Exception("individual comparison not displayed: "+fit.text);return fit.text;');print(result,flush=True)
-  path=pathlib.Path('Docs/UI_Screens/shop-resume-1280x720' if small else 'Docs/UI_Screens/shop-resume')/(name+'.png');(root/path).parent.mkdir(parents=True,exist_ok=True)
+  path=(pathlib.Path('Docs/UI_Screens')/(folder+('-1280x720' if small else '')))/(name+'.png');(root/path).parent.mkdir(parents=True,exist_ok=True)
   if (root/path).exists():(root/path).unlink()
   code('ReviewFrameCapture.Begin('+json.dumps(str(path))+');return "capture";')
   for _ in range(40):

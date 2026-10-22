@@ -1,0 +1,63 @@
+{
+  "branch": "shop",
+  "base_commit": "31382d8",
+  "all_checks": 3733,
+  "results": [
+    "PASS: 170 M3/M4 checks (current sample settings). / PASS: 67 M5 checks. / PASS: 8 campaign reset checks. / PASS: 135 M6 checks. / PASS: 58 screen checks. / PASS: 82 M7 checks. / PASS: 216 visual checks. / PASS: 48 shop checks.",
+    "PASS: 72 M5 simulation checks / CSV: /Users/soma/Unity/PizzaDeliveryGame/Docs/M7_Simulations/legacy/legacy/seed-20261022.csv",
+    "PASS: 825 M6 simulation checks",
+    "PASS: 1239 M6 simulation checks",
+    "PASS: 813 M7 simulation checks"
+  ],
+  "second_normal_run_matches_first": true,
+  "csv_count": 12,
+  "csv_sha256": {
+    "Docs/M7_Simulations/FGH/F.csv": "2a433476ece093eb7bbdd72747b01120fbe7a0671c6a2d7cba9b467fdc0ca00b",
+    "Docs/M7_Simulations/FGH/G.csv": "ecf624cf3dcc08f27c8da9b8f53e2dfffa45ea092449ee0dc21036a9afe8a403",
+    "Docs/M7_Simulations/FGH/H.csv": "d6822646ca482ea0f0c8ed62e1b7b70b452442fcfda7b523c725d65f1e2be0ce",
+    "Docs/M7_Simulations/legacy/A.csv": "8d4e9e0455c1747bf1d71d629c8f1f6a6ea83e74edfc92074544354c4ef360b7",
+    "Docs/M7_Simulations/legacy/C.csv": "eac0d3d809f5e6af8834adc9f8190c34b4cffc698b8f3c720a2008d2c9261aa6",
+    "Docs/M7_Simulations/legacy/B.csv": "a4e4273994f991ee373fbaefe1fcedf8369fbface2f1acde3eac7d06c9b7e56f",
+    "Docs/M7_Simulations/legacy/E.csv": "f264f90d538e36ef1c77a2a33265cf2530e810338cab0f1e56214f3325cf4309",
+    "Docs/M7_Simulations/legacy/D.csv": "9afec19c8d5dfb620f63c571be13e8aeb7d88389875653b358606c89b8e7794d",
+    "Docs/M7_Simulations/legacy/E2.csv": "5d740784d2d6911fb5f389dff66d12689961376d51deb5ed816a4dbc437d734f",
+    "Docs/M7_Simulations/legacy/comparisons.csv": "21af432cfd835da6f49bf1f259c29249b411dca478e090e6d64ed311a2fa8672",
+    "Docs/M7_Simulations/legacy/policies.csv": "26dbf69215572e9237efd7e4bee83896c3bdae963ed1a8a9aba7070b2aa1fd97",
+    "Docs/M7_Simulations/legacy/legacy/seed-20261022.csv": "f53a44ff9ffa9d7adeb77c2d525c82d9b60a3cc9ed8180310b7ce44a02605dc8"
+  },
+  "ui_steps": [
+    "PASS: manual setup",
+    "PASS: ticket click",
+    "PASS: dough and sauce",
+    "PASS: cheese topping oven",
+    "PASS: bake band takeout",
+    "PASS: automatic packing",
+    "PASS: open dispatch",
+    "PASS: courier name click",
+    "PASS: load named order",
+    "PASS: order countdown and no handover tab",
+    "PASS: map zoom button",
+    "PASS: road width remains readable",
+    "PASS: road screen picking",
+    "PASS: manual destination route",
+    "PASS: manual route departure",
+    "PASS: in-flight countdown",
+    "PASS: delivery return settlement",
+    "PASS: late order setup",
+    "PASS: grace countdown visible",
+    "PASS: cancel reason stays visible"
+  ],
+  "settings": {
+    "late_acceptance_seconds": 20,
+    "manual_auto_pack_seconds": 2,
+    "cancel_notice_seconds": 8
+  },
+  "note": "Final normal run after minimap position fix. No safety settings disabled. Same simulation steps and fixed seeds.",
+  "editor_final": {
+    "playing": false,
+    "compiling": false,
+    "updating": false,
+    "compilation_errors": 0,
+    "cached_runtime_errors": 0
+  }
+}

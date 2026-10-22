@@ -27,7 +27,7 @@ public sealed class HandoverManager : MonoBehaviour
         if(person.Status==DeliveryStatus.Training)return person.Name+" は訓練中です。";
         if(!person.IsAvailable)return person.Name+" は店にいません。";
         if(order==null || !orders.Contains(order) || !order.IsReady)return "梱包済みの箱だけ渡せます。";
-        if(clock.ElapsedSeconds>=order.Deadline)return "期限が切れています。";
+        if(clock.ElapsedSeconds>=FindFirstObjectByType<ScoreManager>().CancellationAt(order))return "期限が切れています。";
         if(IsBagged(order))return "この箱はもう誰かのバッグに入っています。";
         if(BagOf(person).Count>=person.Capacity)return $"{person.Name} のバッグはいっぱいです（{person.Capacity}箱まで）。";
         return "";

@@ -337,6 +337,7 @@ MonoBehaviour:
   cardRadius: 16
   outerMargin: 32
   buttonFeedbackSeconds: 0.08
+  cancelledOrderNoticeSeconds: 8
   displayFont: {fileID: 11400000, guid: 0ea3fdffb6deb4da39e6b517f23cc7d7, type: 2}
   boldFont: {fileID: 11400000, guid: b5200794e2a954066a16e93d01e45951, type: 2}
   blackFont: {fileID: 11400000, guid: d8f3190cdfc9a4970a4ef1d20f72c23d, type: 2}
@@ -350,6 +351,9 @@ MonoBehaviour:
   backRoadEdge: {r: 0.7254902, g: 0.68235296, b: 0.59607846, a: 1}
   backRoadFill: {r: 1, g: 0.99215686, b: 0.9647059, a: 1}
   congestion: {r: 0.8784314, g: 0.29411766, b: 0.1764706, a: 1}
+  mapRoadMaxPixels: 24
+  mapRoadBorderPixels: 3
+  mapRouteArrowPixels: 22
   mapMainRoad: 0.42
   mapBackRoad: 0.22
   mapRoute: 0.3

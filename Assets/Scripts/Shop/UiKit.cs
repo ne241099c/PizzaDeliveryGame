@@ -13,7 +13,8 @@ public enum FontRole { Body, Bold, Black, Display }
 public static class UiKit
 {
     public static UITheme T=>UITheme.Active;
-    private static Sprite round,circle,triangle;
+    private static Sprite round,circle,triangle,mapLabel;
+    public static Sprite MapLabel=>mapLabel!=null?mapLabel:(mapLabel=Shape(128,16,false));
     private static readonly Dictionary<string,Sprite> art=new();
 
     // ---- generated shapes ----

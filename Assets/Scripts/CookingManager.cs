@@ -19,6 +19,7 @@ public sealed class PizzaJob
     public float AssembledAt {get;internal set;}
     public float OvenStartedAt {get;internal set;}
     public float TakenOutAt {get;internal set;}
+    public float PackingStartedAt {get;internal set;}
     public float SauceCoverage {get;internal set;}
     public Topping? AddedTopping {get;internal set;}
     public bool SaucePoint {get;internal set;}
@@ -64,6 +65,9 @@ public sealed class CookingManager : MonoBehaviour
     private float[] benchFreeSince=Array.Empty<float>(),ovenFreeSince=Array.Empty<float>();
     private readonly HashSet<Order> expired=new();
     private float processed;
+    private ScoreManager score;
+    private float Expires(Order order) { if(score==null)score=FindFirstObjectByType<ScoreManager>(); return score.CancellationAt(order); }
+    public float PackSeconds=>packSeconds;
     private System.Random random;
 
     public bool ManualControlEnabled {get;set;}=true;
@@ -96,7 +100,7 @@ public sealed class CookingManager : MonoBehaviour
     public bool IsStaffBusy(KitchenStaff member)=>staff.Any(s=>s.Staff==member && s.Task!=null);
     public PizzaJob StaffTask(KitchenStaff member)=>staff.FirstOrDefault(s=>s.Staff==member)?.Task;
     /// <summary>Packed boxes waiting at the counter (not yet in a courier's bag).</summary>
-    public int RackCount=>orders.Orders.Count(o=>o.IsReady && (handover==null || !handover.IsBagged(o)))+staff.Count(s=>s.Packing && s.Task!=null);
+    public int RackCount=>orders.Orders.Count(o=>o.IsReady && (handover==null || !handover.IsBagged(o)))+jobs.Count(j=>j.Stage==PizzaStage.Boxed);
     public float StaffWorkSeconds(KitchenStaff member)=>(doughSeconds+sauceSeconds+assemblySeconds)*StaffFactor(member);
     public float StaffPackSeconds(KitchenStaff member)=>packSeconds*StaffFactor(member);
     private float StaffFactor(KitchenStaff member)=>Mathf.Max(.05f,staffTimeBase-staffTimeScale*member.Speed);
@@ -165,11 +169,11 @@ public sealed class CookingManager : MonoBehaviour
         }
         processed=now;Assign(now);
         if(clock.Phase==DayPhase.Open || clock.Phase==DayPhase.BeforeOpening)
-            MaximumQueueLength=Mathf.Max(MaximumQueueLength,orders.Orders.Count(o=>o.Baking==BakingState.Waiting && o.Deadline>now && !expired.Contains(o)));
+            MaximumQueueLength=Mathf.Max(MaximumQueueLength,orders.Orders.Count(o=>o.Baking==BakingState.Waiting && Expires(o)>now && !expired.Contains(o)));
     }
     private void DropRemovedOrders()
     {
-        foreach(var job in jobs.Where(j=>!orders.Contains(j.Order) && j.Stage!=PizzaStage.Packed).ToArray())Release(job,Mathf.Min(clock.ElapsedSeconds,job.Order.Deadline));
+        foreach(var job in jobs.Where(j=>!orders.Contains(j.Order) && j.Stage!=PizzaStage.Packed).ToArray())Release(job,Mathf.Min(clock.ElapsedSeconds,Expires(job.Order)));
         jobs.RemoveAll(j=>j.Stage==PizzaStage.Packed && !orders.Contains(j.Order));
     }
     // Assignments may be backdated to the exact moment a ticket arrived, so pending events can lie in the past;
@@ -179,15 +183,20 @@ public sealed class CookingManager : MonoBehaviour
         float next=float.PositiveInfinity;
         foreach(var slot in staff)if(slot.Task!=null)next=Mathf.Min(next,slot.Until);
         foreach(var job in ovens)if(job!=null && job.Worker==PizzaWorker.Staff)next=Mathf.Min(next,job.OvenStartedAt+bakeSeconds);
-        foreach(var job in jobs)if(job.Stage!=PizzaStage.Packed)next=Mathf.Min(next,job.Order.Deadline);
+        foreach(var job in jobs)
+        {
+            if(job.Stage!=PizzaStage.Packed)next=Mathf.Min(next,Expires(job.Order));
+            if(job.Worker==PizzaWorker.Player && job.Stage==PizzaStage.Boxed)next=Mathf.Min(next,job.PackingStartedAt+packSeconds);
+        }
         next=Mathf.Max(next,after);
         if(clock.Phase==DayPhase.Open && staff.Any(s=>s.Task==null))
-            foreach(var order in orders.Orders)if(order.Baking==BakingState.Waiting && order.SpawnedAt>after && order.Deadline>order.SpawnedAt)next=Mathf.Min(next,order.SpawnedAt);
+            foreach(var order in orders.Orders)if(order.Baking==BakingState.Waiting && order.SpawnedAt>after && Expires(order)>order.SpawnedAt)next=Mathf.Min(next,order.SpawnedAt);
         return next;
     }
     private void Process(float t)
     {
-        foreach(var job in jobs.Where(j=>j.Stage!=PizzaStage.Packed && j.Order.Deadline<=t).ToArray()){expired.Add(job.Order);Release(job,job.Order.Deadline);}
+        foreach(var job in jobs.Where(j=>j.Stage!=PizzaStage.Packed && Expires(j.Order)<=t).ToArray()){expired.Add(job.Order);Release(job,Expires(job.Order));}
+        foreach(var job in jobs.Where(j=>j.Worker==PizzaWorker.Player && j.Stage==PizzaStage.Boxed && j.PackingStartedAt+packSeconds<=t).ToArray())Pack(job);
         foreach(var slot in staff.Where(s=>s.Task!=null && s.Until<=t).OrderBy(s=>s.Until).ToArray())
         {
             var job=slot.Task;float at=slot.Until;
@@ -211,6 +220,11 @@ public sealed class CookingManager : MonoBehaviour
     private void Assign(float t)
     {
         if(clock.Phase!=DayPhase.Open)return;
+        foreach(var job in jobs.Where(j=>j.Worker==PizzaWorker.Player && j.Stage==PizzaStage.Baked).OrderBy(j=>j.TakenOutAt))
+        {
+            if(RackCount>=rackCapacity || PackingTable.Count()>=packingSlots)break;
+            job.Stage=PizzaStage.Boxed;job.PackingStartedAt=t;
+        }
         for(int i=0;i<ovens.Length;i++)
         {
             if(ovens[i]!=null)continue;
@@ -226,7 +240,7 @@ public sealed class CookingManager : MonoBehaviour
                 baked.Stage=PizzaStage.Boxed;slot.Task=baked;slot.Packing=true;slot.Until=start+StaffPackSeconds(slot.Staff);slot.Staff.IsWorking=true;continue;
             }
             int bench=FreeBench();if(bench<0)continue;
-            var order=orders.Orders.Where(o=>o.Baking==BakingState.Waiting && o.SpawnedAt<=t && o.Deadline>t && !expired.Contains(o) && JobFor(o)==null).OrderBy(o=>o.SpawnedAt).FirstOrDefault();
+            var order=orders.Orders.Where(o=>o.Baking==BakingState.Waiting && o.SpawnedAt<=t && Expires(o)>t && !expired.Contains(o) && JobFor(o)==null).OrderBy(o=>o.SpawnedAt).FirstOrDefault();
             if(order==null)continue;
             float begin=Mathf.Min(t,Mathf.Max(order.SpawnedAt,Mathf.Max(slot.FreeSince,benchFreeSince[bench])));
             var job=new PizzaJob(order,PizzaWorker.Staff){Staff=slot.Staff,Bench=bench,Stage=PizzaStage.Topping,StartedAt=begin};
@@ -270,7 +284,7 @@ public sealed class CookingManager : MonoBehaviour
         if(!ManualControlEnabled)return "いまは自分で調理できません。";
         if(clock.Phase!=DayPhase.Open)return "営業中だけ調理できます。";
         if(order==null || !orders.Contains(order) || order.Baking!=BakingState.Waiting || JobFor(order)!=null)return "この伝票はもう作り始めています。";
-        if(clock.ElapsedSeconds>=order.Deadline)return "期限が切れています。";
+        if(clock.ElapsedSeconds>=Expires(order))return "期限が切れています。";
         if(bench<0 || bench>=benches.Length)return "作業台がありません。";
         if(benches[bench]!=null)return "この作業台は使用中です。";
         return "";
@@ -305,13 +319,13 @@ public sealed class CookingManager : MonoBehaviour
     }
     public bool Box(PizzaJob job)
     {
-        if(!Ready() || job==null || job.Worker!=PizzaWorker.Player || job.Stage!=PizzaStage.Baked || PackingTable.Count()>=packingSlots)return false;
-        job.Stage=PizzaStage.Boxed;return Done();
+        if(!Ready() || job==null || job.Worker!=PizzaWorker.Player || job.Stage!=PizzaStage.Baked || RackCount>=rackCapacity || PackingTable.Count()>=packingSlots)return false;
+        job.Stage=PizzaStage.Boxed;job.PackingStartedAt=clock.ElapsedSeconds;return Done();
     }
     public string CloseRejection(PizzaJob job)
     {
         if(job==null || job.Stage!=PizzaStage.Boxed || job.Worker!=PizzaWorker.Player)return "箱に入ったピザがありません。";
-        if(RackCount>=rackCapacity)return $"受け渡しの台がいっぱいです（{rackCapacity}箱まで）。";
+        if(clock.ElapsedSeconds<job.PackingStartedAt+packSeconds)return "自動で梱包中です。";
         return "";
     }
     public bool CloseBox(PizzaJob job)

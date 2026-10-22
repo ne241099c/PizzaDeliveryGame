@@ -8,6 +8,8 @@ public sealed class ScoreManager : MonoBehaviour
     [SerializeField, Min(0f)] private float latePenaltyPerSecond = 5f;
     [SerializeField, Min(0)] private int closingCancellationPenalty = 0;
     [SerializeField, Range(0,1)] private float tipRatio = 0.2f;
+    [SerializeField, Min(0f), Tooltip("目安を過ぎても未出発の注文を受け付ける秒数。得点の減点は目安時刻から始まります。") ] private float lateAcceptanceSeconds = 20f;
+    public float LateAcceptanceSeconds => lateAcceptanceSeconds;
     public int Score { get; private set; }
     public int ScorePerDelivery => scorePerDelivery;
     public float LatePenaltyPerSecond => latePenaltyPerSecond;
@@ -19,6 +21,6 @@ public sealed class ScoreManager : MonoBehaviour
         => DeliveryScoring.Calculate(arrivedAt, deadline, scorePerDelivery, latePenaltyPerSecond,service,tipRatio);
     public int TipForArrival(float arrivedAt,float deadline,float service)
         => arrivedAt<=deadline ? (int)System.Math.Round(scorePerDelivery*tipRatio*Mathf.Clamp01(service),System.MidpointRounding.AwayFromZero) : 0;
-    public float CancellationAt(Order order) => DeliveryScoring.CancellationAt(order.Deadline, scorePerDelivery, latePenaltyPerSecond);
+    public float CancellationAt(Order order) => DeliveryScoring.CancellationAt(order.Deadline, scorePerDelivery, latePenaltyPerSecond, lateAcceptanceSeconds);
     private void UpdateScoreText() { if (scoreText != null) scoreText.text = $"Score: {Score}"; }
 }
