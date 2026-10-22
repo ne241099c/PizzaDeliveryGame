@@ -12,6 +12,6 @@ public sealed class OrderDeadlineView : MonoBehaviour
     private void LateUpdate()
     {
         var order=card.BoundOrder;if(order==null){image.enabled=false;return;}image.enabled=true;
-        float ratio=Mathf.Clamp01((order.Deadline-clock.ElapsedSeconds)/Mathf.Max(.01f,order.TimeLimit));fill.anchorMax=new Vector2(ratio,1);image.color=UITheme.Active.good;
+        float ratio=Mathf.Clamp01((order.Deadline-clock.ElapsedSeconds)/Mathf.Max(.01f,order.TimeLimit));fill.anchorMax=new Vector2(ratio,1);image.color=UITheme.Active.DeadlineColor(ratio);
     }
 }

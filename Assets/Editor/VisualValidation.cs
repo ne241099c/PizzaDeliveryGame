@@ -44,6 +44,15 @@ public static class VisualValidation
             Check(UnityEngine.Object.FindObjectsByType<NodeView>(FindObjectsSortMode.None).Length==map.Nodes.Count,"existing node views reused");
             var clone=UnityEngine.Object.Instantiate(edges[0]);try{var a=map.Nodes[0];var b=map.Nodes[1];var road=new MapEdge("ReviewOneWay",a.Id,b.Id,1,RoadType.Main,.5f){Bidirectional=false};clone.Initialize(road,a,b,map,false);Check(clone.transform.Find("OneWayArrow")!=null,"one-way road has a direction arrow");}finally{UnityEngine.Object.DestroyImmediate(clone.gameObject);}
         }
+        if(driver!=null && driver.ImplementationStage>=3)
+        {
+            var feedback=UnityEngine.Object.FindFirstObjectByType<DeliveryFeedback>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
+            Check(theme.DeadlineColor(.8f)==theme.good && theme.DeadlineColor(.3f)==theme.money && theme.DeadlineColor(.1f)==theme.bad,"deadline green yellow red thresholds");
+            Check(theme.effectSeconds>=.5f && theme.effectSeconds<=1.5f,"short feedback duration");
+            var ledger=economy.Ledger;decimal cash=economy.Cash;float elapsed=clock.ElapsedSeconds;bool enabled=feedback.AnimationsEnabled;feedback.AnimationsEnabled=false;feedback.Render();feedback.AnimationsEnabled=enabled;
+            Check(economy.Cash==cash && economy.Ledger==ledger && clock.ElapsedSeconds==elapsed,"feedback toggle leaves cash ledger and clock untouched");
+            var timer=UIVisibility.Find(UnityEngine.Object.FindFirstObjectByType<Canvas>().transform,"TimeFill");Check(!timer.GetComponent<Image>().raycastTarget,"feedback band passes clicks through");
+        }
         return $"PASS: {count} visual checks.";
     }
 }

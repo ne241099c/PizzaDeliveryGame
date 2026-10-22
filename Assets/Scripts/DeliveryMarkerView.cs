@@ -23,7 +23,7 @@ public sealed class DeliveryMarkerView : MonoBehaviour
         var text = go.AddComponent<TextMeshPro>();
         text.font = UITheme.Active.font;
         var dot=new GameObject("CourierDot");dot.transform.SetParent(go.transform,false);dot.transform.localScale=Vector3.one*UITheme.Active.worldIconScale;var sprite=dot.AddComponent<SpriteRenderer>();sprite.sprite=MapVisuals.Shape(true);sprite.color=UITheme.Active.CourierColor(trip.Person.Name);sprite.sortingOrder=29;
-        text.text = MarkerCaption(trip,clock.ElapsedSeconds);
+        text.text = UiStrings.Japanese(MarkerCaption(trip,clock.ElapsedSeconds));
         var headingObject=new GameObject("Heading");headingObject.transform.SetParent(go.transform,false);var heading=headingObject.AddComponent<TextMeshPro>();heading.font=UITheme.Active.font;heading.text=">";heading.fontSize=UITheme.Active.routeArrowSize;heading.color=UITheme.Active.CourierColor(trip.Person.Name);heading.alignment=TextAlignmentOptions.Center;heading.rectTransform.sizeDelta=Vector2.one;headingObject.GetComponent<MeshRenderer>().sortingOrder=31;
         text.fontSize = UITheme.Active.worldLabelSize;
         text.color = ColorFor(trip,clock.ElapsedSeconds);
@@ -44,7 +44,8 @@ public sealed class DeliveryMarkerView : MonoBehaviour
         foreach (var pair in markers)
         {
             pair.Value.transform.position = (Vector3)pair.Key.PositionAt(clock.ElapsedSeconds) + Vector3.up * markerOffset;
-            pair.Value.text=MarkerCaption(pair.Key,clock.ElapsedSeconds);
+            pair.Value.text=UiStrings.Japanese(MarkerCaption(pair.Key,clock.ElapsedSeconds));
+            if(pair.Key.IsStoppedAt(clock.ElapsedSeconds) && DeliveryFeedback.Animate)pair.Value.transform.position+=Vector3.right*Mathf.Sin(Time.unscaledTime*UITheme.Active.shakeFrequency)*UITheme.Active.shakeDistance;
             pair.Value.color=ColorFor(pair.Key,clock.ElapsedSeconds);
             Vector2 direction=pair.Key.PositionAt(clock.ElapsedSeconds+.1f)-pair.Key.PositionAt(clock.ElapsedSeconds);var heading=pair.Value.transform.Find("Heading");
             if(direction.sqrMagnitude>0){heading.localPosition=direction.normalized*UITheme.Active.worldIconScale;heading.rotation=Quaternion.Euler(0,0,Mathf.Atan2(direction.y,direction.x)*Mathf.Rad2Deg);}

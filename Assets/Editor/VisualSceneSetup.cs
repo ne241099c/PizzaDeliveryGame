@@ -66,4 +66,15 @@ public static class VisualSceneSetup
         var go=GameObject.Find("GameManager");var visuals=go.GetComponent<MapVisuals>();if(visuals==null)visuals=Undo.AddComponent<MapVisuals>(go);ScreensSceneSetup.Bind(visuals,"map",UnityEngine.Object.FindFirstObjectByType<MapManager>());
         var so=new SerializedObject(go.GetComponent<UIThemeDriver>());so.FindProperty("implementationStage").intValue=2;so.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(go.scene);
     }
+    public static void Feedback()
+    {
+        var go=GameObject.Find("GameManager");var view=go.GetComponent<DeliveryFeedback>();if(view==null)view=Undo.AddComponent<DeliveryFeedback>(go);
+        ScreensSceneSetup.Bind(view,"flow",go.GetComponent<DeliveryFlowController>());ScreensSceneSetup.Bind(view,"clock",go.GetComponent<GameClock>());ScreensSceneSetup.Bind(view,"score",go.GetComponent<ScoreManager>());ScreensSceneSetup.Bind(view,"cooking",go.GetComponent<CookingManager>());ScreensSceneSetup.Bind(view,"economy",go.GetComponent<BusinessEconomy>());ScreensSceneSetup.Bind(view,"reputation",go.GetComponent<ReputationManager>());ScreensSceneSetup.Bind(view,"roster",go.GetComponent<DeliveryPersonSelector>());ScreensSceneSetup.Bind(view,"settlement",go.GetComponent<SettlementScreenUI>());ScreensSceneSetup.Bind(view,"router",go.GetComponent<ScreenRouter>());ScreensSceneSetup.Bind(view,"map",UnityEngine.Object.FindFirstObjectByType<MapManager>());
+        ScreensSceneSetup.Bind(view,"cashLabel",ScreensSceneSetup.Find("Cash").GetComponent<TMP_Text>());
+        var promise=new SerializedObject(go.GetComponent<DeliveryPromiseUI>());ScreensSceneSetup.Bind(view,"reputationLabel",promise.FindProperty("reputationText").objectReferenceValue);
+        var settlement=new SerializedObject(go.GetComponent<SettlementScreenUI>());ScreensSceneSetup.Bind(view,"settlementLabel",settlement.FindProperty("pageText").objectReferenceValue);
+        var roster=new SerializedObject(go.GetComponent<DeliveryPersonSelector>());ScreensSceneSetup.Bind(view,"courierContent",roster.FindProperty("deliveryPersonListContent").objectReferenceValue);
+        var timer=M4StageSceneSetup.Rect(ScreensSceneSetup.Find("Header"),"BusinessTimeBand",32,116,260,8);var bg=timer.gameObject.AddComponent<Image>();bg.color=UITheme.Active.block;bg.raycastTarget=false;var fill=ScreensSceneSetup.Full(timer,"TimeFill");var image=fill.gameObject.AddComponent<Image>();image.raycastTarget=false;ScreensSceneSetup.Bind(view,"timerFill",image);
+        var so=new SerializedObject(go.GetComponent<UIThemeDriver>());so.FindProperty("implementationStage").intValue=3;so.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(go.scene);
+    }
 }
