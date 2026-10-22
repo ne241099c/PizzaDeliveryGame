@@ -27,7 +27,7 @@ public static class ShopValidation
                 var tabs=controls.FindProperty("zoneTabs");
                 Check(tabs!=null && tabs.arraySize==3 && Enumerable.Range(0,3).All(i=>tabs.GetArrayElementAtIndex(i).objectReferenceValue!=null),"zone controls survive Unity serialization");
                 var steps=controls.FindProperty("steps");
-                Check(steps!=null && steps.arraySize==4 && Enumerable.Range(0,4).All(i=>steps.GetArrayElementAtIndex(i).objectReferenceValue!=null),"dispatch steps survive Unity serialization");
+                Check(steps!=null && steps.arraySize==2 && Enumerable.Range(0,2).All(i=>steps.GetArrayElementAtIndex(i).objectReferenceValue!=null),"dispatch steps survive Unity serialization");
                 var previous=business.Zone;
                 foreach(ShopZone zone in Enum.GetValues(typeof(ShopZone)))
                 {

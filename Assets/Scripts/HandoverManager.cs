@@ -43,6 +43,26 @@ public sealed class HandoverManager : MonoBehaviour
         var holder=Holder(order);if(holder==null)return false;
         bags[holder].Remove(order);if(roster.SelectedPerson==holder)Select(holder);Changed?.Invoke();return true;
     }
+    /// <summary>Change the visit order inside a bag, or move a bagged box to another courier's bag at an index.</summary>
+    public bool Move(Order order,DeliveryPerson person,int index)
+    {
+        var holder=Holder(order);LastMessage="";
+        if(holder==null || person==null){LastMessage="この箱はバッグに入っていません。";return false;}
+        if(holder!=person)
+        {
+            if(clock.Phase!=DayPhase.Open)LastMessage="営業中だけ渡せます。";
+            else if(!person.IsAvailable)LastMessage=person.Name+" は店にいません。";
+            else if(BagOf(person).Count>=person.Capacity)LastMessage=$"{person.Name} のバッグはいっぱいです（{person.Capacity}箱まで）。";
+            if(LastMessage.Length>0){Changed?.Invoke();return false;}
+            bags[holder].Remove(order);if(!bags.TryGetValue(person,out var target))bags[person]=target=new List<Order>();
+            target.Insert(Mathf.Clamp(index<0?target.Count:index,0,target.Count),order);
+        }
+        else
+        {
+            var bag=bags[person];bag.Remove(order);bag.Insert(Mathf.Clamp(index<0?bag.Count:index,0,bag.Count),order);
+        }
+        Select(person);Changed?.Invoke();return true;
+    }
     /// <summary>Make the planner work on this courier's bag (selection drives route and dispatch).</summary>
     public bool Select(DeliveryPerson person)
     {

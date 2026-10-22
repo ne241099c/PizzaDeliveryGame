@@ -31,6 +31,6 @@ public static class ShopStrings
     public const string Speed="手際",Care="丁寧さ";
     public const string FindTeammate="仲間を探す",SeeApplicants="求人を見る";
     public const string KitchenTab="厨房",HandoverTab="受け渡し",DispatchTab="配達指示";
-    public const string Step1="配達員をえらぶ",Step2="注文の「積む」を押す",Step3="地図で届け先を順番にタップ",Step4="出発!";
-    public const string Depart="出発",Suggested="おすすめ経路",Redo="やり直す",Store="お店";
+    public const string Step1="伝票を配達員のレーンへ",Step2="ルートを直して出発";
+    public const string Depart="出発",ResetRoute="自動に戻す",Store="お店";
 }

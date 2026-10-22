@@ -22,7 +22,7 @@ try:
  for name,action in views:
   code(base+action+'router.Show(router.Current,true);Canvas.ForceUpdateCanvases();return "view";');time.sleep(1.1)
   if name=='dispatch':
-   result=code(base+'var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>();var fit=business.GetComponentsInChildren<TMPro.TMP_Text>(true).First(t=>t.name=="Fit" && t.transform.parent.name=="Summary");var expected="個別 "+clock.ToRealSeconds(planner.IndividualReferenceTime.Value).ToString("F1")+"秒";if(!fit.text.StartsWith(expected))throw new Exception("individual comparison not displayed: "+fit.text);return fit.text;');print(result,flush=True)
+   result=code(base+'var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>();var time=business.GetComponentsInChildren<TMPro.TMP_Text>(true).First(t=>t.name=="Time" && t.transform.parent.name.StartsWith("Lane_") && t.gameObject.activeInHierarchy);if(!time.text.Contains("秒"))throw new Exception("lane trip time not displayed: "+time.text);return time.text;');print(result,flush=True)
   path=(pathlib.Path('Docs/UI_Screens')/(folder+('-1280x720' if small else '')))/(name+'.png');(root/path).parent.mkdir(parents=True,exist_ok=True)
   if (root/path).exists():(root/path).unlink()
   code('ReviewFrameCapture.Begin('+json.dumps(str(path))+');return "capture";')

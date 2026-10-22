@@ -29,6 +29,8 @@ public sealed partial class BusinessView : MonoBehaviour
     public ShopZone Zone {get;private set;}=ShopZone.Kitchen;
     public RectTransform MapArea {get;private set;}
     public const float WorldWidth=2880,HandoverPan=-960;
+    private const float ToggleX=32,ToggleY=20,ToggleW=340;
+    private RectTransform zoneKnob;
 
     private void Awake()
     {
@@ -62,11 +64,19 @@ public sealed partial class BusinessView : MonoBehaviour
         BuildKitchen();BuildHandover();
         dispatch=UiKit.Stretch(root,"Dispatch");dispatchGroup=UiKit.Group(dispatch);BuildDispatch();
         BuildHud();BuildRail();
-        // zone tabs (bottom centre in the shop; bottom left on the map)
-        string[] names={ShopStrings.KitchenTab,ShopStrings.HandoverTab,ShopStrings.DispatchTab};
-        var tabs=UiKit.Box(root,"ZoneTabs",590,968,740,96);
-        for(int i=0;i<3;i++){var z=(ShopZone)i;zoneTabs[i]=UiKit.Button(tabs,"Zone"+i,names[i],StickerKind.Secondary,i*250,0,236,82,34,()=>ShowZone(z),FontRole.Display);}
-        toasts=UiKit.Box(root,"Toasts",1450,330,420,300);
+        // 厨房 / 配達指示 toggle switch: the same place (top left) in both views; a tomato knob slides to the current side.
+        string[] names={ShopStrings.KitchenTab,ShopStrings.HandoverTab,ShopStrings.DispatchTab};string[] icons={"icon_pizza",null,"icon_map"};
+        var tabs=UiKit.Card(root,"ZoneTabs",ToggleX,ToggleY,ToggleW,76,T.paper,38,5,3);
+        zoneKnob=UiKit.Box(tabs,"Knob",6,6,ToggleW/2-9,64);UiKit.Fill(zoneKnob,T.tomato,32);
+        for(int i=0;i<3;i++)
+        {
+            var z=(ShopZone)i;float x=i==0?6:i==2?ToggleW/2+3:0,w=i==1?0:ToggleW/2-9;
+            zoneTabs[i]=UiKit.Button(tabs,"Zone"+i,names[i],StickerKind.Secondary,x,6,w,64,24,()=>ShowZone(z),FontRole.Display,icons[i]);
+            // The knob is the face: the buttons only carry the label and icon.
+            foreach(var part in new[]{"Shadow","Face/Edge","Face/Fill"})zoneTabs[i].transform.Find(part).GetComponent<Image>().enabled=false;
+        }
+        UiKit.Show(zoneTabs[1],false);
+        toasts=UiKit.Box(root,"Toasts",1360,300,420,300);
         dragLayer=UiKit.Stretch(root,"Hand");hand=dragLayer.gameObject.AddComponent<ShopHand>();hand.Init(dragLayer);
         ShowZone(ShopZone.Kitchen,true);
     }
@@ -74,21 +84,21 @@ public sealed partial class BusinessView : MonoBehaviour
     // ---- HUD ----
     private void BuildHud()
     {
-        hud=UiKit.Card(transform,"Hud",32,20,1856,96,T.paper);hudGroup=UiKit.Group(hud);
-        UiKit.Icon(hud,"Clock","icon_clock",28,24,46,T.line);
-        dayText=UiKit.Label(hud,"Day","1日目 営業中",84,12,220,28,18,T.inkSub,FontRole.Black);
-        timeText=UiKit.Label(hud,"Time","5:00",84,34,130,56,40,T.line,FontRole.Display);
-        timeBar=UiKit.Bar(hud,"TimeBar",224,46,300,26,T.basil);
-        UiKit.Icon(hud,"Coin","icon_coin",560,24,46,T.line);
-        cashText=UiKit.Label(hud,"Cash","¥0",614,14,220,66,40,T.line,FontRole.Display);
-        cashDelta=UiKit.Badge(hud,"CashDelta","▲ +0",820,30,T.basil,Color.white,34,18);
-        UiKit.Icon(hud,"Star","icon_star",960,24,46,T.line);
-        reputationText=UiKit.Label(hud,"Reputation","50",1014,14,80,66,38,T.line,FontRole.Display);
-        reputationBar=UiKit.Bar(hud,"ReputationBar",1092,36,140,24,T.cheese);
-        UiKit.Label(hud,"PromiseTitle",ShopStrings.Promise,1268,24,120,46,20,T.line,FontRole.Black);
-        promiseSlider=UiKit.Slider(hud,"PromiseSlider",1390,34,240,28,T.cheese,v=>spawner.SetPromiseSeconds(v));
-        promiseText=UiKit.Label(hud,"Promise","60秒",1640,14,124,66,36,T.line,FontRole.Display,TextAlignmentOptions.Center);
-        UiKit.Button(hud,"MenuButton","",StickerKind.Secondary,1772,14,64,64,20,()=>menu.ShowMenu(),FontRole.Black,"icon_menu");
+        hud=UiKit.Card(transform,"Hud",388,20,1500,96,T.paper);hudGroup=UiKit.Group(hud);
+        UiKit.Icon(hud,"Clock","icon_clock",20,24,46,T.line);
+        dayText=UiKit.Label(hud,"Day","1日目 営業中",74,12,150,28,18,T.inkSub,FontRole.Black);
+        timeText=UiKit.Label(hud,"Time","5:00",74,34,118,56,40,T.line,FontRole.Display);
+        timeBar=UiKit.Bar(hud,"TimeBar",200,46,170,26,T.basil);
+        UiKit.Icon(hud,"Coin","icon_coin",394,24,46,T.line);
+        cashText=UiKit.Label(hud,"Cash","¥0",446,14,200,66,40,T.line,FontRole.Display);
+        cashDelta=UiKit.Badge(hud,"CashDelta","▲ +0",650,30,T.basil,Color.white,34,18);
+        UiKit.Icon(hud,"Star","icon_star",786,24,46,T.line);
+        reputationText=UiKit.Label(hud,"Reputation","50",838,14,70,66,38,T.line,FontRole.Display);
+        reputationBar=UiKit.Bar(hud,"ReputationBar",910,36,100,24,T.cheese);
+        UiKit.Label(hud,"PromiseTitle",ShopStrings.Promise,1034,24,104,46,20,T.line,FontRole.Black);
+        promiseSlider=UiKit.Slider(hud,"PromiseSlider",1142,34,168,28,T.cheese,v=>spawner.SetPromiseSeconds(v));
+        promiseText=UiKit.Label(hud,"Promise","60秒",1318,14,100,66,36,T.line,FontRole.Display,TextAlignmentOptions.Center);
+        UiKit.Button(hud,"MenuButton","",StickerKind.Secondary,1424,14,64,64,20,()=>menu.ShowMenu(),FontRole.Black,"icon_menu");
     }
     private void RefreshHud()
     {
@@ -96,7 +106,7 @@ public sealed partial class BusinessView : MonoBehaviour
         string phase=clock.Phase==DayPhase.Open?ShopStrings.Open:ShopStrings.Closed;
         dayText.text=$"{campaign.DayNumber}{ShopStrings.Day} {phase}";timeText.text=$"{seconds/60}:{seconds%60:00}";
         float fraction=clock.RemainingSeconds/clock.BusinessDuration;timeBar.Set(fraction,-1,fraction<=T.closingWarning?T.berry:T.basil);
-        cashText.text=UiKit.Yen(economy.Cash);UiKit.SetBadge(cashDelta,"▲ +"+UiKit.Yen(economy.DailyRevenue).Replace("¥",""),T.basil,Color.white);
+        cashText.text=UiKit.Yen(economy.Cash);UiKit.SetBadge(cashDelta,"▲ +"+UiKit.Yen(economy.DailyRevenue).Replace("¥",""),T.basil,Color.white);cashDelta.anchoredPosition=new Vector2(446+Mathf.Clamp(cashText.textBounds.size.x,0,200)+8,-30);
         reputationText.text=Mathf.RoundToInt(reputation.Value).ToString();reputationBar.Set(reputation.Value/reputation.Maximum);
         promiseText.text=$"{spawner.PromiseSeconds:F0}<size=20>秒</size>";UiKit.SyncPromise(promiseSlider,spawner,clock);
     }
@@ -172,18 +182,17 @@ public sealed partial class BusinessView : MonoBehaviour
         bool dispatching=zone==ShopZone.Dispatch;
         worldGroup.alpha=dispatching?0:1;worldGroup.blocksRaycasts=worldGroup.interactable=!dispatching;
         UiKit.Show(dispatch,dispatching);hudGroup.alpha=dispatching?0:1;hudGroup.blocksRaycasts=!dispatching;UiKit.Show(rail,!dispatching);
-        // On the map the tabs move to the bottom left (厨房 / 指示盤) so the summary bar keeps the width.
-        var tabs=(RectTransform)zoneTabs[0].transform.parent;tabs.anchoredPosition=dispatching?new Vector2(32,-968):new Vector2(590,-968);
-        UiKit.Show(zoneTabs[1],false);zoneTabs[0].Label.fontSize=zoneTabs[2].Label.fontSize=T.subheadingSize;((RectTransform)zoneTabs[0].transform).sizeDelta=new Vector2(dispatching?136:236,82);
-        ((RectTransform)zoneTabs[2].transform).anchoredPosition=new Vector2(dispatching?146:250,0);((RectTransform)zoneTabs[2].transform).sizeDelta=new Vector2(dispatching?136:236,82);
+        UiKit.Show(zoneTabs[1],false);knobTarget=dispatching?ToggleW/2+3:6;if(immediate && zoneKnob!=null)zoneKnob.anchoredPosition=new Vector2(knobTarget,-6);
         float target=zone==ShopZone.Handover?HandoverPan:0;panFrom=world.anchoredPosition.x;panTo=target;panStarted=Time.unscaledTime;
         if(immediate){world.anchoredPosition=new Vector2(target,0);panFrom=target;}
         if(map!=null)map.PointerInputEnabled=!dispatching;
         SetMinimap(dispatching);
         if(dispatching)EnterDispatch();
     }
+    private float knobTarget=6;
     private void Pan()
     {
+        if(zoneKnob!=null)zoneKnob.anchoredPosition=new Vector2(Mathf.Lerp(zoneKnob.anchoredPosition.x,knobTarget,1-Mathf.Exp(-Time.unscaledDeltaTime*18)),-6);
         float t=Mathf.Clamp01((Time.unscaledTime-panStarted)/.35f);t=1-(1-t)*(1-t)*(1-t);
         world.anchoredPosition=new Vector2(Mathf.Lerp(panFrom,panTo,t),0);
     }
@@ -210,7 +219,7 @@ public sealed partial class BusinessView : MonoBehaviour
         for(int i=toastCards.Count-1;i>=0;i--)if(Time.unscaledTime>toastCards[i].until || i>=3){if(toastCards[i].card!=null)Destroy(toastCards[i].card.gameObject);toastCards.RemoveAt(i);}
         for(int i=0;i<toastCards.Count;i++)toastCards[i].card.anchoredPosition=Vector2.Lerp(toastCards[i].card.anchoredPosition,new Vector2(0,-i*90),.25f);
     }
-    private void Returned(DeliveryTrip trip){Toast($"{trip.Person.Name} が帰還  配達指示へ →",T.basil,()=>ShowZone(ShopZone.Handover));}
+    private void Returned(DeliveryTrip trip){Toast($"{trip.Person.Name} が帰還  配達指示へ →",T.basil,()=>ShowZone(ShopZone.Dispatch));}
     private void FlowMessage(string message){if(message.Contains("cancelled"))Toast("注文キャンセル："+(clock.Phase==DayPhase.Open?"受付猶予を過ぎました。":"閉店しました。"),T.berry);if(message.StartsWith("ACCIDENT"))Toast("事故: "+UiStrings.Japanese(message).Replace("ACCIDENT: ",""),T.berry,null,"icon_flame");}
 
     private void Update()

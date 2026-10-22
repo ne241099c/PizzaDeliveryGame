@@ -157,6 +157,32 @@ public sealed class CookingManager : MonoBehaviour
         };
     }
 
+    /// <summary>Display estimate of the seconds until the order is packed (queue, staff, oven). Null while the player is
+    /// making it by hand or nobody in the kitchen can take it.</summary>
+    public float? ReadyIn(Order order)
+    {
+        if(order==null || clock==null)return null;if(order.IsReady)return 0;
+        float now=clock.ElapsedSeconds;
+        float ovenFree=float.PositiveInfinity;foreach(var o in ovens)ovenFree=Mathf.Min(ovenFree,o==null?0:Mathf.Max(0,o.OvenStartedAt+bakeSeconds-now));
+        if(float.IsInfinity(ovenFree))ovenFree=0;
+        var job=JobFor(order);
+        if(job!=null)
+        {
+            if(job.Stage==PizzaStage.Baking)return Mathf.Max(0,job.OvenStartedAt+bakeSeconds-now)+packSeconds;
+            if(job.Stage>=PizzaStage.Baked)return packSeconds;
+            if(job.Worker!=PizzaWorker.Staff)return null;
+            var slot=staff.FirstOrDefault(s=>s.Task==job);
+            return Mathf.Max(slot!=null?Mathf.Max(0,slot.Until-now):0,ovenFree)+bakeSeconds+packSeconds;
+        }
+        if(staff.Count==0 || order.Baking!=BakingState.Waiting)return null;
+        var waiting=orders.Orders.Where(o=>o.Baking==BakingState.Waiting && JobFor(o)==null && !expired.Contains(o)).OrderBy(o=>o.SpawnedAt).ToList();
+        int ahead=waiting.IndexOf(order);if(ahead<0)return null;
+        float work=staff.Average(s=>StaffWorkSeconds(s.Staff));
+        float firstFree=staff.Min(s=>s.Task==null?0:Mathf.Max(0,s.Until-now));
+        float cycle=Mathf.Max(work/Mathf.Max(1,Mathf.Min(staff.Count,BenchCount)),bakeSeconds/Mathf.Max(1,ovens.Length));
+        return Mathf.Max(firstFree+ahead*cycle+work,ovenFree)+bakeSeconds+packSeconds;
+    }
+
     // ---- automatic staff simulation on exact timestamps ----
     private void AdvanceTo(float now)
     {

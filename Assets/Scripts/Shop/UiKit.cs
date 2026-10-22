@@ -105,6 +105,8 @@ public static class UiKit
         // 16 is the smallest size used (readable at 720p).
         t.font=Font(role);t.fontSize=Mathf.Max(size,T.captionSize);t.color=color;t.alignment=align;t.text=text;t.raycastTarget=false;
         t.textWrappingMode=wrap?TextWrappingModes.Normal:TextWrappingModes.NoWrap;t.overflowMode=TextOverflowModes.Overflow;t.margin=Vector4.zero;
+        // Long numbers (more digits) shrink to fit their box instead of spilling over the card behind them.
+        if(t.fontSize>T.captionSize){t.enableAutoSizing=true;t.fontSizeMax=t.fontSize;t.fontSizeMin=Mathf.Max(T.captionSize,t.fontSize*.5f);}
         return t;
     }
 

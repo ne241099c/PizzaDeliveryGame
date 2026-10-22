@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-public enum DragKind { Ticket, Dough, Ladle, Cheese, Topping, Pizza, Box }
+public enum DragKind { Ticket, Dough, Ladle, Cheese, Topping, Pizza, Box, Bagged }
 
 /// <summary>What the hand holds.</summary>
 public sealed class DragPayload
@@ -54,23 +54,27 @@ public sealed class ShopHand : MonoBehaviour
     private void OnDestroy(){if(Instance==this)Instance=null;}
     public void Register(DropZone zone){if(!zones.Contains(zone))zones.Add(zone);}
     public void Unregister(DropZone zone)=>zones.Remove(zone);
-    public void Begin(DragPayload payload,PointerEventData e)
+    public void Begin(DragPayload payload,PointerEventData e)=>BeginAt(payload,e.position,e.pressEventCamera);
+    public void Move(PointerEventData e)=>MoveAt(e.position,e.pressEventCamera);
+    public void End(PointerEventData e)=>EndAt(e.position);
+    /// <summary>Screen-position versions, used for things picked up from the world map (pins).</summary>
+    public void BeginAt(DragPayload payload,Vector2 screen,Camera eventCamera=null)
     {
         Held=payload;ghost.gameObject.SetActive(true);ghost.SetAsLastSibling();ghost.sizeDelta=payload.Size;
-        var sprite=UiKit.Art(payload.Sprite);ghostImage.sprite=sprite;ghostShadow.sprite=sprite;ghostImage.color=Color.white;Move(e);
+        var sprite=UiKit.Art(payload.Sprite);ghostImage.sprite=sprite;ghostShadow.sprite=sprite;ghostImage.color=Color.white;MoveAt(screen,eventCamera);
     }
-    public void Move(PointerEventData e)
+    public void MoveAt(Vector2 screen,Camera eventCamera=null)
     {
         if(Held==null)return;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(layer,e.position,e.pressEventCamera,out var local);
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(layer,screen,eventCamera,out var local);
         ghost.localPosition=local;
-        var over=ZoneAt(e.position);
+        var over=ZoneAt(screen);
         foreach(var zone in zones){if(zone==null)continue;bool ok=zone.isActiveAndEnabled && zone.Accepts!=null && zone.Accepts(Held);zone.SetGlow(ok,ok && zone==over);}
-        if(over!=null && over.Accepts!=null && over.Accepts(Held))over.Hovering?.Invoke(Held,e.position);
+        if(over!=null && over.Accepts!=null && over.Accepts(Held))over.Hovering?.Invoke(Held,screen);
     }
-    public void End(PointerEventData e)
+    public void EndAt(Vector2 screen)
     {
-        if(Held==null)return;var payload=Held;var over=ZoneAt(e.position);Cancel();
+        if(Held==null)return;var payload=Held;var over=ZoneAt(screen);Cancel();
         if(over!=null && over.Accepts!=null && over.Accepts(payload))over.Dropped?.Invoke(payload);
         Released?.Invoke(payload);
     }

@@ -64,7 +64,7 @@ public sealed class HubView : MonoBehaviour
         for(int i=0;i<4;i++)
         {
             int tab=i;tabs[i]=UiKit.Button(root,"Tab"+i,names[i],StickerKind.Secondary,32,156+i*104,236,82,32,()=>ShowTab(tab),FontRole.Display);
-            tabs[i].Label.alignment=TextAlignmentOptions.MidlineLeft;tabs[i].Label.rectTransform.offsetMin=new Vector2(24,0);tabs[i].Label.fontSize=i<2?28:32;
+            tabs[i].Label.alignment=TextAlignmentOptions.MidlineLeft;tabs[i].Label.rectTransform.offsetMin=new Vector2(24,0);tabs[i].Label.fontSize=tabs[i].Label.fontSizeMax=i<2?28:32;
             if(i<2){tabBadges[i]=UiKit.Badge(tabs[i].transform.Find("Face"),"Count","0",150,26,T.paper,T.line,30,16,56);}
         }
         noteText=UiKit.Label(root,"TeamNote","",32,640,236,120,17,T.inkSub,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
