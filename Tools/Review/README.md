@@ -1,9 +1,10 @@
 # レビュー・再開用ツール
 
 Python 3.11以上。元のUnityプロジェクトで、Unity操作担当者だけが使用する。
-Unity操作担当はWorkboardを正とする（2026-10-23はCodex）。並行実装用worktreeからは実行しない。
+Unity操作担当はWorkboardを正とする（2026-10-23の最新交代でClaude Code）。並行実装用worktreeからは実行しない。
 
 - `unity_call.py <tool> ['JSON' | @args.json]`：既存KitWright MCPのツール呼び出し。エラー時は非ゼロ終了。
+- **毎回の全検証は不要**。UIは変更箇所の表示/操作、ゲーム処理は関連検証。以下の全検証は大きな区切りか明示依頼時だけ行う。引き継ぎだけで実行しない。
 - `run_suite.py <label>`：全単体・シミュレーション検証を順次実行。事前にSampleSceneのPlayと接続を確認。失敗時は停止。
 - `capture_views.py <folder>`：`Docs/UI_Screens/<folder>/`へ11画面を保存。事前にPlayと固定解像度を確認。既存ファイルを置き換えるため、フォルダ名は作業ボードで決める。
 - `unity_mcp.py`：内部HTTP補助。サーバー起動や設定変更は行わない。
