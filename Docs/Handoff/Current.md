@@ -6,7 +6,7 @@
 
 - Unity 6000.2.10f1 / macOS。元プロジェクト `/Users/soma/Unity/PizzaDeliveryGame`。シーン `Assets/Scenes/SampleScene.unity`。
 - 現在 `ui`。V-4をClaudeが実装し全検証後にローカルコミット（ハッシュはWorkboard）。
-- `main` は `498a114`（C-5）。m4/m5/m6/screens/m7はmainに統合済み。uiはまだ未統合。
+- `main` はV-4まで統合済み（uiと同じ）。m4/m5/m6/screens/m7/uiはmainに統合済み。
 - 最後の全検証（V-4、ui）は **3772項目すべて成功**。記録は [V4_Validation.json](V4_Validation.json)。V-3時点は [V3_Validation.json](V3_Validation.json)（3656）。
 - **接続確認成功**：現在のローカル設定を読む `Tools/Review/unity_call.py get_editor_state` からUnityのPlay中・一時停止なし・コンパイル/更新なしを取得。初回の失敗は、旧一時ツールが古い9085ポートへ固定していたため。現在の設定を使用し、ポートを決め打ちしない。
 - Claude Code CLI 2.1.79がインストール済み。Claudeをこちらから起動・依頼送信したわけではない。ユーザーが元プロジェクトでClaudeを起動して引き継ぐ。旧claude-review worktreeは今回使わない。
@@ -16,7 +16,7 @@
 m4→m5→m6のmain統合と検証 → screens S-0〜S-5と段階コミット → screensをmainへ → m7 C-1〜C-5と段階コミット → m7をmainへ → ui V-0〜V-4と段階コミット → uiをmainへ。
 途中の段階で止まらず、既存検証が失敗したら止めて報告。pushしない。V-5は禁止。C-5は数値を変えずF/G/Hを報告してユーザー判断待ち。C-5の数値判断は保留し、許可されたUI作業を続ける解釈を報告済み。
 
-V-4は完了（全検証3772通過、ローカルコミット済み）。残作業は **uiをmainへ統合 → 全検証 → 最終報告**。Codexの文言（UiStrings.cs）は未着手で未統合。
+V-4完了（adffe1f）。**uiをmainへfast-forward統合し、mainで全検証3772通過**（[Main_V4_Validation.json](Main_V4_Validation.json)）。依頼された順番の作業はここまで完了。Codexの文言（UiStrings.cs）は未着手で未統合。C-5の数値判断とV-5は引き続きユーザー判断待ち。
 この共同開発準備はユーザーの追加依頼。**最新の指示は二人とも実装の主力とすること。Claudeはレビュー限定という旧分担を撤回済み。** Claudeは元プロジェクトでV-4レイアウトとUnity操作、Codexは専用worktreeで文言の実装を担当する。担当ルールは[Workboard](Workboard.md)とルートAGENTS.md。
 
 ## 仕様と履歴の読む順番

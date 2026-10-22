@@ -7,7 +7,7 @@
 
 | 担当 | 実装する内容 | 所有ファイル | 作業場所・状態 |
 |---|---|---|---|
-| Claude Code | V-4のレイアウト、2解像度対応、画面確認、撮影、全検証、ui→main統合 | UIThemeDriver、VisualSceneSetup、VisualValidation、その他必要な表示/配置コード、シーン/Prefab/UITheme、最終画像・報告。UiStrings.csは除く | 元プロジェクト / ui。**V-4完了**：全検証3772通過、ui上の`V-4:`コミット。次はui→main統合と再検証。レビュー結果09dffcf |
+| Claude Code | V-4のレイアウト、2解像度対応、画面確認、撮影、全検証、ui→main統合 | UIThemeDriver、VisualSceneSetup、VisualValidation、その他必要な表示/配置コード、シーン/Prefab/UITheme、最終画像・報告。UiStrings.csは除く | 元プロジェクト / ui。**V-4完了・main統合済み**：V-4 adffe1f（ui全検証3772）→ mainへfast-forward、main全検証3772通過。Unityは編集モード・シーン保存済み・Gameビューは元のFree Aspect。現在のブランチはmain。Codexの文言コミットは未着手のため未統合 |
 | Codex | 未翻訳の画面文言の整備。表示文字表のコードを実装する | Assets/Scripts/UiStrings.cs。成果記録はDocs/Handoff/Codex_Implementation.md | .worktrees/codex-text / codex/v4-text。未着手 |
 
 双方の共通所有：このボードは自分の状態欄と成果欄だけを更新。相手の作業中はファイル全体を上書きしない。新規タスクの分担はここで具体的なファイルを指定する。

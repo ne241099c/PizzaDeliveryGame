@@ -88,3 +88,7 @@ V-3：演出は既存の計算結果を参照し、得点や所持金を二重�
 V-4：全検証は単体732（visual 235、V-3の119から+116）、M5自動84、M6方針825、M6比較1279、M7 F/G/H 852。記録は[V4_Validation.json](Handoff/V4_Validation.json)。最終画像は`UI_Screens/after/`（1920×1080）と`UI_Screens/after-1280x720/`、比較表は[UI_Screens/README](UI_Screens/README.md)。
 
 V-4の判断：営業画面の背後に店画面が残る現象は、CanvasGroupではなく、地図カメラのviewport外が消去されないことが原因だった。レビュー時の候補案（CanvasGroupのalphaをGraphic.enabledへ写す）は、この現象を直さず、他の表示コードの有効/無効と競合するため採用しなかった。代わりに描画なしの全画面消去カメラを地図カメラの前に置いた。CanvasScalerはExpandのまま変えない（16:9の2解像度で配置は同じ）。Caption 14は720pで約9pxになるが、テーマの文字サイズは変えず、画像を見たうえでのユーザー判断とする。`DeliveryPersonSelector`の配達員カード見出しの高さ（表示の1行）だけを変更し、ゲームの計算には触れていない。未翻訳の「Game over」「Growth」「MENU」「Title」は文言担当（Codex、UiStrings.cs）に残した。1280×720の撮影は、Unityのユーザー設定にGameビューの一時サイズを追加して行い、終了後に削除する。
+
+| ui→main | fast-forward統合（main 498a114→adffe1f）後、mainで全検証を再確認。数値変更なし | 3772 |
+
+ui→main：統合後のmainで単体732、M5自動84、M6方針825、M6比較1279、M7 F/G/H 852がすべて通過。記録は[Main_V4_Validation.json](Handoff/Main_V4_Validation.json)。コンソールのエラー0件。1280×720用に追加したGameビューの一時サイズは削除し、GameビューはFree Aspectへ戻した。
