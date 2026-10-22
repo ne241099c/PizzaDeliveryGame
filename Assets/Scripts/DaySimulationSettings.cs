@@ -8,6 +8,10 @@ public sealed class DaySimulationSettings : MonoBehaviour
     [SerializeField] private int randomSeed = 20261022;
     [SerializeField, Min(.01f)] private float clockStepSeconds = .25f;
     [SerializeField, Min(1f)] private float maximumDaySeconds = 3600f;
+    [SerializeField] private bool buyFacilities;
+    [SerializeField,Min(0)] private float facilityReserve=100;
+    public bool BuyFacilities=>buyFacilities;
+    public decimal FacilityReserve=>(decimal)facilityReserve;
     [SerializeField] private bool trainCouriers;
     [SerializeField,Min(0)] private float trainingReserve=100;
     [SerializeField,Min(1)] private int comparisonDays=30;

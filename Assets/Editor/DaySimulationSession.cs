@@ -8,8 +8,12 @@ using UnityEditor;
 /// <summary>Autoplay drives the real UI selection/dispatch and GameClock; it contains no economic formulas.</summary>
 public sealed class SimulationDayRecord
 {
-    public const string Header="seed,day,promise_seconds,revenue,materials,fuel,wages,fixed_costs,profit,cash,reputation,delivered,late,cancelled,accidents,bankrupt,stock,spawned,busy_ratio,hired,roster_size,preparation_costs,policy,couriers,daily_growth,growth_count,training,training_costs,experience_growth,potentials,requested_promise_seconds,perfect_bake_bonus,repairs";
+    public const string Header="seed,day,promise_seconds,revenue,materials,fuel,wages,fixed_costs,profit,cash,reputation,delivered,late,cancelled,accidents,bankrupt,stock,spawned,busy_ratio,hired,roster_size,preparation_costs,policy,couriers,daily_growth,growth_count,training,training_costs,experience_growth,potentials,requested_promise_seconds,perfect_bake_bonus,repairs,oven_level,bike_level,shop_level,maximum_cooking_queue,oven_utilization,equipment_maintenance,facility_purchases,minimum_promise_seconds,facility_purchase";
     public int Seed,Day,Delivered,Late,Cancelled,Accidents,Stock,Spawned,Hired,RosterSize;
+    public int OvenLevel,BikeLevel,ShopLevel,MaximumCookingQueue;
+    public float OvenUtilization,MinimumPromise;
+    public decimal EquipmentMaintenance,FacilityPurchases;
+    public string FacilityPurchase="";
     public float BusyRatio;
     public decimal PreparationCosts;
     public string Policy="legacy",Couriers="",DailyGrowth="";
@@ -19,7 +23,7 @@ public sealed class SimulationDayRecord
     public float Promise,Reputation,RequestedPromise;
     public decimal Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash;
     public bool Bankrupt;
-    public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy,Couriers,DailyGrowth,GrowthCount,Training,TrainingCosts,ExperienceGrowth,Potentials,RequestedPromise,PerfectBakeBonus,Repairs}
+    public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy,Couriers,DailyGrowth,GrowthCount,Training,TrainingCosts,ExperienceGrowth,Potentials,RequestedPromise,PerfectBakeBonus,Repairs,OvenLevel,BikeLevel,ShopLevel,MaximumCookingQueue,OvenUtilization,EquipmentMaintenance,FacilityPurchases,MinimumPromise,FacilityPurchase}
         .Select(Cell));
     private static string Cell(object value)
     {string s=value is IFormattable f?f.ToString(null,CultureInfo.InvariantCulture):value.ToString();return s.IndexOfAny(new[]{',','"','\n'})>=0 ? "\""+s.Replace("\"","\"\"")+"\"" : s;}
@@ -41,6 +45,10 @@ public sealed class DaySimulationSession : IDisposable
     private readonly DeliveryPlannerUI planner;
     private readonly CourierProgression progression;
     private readonly TrainingManager training;
+    private readonly FacilityManager facilities;
+    private readonly bool buyFacilities;
+    private string facilityPurchase;
+    private float operatingMinimum;
     private readonly CookingManager cooking;
     private readonly bool originalManualCooking;
     private readonly bool train;private string trained;private decimal trainingCost;
@@ -67,8 +75,9 @@ public sealed class DaySimulationSession : IDisposable
     public event Action<SimulationDayRecord> DayCompleted;
     private static T Find<T>() where T:UnityEngine.Object => UnityEngine.Object.FindFirstObjectByType<T>()
         ?? throw new InvalidOperationException("Missing scene component: "+typeof(T).Name);
-    public DaySimulationSession(DaySimulationSettings settings,bool? batchOverride=null,bool? hireOverride=null,bool? adjustOverride=null,string name="comparison",int? daysOverride=null,float[] promisesOverride=null,bool? trainOverride=null,float? initialCashOverride=null)
+    public DaySimulationSession(DaySimulationSettings settings,bool? batchOverride=null,bool? hireOverride=null,bool? adjustOverride=null,string name="comparison",int? daysOverride=null,float[] promisesOverride=null,bool? trainOverride=null,float? initialCashOverride=null,bool? facilityOverride=null)
     {
+        buyFacilities=facilityOverride??settings.BuyFacilities;facilities=Find<FacilityManager>();
         this.initialCashOverride=initialCashOverride;
         this.settings=settings;batch=batchOverride??settings.BatchDispatch;hire=hireOverride??settings.HireApplicants;adjust=adjustOverride??settings.AdjustPromise;policyName=name;train=trainOverride??settings.TrainCouriers;
         if(!Application.isPlaying)throw new InvalidOperationException("Enter Play first.");
@@ -113,6 +122,17 @@ public sealed class DaySimulationSession : IDisposable
         {
             dynamics.SeedOverride=unchecked(seed^campaign.DayNumber);dynamics.ResetForDay();
             spawner.SetPromiseSeconds(currentPromise);hired=0;
+            facilityPurchase="";
+            if(buyFacilities)
+            {
+                foreach(var type in new[]{FacilityType.Oven,FacilityType.Bike,FacilityType.Advertising,FacilityType.Expansion})
+                {
+                    if(facilities.IsMaximum(type) || economy.Cash<facilities.Price(type)+settings.FacilityReserve)continue;
+                    if(!facilities.Purchase(type))throw new InvalidOperationException(facilities.LastMessage);
+                    facilityPurchase=type.ToString();break;
+                }
+            }
+            operatingMinimum=spawner.MinimumPromiseSeconds;
             if(hire)
             {
                 while(roster.People.Count<recruitment.MaximumPeople)
@@ -157,6 +177,7 @@ public sealed class DaySimulationSession : IDisposable
         if(clock.Phase!=DayPhase.Ended)return;
         var ledger=economy.Ledger;
         var record=new SimulationDayRecord { Seed=seed,Day=campaign.DayNumber,Promise=spawner.PromiseSeconds,RequestedPromise=promises[policy],PerfectBakeBonus=ledger.PerfectBakeBonus,Repairs=ledger.Repairs,
+            OvenLevel=facilities.LastOperatingState.oven+1,BikeLevel=facilities.LastOperatingState.bike+1,ShopLevel=facilities.LastOperatingState.expansion,MaximumCookingQueue=cooking.MaximumQueueLength,OvenUtilization=cooking.Utilization,EquipmentMaintenance=ledger.EquipmentMaintenance,FacilityPurchases=ledger.FacilityPurchases,MinimumPromise=operatingMinimum,FacilityPurchase=facilityPurchase,
             Revenue=ledger.Revenue,Materials=ledger.Materials,Fuel=ledger.Fuel,Wages=ledger.Wages,FixedCosts=ledger.FixedCosts,
             Profit=ledger.Profit,Cash=economy.Cash,Reputation=reputation.Value,Delivered=stats.DeliveredCount,Late=stats.LateCount,
             Cancelled=stats.CancelledCount,Accidents=stats.AccidentCount,Bankrupt=campaign.IsBankrupt,Stock=stats.ClosingCancelledCount,Spawned=stats.SpawnedCount,

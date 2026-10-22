@@ -41,12 +41,13 @@ public sealed class CookingManager : MonoBehaviour
     public int OvenCount=>facilities!=null?facilities.Ovens:initialOvens;
     public int MaximumQueueLength {get;private set;}
     public float BusySeconds {get;private set;}
-    public float Utilization=>BusySeconds/(OvenCount*clock.BusinessDuration);
+    public int OperatingOvenCount {get;private set;}=1;
+    public float Utilization=>BusySeconds/(OperatingOvenCount*clock.BusinessDuration);
     public IReadOnlyList<Order> CookingOrders=>ovens.Where(o=>o.Active!=null).Select(o=>o.Active).ToArray();
     private void Awake()=>ResetDay();
     private void OnEnable(){clock.Advanced+=Tick;clock.OnDayStarted+=ResetDay;orders.OrdersChanged+=Synchronize;}
     private void OnDisable(){clock.Advanced-=Tick;clock.OnDayStarted-=ResetDay;orders.OrdersChanged-=Synchronize;}
-    public void ResetDay(){ovens.Clear();for(int i=0;i<OvenCount;i++)ovens.Add(new Oven());MaximumQueueLength=0;BusySeconds=0;}
+    public void ResetDay(){OperatingOvenCount=OvenCount;ovens.Clear();for(int i=0;i<OvenCount;i++)ovens.Add(new Oven());MaximumQueueLength=0;BusySeconds=0;}
     private void Synchronize()=>AdvanceTo(clock.ElapsedSeconds);
     private void Tick(float before,float now)=>AdvanceTo(now);
     public float Progress(Order order)=>order.Baking==BakingState.Ready?1:order.Baking==BakingState.Cooking?Mathf.Clamp01((clock.ElapsedSeconds-order.CookStartedAt)/(order.CookFinishesAt-order.CookStartedAt)):0;
