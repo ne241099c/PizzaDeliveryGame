@@ -13,6 +13,8 @@ using UnityEngine.UI;
 }
 [Serializable] public sealed class CampaignSaveData
 {
+    public FacilitySaveData facilities;
+    public string facilityPurchaseCosts;
     public int version,day,totalDelivered,totalScore,negativeDays;
     public string cash,openingCash,preparationCosts,totalRevenue,bestDailyRevenue;
     public float reputation,promise;
@@ -23,6 +25,7 @@ using UnityEngine.UI;
 /// <summary>Only preparation snapshots are saved. Simulations/tests suppress all normal file changes.</summary>
 public sealed class CampaignSaveManager : MonoBehaviour
 {
+    [SerializeField] private FacilityManager facilities;
     [SerializeField] private CampaignManager campaign;
     [SerializeField] private GameClock clock;
     [SerializeField] private BusinessEconomy economy;
@@ -35,7 +38,7 @@ public sealed class CampaignSaveManager : MonoBehaviour
     [SerializeField] private Button continueButton,newButton;
     [SerializeField] private TextMeshProUGUI notice,choiceText;
     [SerializeField] private string filename="campaign.json";
-    [SerializeField,Min(1)] private int formatVersion=1;
+    [SerializeField,Min(1)] private int formatVersion=2;
     private bool ready,restoring,listenersRegistered;
     public bool AutomaticSavingEnabled {get;set;}=true;
     public string SavePathOverride {get;set;}
@@ -44,9 +47,9 @@ public sealed class CampaignSaveManager : MonoBehaviour
     public string LastMessage {get;private set;}="";
     public void ClearNotice()=>LastMessage="";
     private void OnEnable()
-    {campaign.PreparationEntered+=SavePreparation;recruitment.Changed+=SavePreparation;training.Changed+=SavePreparation;spawner.PolicyChanged+=SavePreparation;}
+    {campaign.PreparationEntered+=SavePreparation;recruitment.Changed+=SavePreparation;training.Changed+=SavePreparation;spawner.PolicyChanged+=SavePreparation;if(facilities!=null)facilities.Changed+=SavePreparation;}
     private void OnDisable()
-    {campaign.PreparationEntered-=SavePreparation;recruitment.Changed-=SavePreparation;training.Changed-=SavePreparation;spawner.PolicyChanged-=SavePreparation;}
+    {campaign.PreparationEntered-=SavePreparation;recruitment.Changed-=SavePreparation;training.Changed-=SavePreparation;spawner.PolicyChanged-=SavePreparation;if(facilities!=null)facilities.Changed-=SavePreparation;}
     private void Update() {if(notice!=null)notice.text=LastMessage;}
     public static decimal Decimal(string value)=>decimal.Parse(value,NumberStyles.Number,CultureInfo.InvariantCulture);
     public bool HasUsableSave => TryRead(out _,out _);
@@ -81,7 +84,7 @@ public sealed class CampaignSaveManager : MonoBehaviour
     public CampaignSaveData Capture()
     {
         if(clock.Phase!=DayPhase.BeforeOpening)throw new InvalidOperationException("Only preparation can be saved.");
-        return new CampaignSaveData{version=formatVersion,day=campaign.DayNumber,totalDelivered=campaign.TotalDelivered,totalScore=campaign.TotalScore,negativeDays=campaign.ConsecutiveNegativeDays,
+        return new CampaignSaveData{facilities=facilities.Capture(),facilityPurchaseCosts=economy.Ledger.FacilityPurchases.ToString(CultureInfo.InvariantCulture),version=formatVersion,day=campaign.DayNumber,totalDelivered=campaign.TotalDelivered,totalScore=campaign.TotalScore,negativeDays=campaign.ConsecutiveNegativeDays,
             cash=economy.Cash.ToString(CultureInfo.InvariantCulture),openingCash=economy.OpeningCash.ToString(CultureInfo.InvariantCulture),preparationCosts=economy.Ledger.PreparationCosts.ToString(CultureInfo.InvariantCulture),
             totalRevenue=campaign.TotalRevenue.ToString(CultureInfo.InvariantCulture),bestDailyRevenue=campaign.BestDailyRevenue.ToString(CultureInfo.InvariantCulture),reputation=reputation.Value,promise=spawner.PromiseSeconds,
             people=roster.People.Select(p=>p.Clone()).ToList(),
@@ -95,8 +98,12 @@ public sealed class CampaignSaveManager : MonoBehaviour
         try
         {
             data=JsonUtility.FromJson<CampaignSaveData>(json);var candidate=data;
+            // Version 1 had no equipment. Normalize in memory without overwriting the original file.
+            if(candidate!=null && candidate.version==1 && formatVersion==2){candidate.version=2;candidate.facilities=new FacilitySaveData();candidate.facilityPurchaseCosts="0";}
             if(candidate==null || candidate.version!=formatVersion)throw new FormatException("Unsupported save version.");
-            if(candidate.day<1 || candidate.negativeDays<0 || candidate.totalDelivered<0 || candidate.people==null || candidate.people.Count<1 || candidate.people.Count>recruitment.MaximumPeople || candidate.applicants==null || candidate.training==null)throw new FormatException("Missing campaign candidate.");
+            if(!facilities.Valid(candidate.facilities))throw new FormatException("Invalid facility levels.");
+            if(candidate.day<1 || candidate.negativeDays<0 || candidate.totalDelivered<0 || candidate.people==null || candidate.people.Count<1 || candidate.people.Count>facilities.MaximumPeopleFor(candidate.facilities) || candidate.applicants==null || candidate.training==null)throw new FormatException("Missing campaign candidate.");
+            if(Decimal(candidate.facilityPurchaseCosts)<0 || Decimal(candidate.facilityPurchaseCosts)>Decimal(candidate.preparationCosts))throw new FormatException("Invalid facility purchases.");
             _=Decimal(candidate.cash);_=Decimal(candidate.openingCash);if(Decimal(candidate.preparationCosts)<0 || Decimal(candidate.totalRevenue)<0 || Decimal(candidate.bestDailyRevenue)<0)throw new FormatException("Invalid amounts.");
             if(Decimal(candidate.cash)!=Decimal(candidate.openingCash)-Decimal(candidate.preparationCosts))throw new FormatException("Preparation cash does not reconcile.");
             if(!Finite(candidate.reputation) || candidate.reputation<0 || candidate.reputation>reputation.Maximum || !Finite(candidate.promise) || candidate.promise<=0)throw new FormatException("Invalid policy or reputation.");
@@ -106,7 +113,7 @@ public sealed class CampaignSaveManager : MonoBehaviour
             if(candidate.people.Any(p=>p.Status!=DeliveryStatus.Idle && p.Status!=DeliveryStatus.Training))throw new FormatException("Only preparation courier states are supported.");
             if(candidate.applicants.Any(a=>a.baselines==null || a.baselines.Length!=5 || a.strengths==null || a.weaknesses==null || a.strengths.Length!=2 || a.weaknesses.Length!=2 || a.strengths.Concat(a.weaknesses).Distinct().Count()!=4 || a.strengths.Concat(a.weaknesses).Any(i=>i<0 || i>4)))throw new FormatException("Invalid applicant traits.");
             if(candidate.training.Select(a=>a.PersonId).Distinct().Count()!=candidate.training.Count || candidate.training.Any(a=>!Enum.IsDefined(typeof(CourierAbility),a.Ability) || a.Completed || Decimal(a.Fee)<0 || !candidate.people.Any(p=>p.Id==a.PersonId && p.Status==DeliveryStatus.Training)))throw new FormatException("Invalid training instructions.");
-            if(candidate.training.Sum(a=>Decimal(a.Fee))>Decimal(candidate.preparationCosts))throw new FormatException("Training fees exceed preparation costs.");
+            if(candidate.training.Sum(a=>Decimal(a.Fee))+Decimal(candidate.facilityPurchaseCosts)>Decimal(candidate.preparationCosts))throw new FormatException("Training fees exceed preparation costs.");
             if(candidate.people.Any(p=>p.Status==DeliveryStatus.Training && !candidate.training.Any(a=>a.PersonId==p.Id)))throw new FormatException("Training instruction missing.");
             return true;
         }

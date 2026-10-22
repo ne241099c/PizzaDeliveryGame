@@ -28,7 +28,7 @@ public static class M7Validation
         Check(closing.Status==OrderStatus.Cancelled && list.OrderCount==0,"closing cancels cooking and queue");
         Check(Mathf.Abs(spawner.MinimumPromiseSeconds-(spawner.ShortestRoundTripSeconds("Goal2")*1.1f+cook.CookSeconds))<.001f,"round trip and cooking minimum");
         spawner.SetPromiseSeconds(30);Check(spawner.PromiseSeconds>=spawner.MinimumPromiseSeconds,"requested 30 respects physical minimum");campaign.NewGame();
-        ValidateQuality(Check);
+        ValidateQuality(Check);ValidateFacilities(Check);
         return $"PASS: {count} M7 checks.";
     }
     private static void ValidateQuality(Action<bool,string> check)
@@ -51,5 +51,20 @@ public static class M7Validation
         campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var automatic=new Order("Goal1","Automatic",0,100);list.AddOrder(automatic);clock.Advance(cook.CookSeconds);check(automatic.IsReady && automatic.Quality==BakeQuality.Standard && cook.BonusForArrival(automatic,12)==0,"ignored baking automatically standard without penalty");
         campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var last=new Order("Goal1","Late extraction",0,100);list.AddOrder(last);clock.Advance(cook.CookSeconds*.97f);check(cook.TryTakeOut(last) && last.Quality==BakeQuality.Standard,"press after perfect band yields standard");
         campaign.NewGame();
+    }
+    private static void ValidateFacilities(Action<bool,string> check)
+    {
+        var facilities=UnityEngine.Object.FindFirstObjectByType<FacilityManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();
+        campaign.NewGame();check(facilities.Ovens==1 && facilities.BikeLevel==1 && facilities.MaximumPeople==4 && facilities.Maintenance==0,"initial facilities");
+        check(!facilities.Purchase(FacilityType.Oven) && facilities.LastMessage.Contains("cash"),"insufficient equipment cash rejected");
+        var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=10000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
+        decimal cash=economy.Cash;check(facilities.Purchase(FacilityType.Oven) && economy.Cash==cash-600 && economy.Ledger.FacilityPurchases==600,"oven purchase debits preparation once");
+        check(facilities.Purchase(FacilityType.Bike) && facilities.Purchase(FacilityType.Expansion),"bike and shop purchases");check(facilities.Maintenance==90 && economy.FixedCost(1)==240,"maintenance included once in fixed cost");
+        check(facilities.Purchase(FacilityType.Advertising,2) && !facilities.Purchase(FacilityType.Advertising,1),"one advertising choice per day");
+        string json=save.SnapshotJson();check(save.TryParse(json,out var data,out _) && data.facilities.oven==1 && data.facilities.bike==1 && data.facilities.expansion==1,"facility save schema validates");
+        campaign.NewGame();campaign.RestorePreparation(data);check(facilities.Ovens==2 && facilities.BikeLevel==2 && facilities.MaximumPeople==5 && facilities.Advertisement==0,"restore equipment but not advertising");check(economy.Ledger.FacilityPurchases==CampaignSaveManager.Decimal(data.facilityPurchaseCosts) && economy.Cash==CampaignSaveManager.Decimal(data.cash),"facility spending and preparation money round trip");
+        var legacy=save.Capture();legacy.version=1;legacy.facilities=null;legacy.facilityPurchaseCosts=null;check(save.TryParse(JsonUtility.ToJson(legacy),out var migrated,out _) && migrated.version==2 && migrated.facilities.oven==0,"old version one migrates in memory");
+        campaign.StartBusiness();check(!facilities.Purchase(FacilityType.Oven) && facilities.LastMessage.Contains("preparation"),"business blocks purchases");UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().enabled=false;clock.Advance(clock.BusinessDuration+1000);check(economy.Ledger.EquipmentMaintenance==90 && economy.Ledger.FixedCosts==240,"maintenance in real settlement");
+        campaign.NewGame();check(facilities.Ovens==1 && facilities.BikeLevel==1 && facilities.MaximumPeople==4,"new game resets facilities");
     }
 }

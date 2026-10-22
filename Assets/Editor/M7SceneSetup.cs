@@ -27,4 +27,20 @@ public static class M7SceneSetup
         finally{PrefabUtility.UnloadPrefabContents(prefab);}
         EditorSceneManager.MarkSceneDirty(go.scene);
     }
+    public static void Facilities()
+    {
+        var go=GameObject.Find("GameManager");var facilities=Undo.AddComponent<FacilityManager>(go);
+        ScreensSceneSetup.Bind(facilities,"clock",go.GetComponent<GameClock>());ScreensSceneSetup.Bind(facilities,"economy",go.GetComponent<BusinessEconomy>());
+        foreach(var component in new UnityEngine.Object[]{go.GetComponent<CampaignManager>(),go.GetComponent<BusinessEconomy>(),go.GetComponent<CampaignSaveManager>()})ScreensSceneSetup.Bind(component,"facilities",facilities);
+        var saving=new SerializedObject(go.GetComponent<CampaignSaveManager>());saving.FindProperty("formatVersion").intValue=2;saving.ApplyModifiedProperties();
+        var preparation=ScreensSceneSetup.Find("Preparation");var tab=ScreensSceneSetup.Full(preparation,"FacilitiesTab");ScreensSceneSetup.Place(tab,256,150,1500,650);var group=tab.gameObject.AddComponent<CanvasGroup>();
+        var tabButton=M5SceneSetup.MakeButton(preparation,"FacilitiesButton","Facilities",32,376,190,56);
+        var hub=new SerializedObject(go.GetComponent<HubScreenUI>());var tabs=hub.FindProperty("tabs");tabs.arraySize=4;tabs.GetArrayElementAtIndex(3).objectReferenceValue=group;var buttons=hub.FindProperty("tabButtons");buttons.arraySize=4;buttons.GetArrayElementAtIndex(3).objectReferenceValue=tabButton;hub.ApplyModifiedProperties();
+        var ui=go.AddComponent<FacilityScreenUI>();ScreensSceneSetup.Bind(ui,"facilities",facilities);
+        var cards=new RectTransform[4];var labels=new TMPro.TextMeshProUGUI[4];
+        for(int n=0;n<4;n++){cards[n]=M4StageSceneSetup.Rect(tab,"FacilityCard"+n,(n%2)*736,(n/2)*310,712,290);cards[n].gameObject.AddComponent<UnityEngine.UI.Image>().color=new Color(.14f,.21f,.28f);labels[n]=M4StageSceneSetup.Text(cards[n],"FacilityDescription"+n,"",16,16,680,180,22);}
+        var oven=M5SceneSetup.MakeButton(cards[0],"BuyOven","Buy oven",16,218,300,52);var bike=M5SceneSetup.MakeButton(cards[1],"BuyBike","Upgrade bikes",16,218,300,52);var small=M5SceneSetup.MakeButton(cards[2],"BuyAdSmall","Small",16,218,208,52);var medium=M5SceneSetup.MakeButton(cards[2],"BuyAdMedium","Medium",248,218,208,52);var large=M5SceneSetup.MakeButton(cards[2],"BuyAdLarge","Large",480,218,208,52);var shop=M5SceneSetup.MakeButton(cards[3],"BuyShop","Expand shop",16,218,300,52);
+        var message=M4StageSceneSetup.Text(tab,"FacilityMessage","",0,620,1450,38,20);ScreensSceneSetup.Bind(ui,"message",message);ScreensSceneSetup.Bind(ui,"oven",oven);ScreensSceneSetup.Bind(ui,"bike",bike);ScreensSceneSetup.Bind(ui,"shop",shop);ScreensSceneSetup.Bind(ui,"small",small);ScreensSceneSetup.Bind(ui,"medium",medium);ScreensSceneSetup.Bind(ui,"large",large);
+        var so=new SerializedObject(ui);var descriptions=so.FindProperty("descriptions");descriptions.arraySize=4;for(int n=0;n<4;n++)descriptions.GetArrayElementAtIndex(n).objectReferenceValue=labels[n];so.ApplyModifiedProperties();UIVisibility.Set(tab.gameObject,false);EditorSceneManager.MarkSceneDirty(go.scene);
+    }
 }

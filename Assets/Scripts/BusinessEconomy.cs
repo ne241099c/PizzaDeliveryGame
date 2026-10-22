@@ -4,6 +4,7 @@ using TMPro;
 /// <summary>Only confirmed arrival revenue credits cash; daily scores may also contain penalties.</summary>
 public sealed class BusinessEconomy : MonoBehaviour
 {
+    [SerializeField] private FacilityManager facilities;
     [SerializeField] private GameClock clock;
     private readonly System.Collections.Generic.Dictionary<string,decimal> openingWages=new();
     [SerializeField] private DeliveryFlowController flow;
@@ -34,7 +35,8 @@ public sealed class BusinessEconomy : MonoBehaviour
     public void NewGame() { Cash=(decimal)initialCash; PrepareDay(); }
     public void PrepareDay(int day=1) { dayNumber=day; Ledger=new DayLedger(Cash); }
     private void CaptureWages() {openingWages.Clear();foreach(var person in roster.People)openingWages[person.Id]=DailyWage(person);}
-    public decimal FixedCost(int day) => Money((decimal)dailyFixedCost+(decimal)fixedCostGrowthPerDay*System.Math.Max(0,day-1));
+    public decimal FixedCost(int day) => BaseFixedCost(day)+(facilities!=null?facilities.Maintenance:0);
+    public decimal BaseFixedCost(int day) => Money((decimal)dailyFixedCost+(decimal)fixedCostGrowthPerDay*System.Math.Max(0,day-1));
     public static decimal Money(decimal amount) => System.Math.Round(amount,2,System.MidpointRounding.AwayFromZero);
     public decimal MaterialCost(int orderCount) => Money((decimal)materialCostPerOrder*orderCount);
     public decimal FuelCost(decimal distance) => Money((decimal)fuelCostPerDistance*distance);
@@ -57,6 +59,7 @@ public sealed class BusinessEconomy : MonoBehaviour
         if(Ledger.Settled)return;
         Ledger.Fuel=FuelCost(Ledger.Distance);
         foreach(var person in roster.People)Ledger.Wages+=openingWages.TryGetValue(person.Id,out var wage)?wage:DailyWage(person);
+        Ledger.EquipmentMaintenance=facilities!=null?facilities.Maintenance:0;
         Ledger.FixedCosts=FixedCost(dayNumber);
         Cash-=Ledger.Fuel+Ledger.Wages+Ledger.FixedCosts;
         Ledger.Settled=true;

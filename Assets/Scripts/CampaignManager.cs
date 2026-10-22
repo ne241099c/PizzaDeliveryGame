@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public sealed class CampaignManager : MonoBehaviour
 {
     [SerializeField, Min(0)] private int bankruptcyGraceDays = 0;
+    [SerializeField] private FacilityManager facilities;
     [SerializeField] private CampaignSaveManager saveGame;
     public event System.Action PreparationEntered;
     [SerializeField] private TrainingManager training;
@@ -44,16 +45,16 @@ public sealed class CampaignManager : MonoBehaviour
         TotalRevenue+=economy.DailyRevenue;BestDailyRevenue=System.Math.Max(BestDailyRevenue,economy.DailyRevenue);
         ConsecutiveNegativeDays=economy.Cash<0 ? ConsecutiveNegativeDays+1 : 0;
         IsBankrupt=ShouldDeclareBankruptcy(economy.Cash,ConsecutiveNegativeDays);
-        if(IsBankrupt)saveGame?.DeleteSave();
+        if(IsBankrupt){saveGame?.DeleteSave();facilities?.NewGame();}
     }
     public string FinancialSummary => $"Day {DayNumber} / {(IsBankrupt ? "BANKRUPT - GAME OVER" : "SETTLEMENT")}\n"
-        +$"Revenue: {economy.Ledger.Revenue:F2}\nPerfect bake bonus (included): {economy.Ledger.PerfectBakeBonus:F2}\nMaterials: -{economy.Ledger.Materials:F2}\nFuel: -{economy.Ledger.Fuel:F2}\nWages: -{economy.Ledger.Wages:F2}\nFixed: -{economy.Ledger.FixedCosts:F2}\nProfit: {economy.Ledger.Profit:+0.00;-0.00;0.00}\n"
+        +$"Revenue: {economy.Ledger.Revenue:F2}\nPerfect bake bonus (included): {economy.Ledger.PerfectBakeBonus:F2}\nMaterials: -{economy.Ledger.Materials:F2}\nFuel: -{economy.Ledger.Fuel:F2}\nWages: -{economy.Ledger.Wages:F2}\nFixed: -{economy.Ledger.FixedCosts:F2}\nEquipment maintenance (included): {economy.Ledger.EquipmentMaintenance:F2}\nFacility purchases (preparation): {economy.Ledger.FacilityPurchases:F2}\nProfit: {economy.Ledger.Profit:+0.00;-0.00;0.00}\n"
         +$"Preparation hiring/severance: -{economy.Ledger.PreparationCosts:F2}\nCash: {economy.OpeningCash:F2} -> {economy.Cash:F2}\n"
         +$"Total revenue: {TotalRevenue:F2} / Best day: {BestDailyRevenue:F2}\n"+progression.DailySummary+"\n";
     public void StartBusiness()
     {
         if(clock.Phase!=DayPhase.BeforeOpening || IsBankrupt || (saveGame!=null && saveGame.AwaitingChoice && saveGame.AutomaticSavingEnabled))return;
-        saveGame?.SavePreparation();UIVisibility.Set(preparationPanel,false); clock.BeginDay();
+        facilities?.BeginBusiness();saveGame?.SavePreparation();UIVisibility.Set(preparationPanel,false); clock.BeginDay();
     }
     public void NextDay()
     {
@@ -62,7 +63,7 @@ public sealed class CampaignManager : MonoBehaviour
     }
     public void NewGame()
     {
-        flow.ResetForNewGame();
+        flow.ResetForNewGame();facilities?.NewGame();
         IsBankrupt=false;ConsecutiveNegativeDays=0;TotalRevenue=BestDailyRevenue=0;
         recruitment.ResetRandom();spawner.ResetRandom();roster.ResetToInitialRoster();economy.NewGame(); DayNumber=1; TotalDelivered=TotalScore=0; reputation.ResetForDay(); spawner.ResetPolicy(); PrepareDay();
     }
@@ -71,16 +72,18 @@ public sealed class CampaignManager : MonoBehaviour
         flow.ResetForNewGame();DayNumber=data.day;TotalDelivered=data.totalDelivered;TotalScore=data.totalScore;
         TotalRevenue=CampaignSaveManager.Decimal(data.totalRevenue);BestDailyRevenue=CampaignSaveManager.Decimal(data.bestDailyRevenue);
         ConsecutiveNegativeDays=data.negativeDays;IsBankrupt=false;clock.PrepareDay();
+        facilities?.Restore(data.facilities);
         orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));orders.ClearSelection();roster.RestoreRoster(data.people);
         reputation.Restore(data.reputation);dynamics.ResetForDay();spawner.ResetForDay();spawner.SetPromiseSeconds(data.promise);
         economy.RestorePreparation(CampaignSaveManager.Decimal(data.cash),CampaignSaveManager.Decimal(data.openingCash),CampaignSaveManager.Decimal(data.preparationCosts),DayNumber);
+        economy.Ledger.FacilityPurchases=CampaignSaveManager.Decimal(data.facilityPurchaseCosts);
         score.ResetForDay();stats.ResetForDay();training.RestoreAssignments(data.training);
         recruitment.RestoreApplicants(data.applicants.ConvertAll(a=>new Applicant(a.person,a.baselines,a.strengths,a.weaknesses)));
         progression.PrepareDay();planner.PrepareDay();UIVisibility.Set(preparationPanel,true);
     }
     private void PrepareDay()
     {
-        economy.PrepareDay(DayNumber); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
+        facilities?.PrepareDay();economy.PrepareDay(DayNumber); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
         orders.ClearSelection(); roster.ResetDailyState(); dynamics.ResetForDay(); spawner.ResetForDay();
         training.PrepareDay();score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();progression.PrepareDay();
         UIVisibility.Set(preparationPanel,true);PreparationEntered?.Invoke();
