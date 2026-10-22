@@ -15,13 +15,13 @@ public static partial class M6Validation
         var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();
         campaign.StartBusiness();campaign.NewGame();
-        var content=canvas.transform.Find("Preparation/TeamViewport/TeamContent");var row=content.GetChild(0);var person=roster.People[0];
+        var content=UIVisibility.Find(canvas.transform,"TeamContent");var row=content.GetChild(0);var person=roster.People[0];
         row.Find("TrainingControls/Train0").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
         Check(training.HasAssignment(person) && economy.Cash==130,"actual training button rebinds new roster after hidden preparation");
         row.Find("CancelTraining").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(economy.Cash==300 && person.IsAvailable,"actual cancel button refunds");
         row.Find("Action").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(roster.People.Count==1 && !roster.People.Contains(person),"actual fire button targets current person");
         campaign.NewGame();var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
-        canvas.transform.Find("Preparation/ApplicantsViewport/ApplicantsContent").GetChild(0).Find("Action").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+        UIVisibility.Find(canvas.transform,"ApplicantsContent").GetChild(0).Find("Action").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
         Check(roster.People.Count==3,"actual hire button targets current applicant");campaign.NewGame();
         Check(roster.People.Count==2 && clock.Phase==DayPhase.BeforeOpening,"button integration returns clean campaign");
     }

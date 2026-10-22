@@ -53,7 +53,7 @@ public sealed class CampaignManager : MonoBehaviour
     public void StartBusiness()
     {
         if(clock.Phase!=DayPhase.BeforeOpening || IsBankrupt || (saveGame!=null && saveGame.AwaitingChoice && saveGame.AutomaticSavingEnabled))return;
-        saveGame?.SavePreparation();preparationPanel.SetActive(false); clock.BeginDay();
+        saveGame?.SavePreparation();UIVisibility.Set(preparationPanel,false); clock.BeginDay();
     }
     public void NextDay()
     {
@@ -76,13 +76,13 @@ public sealed class CampaignManager : MonoBehaviour
         economy.RestorePreparation(CampaignSaveManager.Decimal(data.cash),CampaignSaveManager.Decimal(data.openingCash),CampaignSaveManager.Decimal(data.preparationCosts),DayNumber);
         score.ResetForDay();stats.ResetForDay();training.RestoreAssignments(data.training);
         recruitment.RestoreApplicants(data.applicants.ConvertAll(a=>new Applicant(a.person,a.baselines,a.strengths,a.weaknesses)));
-        progression.PrepareDay();planner.PrepareDay();preparationPanel.SetActive(true);
+        progression.PrepareDay();planner.PrepareDay();UIVisibility.Set(preparationPanel,true);
     }
     private void PrepareDay()
     {
         economy.PrepareDay(DayNumber); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
         orders.ClearSelection(); roster.ResetDailyState(); dynamics.ResetForDay(); spawner.ResetForDay();
         training.PrepareDay();score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();progression.PrepareDay();
-        preparationPanel.SetActive(true);PreparationEntered?.Invoke();
+        UIVisibility.Set(preparationPanel,true);PreparationEntered?.Invoke();
     }
 }

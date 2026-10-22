@@ -8,3 +8,5 @@
 | S-0 | 既存部品の対応・名前/並び/有効状態の依存調査、4画面before画像 | 2328 |
 
 詳細な調査：[ScreenInventory.md](UI_Screens/ScreenInventory.md)。
+
+| S-1 | CanvasGroupの5画面ルートとイベント駆動の0.3秒フェード。既存部品を親付け替え。表示切替だけを変更し、計算条件は維持。33画面検証を追加 | 2361 |

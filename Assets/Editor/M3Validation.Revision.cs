@@ -164,7 +164,7 @@ public static partial class M3Validation
         check(resultsPanel.transform.GetSiblingIndex()==resultsPanel.transform.parent.childCount-1,"M4-8 results cover policy controls");
         var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();
         check(canvas.GetComponent<CanvasScaler>().screenMatchMode==CanvasScaler.ScreenMatchMode.Expand,"M4-8 whole layout fits variable aspect ratio");
-        var footer=canvas.transform.Find("Footer").GetComponent<RectTransform>();var footerCorners=new Vector3[4];footer.GetWorldCorners(footerCorners);
+        var footer=UIVisibility.Find(canvas.transform,"Footer").GetComponent<RectTransform>();var footerCorners=new Vector3[4];footer.GetWorldCorners(footerCorners);
         check(footerCorners.All(p=>p.x>=canvas.pixelRect.xMin-1 && p.x<=canvas.pixelRect.xMax+1 && p.y>=canvas.pixelRect.yMin-1 && p.y<=canvas.pixelRect.yMax+1),"M4-8 dispatch and reset remain inside Game view");
         check(planner.ResultSummary.Contains("Reputation:"),"M4-8 result includes reputation");
         check(planner.ResultSummary.Contains("Aoi / Load 2"),"M4-8 result includes capacity");

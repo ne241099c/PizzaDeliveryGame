@@ -69,7 +69,7 @@ public class DeliveryPlannerUI : MonoBehaviour
         resetButton.onClick.AddListener(Restart);
         replayButton.onClick.AddListener(NextDay);
         roadButtons.AddRange(roadContent.GetComponentsInChildren<Button>(true));
-        resultsPanel.SetActive(false);
+        UIVisibility.Set(resultsPanel,false);
         subscribed = true;
         if (map.IsReady) OnMapReady();
     }
@@ -148,7 +148,7 @@ public class DeliveryPlannerUI : MonoBehaviour
     }
     public void PrepareDay()
     {
-        resultsPanel.SetActive(false); route?.Clear(); dispatchedPlan=null; dispatchedReference=null;
+        UIVisibility.Set(resultsPanel,false); route?.Clear(); dispatchedPlan=null; dispatchedReference=null;
         activityText.text=""; UpdateSuggestion(); RefreshRoute();
     }
     private void ShowActivity(string message) { activityText.text = message; activityUntil = clock.ElapsedSeconds + activitySeconds; }
@@ -160,7 +160,7 @@ public class DeliveryPlannerUI : MonoBehaviour
         replayButton.GetComponentInChildren<TextMeshProUGUI>().text=campaign!=null && campaign.IsBankrupt ? "Start over" : "Next day";
         var scroll=resultText.GetComponentInParent<ScrollRect>();if(scroll!=null){Canvas.ForceUpdateCanvases();scroll.verticalNormalizedPosition=1;}
         resultsPanel.transform.SetAsLastSibling();
-        resultsPanel.SetActive(true);
+        UIVisibility.Set(resultsPanel,true);
     }
 
     public string ResultSummary => $"DAY COMPLETE\n\nScore: {stats.TotalScore}\nDelivered: {stats.DeliveredCount}"

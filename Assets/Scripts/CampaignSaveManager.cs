@@ -53,17 +53,17 @@ public sealed class CampaignSaveManager : MonoBehaviour
     {
         if(!listenersRegistered){continueButton.onClick.AddListener(Continue);newButton.onClick.AddListener(StartNewGame);listenersRegistered=true;}
         if(File.Exists(SavePath) && TryRead(out var data,out var reason))
-        {ready=false;AwaitingChoice=true;choicePanel.SetActive(true);choiceText.text=$"CONTINUE CAMPAIGN?\nDay {data.day} / Cash {data.cash} / Reputation {data.reputation:F1}";return;}
+        {ready=false;AwaitingChoice=true;UIVisibility.Set(choicePanel,true);choiceText.text=$"CONTINUE CAMPAIGN?\nDay {data.day} / Cash {data.cash} / Reputation {data.reputation:F1}";return;}
         if(File.Exists(SavePath))LastMessage="Cannot load save: "+ReadFailure()+" Starting a new game.";
         StartNewGame();
     }
     private string ReadFailure(){TryRead(out _,out var reason);return reason;}
     public void StartNewGame()
-    {AwaitingChoice=false;ready=true;choicePanel.SetActive(false);campaign.NewGame();}
+    {AwaitingChoice=false;ready=true;UIVisibility.Set(choicePanel,false);campaign.NewGame();}
     public void Continue()
     {
         if(TryRead(out var data,out var reason))
-        {restoring=true;try{campaign.RestorePreparation(data);}finally{restoring=false;}ready=true;AwaitingChoice=false;choicePanel.SetActive(false);LastMessage=$"Loaded day {data.day}.";}
+        {restoring=true;try{campaign.RestorePreparation(data);}finally{restoring=false;}ready=true;AwaitingChoice=false;UIVisibility.Set(choicePanel,false);LastMessage=$"Loaded day {data.day}.";}
         else {LastMessage="Cannot load save: "+reason+" Starting a new game.";StartNewGame();}
     }
     public CampaignSaveData Capture()
