@@ -336,6 +336,7 @@ public sealed partial class BusinessView
         if(pinRoot==null){pinRoot=new GameObject("ShopMapPins").transform;pinRoot.SetParent(map.transform,false);}
         bool show=router.Current==ScreenId.Business && Zone==ShopZone.Dispatch;pinRoot.gameObject.SetActive(show);if(!show)return;
         float px=Px;
+        foreach(var id in pins.Keys.Where(id=>!map.HasNode(id)).ToArray()){Destroy(pins[id].Root.gameObject);pins.Remove(id);}
         var person=roster.SelectedPerson;var bag=person!=null && person.IsAvailable?handover.BagOf(person):System.Array.Empty<Order>();
         var held=Held;UpdateNear(held);
         var waiting=orders.Orders.Where(o=>o.Status==OrderStatus.Pending).OrderBy(o=>o.Deadline).ToList();
@@ -408,6 +409,7 @@ public sealed partial class BusinessView
     private void UpdateRouteMarks()
     {
         if(pinRoot==null)return;float px=Px;
+        foreach(var id in pins.Keys.Where(id=>!map.HasNode(id)).ToArray()){Destroy(pins[id].Root.gameObject);pins.Remove(id);}
         var person=roster.SelectedPerson;var bag=person!=null && person.IsAvailable?handover.BagOf(person):System.Array.Empty<Order>();
         var legs=bag.Count>0?Legs(person,bag,false):new List<(string from,string to,List<string> edges)>();
         for(int i=0;i<legs.Count || i<handles.Count;i++)

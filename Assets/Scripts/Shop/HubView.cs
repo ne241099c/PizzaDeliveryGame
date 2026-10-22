@@ -111,7 +111,7 @@ public sealed class HubView : MonoBehaviour
         string message=FirstNonEmpty(recruitment.LastMessage,training.LastMessage,facilities.LastMessage);
         if(message!=lastMessage){lastMessage=message;messageUntil=Time.unscaledTime+4;}
         messageText.text=Time.unscaledTime<messageUntil?Japanese(message):"";
-        hintText.text=Hint();
+        hintText.text=FindFirstObjectByType<MapManager>().TodayCityInfo+"  ／  "+Hint();
         string next=Signature();if(next!=signature){signature=next;Rebuild();}
     }
     private static string FirstNonEmpty(params string[] values)=>values.FirstOrDefault(v=>!string.IsNullOrEmpty(v))??"";

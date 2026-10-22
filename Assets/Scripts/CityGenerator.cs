@@ -44,7 +44,7 @@ public sealed class CityBlock
 }
 public sealed class GeneratedCity
 {
-    public int seed,attempt;public bool fallback;public MapDefinition map;
+    public int seed,attempt,day;public bool fallback;public MapDefinition map;
     public readonly List<CityBlock> blocks=new();
     public readonly List<string> bridges=new(),construction=new();
     public CityMetrics metrics;

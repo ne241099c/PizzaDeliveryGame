@@ -5,6 +5,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
+[Serializable] public sealed class CitySaveState {public int version=1,seed,blocks,day;}
+
 public class MapManager : MonoBehaviour
 {
     [SerializeField] private FacilityManager facilities;
@@ -23,6 +25,56 @@ public class MapManager : MonoBehaviour
     [SerializeField] private Transform edgesParent;
     [SerializeField] private MapDefinition mapDefinition;
 
+    [SerializeField] private bool generateCampaignCity=true;
+    [SerializeField] private CityGenerationSettings citySettings=new();
+    public CityGenerationSettings CitySettings=>citySettings;
+    public GeneratedCity City {get;private set;}
+    public CitySaveState CityState {get;private set;}
+    public bool UseSampleForValidation {get;set;}
+    public int? SeedOverride {get;set;}
+    public int? BlocksOverride {get;set;}
+    public string TodayCityInfo=>City==null?"いつもの街で営業します。":$"街区{City.blocks.Count} / "+(City.construction.Count==0?"工事なし":$"{City.construction[0]}は工事中・徐行（{citySettings.constructionDays}日ごとに更新）");
+    public string TomorrowCityInfo(int day)=>City!=null && citySettings.Blocks(day+1)>City.blocks.Count?"あした、新しい街区が開きます。":"あしたも同じ街で営業します。";
+    public void NewCampaignCity()
+    {
+        CityState=generateCampaignCity && !UseSampleForValidation?new CitySaveState{seed=SeedOverride??Guid.NewGuid().GetHashCode(),day=1}:null;
+    }
+    public CitySaveState CaptureCity()=>CityState==null?null:new CitySaveState{seed=CityState.seed,blocks=CityState.blocks,day=CityState.day};
+    public bool ValidCity(CitySaveState state,int day)=>state==null || state.version==1 && state.day==day && state.blocks==citySettings.Blocks(day);
+    public void RestoreCity(CitySaveState state)
+    {
+        CityState=state==null?null:new CitySaveState{seed=state.seed,blocks=state.blocks,day=state.day};
+        PrepareCity(state?.day??1);
+    }
+    public void PrepareCity(int day)
+    {
+        if(!IsReady)return;
+        if(UseSampleForValidation || CityState==null)
+        {
+            if(City!=null){var previousCity=City;City=null;LoadMap(null);Destroy(previousCity.map);}return;
+        }
+        int blocks=BlocksOverride??citySettings.Blocks(day);
+        if(City!=null && City.seed==CityState.seed && City.day==day && City.blocks.Count==blocks)return;
+        var old=City;var next=CityGenerator.Generate(CityState.seed,blocks,citySettings);
+        if(day>=citySettings.constructionStartDay)
+        {
+            var candidates=next.map.Edges.Where(e=>e.Id.EndsWith("AB") && !next.bridges.Contains(e.Id)).ToArray();
+            if(candidates.Length>0)
+            {
+                var e=candidates[(int)((uint)(CityState.seed^(day/citySettings.constructionDays))%(uint)candidates.Length)];float before=e.TrafficFactor;e.TrafficFactor=citySettings.constructionTraffic;
+                var metrics=CityValidator.Measure(next,citySettings);if(metrics.failures.Count==0){next.construction.Add(e.Id);next.metrics=metrics;}else e.TrafficFactor=before;
+            }
+        }
+        next.day=day;City=next;CityState.day=day;CityState.blocks=blocks;LoadMap(next.map);if(old!=null)Destroy(old.map);
+    }
+    public void LoadMap(MapDefinition definition)
+    {
+        IsReady=false;
+        foreach(var view in nodeViews.Values){view.gameObject.SetActive(false);Destroy(view.gameObject);}foreach(var view in edgeViews.Values){view.gameObject.SetActive(false);Destroy(view.gameObject);}
+        nodes.Clear();edges.Clear();nodeLookup.Clear();edgeLookup.Clear();outgoing.Clear();nodeViews.Clear();edgeViews.Clear();
+        if(definition!=null){nodes.AddRange(definition.Nodes);edges.AddRange(definition.Edges);}else CreateMap();
+        BuildViews();
+    }
     private readonly List<MapNode> nodes = new();
     private readonly List<MapEdge> edges = new();
     private readonly Dictionary<string, MapNode> nodeLookup = new();
@@ -46,22 +98,14 @@ public class MapManager : MonoBehaviour
     private void Start()
     {
         CreateMap();
+        BuildViews();
+    }
+    private void BuildViews()
+    {
         ValidateAndIndex();
-        foreach (MapNode node in nodes)
-        {
-            NodeView view = Instantiate(nodeViewPrefab, nodesParent);
-            view.Initialize(node);
-            nodeViews.Add(node.Id, view);
-        }
-        foreach (MapEdge edge in edges)
-        {
-            EdgeView view = Instantiate(edgeViewPrefab, edgesParent);
-            view.Initialize(edge, nodeLookup[edge.NodeAId], nodeLookup[edge.NodeBId], this, false);
-            edgeViews.Add(edge.Id, view);
-        }
-        IsReady = true;
-        PreviewRoute(Array.Empty<string>(), StoreNodeId, 1f);
-        MapReady?.Invoke();
+        foreach(var node in nodes){var view=Instantiate(nodeViewPrefab,nodesParent);view.Initialize(node);nodeViews.Add(node.Id,view);}
+        foreach(var edge in edges){var view=Instantiate(edgeViewPrefab,edgesParent);view.Initialize(edge,nodeLookup[edge.NodeAId],nodeLookup[edge.NodeBId],this,false);edgeViews.Add(edge.Id,view);}
+        IsReady=true;PreviewRoute(Array.Empty<string>(),StoreNodeId,1);MapReady?.Invoke();
     }
 
     private void Update()

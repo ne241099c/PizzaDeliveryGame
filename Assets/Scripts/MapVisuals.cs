@@ -10,6 +10,7 @@ public sealed class MapVisuals : MonoBehaviour
     [SerializeField] private Rect[] cityBlocks={new Rect(-3.3f,.35f,2,1),new Rect(-1,.4f,2,1.2f),new Rect(1.9f,.4f,1.6f,1),new Rect(-3.3f,-2.2f,3,1.2f),new Rect(0,-2.3f,2.5f,.7f),new Rect(4.4f,-2.8f,.8f,1.6f)};
     [SerializeField] private Rect[] parks={new Rect(-3,-3.4f,2,.8f)};
     private bool created;
+    private Transform decorationRoot;
     private float previousAspect;
     private void LateUpdate()
     {
@@ -39,8 +40,12 @@ public sealed class MapVisuals : MonoBehaviour
     private static Sprite rounded;
     private void Create()
     {
-        if(created)return;created=true;var theme=UITheme.Active;Camera.main.backgroundColor=theme.mapGround;
-        foreach(var area in cityBlocks)Block(area,theme.mapBlock,"CityBlock");foreach(var area in outerBlocks)Block(area,theme.mapBlock,"CityBlock");
+        if(decorationRoot!=null){decorationRoot.gameObject.SetActive(false);Destroy(decorationRoot.gameObject);}decorationRoot=new GameObject("CityDecoration").transform;decorationRoot.SetParent(transform,false);arrows.Clear();congestion.Clear();created=true;var theme=UITheme.Active;Camera.main.backgroundColor=theme.mapGround;
+        if(map.City!=null)
+        {
+            foreach(var block in map.City.blocks){var a=block.area;var inset=new Rect(a.x+.5f,a.y+.5f,a.width-1,a.height-1);bool green=block.template.kind==DistrictKind.Park;Block(inset,green?theme.mapPark:theme.mapBlock,"District_"+block.index);if(green)for(int i=0;i<3;i++)Tree(inset.center+new Vector2((i-1)*.6f,.3f),theme.mapTree);}
+        }
+        else{foreach(var area in cityBlocks)Block(area,theme.mapBlock,"CityBlock");foreach(var area in outerBlocks)Block(area,theme.mapBlock,"CityBlock");}
         foreach(var area in parks){Block(area,theme.mapPark,"Park");for(int i=0;i<3;i++)Tree(new Vector2(area.xMin+area.width*(.25f+.25f*i),area.center.y+(i%2==0?.12f:-.12f)),theme.mapTree);}
         River(theme);Congestion(theme);Route(map.CurrentRouteState);
     }
@@ -52,17 +57,17 @@ public sealed class MapVisuals : MonoBehaviour
     }
     private void Block(Rect area,Color color,string name)
     {
-        var go=new GameObject(name);go.transform.SetParent(transform,false);go.transform.position=area.center;go.transform.localScale=Vector3.one*.5f;
+        var go=new GameObject(name);go.transform.SetParent(decorationRoot,false);go.transform.position=area.center;go.transform.localScale=Vector3.one*.5f;
         var sprite=go.AddComponent<SpriteRenderer>();sprite.sprite=Rounded();sprite.drawMode=SpriteDrawMode.Sliced;sprite.size=area.size*2;sprite.color=color;sprite.sortingOrder=-20;
     }
     private void Tree(Vector2 at,Color color)
     {
-        var go=new GameObject("Tree");go.transform.SetParent(transform,false);go.transform.position=at;go.transform.localScale=Vector3.one*.32f;
+        var go=new GameObject("Tree");go.transform.SetParent(decorationRoot,false);go.transform.position=at;go.transform.localScale=Vector3.one*.32f;
         var sprite=go.AddComponent<SpriteRenderer>();sprite.sprite=Shape(true);sprite.color=color;sprite.sortingOrder=-19;
     }
     private void River(UITheme theme)
     {
-        var go=new GameObject("River");go.transform.SetParent(transform,false);var line=go.AddComponent<LineRenderer>();
+        var go=new GameObject("River");go.transform.SetParent(decorationRoot,false);var line=go.AddComponent<LineRenderer>();
         var road=FindFirstObjectByType<EdgeView>();line.sharedMaterial=road!=null?road.GetComponent<LineRenderer>().sharedMaterial:null;line.useWorldSpace=false;line.positionCount=40;
         for(int i=0;i<40;i++){float x=-12+i*.6f;line.SetPosition(i,new Vector3(x,riverY+Mathf.Sin(i*.45f)*.35f,0));}
         line.startWidth=line.endWidth=1.6f;line.startColor=line.endColor=theme.mapWater;line.sortingOrder=-21;line.numCapVertices=4;
@@ -78,7 +83,7 @@ public sealed class MapVisuals : MonoBehaviour
             int count=Mathf.Max(2,Mathf.RoundToInt((b-a).magnitude*jam*2.4f));
             for(int i=0;i<count;i++)
             {
-                var go=new GameObject("Congestion");go.transform.SetParent(transform,false);go.transform.position=Vector2.Lerp(a,b,(i+.5f)/count);go.transform.localScale=Vector3.one*.16f;
+                var go=new GameObject("Congestion");go.transform.SetParent(decorationRoot,false);go.transform.position=Vector2.Lerp(a,b,(i+.5f)/count);go.transform.localScale=Vector3.one*.16f;
                 var dot=go.AddComponent<SpriteRenderer>();dot.sprite=Shape(true);dot.color=theme.congestion;dot.sortingOrder=6;congestion.Add((edge,dot));
             }
         }
@@ -89,7 +94,7 @@ public sealed class MapVisuals : MonoBehaviour
         foreach(string id in state.ActiveEdgeIds)
         {
             var edge=map.GetEdge(id);if(!edge.TryTraverse(current,out string next))break;
-            while(arrows.Count<=count){var go=new GameObject("RouteArrow");go.transform.SetParent(transform,false);var text=go.AddComponent<TextMeshPro>();text.font=UITheme.Active.font;text.alignment=TextAlignmentOptions.Center;text.rectTransform.sizeDelta=new Vector2(.5f,.5f);go.GetComponent<MeshRenderer>().sortingOrder=12;arrows.Add(text);}
+            while(arrows.Count<=count){var go=new GameObject("RouteArrow");go.transform.SetParent(decorationRoot,false);var text=go.AddComponent<TextMeshPro>();text.font=UITheme.Active.font;text.alignment=TextAlignmentOptions.Center;text.rectTransform.sizeDelta=new Vector2(.5f,.5f);go.GetComponent<MeshRenderer>().sortingOrder=12;arrows.Add(text);}
             var arrow=arrows[count];Vector2 a=positions[current],b=positions[next];var position=Vector2.Lerp(a,b,count%2==0?.4f:.6f);
             if(edge.RoadType==RoadType.Backstreet){var direction=(positions[edge.NodeBId]-positions[edge.NodeAId]).normalized;position+=new Vector2(-direction.y,direction.x)*.35f;}
             arrow.transform.position=position;arrow.transform.rotation=Quaternion.Euler(0,0,Mathf.Atan2(b.y-a.y,b.x-a.x)*Mathf.Rad2Deg);arrow.text=">";arrow.fontSize=UITheme.Active.routeArrowSize;arrow.color=UITheme.Active.background;arrow.fontStyle=FontStyles.Bold;count++;current=next;
