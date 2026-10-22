@@ -68,7 +68,13 @@ public sealed partial class BusinessView
         minimapFrame=UiKit.Box(minimapImage.transform,"Frame",0,0,40,30);
         foreach(var side in new[]{"T","B","L","R"}){var s=UiKit.Box(minimapFrame,side,0,0,1,1);UiKit.Fill(s,T.tomato,0);}
         // one lane per courier
-        laneRow=UiKit.Box(dispatch,"Lanes",32,LaneTop,1856,LaneHeight);
+        var laneViewport=UiKit.Box(dispatch,"LaneViewport",32,LaneTop,1856,LaneHeight);
+        laneViewport.gameObject.AddComponent<RectMask2D>().padding=new Vector4(-8,-12,-8,-12);
+        var laneHit=laneViewport.gameObject.AddComponent<Image>();laneHit.color=Color.clear;
+        laneRow=UiKit.Box(laneViewport,"Lanes",0,0,1856,LaneHeight);
+        var laneScroll=laneViewport.gameObject.AddComponent<ScrollRect>();laneScroll.viewport=laneViewport;laneScroll.content=laneRow;laneScroll.horizontal=true;laneScroll.vertical=false;laneScroll.movementType=ScrollRect.MovementType.Clamped;
+        UiKit.Label(dispatch,"RouteLegend","行き・配達先へ  ━  /  帰り・お店へ  ━  （動く丸が進行方向）",430,782,1120,32,T.captionSize,T.line,FontRole.Black);
+        var legend=dispatch.Find("RouteLegend").GetComponent<TextMeshProUGUI>();legend.text=$"<color=#{ColorUtility.ToHtmlStringRGB(T.tomato)}>行き・配達先へ ━</color>  /  <color=#{ColorUtility.ToHtmlStringRGB(T.info)}>帰り・お店へ ━</color>  動く丸が進行方向 ／ レーンは横スクロール";
         UiKit.Show(dispatch,false);
     }
     private TextMeshProUGUI Chip(Transform parent,float x,float w,string icon)
@@ -194,7 +200,7 @@ public sealed partial class BusinessView
     {
         foreach(var lane in lanes){ShopHand.Instance?.Unregister(lane.Zone);foreach(var z in lane.Slots)ShopHand.Instance?.Unregister(z);Destroy(lane.Root.gameObject);}lanes.Clear();
         var people=roster.People.ToList();int n=people.Count;if(n==0)return;
-        float gap=20,w=(1856-gap*(n-1))/n;int idle=people.Count(p=>p.IsAvailable);
+        float gap=20,w=Mathf.Max(T.deliveryLaneMinWidth,(1856-gap*(n-1))/n);laneRow.sizeDelta=new Vector2(Mathf.Max(1856,n*(w+gap)-gap),LaneHeight);int idle=people.Count(p=>p.IsAvailable);
         for(int k=0;k<n;k++)
         {
             var p=people[k];bool here=p.IsAvailable,selected=here && roster.SelectedPerson==p,only=here && idle==1;
@@ -413,23 +419,31 @@ public sealed partial class BusinessView
             h.root.gameObject.SetActive(true);h.root.localScale=Vector3.one*px;
             if(!(handleDragging && handlePress==i))h.root.position=new Vector3(at.x,at.y,-1.5f);
         }
-        // direction chevrons: outbound and return sit on their own side of the road, so both stay visible
-        var chevrons=new List<(Vector2 at,float angle)>();
-        if(legs.Count>0)
+        // Separate outbound and return with coloured, offset strokes and moving round direction markers.
+        var dotsOnRoute=new List<(Vector2 at,Color color)>();int stroke=0;
+        for(int leg=0;leg<legs.Count;leg++)
         {
-            var line=Polyline(map.StoreNodeId,legs.SelectMany(l=>l.edges));float spacing=64*px,carry=spacing*.5f;
+            var line=Polyline(legs[leg].from,legs[leg].edges);bool returning=leg==legs.Count-1;
+            var color=returning?T.info:T.tomato;
+            float spacing=T.deliveryRouteDotSpacingPixels*px;
+            float carry=Mathf.Repeat(Time.unscaledTime*T.deliveryRouteDotSpeedPixels*px,spacing);
             for(int i=0;i+1<line.Count;i+=2)
             {
-                var a=line[i];var d=line[i+1]-a;float len=d.magnitude;if(len<=0)continue;var dir=d/len;var side=new Vector2(dir.y,-dir.x)*9*px;
-                for(float t=carry;t<len;t+=spacing)chevrons.Add((a+dir*t+side,Mathf.Atan2(dir.y,dir.x)*Mathf.Rad2Deg));
-                carry=(carry-len)%spacing;if(carry<0)carry+=spacing;
+                var a=line[i];var d=line[i+1]-a;float len=d.magnitude;if(len<=0)continue;var dir=d/len;
+                var side=new Vector2(dir.y,-dir.x)*T.deliveryRouteOffsetPixels*px;
+                while(routeStrokes.Count<=stroke)routeStrokes.Add(MakeRouteStroke());
+                var draw=routeStrokes[stroke++];draw.enabled=true;draw.startWidth=draw.endWidth=T.deliveryRouteWidthPixels*px;
+                draw.startColor=draw.endColor=color;draw.SetPosition(0,new Vector3(a.x+side.x,a.y+side.y,-1.25f));draw.SetPosition(1,new Vector3(a.x+d.x+side.x,a.y+d.y+side.y,-1.25f));
+                for(float t=carry;t<len;t+=spacing)dotsOnRoute.Add((a+dir*t+side,color));
+                carry=Mathf.Repeat(carry-len,spacing);
             }
         }
-        while(routeArrows.Count<chevrons.Count)routeArrows.Add(MakeChevron());
+        for(int i=stroke;i<routeStrokes.Count;i++)routeStrokes[i].enabled=false;
+        while(routeArrows.Count<dotsOnRoute.Count)routeArrows.Add(MakeDirectionDot());
         for(int i=0;i<routeArrows.Count;i++)
         {
-            bool on=i<chevrons.Count;routeArrows[i].gameObject.SetActive(on);if(!on)continue;
-            routeArrows[i].position=new Vector3(chevrons[i].at.x,chevrons[i].at.y,-1.3f);routeArrows[i].rotation=Quaternion.Euler(0,0,chevrons[i].angle);routeArrows[i].localScale=Vector3.one*px;
+            bool on=i<dotsOnRoute.Count;routeArrows[i].gameObject.SetActive(on);if(!on)continue;
+            routeArrows[i].position=new Vector3(dotsOnRoute[i].at.x,dotsOnRoute[i].at.y,-1.3f);routeArrows[i].localScale=Vector3.one*px;
         }
         HideMapArrows=router.Current==ScreenId.Business && Zone==ShopZone.Dispatch;
         // automatic route, shown only once the player's route differs from it
@@ -449,11 +463,17 @@ public sealed partial class BusinessView
     private readonly List<Transform> routeArrows=new();
     /// <summary>The map's own small "&gt;" route arrows give way to the dispatch board's chevrons.</summary>
     public static bool HideMapArrows {get;private set;}
-    private Transform MakeChevron()
+    private readonly List<LineRenderer> routeStrokes=new();
+    private LineRenderer MakeRouteStroke()
     {
-        var root=new GameObject("RouteDirection").transform;root.SetParent(pinRoot,false);
-        void Part(string name,float size,Color c,int order){var s=new GameObject(name).AddComponent<SpriteRenderer>();s.transform.SetParent(root,false);s.sprite=UiKit.Art("icon_play");s.color=c;s.sortingOrder=order;float w=s.sprite!=null?s.sprite.bounds.size.x:1;s.transform.localScale=Vector3.one*size/Mathf.Max(.0001f,w);}
-        Part("Edge",22,T.line,14);Part("Face",15,Color.white,15);
+        var line=new GameObject("RouteLegStroke").AddComponent<LineRenderer>();line.transform.SetParent(pinRoot,false);line.useWorldSpace=true;line.positionCount=2;line.numCapVertices=6;line.sortingOrder=14;
+        var road=FindFirstObjectByType<EdgeView>();if(road!=null)line.sharedMaterial=road.GetComponent<LineRenderer>().sharedMaterial;
+        return line;
+    }
+    private Transform MakeDirectionDot()
+    {
+        var root=new GameObject("RouteDirectionDot").transform;root.SetParent(pinRoot,false);
+        foreach(bool edge in new[]{true,false}){var s=new GameObject(edge?"Edge":"Face").AddComponent<SpriteRenderer>();s.transform.SetParent(root,false);s.sprite=UiKit.Circle;s.color=edge?T.line:T.paper;s.sortingOrder=edge?15:16;s.transform.localScale=Vector3.one*(edge?10:6)/1.28f;}
         return root;
     }
     private Transform MakeHandle()
@@ -461,7 +481,8 @@ public sealed partial class BusinessView
         var root=new GameObject("RouteHandle").transform;root.SetParent(pinRoot,false);
         void Disc(string name,float size,Color c,int order){var s=new GameObject(name).AddComponent<SpriteRenderer>();s.transform.SetParent(root,false);s.sprite=UiKit.Circle;s.color=c;s.sortingOrder=order;s.transform.localScale=Vector3.one*size/1.28f;}
         Disc("Shadow",44,new Color(0,0,0,.25f),45);Disc("Edge",40,T.line,46);Disc("Face",34,Color.white,47);
-        foreach(var flip in new[]{1,-1}){var s=new GameObject("Arrow").AddComponent<SpriteRenderer>();s.transform.SetParent(root,false);s.sprite=UiKit.Art("icon_play");s.color=T.line;s.sortingOrder=48;s.transform.localPosition=new Vector3(6*flip,0,0);s.transform.localRotation=Quaternion.Euler(0,0,flip>0?0:180);float size=s.sprite!=null?s.sprite.bounds.size.x:1;s.transform.localScale=Vector3.one*11/Mathf.Max(.0001f,size);}
+        foreach(float x in new[]{-5f,5f})foreach(float y in new[]{-6f,0f,6f}){var dot=new GameObject("Grip").AddComponent<SpriteRenderer>();dot.transform.SetParent(root,false);dot.sprite=UiKit.Circle;dot.color=T.line;dot.sortingOrder=48;dot.transform.localPosition=new Vector3(x,y,0);dot.transform.localScale=Vector3.one*3/1.28f;}
+
         root.Find("Shadow").localPosition=new Vector3(0,-3,0);
         return root;
     }

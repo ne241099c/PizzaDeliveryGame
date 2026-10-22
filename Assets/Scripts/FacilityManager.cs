@@ -17,7 +17,7 @@ public sealed class FacilityManager : MonoBehaviour
     [SerializeField] private float[] bikeSpeed={1,1.08f,1.16f};
     [SerializeField] private float[] bikeRisk={1,.9f,.8f};
     [SerializeField,Min(0)] private float ovenMaintenance=30,bikeMaintenance=20,expansionMaintenance=40,workbenchMaintenance=15;
-    [SerializeField,Min(1)] private int initialOvens=1,initialBikeLevel=1,initialMaximumPeople=4,initialWorkbenches=2;
+    [SerializeField,Min(1)] private int initialOvens=1,initialBikeLevel=1,initialWorkbenches=2;
     [SerializeField] private int implementationStage=3;
     public int ImplementationStage=>implementationStage;
     public int OvenUpgrades {get;private set;}
@@ -28,7 +28,7 @@ public sealed class FacilityManager : MonoBehaviour
     public int Advertisement {get;private set;}
     public int Ovens=>initialOvens+OvenUpgrades;
     public int BikeLevel=>initialBikeLevel+BikeUpgrades;
-    public int MaximumPeople=>initialMaximumPeople+ShopUpgrades;
+    public int MaximumPeople=>int.MaxValue; // Legacy API; staffing is unlimited.
     public float SpeedMultiplier=>bikeSpeed[BikeUpgrades];
     public float RiskMultiplier=>bikeRisk[BikeUpgrades];
     public float DemandMultiplier=>clock.Phase==DayPhase.Closed || clock.Phase==DayPhase.Ended?1:advertisingDemand[Advertisement];
@@ -56,7 +56,7 @@ public sealed class FacilityManager : MonoBehaviour
         {
             FacilityType.Oven=>$"OVENS / {Ovens}\nNext {Price(type):F2} / +1 oven / maintenance +{ovenMaintenance:F2}/day\n"+Rejection(type),
             FacilityType.Bike=>$"BIKES / Lv {BikeLevel}\nNext {Price(type):F2} / speed x{bikeSpeed[nextBike]:F2} / risk x{bikeRisk[nextBike]:F2}\nMaintenance +{bikeMaintenance:F2}/day\n"+Rejection(type),
-            FacilityType.Expansion=>$"SHOP / Team limit {MaximumPeople}\nNext {Price(type):F2} / +1 staff slot / maintenance +{expansionMaintenance:F2}/day\n"+Rejection(type),
+            FacilityType.Expansion=>"SHOP / Staff hiring has no limit. Legacy expansion data is retained.",
             FacilityType.Workbench=>$"WORKBENCHES / {Workbenches}\nNext {Price(type):F2} / +1 workbench / maintenance +{workbenchMaintenance:F2}/day\n"+Rejection(type),
             _=>$"ADVERTISING / Today {Advertisement}\n"+string.Join(" / ",System.Linq.Enumerable.Select(System.Linq.Enumerable.Range(0,advertisingPrices.Length),i=>$"{advertisingPrices[i]:F2}: x{advertisingDemand[i+1]:F2}"))+"\nToday only\n"+Rejection(type)
         };
@@ -80,6 +80,6 @@ public sealed class FacilityManager : MonoBehaviour
     public void PrepareDay(){Advertisement=0;LastMessage="";}
     public FacilitySaveData Capture()=>new FacilitySaveData{oven=OvenUpgrades,bike=BikeUpgrades,expansion=ShopUpgrades,workbench=WorkbenchUpgrades};
     public bool Valid(FacilitySaveData data)=>data!=null && data.oven>=0 && data.oven<=ovenPrices.Length && data.bike>=0 && data.bike<=bikePrices.Length && data.expansion>=0 && data.expansion<=expansionPrices.Length && data.workbench>=0 && data.workbench<=workbenchPrices.Length;
-    public int MaximumPeopleFor(FacilitySaveData data)=>initialMaximumPeople+data.expansion;
+    public int MaximumPeopleFor(FacilitySaveData data)=>int.MaxValue;
     public void Restore(FacilitySaveData data){if(!Valid(data))throw new ArgumentException("Invalid facility levels.");OvenUpgrades=data.oven;BikeUpgrades=data.bike;ShopUpgrades=data.expansion;WorkbenchUpgrades=data.workbench;Advertisement=0;Changed?.Invoke();}
 }

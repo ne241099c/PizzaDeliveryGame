@@ -84,7 +84,7 @@ public sealed class CampaignManager : MonoBehaviour
         score.ResetForDay();stats.ResetForDay();training.RestoreAssignments(data.training);
         recruitment.RestoreApplicants(data.applicants.ConvertAll(a=>new Applicant(a.person,a.baselines,a.strengths,a.weaknesses)));
         recruitment.RestoreKitchenApplicants(data.kitchenApplicants.ConvertAll(k=>new KitchenApplicant(k)));handover?.Clear();
-        progression.PrepareDay();planner.PrepareDay();UIVisibility.Set(preparationPanel,true);
+        progression.PrepareDay();planner.PrepareDay();UIVisibility.Set(preparationPanel,true);PreparationEntered?.Invoke();
     }
     private void PrepareDay()
     {

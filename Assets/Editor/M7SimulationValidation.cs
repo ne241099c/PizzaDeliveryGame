@@ -43,7 +43,7 @@ public static class M7SimulationValidation
             Check(firstCsv==session.ToCsv(),names[index]+" identical seed reproduces every CSV field");
             Check(session.Records.Count==settings.ComparisonDays || session.Records.Last().Bankrupt,"30 days or bankruptcy only");
             var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();decimal cash=economy.InitialCash;
-            foreach(var row in session.Records)
+            int expectedRoster=2;foreach(var row in session.Records)
             {
                 Check(row.Profit==row.Revenue-row.Materials-row.Fuel-row.Wages-row.FixedCosts-row.Repairs,"profit reconciliation");cash+=row.Profit-row.PreparationCosts;Check(cash==row.Cash,"cash reconciliation including equipment and hiring");
                 Check(row.Repairs==economy.RepairCost(row.Accidents),"repair expense formula");
@@ -55,7 +55,7 @@ public static class M7SimulationValidation
                 Check(row.Spawned==row.Delivered+row.Cancelled,"all orders resolved");
                 Check(index!=0 || row.FacilityPurchases==0,"F buys no equipment");
                 Check(row.FacilityPurchases<=row.PreparationCosts && (row.FacilityPurchases==0)==string.IsNullOrEmpty(row.FacilityPurchase),"one preparation purchase recorded");
-                Check(row.RosterSize<=4+row.ShopLevel,"expanded roster capacity");
+                expectedRoster+=row.Hired;Check(row.RosterSize==expectedRoster,"roster growth equals actual hires without a headcount cap");
             }
             records.AddRange(session.Records);session.Dispose();session=null;index++;repeat=0;
             if(index<names.Length){StartCase();return;}

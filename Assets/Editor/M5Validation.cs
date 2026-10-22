@@ -148,7 +148,7 @@ public static class M5Validation
         check(roster.People.Contains(candidate.Person) && candidate.Person.CurrentStamina==1,"hired courier carried with full stamina");
         // The team limit counts couriers and kitchen staff together: three couriers plus the starting apprentice fill four.
         check(recruitment.TeamCount==4 && roster.People.Count==3,"three couriers and the kitchen apprentice fill the team of four");
-        recruitment.GenerateDay();check(!recruitment.Hire(recruitment.Applicants[0]) && recruitment.LastMessage.Contains("limit"),"team limit rejects fifth hire with reason");
+        recruitment.GenerateDay();check(recruitment.Hire(recruitment.Applicants[0]) && recruitment.TeamCount==5,"fifth employee can be hired without expansion");
         decimal beforeFire=economy.Cash,severance=recruitment.SeveranceCost(roster.People[0]);
         check(recruitment.Fire(roster.People[0]) && economy.Cash==beforeFire-severance,"firing charges one daily wage and removes courier");
         while(roster.People.Count>1)recruitment.Fire(roster.People[0]);

@@ -15,6 +15,7 @@ public sealed class UITheme : ScriptableObject
     [SerializeField] public Color[] courierColors={Hex("#27658A"),Hex("#835191"),Hex("#956129"),Hex("#3E7770"),Hex("#AC4E72"),Hex("#546536")};
     [SerializeField] public float mainRoadWidth=.18f,backstreetWidth=.10f,routeWidth=.24f,roadBorder=.07f,nodeSize=.4f,worldLabelSize=4.5f;
     [SerializeField] public float congestionWidthScale=.35f,worldIconScale=.35f,routeArrowSize=4f;
+    [SerializeField, Min(1)] public float deliveryLaneMinWidth=560,deliveryRouteWidthPixels=6,deliveryRouteOffsetPixels=9,deliveryRouteDotSpacingPixels=64,deliveryRouteDotSpeedPixels=28;
     [Header("v2: shop redesign (設計書_画面デザイン 2)")]
     [SerializeField] public Color paper=Hex("#FFF6E5"),paperDeep=Hex("#F3E3C3"),line=Hex("#3A2A20"),inkSub=Hex("#7A6652"),tomato=Hex("#E04B2D"),tomatoShadow=Hex("#A8361F"),basil=Hex("#4C9A52"),basilLight=Hex("#E2F1DF"),cheese=Hex("#F7BE3D"),cheeseLight=Hex("#FFF0C2"),berry=Hex("#B3261E"),berryLight=Hex("#F9DFDA"),info=Hex("#3C79C2"),infoLight=Hex("#E4EEFA"),disabled=Hex("#C9BBA3");
     [SerializeField] public Color wood=Hex("#C98B5B"),woodDark=Hex("#9C6A43"),plaster=Hex("#F1E4CF"),steel=Hex("#C8D0D6"),steelShadow=Hex("#8F9BA5"),floorA=Hex("#E9C99C"),floorB=Hex("#DDB783"),barFill=Hex("#F1A43A");

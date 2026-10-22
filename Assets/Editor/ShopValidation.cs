@@ -76,7 +76,7 @@ public static class ShopValidation
             Check(!roster.People.Any(p=>p.Name==candidate.Staff.Name) && !recruitment.Applicants.Any(a=>a.Person.Name==candidate.Staff.Name) && candidate.Staff.Name!="Mio","kitchen candidate names are unique");
             decimal cash=economy.Cash,fee=recruitment.HiringCost(candidate.Staff);
             Check(fee==economy.DailyWage(candidate.Staff)*3 && recruitment.Hire(candidate) && crew.Count==2 && economy.Cash==cash-fee,"hiring kitchen staff costs three wage days");
-            Check(recruitment.TeamCount==4 && recruitment.HireRejection(recruitment.Applicants.FirstOrDefault()).Contains("limit"),"kitchen staff count against the shared team limit");
+            Check(recruitment.TeamCount==4 && recruitment.Hire(recruitment.Applicants.First()) && recruitment.TeamCount==5,"couriers can be hired beyond four including kitchen staff");
             Check(facilities.Purchase(FacilityType.Workbench) && facilities.Workbenches==3 && facilities.Maintenance==15,"workbench purchase 400 adds a bench and maintenance");
             Check(facilities.Price(FacilityType.Workbench)==700,"second workbench costs 700");
             string json=save.SnapshotJson();Check(save.TryParse(json,out var data,out var reason),"version 3 save validates "+reason);
@@ -84,7 +84,7 @@ public static class ShopValidation
             var hiredName=candidate.Staff.Name;campaign.NewGame();Check(crew.Count==1 && facilities.Workbenches==2,"new game resets kitchen and benches");
             campaign.RestorePreparation(data);Check(crew.Count==2 && crew.People.Any(c=>c.Name==hiredName) && facilities.Workbenches==3,"restore brings back kitchen staff and benches");
             var duplicate=save.Capture();duplicate.crew.Add(new KitchenStaff(roster.People[0].Name,.5f,.5f));Check(!save.TryParse(JsonUtility.ToJson(duplicate),out _,out _),"duplicate names across couriers and kitchen staff are rejected");
-            var overflow=save.Capture();overflow.crew.Add(new KitchenStaff("Extra",.5f,.5f));Check(!save.TryParse(JsonUtility.ToJson(overflow),out _,out _),"saved team cannot exceed the shared limit");
+            var overflow=save.Capture();overflow.crew.Add(new KitchenStaff("Extra",.5f,.5f));Check(save.TryParse(JsonUtility.ToJson(overflow),out _,out _),"saved team can exceed the former shared limit");
             campaign.StartBusiness();Check(cook.BenchCount==3,"bench count applies from the next opening");
             spawner.enabled=false;clock.Advance(clock.BusinessDuration+1000);
             Check(economy.Ledger.Wages==economy.TeamWages && economy.KitchenWages==crew.People.Sum(c=>economy.DailyWage(c)),"both kitchen staff are paid at settlement");

@@ -151,15 +151,15 @@ public sealed class CampaignSaveManager : MonoBehaviour
             data=JsonUtility.FromJson<CampaignSaveData>(json);var candidate=data;
             // Version 1 had no equipment. Normalize in memory without overwriting the original file.
             if(candidate!=null && candidate.version==1){candidate.version=2;candidate.facilities=new FacilitySaveData();candidate.facilityPurchaseCosts="0";}
-            // Version 2 had no kitchen staff or workbenches. The starting apprentice joins if the team limit allows.
+            // Version 2 had no kitchen staff or workbenches. The starting apprentice joins independently of headcount.
             if(candidate!=null && candidate.version==2 && formatVersion==3)
             {
                 candidate.version=3;candidate.kitchenApplicants=new List<KitchenStaff>();candidate.crew=new List<KitchenStaff>();
-                if(candidate.people!=null && candidate.facilities!=null && candidate.people.Count<facilities.MaximumPeopleFor(candidate.facilities))candidate.crew.Add(new KitchenStaff("Mio",.4f,.4f));
+                if(candidate.people!=null && candidate.facilities!=null)candidate.crew.Add(new KitchenStaff("Mio",.4f,.4f));
             }
             if(candidate==null || candidate.version!=formatVersion)throw new FormatException("Unsupported save version.");
             if(!facilities.Valid(candidate.facilities))throw new FormatException("Invalid facility levels.");
-            if(candidate.day<1 || candidate.negativeDays<0 || candidate.totalDelivered<0 || candidate.people==null || candidate.people.Count<1 || candidate.applicants==null || candidate.training==null || candidate.crew==null || candidate.kitchenApplicants==null || candidate.people.Count+candidate.crew.Count>facilities.MaximumPeopleFor(candidate.facilities))throw new FormatException("Missing campaign candidate.");
+            if(candidate.day<1 || candidate.negativeDays<0 || candidate.totalDelivered<0 || candidate.people==null || candidate.people.Count<1 || candidate.applicants==null || candidate.training==null || candidate.crew==null || candidate.kitchenApplicants==null)throw new FormatException("Missing campaign candidate.");
             var kitchen=candidate.crew.Concat(candidate.kitchenApplicants).ToArray();
             if(kitchen.Any(k=>k==null || string.IsNullOrWhiteSpace(k.Name) || !Finite(k.Speed) || !Finite(k.Care)) || kitchen.Select(k=>k.Name).Concat(candidate.people.Select(p=>p.Name)).Distinct().Count()!=kitchen.Length+candidate.people.Count)throw new FormatException("Duplicate or invalid kitchen staff.");
             if(Decimal(candidate.facilityPurchaseCosts)<0 || Decimal(candidate.facilityPurchaseCosts)>Decimal(candidate.preparationCosts))throw new FormatException("Invalid facility purchases.");

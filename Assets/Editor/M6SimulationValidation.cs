@@ -79,7 +79,7 @@ public static class M6SimulationValidation
                 Check(!string.IsNullOrEmpty(r.Couriers) && !string.IsNullOrEmpty(r.ExperienceGrowth) && !string.IsNullOrEmpty(r.Potentials),"daily abilities experience and ceilings");
                 Check(c.Train?r.TrainingCosts>=0:r.TrainingCosts==0,"training policy and costs");
                 var kitchen=UnityEngine.Object.FindFirstObjectByType<CookingManager>();Check(r.QualityBonus==r.TwoStarOnTime*kitchen.TwoStarBonus+r.ThreeStarOnTime*kitchen.ThreeStarBonus,"quality bonus equals on-time two/three-star pizzas");
-                hired+=r.Hired;Check(r.RosterSize==2+hired && r.RosterSize<=4,"roster growth");
+                hired+=r.Hired;Check(r.RosterSize==2+hired,"roster growth");
             }
             Check(economy.InitialCash==300,"E2 does not change configured starting cash");
             records.AddRange(session.Records);session.Dispose();session=null;

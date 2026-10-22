@@ -13,6 +13,8 @@ public sealed class GameClock : MonoBehaviour
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool automaticTick = true;
 
+    [SerializeField, Min(1f), Tooltip("閉店後の帰還待ちの進行倍率。営業中とメニュー停止には影響しません。") ] private float closedPlaybackSpeed=8f;
+    public float ClosedPlaybackSpeed=>Mathf.Max(1f,closedPlaybackSpeed);
     public DayPhase Phase { get; private set; } = DayPhase.BeforeOpening;
     public float ElapsedSeconds { get; private set; }
     public float RemainingSeconds => Mathf.Max(0f, businessDuration - ElapsedSeconds);
@@ -30,7 +32,7 @@ public sealed class GameClock : MonoBehaviour
     public event Action<float, float> Advanced;
 
     private void Start() { if (autoStart) BeginDay(); }
-    private void Update() { if (automaticTick) Advance(Time.unscaledDeltaTime); }
+    private void Update() { if (automaticTick) AdvanceAutomatically(Time.unscaledDeltaTime); }
     public float ToRealSeconds(float mapTime) => mapTime * travelTimeMultiplier;
 
     public void BeginDay()
@@ -41,12 +43,24 @@ public sealed class GameClock : MonoBehaviour
         OnDayStarted?.Invoke();
     }
 
+    /// <summary>Advance wall time. Only the closed part of a frame is accelerated; Advance remains simulation time.</summary>
+    public void AdvanceAutomatically(float realSeconds)
+    {
+        if(realSeconds<0 || float.IsNaN(realSeconds) || float.IsInfinity(realSeconds))throw new ArgumentOutOfRangeException(nameof(realSeconds));
+        if(Phase==DayPhase.Open)
+        {
+            float openWall=Mathf.Min(realSeconds,RemainingSeconds/(IsPlanning?planningTimeRate:1f));
+            Advance(openWall);realSeconds=Mathf.Max(0,realSeconds-openWall);
+        }
+        if(Phase==DayPhase.Closed && realSeconds>0)Advance(realSeconds*ClosedPlaybackSpeed);
+    }
+
     // Also used by deterministic validation. Split the closing boundary so no event is skipped.
     public void Advance(float realSeconds)
     {
         if (realSeconds < 0 || float.IsNaN(realSeconds) || float.IsInfinity(realSeconds))
             throw new ArgumentOutOfRangeException(nameof(realSeconds));
-        float remaining = realSeconds * (IsPlanning ? planningTimeRate : 1f);
+        float remaining = realSeconds * (Phase==DayPhase.Open && IsPlanning ? planningTimeRate : 1f);
         if (Phase == DayPhase.Open)
         {
             float step = Mathf.Min(remaining, RemainingSeconds);

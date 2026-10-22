@@ -26,7 +26,7 @@ public sealed class PreparationUI : MonoBehaviour
     private void Start() => Refresh();
     private void Update()
     {
-        overview.text=$"Day {campaign.DayNumber} / Cash {economy.Cash:F2} / Reputation {reputation.Value:F1} / Team {roster.People.Count}/{recruitment.MaximumPeople}";
+        overview.text=$"Day {campaign.DayNumber} / Cash {economy.Cash:F2} / Reputation {reputation.Value:F1} / Team {recruitment.TeamCount} (no limit)";
         message.text=displayMessage;
     }
     private void FitPool(List<GameObject> rows,int count,Transform parent)

@@ -100,9 +100,9 @@ public sealed class HubView : MonoBehaviour
         UiKit.SetBadge(cashDelta,(delta>=0?"▲ ":"▼ ")+UiKit.Signed(delta).Replace("¥",""),delta>=0?T.basil:T.berry,Color.white);
         cashDelta.gameObject.SetActive(previous.day>0);
         reputationText.text=Mathf.RoundToInt(reputation.Value).ToString();reputationBar.Set(reputation.Value/reputation.Maximum);
-        UiKit.SetBadge(tabBadges[0],$"{recruitment.TeamCount} / {recruitment.MaximumPeople}",T.paper,T.line,56);tabBadges[0].anchoredPosition=new Vector2(236-14-tabBadges[0].sizeDelta.x,-26);
+        UiKit.SetBadge(tabBadges[0],$"{recruitment.TeamCount}人",T.paper,T.line,56);tabBadges[0].anchoredPosition=new Vector2(236-14-tabBadges[0].sizeDelta.x,-26);
         UiKit.SetBadge(tabBadges[1],(recruitment.Applicants.Count+recruitment.KitchenApplicants.Count)+"人",T.cheese,T.line,56);tabBadges[1].anchoredPosition=new Vector2(236-14-tabBadges[1].sizeDelta.x,-26);
-        noteText.text=string.Format(ShopStrings.TeamNote,recruitment.MaximumPeople);
+        noteText.text=ShopStrings.TeamNote;
         decimal trainingFees=training.Assignments.Where(a=>!a.Completed).Sum(a=>a.Paid);
         forecastWages.text=UiKit.Yen(economy.TeamWages);forecastFixed.text=UiKit.Yen(economy.BaseFixedCost(campaign.DayNumber));
         forecastMaintenance.text=UiKit.Yen(facilities.Maintenance);forecastTraining.text=UiKit.Yen(trainingFees);
@@ -252,8 +252,7 @@ public sealed class HubView : MonoBehaviour
         card.sizeDelta=new Vector2(CardW,CardH);UiKit.Dashed(card,T.line,16,10,3);
         var plus=UiKit.Box(card,"Plus",CardW/2-50,170,100,100);UiKit.Dashed(plus,T.line,10,8,3);UiKit.Icon(plus,"Icon","icon_plus",25,25,50,T.line);
         UiKit.Label(card,"Title",ShopStrings.FindTeammate,0,290,CardW,50,32,T.line,FontRole.Display,TextAlignmentOptions.Center);
-        int open=Mathf.Max(0,recruitment.MaximumPeople-recruitment.TeamCount);
-        UiKit.Label(card,"Detail",$"あと{open}人 雇えます\n求人は{recruitment.Applicants.Count+recruitment.KitchenApplicants.Count}人 来ています",0,350,CardW,64,18,T.inkSub,FontRole.Black,TextAlignmentOptions.Center,true);
+        UiKit.Label(card,"Detail",$"人数制限なし\n求人は{recruitment.Applicants.Count+recruitment.KitchenApplicants.Count}人 来ています",0,350,CardW,64,18,T.inkSub,FontRole.Black,TextAlignmentOptions.Center,true);
         UiKit.Button(card,"SeeApplicants",ShopStrings.SeeApplicants,StickerKind.Secondary,58,430,240,70,24,()=>ShowTab(1));
     }
     private void BuildApplicants()
@@ -281,7 +280,7 @@ public sealed class HubView : MonoBehaviour
     }
     private void BuildFacilities()
     {
-        var items=new[]{(FacilityType.Oven,"fac_oven"),(FacilityType.Workbench,"fac_bench"),(FacilityType.Bike,"fac_bike"),(FacilityType.Expansion,"fac_shop"),(FacilityType.Advertising,"fac_ad")};
+        var items=new[]{(FacilityType.Oven,"fac_oven"),(FacilityType.Workbench,"fac_bench"),(FacilityType.Bike,"fac_bike"),(FacilityType.Advertising,"fac_ad")};
         float w=300;for(int i=0;i<items.Length;i++)FacilityCard(content,items[i].Item1,items[i].Item2,i*(w+22),w);
     }
     private void FacilityCard(Transform parent,FacilityType type,string picture,float x,float w)

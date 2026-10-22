@@ -26,7 +26,7 @@ public static class ShopStrings
     public const string Staff="スタッフ",Applicants="求人",Facilities="設備",Management="経営";
     public const string Courier="配達員",Kitchen="内勤",Train="訓練",CancelTraining="訓練を取り消す",Fire="解雇",Hire="雇う",Wage="日給";
     public const string StartBusiness="営業開始",Promise="お届け目安",Seconds="秒";
-    public const string TeamNote="上限 {0}人は、配達員と内勤の合計です。店舗の拡張で増やせます。";
+    public const string TeamNote="従業員の人数制限はありません。日給と設備の数を見て採用しましょう。";
     public const string KitchenInfo="厨房を任せられます。手際が高いほど速く、丁寧さが高いほど★が付きやすくなります。";
     public const string Speed="手際",Care="丁寧さ";
     public const string FindTeammate="仲間を探す",SeeApplicants="求人を見る";

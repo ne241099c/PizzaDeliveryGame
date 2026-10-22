@@ -104,7 +104,7 @@ public sealed partial class BusinessView : MonoBehaviour
     {
         int seconds=Mathf.CeilToInt(clock.RemainingSeconds);
         string phase=clock.Phase==DayPhase.Open?ShopStrings.Open:ShopStrings.Closed;
-        dayText.text=$"{campaign.DayNumber}{ShopStrings.Day} {phase}";timeText.text=$"{seconds/60}:{seconds%60:00}";
+        dayText.text=clock.Phase==DayPhase.Closed?$"閉店・帰還待ち ×{clock.ClosedPlaybackSpeed:0.#}":$"{campaign.DayNumber}{ShopStrings.Day} {phase}";timeText.text=$"{seconds/60}:{seconds%60:00}";
         float fraction=clock.RemainingSeconds/clock.BusinessDuration;timeBar.Set(fraction,-1,fraction<=T.closingWarning?T.berry:T.basil);
         cashText.text=UiKit.Yen(economy.Cash);UiKit.SetBadge(cashDelta,"▲ +"+UiKit.Yen(economy.DailyRevenue).Replace("¥",""),T.basil,Color.white);cashDelta.anchoredPosition=new Vector2(446+Mathf.Clamp(cashText.textBounds.size.x,0,200)+8,-30);
         reputationText.text=Mathf.RoundToInt(reputation.Value).ToString();reputationBar.Set(reputation.Value/reputation.Maximum);

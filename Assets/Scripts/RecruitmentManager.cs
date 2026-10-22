@@ -34,7 +34,6 @@ public sealed class RecruitmentManager : MonoBehaviour
     [SerializeField] private Vector2 kitchenAbilityRange=new(.3f,.8f);
     [SerializeField] private string[] kitchenNamePool={"Sakura","Tsumugi","Kanata","Hiro","Asahi","Ema","Shion","Ritsu"};
     [SerializeField] private BusinessEconomy economy;
-    [SerializeField, Min(1)] private int maximumPeople = 4;
     [SerializeField, Min(1)] private int minimumApplicants = 2;
     [SerializeField, Min(1)] private int maximumApplicants = 3;
     [SerializeField, Min(0)] private float hiringWageDays = 3f;
@@ -64,11 +63,11 @@ public sealed class RecruitmentManager : MonoBehaviour
     private readonly List<Applicant> applicants=new();
     private readonly List<KitchenApplicant> kitchenApplicants=new();
     public IReadOnlyList<KitchenApplicant> KitchenApplicants => kitchenApplicants;
-    /// <summary>Couriers and kitchen staff together count against the team limit.</summary>
+    /// <summary>Total team size; hiring has no headcount limit.</summary>
     public int TeamCount => roster.People.Count+(crew!=null?crew.Count:0);
     public int? SeedOverride { get; set; }
     public IReadOnlyList<Applicant> Applicants => applicants;
-    public int MaximumPeople => facilities!=null?facilities.MaximumPeople:maximumPeople;
+    public int MaximumPeople => int.MaxValue; // Compatibility for existing tools; no gameplay headcount limit.
     public string LastMessage { get; private set; }="";
     public event Action Changed;
     private void Awake() => ResetRandom();
@@ -106,7 +105,8 @@ public sealed class RecruitmentManager : MonoBehaviour
     public void GenerateDay()
     {
         if(random==null)ResetRandom();applicants.Clear();
-        var names=namePool.Where(n=>!string.IsNullOrWhiteSpace(n)).Distinct().Except(roster.People.Select(p=>p.Name)).ToArray();Shuffle(names);
+        var used=new HashSet<string>(roster.People.Select(p=>p.Name));if(crew!=null)used.UnionWith(crew.People.Select(c=>c.Name));
+        var names=AvailableNames(namePool,used,maximumApplicants,"Courier");Shuffle(names);
         int count=Mathf.Min(names.Length,random.Next(minimumApplicants,Mathf.Max(minimumApplicants,maximumApplicants)+1));
         foreach(string name in names.Take(count))applicants.Add(GenerateApplicant(name));
         GenerateKitchenDay();
@@ -120,7 +120,6 @@ public sealed class RecruitmentManager : MonoBehaviour
     {
         if(clock.Phase!=DayPhase.BeforeOpening)return "Hiring is available only during preparation.";
         if(applicant==null || !applicants.Contains(applicant))return "This applicant is no longer available.";
-        if(TeamCount>=MaximumPeople)return $"Team limit: {MaximumPeople}.";
         if(economy.Cash<HiringCost(applicant.Person))return $"Not enough cash. Need {HiringCost(applicant.Person):F2}.";
         return "";
     }
@@ -149,9 +148,17 @@ public sealed class RecruitmentManager : MonoBehaviour
         if(kitchenRandom==null)ResetRandom();kitchenApplicants.Clear();
         if(kitchenRandom.NextDouble()>=kitchenApplicantChance)return;
         var used=new HashSet<string>(roster.People.Select(p=>p.Name).Concat(applicants.Select(a=>a.Person.Name)));if(crew!=null)used.UnionWith(crew.People.Select(c=>c.Name));
-        var names=kitchenNamePool.Where(n=>!string.IsNullOrWhiteSpace(n) && !used.Contains(n)).ToArray();if(names.Length==0)return;
+        var names=AvailableNames(kitchenNamePool,used,1,"Kitchen");
         float Ability()=>Mathf.Lerp(kitchenAbilityRange.x,kitchenAbilityRange.y,(float)kitchenRandom.NextDouble());
         kitchenApplicants.Add(new KitchenApplicant(new KitchenStaff(names[kitchenRandom.Next(names.Length)],Ability(),Ability())));
+    }
+    private static string[] AvailableNames(IEnumerable<string> pool,HashSet<string> used,int needed,string fallback)
+    {
+        var bases=pool.Where(n=>!string.IsNullOrWhiteSpace(n)).Distinct().ToArray();if(bases.Length==0)bases=new[]{fallback};
+        var names=bases.Where(n=>!used.Contains(n)).ToList();
+        for(int suffix=2;names.Count<needed;suffix++)
+            foreach(var name in bases){string candidate=name+" "+suffix;if(!used.Contains(candidate))names.Add(candidate);if(names.Count>=needed)break;}
+        return names.ToArray();
     }
     public decimal HiringCost(KitchenStaff staff) => BusinessEconomy.Money(economy.DailyWage(staff)*(decimal)hiringWageDays);
     public decimal SeveranceCost(KitchenStaff staff) => BusinessEconomy.Money(economy.DailyWage(staff)*(decimal)severanceWageDays);
@@ -159,7 +166,6 @@ public sealed class RecruitmentManager : MonoBehaviour
     {
         if(clock.Phase!=DayPhase.BeforeOpening)return "Hiring is available only during preparation.";
         if(crew==null || applicant==null || !kitchenApplicants.Contains(applicant))return "This applicant is no longer available.";
-        if(TeamCount>=MaximumPeople)return $"Team limit: {MaximumPeople}.";
         if(economy.Cash<HiringCost(applicant.Staff))return $"Not enough cash. Need {HiringCost(applicant.Staff):F2}.";
         return "";
     }
