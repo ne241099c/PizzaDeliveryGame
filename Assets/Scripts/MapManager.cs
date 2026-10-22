@@ -9,6 +9,7 @@ public class MapManager : MonoBehaviour
 {
     [SerializeField, Min(0.01f)] private float baseSpeed = 10f;
     [SerializeField, Min(0f)] private float backstreetPenalty = 1f;
+    [SerializeField, Min(0.01f)] private float sampleBackstreetDistance = 11f;
     [SerializeField, Min(0.01f)] private float drivingSpeedBase = 0.7f;
     [SerializeField, Min(0f)] private float drivingSpeedScale = 0.6f;
     [SerializeField, Min(0.01f)] private float staminaSpeedBase = 0.7f;
@@ -189,7 +190,7 @@ public class MapManager : MonoBehaviour
         nodes.Add(new MapNode("Goal2", new Vector2(4f, -3f), NodeType.DeliveryAddress, false));
         edges.Add(new MapEdge("Store-N1", "Store", "N1", 10f, RoadType.Main, 0.8f));
         edges.Add(new MapEdge("N1-N2-Main", "N1", "N2", 10f, RoadType.Main, 0.6f));
-        edges.Add(new MapEdge("N1-N2-Backstreet", "N1", "N2", 13f, RoadType.Backstreet, 1f));
+        edges.Add(new MapEdge("N1-N2-Backstreet", "N1", "N2", sampleBackstreetDistance, RoadType.Backstreet, 1f));
         edges.Add(new MapEdge("N2-Goal1", "N2", "Goal1", 5f, RoadType.Main, 1f));
         edges.Add(new MapEdge("N2-Goal2", "N2", "Goal2", 7f, RoadType.Main, 1f));
         edges.Add(new MapEdge("Goal1-Goal2", "Goal1", "Goal2", 3f, RoadType.Main, 1f));

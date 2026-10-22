@@ -155,7 +155,7 @@ public static class M4SceneSetup
             new("Goal2",new Vector2(4,-3),NodeType.DeliveryAddress,false) };
         var edges = definition != null ? definition.Edges : new List<MapEdge> {
             new("Store-N1","Store","N1",10,RoadType.Main,0.8f), new("N1-N2-Main","N1","N2",10,RoadType.Main,0.6f),
-            new("N1-N2-Backstreet","N1","N2",13,RoadType.Backstreet,1), new("N2-Goal1","N2","Goal1",5,RoadType.Main,1),
+            new("N1-N2-Backstreet","N1","N2",so.FindProperty("sampleBackstreetDistance").floatValue,RoadType.Backstreet,1), new("N2-Goal1","N2","Goal1",5,RoadType.Main,1),
             new("N2-Goal2","N2","Goal2",7,RoadType.Main,1), new("Goal1-Goal2","Goal1","Goal2",3,RoadType.Main,1) };
         var nodePrefab = so.FindProperty("nodeViewPrefab").objectReferenceValue as NodeView;
         var edgePrefab = so.FindProperty("edgeViewPrefab").objectReferenceValue as EdgeView;

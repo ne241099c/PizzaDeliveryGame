@@ -17,7 +17,7 @@ public static partial class M6Validation
         campaign.StartBusiness();campaign.NewGame();
         var content=canvas.transform.Find("Preparation/TeamViewport/TeamContent");var row=content.GetChild(0);var person=roster.People[0];
         row.Find("TrainingControls/Train0").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
-        Check(training.HasAssignment(person) && economy.Cash==30,"actual training button rebinds new roster after hidden preparation");
+        Check(training.HasAssignment(person) && economy.Cash==130,"actual training button rebinds new roster after hidden preparation");
         row.Find("CancelTraining").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(economy.Cash==300 && person.IsAvailable,"actual cancel button refunds");
         row.Find("Action").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(roster.People.Count==1 && !roster.People.Contains(person),"actual fire button targets current person");
         campaign.NewGame();var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
@@ -56,12 +56,12 @@ public static partial class M6Validation
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();spawner.enabled=false;
         var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var hiring=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();
-        var aoi=roster.People[0];Check(training.Cost(aoi,CourierAbility.Driving)==270 && training.Cost(aoi,CourierAbility.Capacity)==400,"training costs");
+        var aoi=roster.People[0];Check(training.Cost(aoi,CourierAbility.Driving)==170 && training.Cost(aoi,CourierAbility.Capacity)==300,"training costs");
         Check(!training.Request(aoi,CourierAbility.Capacity) && training.LastMessage.Contains("potential"),"capped ability rejected");
         var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=0;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
         Check(!training.Request(aoi,CourierAbility.Driving) && training.LastMessage.Contains("cash"),"insufficient training cash rejected");
         funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
-        decimal cash=economy.Cash;Check(training.Request(aoi,CourierAbility.Driving) && economy.Cash==cash-270 && !aoi.IsAvailable,"training debits cash and blocks courier");
+        decimal cash=economy.Cash;Check(training.Request(aoi,CourierAbility.Driving) && economy.Cash==cash-170 && !aoi.IsAvailable,"training debits cash and blocks courier");
         Check(!hiring.Fire(aoi) && hiring.LastMessage.Contains("training"),"training prevents firing");
         Check(!training.Request(aoi,CourierAbility.Service),"second training rejected");
         Check(training.Cancel(aoi) && economy.Cash==cash && aoi.IsAvailable,"cancel fully refunds and restores availability");
@@ -90,12 +90,12 @@ public static partial class M6Validation
         Near(rules.ExperienceEarned(trip,CourierAbility.Driving),trip.DistanceAt(trip.ReturnsAt)*.3f,"driving XP distance");
         Near(rules.ExperienceEarned(trip,CourierAbility.LocalKnowledge),30,"knowledge counts repeated backstreets");
         Near(rules.ExperienceEarned(trip,CourierAbility.Service),15,"on-time service XP");
-        Near(rules.ExperienceEarned(trip,CourierAbility.Endurance),trip.ReturnsAt*.5f,"endurance outside time");
+        Near(rules.ExperienceEarned(trip,CourierAbility.Endurance),trip.ReturnsAt*.35f,"endurance outside time");
         Near(rules.ExperienceEarned(trip,CourierAbility.Safety),24,"safe roads XP");
         var dynamics=UnityEngine.Object.FindFirstObjectByType<DeliveryDynamics>();
         var accident=new DeliveryTrip(map,route.BuildCompletion(orders,p),p,0,5,dynamics,()=>0);accident.AdvanceAccidents(10000);
         Near(rules.ExperienceEarned(accident,CourierAbility.Safety),0,"accident roads give no safety XP");
-        Near(rules.ExperienceEarned(accident,CourierAbility.Endurance),accident.ReturnsAt*.5f,"accident stop included in endurance XP");
+        Near(rules.ExperienceEarned(accident,CourierAbility.Endurance),accident.ReturnsAt*.35f,"accident stop included in endurance XP");
         var lateOrders=new[]{new Order("Goal1","Late",0,0)};var late=new DeliveryTrip(map,route.BuildCompletion(lateOrders,p),p,0,5);Near(rules.ExperienceEarned(late,CourierAbility.Service),5,"late service XP");
         rules.PrepareDay();
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
@@ -119,16 +119,57 @@ public static partial class M6Validation
         fixture.SetExperience(CourierAbility.Service,123);var copy=fixture.Clone();Near(copy.Experience(CourierAbility.Service),123,"copy preserves experience");Near(copy.Potential(CourierAbility.Driving),.6f,"copy preserves potential");
         var views=UnityEngine.Object.FindObjectsByType<CourierAbilitiesView>(FindObjectsInactive.Include,FindObjectsSortMode.None);Check(views.Length>=3,"ability bars on business and preparation rows");
     }
+    private static void ValidateAdjustment(DaySimulationSettings settings)
+    {
+        Check(settings.NextTrendStreak(-1,1,0,95)==2,"same trend accumulates");
+        Check(settings.NextTrendStreak(-1,2,3,50)==1,"opposite trend resets streak");
+        Check(settings.NextTrendStreak(-1,2,1,95)==0,"neutral day clears streak");
+        Check(settings.NextTrendStreak(0,0,0,95)==1,"success after neutral begins new streak");
+        Near(settings.AdjustedPromise(50,0,95,3),40,"third consecutive day uses rolling two-day window");
+        var trainee=new DeliveryPerson("Priority",.5f,.3f,1,.4f,.6f,.4f);
+        Check(settings.PreferredTrainingAbility(trainee)==CourierAbility.Driving,"train driving before lowest ability");
+        trainee.SetPotential(CourierAbility.Driving,trainee.Driving);
+        Check(settings.PreferredTrainingAbility(trainee)==CourierAbility.Capacity,"capacity one after capped driving");
+        trainee.Capacity=2;
+        Check(settings.PreferredTrainingAbility(trainee)==CourierAbility.Safety,"skip capacity two");
+        trainee.SetPotential(CourierAbility.Safety,trainee.Safety);
+        Check(settings.PreferredTrainingAbility(trainee)==CourierAbility.Service,"service follows safety");
+        trainee.SetPotential(CourierAbility.Service,trainee.Service);
+        Check(!settings.PreferredTrainingAbility(trainee).HasValue,"do not train knowledge or endurance as fallback");
+        trainee.Capacity=1;trainee.SetPotential(CourierAbility.Capacity,1);
+        Check(!settings.PreferredTrainingAbility(trainee).HasValue,"capped capacity one skipped");
+        var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();
+        Near(map.GetEdge("N1-N2-Backstreet").Distance,11,"adjusted backstreet distance");
+        foreach(float knowledge in new[]{.3f,.6f,.9f})
+        {
+            var p=new DeliveryPerson("Knowledge",.5f,knowledge,2,.5f,.5f,.5f);
+            foreach(string goal in new[]{"Goal1","Goal2"})
+            {
+                var route=RoadPathfinder.Suggest(map,new[]{new Order(goal,"Knowledge",0,60)},p);
+                bool usesBackstreet=route.EdgeIds.Any(id=>map.GetEdge(id).RoadType==RoadType.Backstreet);
+                Check(usesBackstreet==(knowledge>.5f),"knowledge chooses road at "+knowledge+" / "+goal);
+                float expected=knowledge<.5f?6.833333f:knowledge<.8f?6.58f:5.92f;
+                Near(route.TotalTime,expected+(goal=="Goal2"?.4f:0),"shortest round trip "+knowledge+" / "+goal);
+            }
+        }
+    }
     public static string Run()
     {
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var savingScope=save?.SuppressSaving();
         Checks=0;string previous=M5Validation.Run()+" / "+M4PlayValidation.CheckReset();
         var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
-        Check(economy.FixedCost(1)==150 && economy.FixedCost(2)==165 && economy.FixedCost(30)==585,"fixed cost growth");
+        Check(economy.FixedCost(1)==150 && economy.FixedCost(2)==175 && economy.FixedCost(30)==875,"fixed cost growth");
         var settings=UnityEngine.Object.FindFirstObjectByType<DaySimulationSettings>();
-        Near(settings.AdjustedPromise(60,0,90),45,"shorter promise with no late and high reputation");
-        Near(settings.AdjustedPromise(60,3,50),75,"longer promise with late orders");
-        Near(settings.AdjustedPromise(60,1,100),60,"other cases preserve promise");
+        Near(settings.AdjustedPromise(60,0,90,1),60,"one successful day cannot shorten promise");
+        Near(settings.AdjustedPromise(60,0,90,2),50,"two successful days shorten by ten");
+        Near(settings.AdjustedPromise(60,3,50,1),60,"one late day cannot extend promise");
+        Near(settings.AdjustedPromise(60,3,50,2),70,"two late days extend by ten");
+        Near(settings.AdjustedPromise(60,1,100,2),60,"neutral results preserve promise");
+        Check(settings.PromiseTrend(0,89)==0 && settings.PromiseTrend(0,90)==-1
+            && settings.PromiseTrend(3,100)==1 && settings.PromiseTrend(2,100)==0,"trend condition boundaries");
+        Check(settings.TrainingReserve==100 && settings.HiringReserve==100,"reserves lowered to one hundred");
+        Near(settings.ComparisonExtraInitialCash,600,"E2 experimental cash");
+        ValidateAdjustment(settings);
         var fixture=new GameObject("Busy fixture");fixture.SetActive(false);
         try {var stats=fixture.AddComponent<DayStats>();Near(stats.BusyRatio(2,300),0,"zero busy ratio");}
         finally {UnityEngine.Object.DestroyImmediate(fixture);}

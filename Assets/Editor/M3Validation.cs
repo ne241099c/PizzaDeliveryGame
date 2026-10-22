@@ -55,17 +55,17 @@ public static partial class M3Validation
         near(route.GetTime(1f), 7.433333f, "Return via a delivered address");
         check(route.BuildCompletion(orders, expert) != null, "Revisiting delivered address is allowed");
         route.TryReplace(full.Select(id => id == "N1-N2-Main" ? "N1-N2-Backstreet" : id));
-        near(route.GetTime(1f), 6.6f, "Manual backstreet route");
-        near(route.GetTime(0.3f), 8.42f, "Skill applied to every traversal");
-        near(RoadPathfinder.Suggest(map, orders, expert).TotalTime, 6.6f, "Expert suggestion uses backstreet");
+        near(route.GetTime(1f), 6.2f, "Manual backstreet route");
+        near(route.GetTime(0.3f), 7.74f, "Skill applied to every traversal");
+        near(RoadPathfinder.Suggest(map, orders, expert).TotalTime, 6.2f, "Expert suggestion uses backstreet");
         near(RoadPathfinder.Suggest(map, orders, rookie).TotalTime, 7.333333f, "Rookie suggestion uses main road");
-        near(RoadPathfinder.GetIndividualReferenceTime(map, orders, expert).Value, 12.6f, "Individual reference uses expert's optimal roads");
+        near(RoadPathfinder.GetIndividualReferenceTime(map, orders, expert).Value, 11.8f, "Individual reference uses expert's optimal roads");
         near(RoadPathfinder.GetIndividualReferenceTime(map, orders, rookie).Value, 14.066667f, "Individual reference uses rookie's optimal roads");
-        near(RoadPathfinder.GetIndividualReferenceTime(map, new[] { orders[0] }, expert).Value, 6.1f, "Single-order reference is one full round trip");
+        near(RoadPathfinder.GetIndividualReferenceTime(map, new[] { orders[0] }, expert).Value, 5.7f, "Single-order reference is one full round trip");
         check(!RoadPathfinder.GetIndividualReferenceTime(map, orders, null).HasValue, "No reference without courier");
         check(!RoadPathfinder.GetIndividualReferenceTime(map, Array.Empty<Order>(), expert).HasValue, "No reference without orders");
         near(RoadPathfinder.GetIndividualReferenceTime(map, orders, expert).Value
-            - RoadPathfinder.Suggest(map, orders, expert).TotalTime, 6f, "Combined saving versus individual reference");
+            - RoadPathfinder.Suggest(map, orders, expert).TotalTime, 5.6f, "Combined saving versus individual reference");
         string[] separate = { "Store-N1", "N1-N2-Main", "N2-Goal1", "N2-Goal1", "N1-N2-Main", "Store-N1",
             "Store-N1", "N1-N2-Main", "N2-Goal2", "N2-Goal2", "N1-N2-Main", "Store-N1" };
         route.TryReplace(separate);

@@ -14017,6 +14017,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MapManager
   baseSpeed: 10
   backstreetPenalty: 1
+  sampleBackstreetDistance: 11
   drivingSpeedBase: 0.7
   drivingSpeedScale: 0.6
   staminaSpeedBase: 0.7
@@ -21123,7 +21124,7 @@ MonoBehaviour:
   wageAbilityFactor: 40
   wageCapacityFactor: 30
   dailyFixedCost: 150
-  fixedCostGrowthPerDay: 15
+  fixedCostGrowthPerDay: 25
   cashText: {fileID: 1514087125}
   initialCash: 300
 --- !u!114 &1404697825
@@ -21204,15 +21205,19 @@ MonoBehaviour:
   clockStepSeconds: 0.25
   maximumDaySeconds: 3600
   trainCouriers: 0
-  trainingReserve: 200
+  trainingReserve: 100
   comparisonDays: 30
   batchDispatch: 0
   hireApplicants: 0
   adjustPromise: 0
-  hiringReserve: 200
-  promiseAdjustment: 15
+  hiringReserve: 100
+  promiseAdjustment: 10
   shortenReputation: 90
   extendLateCount: 3
+  promiseTrendDays: 2
+  comparisonExtraInitialCash: 600
+  resultsDirectory: Docs/M6_Adjustment_Simulations
+  trainingPriority: 00000000050000000400000002000000
 --- !u!114 &1404697827
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21233,7 +21238,7 @@ MonoBehaviour:
   knowledgeExperiencePerRoad: 15
   onTimeServiceExperience: 15
   lateServiceExperience: 5
-  enduranceExperiencePerSecond: 0.5
+  enduranceExperiencePerSecond: 0.35
   safetyExperiencePerRoad: 4
   automaticGrowth: 1
 --- !u!114 &1404697828
@@ -21252,9 +21257,9 @@ MonoBehaviour:
   roster: {fileID: 1404697813}
   economy: {fileID: 1404697824}
   progression: {fileID: 1404697827}
-  baseCost: 120
-  abilityCostFactor: 250
-  capacityCost: 400
+  baseCost: 80
+  abilityCostFactor: 150
+  capacityCost: 300
   trainingDurationRatio: 0.5
   abilityGain: 0.1
   capacityGain: 1

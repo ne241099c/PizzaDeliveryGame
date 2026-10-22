@@ -67,7 +67,7 @@ public static class M5SimulationValidation
             Check(campaign.IsBankrupt || campaign.DayNumber==settings.DaysPerPolicy,"final policy stops at day limit or bankruptcy");
             Check(economy.Ledger.Settled,"last day fully settled");
             string root=Directory.GetParent(Application.dataPath).FullName;
-            string directory=Path.Combine(root,"Docs/M6_Simulations/legacy");Directory.CreateDirectory(directory);
+            string directory=Path.Combine(root,Path.Combine(settings.ResultsDirectory,"legacy"));Directory.CreateDirectory(directory);
             string path=Path.Combine(directory,"seed-"+settings.RandomSeed+".csv");File.WriteAllText(path,firstCsv);
             LastSummary=string.Join("\n",settings.PromiseSeconds.Select(p=>
             {

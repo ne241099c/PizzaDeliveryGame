@@ -9,7 +9,7 @@ public sealed class DaySimulationSettings : MonoBehaviour
     [SerializeField, Min(.01f)] private float clockStepSeconds = .25f;
     [SerializeField, Min(1f)] private float maximumDaySeconds = 3600f;
     [SerializeField] private bool trainCouriers;
-    [SerializeField,Min(0)] private float trainingReserve=200;
+    [SerializeField,Min(0)] private float trainingReserve=100;
     [SerializeField,Min(1)] private int comparisonDays=30;
     public bool TrainCouriers=>trainCouriers;
     public decimal TrainingReserve=>(decimal)trainingReserve;
@@ -17,15 +17,38 @@ public sealed class DaySimulationSettings : MonoBehaviour
     [SerializeField] private bool batchDispatch;
     [SerializeField] private bool hireApplicants;
     [SerializeField] private bool adjustPromise;
-    [SerializeField, Min(0)] private float hiringReserve = 200;
-    [SerializeField, Min(0)] private float promiseAdjustment = 15;
+    [SerializeField, Min(0)] private float hiringReserve = 100;
+    [SerializeField, Min(0)] private float promiseAdjustment = 10;
     [SerializeField, Range(0,100)] private float shortenReputation = 90;
     [SerializeField, Min(1)] private int extendLateCount = 3;
+    [SerializeField, Min(1)] private int promiseTrendDays = 2;
+    [SerializeField, Min(0)] private float comparisonExtraInitialCash = 600;
+    [SerializeField] private string resultsDirectory = "Docs/M6_Adjustment_Simulations";
+    [SerializeField] private CourierAbility[] trainingPriority = {
+        CourierAbility.Driving, CourierAbility.Capacity, CourierAbility.Safety, CourierAbility.Service };
+    public float ComparisonExtraInitialCash => comparisonExtraInitialCash;
+    public string ResultsDirectory => resultsDirectory;
+    public int PromiseTrend(int late, float reputation)
+        => late >= extendLateCount ? 1 : late == 0 && reputation >= shortenReputation ? -1 : 0;
+    public int NextTrendStreak(int previousTrend, int previousStreak, int late, float reputation)
+    {
+        int trend=PromiseTrend(late,reputation);
+        return trend==0 ? 0 : trend==previousTrend ? previousStreak+1 : 1;
+    }
+    public int TrainingPriority(CourierAbility ability) => System.Array.IndexOf(trainingPriority, ability);
+    public CourierAbility? PreferredTrainingAbility(DeliveryPerson person)
+    {
+        foreach (var ability in trainingPriority)
+            if ((ability != CourierAbility.Capacity || person.Capacity == 1)
+                && person.Ability(ability) < person.Potential(ability)) return ability;
+        return null;
+    }
     public bool BatchDispatch => batchDispatch;
     public bool HireApplicants => hireApplicants;
     public bool AdjustPromise => adjustPromise;
     public decimal HiringReserve => (decimal)hiringReserve;
-    public float AdjustedPromise(float previous,int late,float reputation) => late>=extendLateCount ? previous+promiseAdjustment : late==0 && reputation>=shortenReputation ? previous-promiseAdjustment : previous;
+    public float AdjustedPromise(float previous, int late, float reputation, int consecutiveDays)
+        => consecutiveDays >= promiseTrendDays ? previous + PromiseTrend(late, reputation) * promiseAdjustment : previous;
     public int DaysPerPolicy => daysPerPolicy;
     public float[] PromiseSeconds => (float[])promiseSeconds.Clone();
     public int RandomSeed => randomSeed;

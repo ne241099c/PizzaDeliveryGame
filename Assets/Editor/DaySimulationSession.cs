@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using UnityEngine;
+using UnityEditor;
 
 /// <summary>Autoplay drives the real UI selection/dispatch and GameClock; it contains no economic formulas.</summary>
 public sealed class SimulationDayRecord
@@ -50,6 +51,8 @@ public sealed class DaySimulationSession : IDisposable
     private readonly bool batch,hire,adjust;
     private readonly string policyName;
     private float currentPromise;
+    private int previousTrend, trendStreak;
+    private readonly float? initialCashOverride;
     private int hired;
     private readonly int days,seed;
     private readonly float[] promises;
@@ -62,8 +65,9 @@ public sealed class DaySimulationSession : IDisposable
     public event Action<SimulationDayRecord> DayCompleted;
     private static T Find<T>() where T:UnityEngine.Object => UnityEngine.Object.FindFirstObjectByType<T>()
         ?? throw new InvalidOperationException("Missing scene component: "+typeof(T).Name);
-    public DaySimulationSession(DaySimulationSettings settings,bool? batchOverride=null,bool? hireOverride=null,bool? adjustOverride=null,string name="comparison",int? daysOverride=null,float[] promisesOverride=null,bool? trainOverride=null)
+    public DaySimulationSession(DaySimulationSettings settings,bool? batchOverride=null,bool? hireOverride=null,bool? adjustOverride=null,string name="comparison",int? daysOverride=null,float[] promisesOverride=null,bool? trainOverride=null,float? initialCashOverride=null)
     {
+        this.initialCashOverride=initialCashOverride;
         this.settings=settings;batch=batchOverride??settings.BatchDispatch;hire=hireOverride??settings.HireApplicants;adjust=adjustOverride??settings.AdjustPromise;policyName=name;train=trainOverride??settings.TrainCouriers;
         if(!Application.isPlaying)throw new InvalidOperationException("Enter Play first.");
         days=daysOverride??settings.DaysPerPolicy;promises=promisesOverride??settings.PromiseSeconds;seed=settings.RandomSeed;step=settings.ClockStepSeconds;maximumDaySeconds=settings.MaximumDaySeconds;
@@ -86,7 +90,18 @@ public sealed class DaySimulationSession : IDisposable
     {
         // Separate sources prevent UI rendering/recruitment from consuming order/accident randomness.
         spawner.SeedOverride=seed;dynamics.SeedOverride=seed;recruitment.SeedOverride=seed;
-        campaign.NewGame();currentPromise=promises[policy];spawner.SetPromiseSeconds(currentPromise);
+        // E2 is an experimental initial condition only; never change the game's configured cash.
+        var funding = new SerializedObject(economy);
+        var initial = funding.FindProperty("initialCash");
+        float originalCash = initial.floatValue;
+        try
+        {
+            if (initialCashOverride.HasValue) { initial.floatValue=initialCashOverride.Value;funding.ApplyModifiedPropertiesWithoutUndo(); }
+            campaign.NewGame();
+        }
+        finally { initial.floatValue=originalCash;funding.ApplyModifiedPropertiesWithoutUndo(); }
+        previousTrend=trendStreak=0;
+        currentPromise=promises[policy];spawner.SetPromiseSeconds(currentPromise);
     }
     public void Step()
     {
@@ -107,9 +122,12 @@ public sealed class DaySimulationSession : IDisposable
             progression.TrackRoster();trained="";trainingCost=0;
             if(train)
             {
-                var choice=roster.People.Where(p=>!training.HasAssignment(p)).SelectMany(p=>Enumerable.Range(0,6).Select(i=>new{Person=p,Ability=(CourierAbility)i}))
-                    .Where(c=>c.Person.Ability(c.Ability)<c.Person.Potential(c.Ability) && economy.Cash>=training.Cost(c.Person,c.Ability)+settings.TrainingReserve)
-                    .OrderBy(c=>c.Person.Ability(c.Ability)).FirstOrDefault();
+                var choice=roster.People.Where(p=>!training.HasAssignment(p))
+                    .Select(p=>new{Person=p,Preferred=settings.PreferredTrainingAbility(p)})
+                    .Where(c=>c.Preferred.HasValue)
+                    .Select(c=>new{c.Person,Ability=c.Preferred.Value})
+                    .Where(c=>economy.Cash>=training.Cost(c.Person,c.Ability)+settings.TrainingReserve)
+                    .OrderBy(c=>settings.TrainingPriority(c.Ability)).FirstOrDefault();
                 if(choice!=null)
                 {
                     trainingCost=training.Cost(choice.Person,choice.Ability);
@@ -148,7 +166,14 @@ public sealed class DaySimulationSession : IDisposable
             if(policy>=promises.Length){Finished=true;return;}
             StartPolicy();
         }
-        else { if(adjust)currentPromise=settings.AdjustedPromise(spawner.PromiseSeconds,stats.LateCount,reputation.Value);campaign.NextDay(); }
+        else
+        {
+            int trend=settings.PromiseTrend(stats.LateCount,reputation.Value);
+            trendStreak=settings.NextTrendStreak(previousTrend,trendStreak,stats.LateCount,reputation.Value);
+            previousTrend=trend;
+            if(adjust)currentPromise=settings.AdjustedPromise(spawner.PromiseSeconds,stats.LateCount,reputation.Value,trendStreak);
+            campaign.NextDay();
+        }
     }
     public string ToCsv() => SimulationDayRecord.Header+"\n"+string.Join("\n",Records.Select(r=>r.Csv))+"\n";
     public void Dispose()

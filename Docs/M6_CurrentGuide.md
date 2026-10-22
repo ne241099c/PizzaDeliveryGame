@@ -1,5 +1,7 @@
 # M6 操作・検証ガイド
 
+> 更新：T-1報告後の続行指示により数値調整を実施。現在の値・検証・再測定は [M6_Adjustment_Results.md](M6_Adjustment_Results.md)。本書の初回測定・未適用という記述は調整前の記録です。
+
 M6-0〜M6-6。式と初期値は [計画書_M6.md](計画書_M6.md) を正とする。既存M5へ差分実装し、配達・経路計算を再利用した。段階別の変更と判断は [M6_StageResults.md](M6_StageResults.md)、比較と数値の提案は [M6_BalanceReport.md](M6_BalanceReport.md)。
 
 ## 遊び方

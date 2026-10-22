@@ -14,10 +14,11 @@ public sealed class BusinessEconomy : MonoBehaviour
     [SerializeField, Min(0)] private float wageAbilityFactor = 40f;
     [SerializeField, Min(0)] private float wageCapacityFactor = 30f;
     [SerializeField, Min(0)] private float dailyFixedCost = 150f;
-    [SerializeField, Min(0)] private float fixedCostGrowthPerDay = 15f;
+    [SerializeField, Min(0)] private float fixedCostGrowthPerDay = 25f;
     private int dayNumber=1;
     [SerializeField] private TextMeshProUGUI cashText;
     [SerializeField, Min(0)] private float initialCash = 300f;
+    public decimal InitialCash => (decimal)initialCash;
     public decimal Cash { get; private set; }
     public DayLedger Ledger { get; private set; }
     public decimal DailyRevenue => Ledger.Revenue;

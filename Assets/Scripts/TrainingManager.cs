@@ -19,9 +19,9 @@ public sealed class TrainingManager : MonoBehaviour
     [SerializeField] private DeliveryPersonSelector roster;
     [SerializeField] private BusinessEconomy economy;
     [SerializeField] private CourierProgression progression;
-    [SerializeField,Min(0)] private float baseCost=120;
-    [SerializeField,Min(0)] private float abilityCostFactor=250;
-    [SerializeField,Min(0)] private float capacityCost=400;
+    [SerializeField,Min(0)] private float baseCost=80;
+    [SerializeField,Min(0)] private float abilityCostFactor=150;
+    [SerializeField,Min(0)] private float capacityCost=300;
     [SerializeField,Range(0,1)] private float trainingDurationRatio=.5f;
     [SerializeField,Range(0,1)] private float abilityGain=.1f;
     [SerializeField,Min(1)] private int capacityGain=1;

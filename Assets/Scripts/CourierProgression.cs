@@ -13,7 +13,7 @@ public sealed class CourierProgression : MonoBehaviour
     [SerializeField,Min(0)] private float knowledgeExperiencePerRoad=15;
     [SerializeField,Min(0)] private float onTimeServiceExperience=15;
     [SerializeField,Min(0)] private float lateServiceExperience=5;
-    [SerializeField,Min(0)] private float enduranceExperiencePerSecond=.5f;
+    [SerializeField,Min(0)] private float enduranceExperiencePerSecond=.35f;
     [SerializeField,Min(0)] private float safetyExperiencePerRoad=4;
     [SerializeField] private bool automaticGrowth=true;
     private readonly List<string> growth=new();
