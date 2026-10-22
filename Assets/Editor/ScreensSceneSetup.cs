@@ -80,4 +80,38 @@ public static class ScreensSceneSetup
         foreach(var tab in groups)UIVisibility.Set(tab.gameObject,tab==staff);
         var stage=new SerializedObject(Manager.GetComponent<ScreenRouter>());stage.FindProperty("implementationStage").intValue=2;stage.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(Manager.scene);
     }
+    public static void Business()
+    {
+        var root=Find("BusinessScreen");
+        foreach(string name in new[]{"TopBackdrop","BottomBackdrop","LeftBackdrop","RightBackdrop","MapTitle"})UIVisibility.Set(Find(name).gameObject,false);
+        Place(Find("Header"),0,0,1920,160);UIVisibility.Set(Find("Title").gameObject,false);
+        Place(Find("BusinessClock"),32,66,260,44);Place(Find("PlannerScore"),1650,18,240,40);
+        Place(Find("Selections"),24,180,280,610);Place(Find("OrdersTitle"),12,8,256,40);Place(Find("OrdersViewport"),12,54,256,540);Place(Find("OrdersEmpty"),12,80,256,88);
+        var band=Find("CourierViewport");Move(band,root);Place(band,24,830,1872,230);UIVisibility.Set(Find("CouriersTitle").gameObject,false);
+        Text(root,"CourierBandTitle","COURIERS / select an available courier",24,796,1800,30,22);
+        var scroll=band.GetComponent<ScrollRect>();scroll.horizontal=true;scroll.vertical=false;
+        var content=scroll.content;var vertical=content.GetComponent<VerticalLayoutGroup>();if(vertical!=null)Undo.DestroyObjectImmediate(vertical);
+        var horizontal=content.gameObject.AddComponent<HorizontalLayoutGroup>();horizontal.spacing=16;horizontal.childControlHeight=true;horizontal.childControlWidth=true;horizontal.childForceExpandWidth=false;horizontal.childForceExpandHeight=false;
+        content.anchorMin=content.anchorMax=content.pivot=new Vector2(0,1);content.anchoredPosition=Vector2.zero;content.sizeDelta=new Vector2(0,230);
+        var fitter=content.GetComponent<ContentSizeFitter>();fitter.verticalFit=ContentSizeFitter.FitMode.Unconstrained;fitter.horizontalFit=ContentSizeFitter.FitMode.PreferredSize;
+        var prefabPath=AssetDatabase.GetAssetPath(new SerializedObject(Manager.GetComponent<DeliveryPersonSelector>()).FindProperty("deliveryPersonItemPrefab").objectReferenceValue);
+        var prefab=PrefabUtility.LoadPrefabContents(prefabPath);try{var layout=prefab.GetComponent<LayoutElement>()??prefab.AddComponent<LayoutElement>();layout.minWidth=layout.preferredWidth=320;PrefabUtility.SaveAsPrefabAsset(prefab,prefabPath);}finally{PrefabUtility.UnloadPrefabContents(prefab);}
+        foreach(var row in content.Cast<Transform>()){var layout=row.GetComponent<LayoutElement>()??row.gameObject.AddComponent<LayoutElement>();layout.minWidth=layout.preferredWidth=320;}
+        Place(Find("MapViewportFrame"),328,180,1568,610);Place(Find("MapLegend"),470,740,940,42);Place(Find("FitMap"),340,192,140,40);
+        var drawer=Full(root,"PlanningDrawer");Place(drawer,1504,180,384,610);var dg=drawer.gameObject.AddComponent<CanvasGroup>();
+        Move(Find("RouteEditor"),drawer);Place(Find("RouteEditor"),0,0,384,610);
+        Place(Find("RouteTitle"),16,14,290,30);Place(Find("RouteSummary"),16,52,350,65);Place(Find("IndividualComparison"),16,122,350,80);Place(Find("NextRoadsTitle"),16,208,350,26);
+        Place(Find("RoadViewport"),16,238,350,86);Place(Find("HistoryViewport"),16,330,350,36);Place(Find("UseSuggestedRoute"),16,410,350,42);
+        Move(Find("Footer"),drawer);Place(Find("Footer"),0,458,384,152);Place(Find("Status"),12,4,360,48);Place(Find("DispatchRoute"),12,56,360,40);Place(Find("DispatchSuggestion"),12,104,360,40);
+        Move(Find("RestartDemo"),root);Place(Find("RestartDemo"),1718,68,170,40);
+        Move(Find("UndoRoad"),drawer);Move(Find("ClearRoute"),drawer);Place(Find("UndoRoad"),16,370,164,36);Place(Find("ClearRoute"),198,370,168,36);
+        
+        var deselect=M5SceneSetup.MakeButton(drawer,"Deselect","X",328,8,44,36);
+        var slot=Find("BusinessPolicySlot");Place(slot,320,58,1280,100);
+        var minus=M5SceneSetup.MakeButton(root,"PromiseMinus","-",1610,112,54,40);var plus=M5SceneSetup.MakeButton(root,"PromisePlus","+",1674,112,54,40);
+        var ui=Manager.GetComponent<BusinessScreenUI>()??Undo.AddComponent<BusinessScreenUI>(Manager);
+        Bind(ui,"router",Manager.GetComponent<ScreenRouter>());Bind(ui,"clock",Manager.GetComponent<GameClock>());Bind(ui,"orders",Manager.GetComponent<OrderListUI>());Bind(ui,"roster",Manager.GetComponent<DeliveryPersonSelector>());Bind(ui,"drawer",dg);Bind(ui,"mapFrame",Find("MapViewportFrame"));Bind(ui,"deselect",deselect);Bind(ui,"spawner",Manager.GetComponent<OrderSpawner>());Bind(ui,"minus",minus);Bind(ui,"plus",plus);
+        var ob=Find("Selections").GetComponent<CanvasGroup>();if(ob==null)ob=Find("Selections").gameObject.AddComponent<CanvasGroup>();var cb=band.GetComponent<CanvasGroup>();if(cb==null)cb=band.gameObject.AddComponent<CanvasGroup>();Bind(ui,"ordersBand",ob);Bind(ui,"couriersBand",cb);UIVisibility.Set(drawer.gameObject,false);
+        var stage=new SerializedObject(Manager.GetComponent<ScreenRouter>());stage.FindProperty("implementationStage").intValue=3;stage.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(Manager.scene);
+    }
 }

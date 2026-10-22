@@ -137,7 +137,8 @@ public static partial class M3Validation
         var actualSettings=new SerializedObject(actualSelector);
         var actualContent=(RectTransform)actualSettings.FindProperty("deliveryPersonListContent").objectReferenceValue;
         var rosterScroll=actualContent.GetComponentInParent<ScrollRect>();
-        check(rosterScroll!=null && rosterScroll.vertical && !rosterScroll.horizontal,"M4-0 vertical roster scroll");
+        var screenRouter=UnityEngine.Object.FindFirstObjectByType<ScreenRouter>();bool bottomBand=screenRouter!=null && screenRouter.ImplementationStage>=3;
+        check(rosterScroll!=null && (bottomBand ? rosterScroll.horizontal && !rosterScroll.vertical : rosterScroll.vertical && !rosterScroll.horizontal),"M4-0 variable roster scroll follows current screen layout");
         check(rosterScroll.content==actualContent,"M4-0 preserves existing roster content");
         Canvas.ForceUpdateCanvases();
         check(actualContent.rect.height>=0 && rosterScroll.viewport.rect.height>0,"M5 short roster fits scroll viewport");
