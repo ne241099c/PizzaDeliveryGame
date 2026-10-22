@@ -15,7 +15,7 @@ public static class CityCampaignValidation
         {
             map.UseSampleForValidation=false;map.SeedOverride=1401;save.StartNewGame();clock.AutomaticTick=false;spawner.enabled=false;
             Check(map.City!=null && map.City.blocks.Count==3 && map.City.metrics.failures.Count==0,"new game opens three safe districts");
-            var first=CityGenerationValidation.Fingerprint(map.City);var ids=map.Edges.Select(e=>e.Id).ToArray();
+            save.StartNewGame();Check(save.TryParse(save.SnapshotJson(),out _,out _),"restarting the same seed refreshes saved stage");var first=CityGenerationValidation.Fingerprint(map.City);var ids=map.Edges.Select(e=>e.Id).ToArray();
             var data=save.Capture();Check(data.city!=null && save.TryParse(JsonUtility.ToJson(data),out _,out _),"seed and stage save validates");
             map.SeedOverride=1402;save.StartNewGame();Check(CityGenerationValidation.Fingerprint(map.City)!=first,"new seed changes town");
             campaign.RestorePreparation(data);Check(CityGenerationValidation.Fingerprint(map.City)==first,"Continue rebuilds exact saved town");

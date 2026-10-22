@@ -51,7 +51,7 @@ public sealed partial class BusinessView : MonoBehaviour
         if(router!=null)router.Changed-=ScreenChanged;
         if(map!=null)map.PointerInputEnabled=true;
     }
-    private void DayStarted(){numbers.Clear();nextNumber=1;observedOrders.Clear();cancelledNotices.Clear();dispatchOrdersSignature="";ShowZone(ShopZone.Kitchen,true);}
+    private void DayStarted(){numbers.Clear();nextNumber=1;observedOrders.Clear();cancelledNotices.Clear();dispatchOrdersSignature=null;ShowZone(ShopZone.Kitchen,true);}
     private void AssignNumbers(){foreach(var o in orders.Orders){observedOrders.Add(o);if(!numbers.ContainsKey(o))numbers[o]=nextNumber++;}}
     public int Number(Order o){if(!numbers.TryGetValue(o,out int n)){AssignNumbers();numbers.TryGetValue(o,out n);}return n;}
     private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}}
@@ -160,6 +160,7 @@ public sealed partial class BusinessView : MonoBehaviour
         else if(urgent){text="もうすぐ目安";fill=T.berry;}
         else if(order.IsReady){text=handover.IsBagged(order)?(handover.Holder(order)?.Name+" のバッグ"):"梱包済み";fill=T.basil;}
         else if(job==null){text="順番待ち";fill=T.disabled;ink=T.line;}
+        else if(job.QueuedForOven){text=cooking.StageCaption(order);fill=T.cheese;ink=T.line;}
         else if(job.Stage==PizzaStage.Baked){text="梱包待ち";fill=T.basil;}
         else if(job.Stage==PizzaStage.Baking){text="焼いている";fill=T.cheese;ink=T.line;}
         else if(job.Worker==PizzaWorker.Player){text="あなたが調理中";fill=T.tomato;}

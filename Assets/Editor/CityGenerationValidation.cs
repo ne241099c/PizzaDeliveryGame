@@ -23,6 +23,8 @@ public static class CityGenerationValidation
             }
             finally{UnityEngine.Object.Destroy(a.map);UnityEngine.Object.Destroy(b.map);UnityEngine.Object.Destroy(larger.map);}
         }
+        var custom=new CityGenerationSettings();custom.templates.First(t=>t.kind==DistrictKind.Park).addressPositions[0]=new Vector2(.7f,-.3f);var edited=CityGenerator.Build(72,3,custom);
+        try{Check(Mathf.Abs(edited.map.Nodes.First(n=>n.Id=="B0_H1").Position.x-(7+.7f*custom.blockSize))<.001f,"template address positions are data");}finally{UnityEngine.Object.Destroy(edited.map);}
         return $"PASS: {checks} city generation checks.";
     }
 }

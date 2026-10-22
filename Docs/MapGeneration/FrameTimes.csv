@@ -1,0 +1,3 @@
+view,edges,median_ms,p95_ms,mean_fps
+normal,35,13.845,14.647,71.03
+ten-times,356,16.571,17.959,59.66

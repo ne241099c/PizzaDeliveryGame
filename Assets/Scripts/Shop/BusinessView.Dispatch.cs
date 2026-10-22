@@ -107,7 +107,15 @@ public sealed partial class BusinessView
         foreach(var o in bag)if(stops[stops.Count-1]!=o.DestinationNodeId)stops.Add(o.DestinationNodeId);
         stops.Add(map.StoreNodeId);return stops;
     }
-    private List<string> Path(string a,string b)=>RoadPathfinder.FindShortestPath(map.Edges,a,b,e=>e.Distance);
+    private int distanceCacheRevision=-1;
+    private readonly Dictionary<(string,string),List<string>> distancePaths=new();
+    // These distance-only paths are immutable during one map revision. Clear on seed/day/size changes.
+    private List<string> Path(string a,string b)
+    {
+        if(distanceCacheRevision!=map.MapRevision){distanceCacheRevision=map.MapRevision;distancePaths.Clear();}
+        if(!distancePaths.TryGetValue((a,b),out var path)){path=RoadPathfinder.FindShortestPath(map.Edges,a,b,e=>e.Distance);distancePaths[(a,b)]=path;}
+        return path;
+    }
     /// <summary>Legs from one stop to the next. The automatic route takes the shortest distance; the player's route
     /// passes the waypoint dragged onto that leg.</summary>
     private List<(string from,string to,List<string> edges)> Legs(DeliveryPerson p,IReadOnlyList<Order> bag,bool automatic)
@@ -329,17 +337,20 @@ public sealed partial class BusinessView
     }
 
     // ---- pins on the map (world space, constant screen size) ----
+    private string pinViewSignature;
     private float Px=>Camera.main.orthographicSize*2f/Mathf.Max(1,Camera.main.pixelHeight);
     private void UpdatePins()
     {
         if(map==null || !map.IsReady)return;var cam=Camera.main;if(cam==null)return;
         if(pinRoot==null){pinRoot=new GameObject("ShopMapPins").transform;pinRoot.SetParent(map.transform,false);}
-        bool show=router.Current==ScreenId.Business && Zone==ShopZone.Dispatch;pinRoot.gameObject.SetActive(show);if(!show)return;
+        bool show=router.Current==ScreenId.Business && Zone==ShopZone.Dispatch;pinRoot.gameObject.SetActive(show);if(!show){pinViewSignature=null;return;}
         float px=Px;
         foreach(var id in pins.Keys.Where(id=>!map.HasNode(id)).ToArray()){Destroy(pins[id].Root.gameObject);pins.Remove(id);}
         var person=roster.SelectedPerson;var bag=person!=null && person.IsAvailable?handover.BagOf(person):System.Array.Empty<Order>();
         var held=Held;UpdateNear(held);
         var waiting=orders.Orders.Where(o=>o.Status==OrderStatus.Pending).OrderBy(o=>o.Deadline).ToList();
+        string signature=map.MapRevision+"/"+cam.transform.position.ToString("R")+"/"+cam.orthographicSize.ToString("R")+"/"+cam.pixelHeight+"/"+person?.Id+"/"+held?.Order?.Id+"/"+string.Join(",",bag.Select(o=>o.Id))+"/"+string.Join(",",waiting.Select(o=>o.Id+o.Baking))+"/"+T.line.GetHashCode()+T.paper.GetHashCode()+T.basil.GetHashCode();
+        if(signature==pinViewSignature)return;pinViewSignature=signature;
         foreach(var node in map.Nodes)
         {
             if(!node.IsStore && node.NodeType!=NodeType.DeliveryAddress)continue;
@@ -349,13 +360,14 @@ public sealed partial class BusinessView
             int visit=bag.Select(o=>o.DestinationNodeId).Distinct().ToList().IndexOf(node.Id);
             var order=waiting.FirstOrDefault(o=>o.DestinationNodeId==node.Id);
             bool red=visit>=0 || (order!=null && order.IsReady);
-            pin.Sprite.sprite=UiKit.Art(red?"pin_drop":"pin_white");pin.Sprite.transform.localScale=Vector3.one*(red?50:42);pin.Sprite.transform.localPosition=new Vector3(0,red?36:30,0);
-            pin.Number.text=visit>=0?(visit+1).ToString():order!=null?"#"+Number(order):"";pin.Number.fontSize=visit>=0?220:150;
-            pin.Number.color=visit>=0 || order==null || order.IsReady?T.line:T.inkSub;pin.Number.transform.localPosition=new Vector3(0,red?44:36,0);
+            bool compact=map.City!=null && map.CitySettings.blockSize/px<T.cityDetailMinimumBlockPixels;
+            pin.Sprite.sprite=UiKit.Art(red?"pin_drop":"pin_white");pin.Sprite.transform.localScale=Vector3.one*(compact?T.cityCompactPinPixels:red?50:42);pin.Sprite.transform.localPosition=new Vector3(0,compact?14:red?36:30,0);
+            pin.Number.text=visit>=0?(visit+1).ToString():order!=null?"#"+Number(order):"";pin.Number.fontSize=compact?T.cityCompactNumberSize:visit>=0?220:150;
+            pin.Number.color=visit>=0 || order==null || order.IsReady?T.line:T.inkSub;pin.Number.transform.localPosition=new Vector3(0,compact?16:red?44:36,0);
             bool near=Carries(held) && nearSeconds.TryGetValue(node.Id,out _);
             pin.Glow.enabled=near;
             if(near)SetPinLabel(pin,nearSeconds[node.Id]<.5f?"同じ届け先":$"近い・{nearSeconds[node.Id]:F0}秒",T.basil,Color.white);
-            else SetPinLabel(pin,order!=null || visit>=0?ShopStrings.House(map,node.Id):"",T.paper,T.line);
+            else SetPinLabel(pin,!compact && (order!=null || visit>=0)?ShopStrings.House(map,node.Id):"",T.paper,T.line);
             pin.Sprite.color=new Color(1,1,1,order!=null || visit>=0?1:.45f);
         }
     }
@@ -418,7 +430,7 @@ public sealed partial class BusinessView
             var h=handles[i];
             if(i>=legs.Count || legs[i].edges.Count==0){h.root.gameObject.SetActive(false);continue;}
             var at=Along(Polyline(legs[i].from,legs[i].edges),.5f);handles[i]=(h.root,at,legs[i].from,legs[i].to);
-            h.root.gameObject.SetActive(true);h.root.localScale=Vector3.one*px;
+            h.root.gameObject.SetActive(map.City==null || map.CitySettings.blockSize/px>=T.cityDetailMinimumBlockPixels);h.root.localScale=Vector3.one*px;
             if(!(handleDragging && handlePress==i))h.root.position=new Vector3(at.x,at.y,-1.5f);
         }
         // Separate outbound and return with coloured, offset strokes and moving round direction markers.

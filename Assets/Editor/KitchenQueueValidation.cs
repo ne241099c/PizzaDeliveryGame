@@ -22,6 +22,9 @@ public static class KitchenQueueValidation
             clock.Advance(cook.BakeSeconds);cook.TakeOut(0);
             Check(pizzas[0].IsReady && cook.OvenJob(0).Order==pizzas[1],"taking out first starts second immediately");
             list.RemoveOrders(new[]{pizzas[2]});Check(!cook.OvenQueue.Any(),"removed order leaves oven queue");
+            var a=new Order("Goal1","Claimed first",clock.ElapsedSeconds,150);var b=new Order("Goal2","Queued first",clock.ElapsedSeconds,150);list.AddOrder(a);list.AddOrder(b);
+            foreach(var pair in new[]{(a,0),(b,1)})Check(cook.Claim(pair.Item1,pair.Item2) && cook.AddDough(pair.Item2) && cook.AddSauce(pair.Item2,1) && cook.AddCheese(pair.Item2) && cook.AddTopping(pair.Item2,Topping.Basil),"prepare simultaneous queue candidates");
+            Check(cook.PutInOven(1,0) && cook.PutInOven(0,0) && cook.OvenQueue.Select(j=>j.Order).SequenceEqual(new[]{b,a}),"FIFO uses enqueue order when timestamps tie");
             var field=new SerializedObject(map);float rate=field.FindProperty("deliverySpeedMultiplier").floatValue;float faster=map.GetTravelTime("Store-N1",1);
             field.FindProperty("deliverySpeedMultiplier").floatValue=1;field.ApplyModifiedPropertiesWithoutUndo();float original=map.GetTravelTime("Store-N1",1);
             field.FindProperty("deliverySpeedMultiplier").floatValue=rate;field.ApplyModifiedPropertiesWithoutUndo();

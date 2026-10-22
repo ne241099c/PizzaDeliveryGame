@@ -28,7 +28,7 @@ public static class PizzaMenuValidation
             {
                 var o=new Order("Goal1","Recipe",clock.ElapsedSeconds,150,kind:kind);list.AddOrder(o);
                 Check(cook.Claim(o,0) && cook.AddDough(0) && cook.AddSauce(0,1) && cook.AddCheese(0),"manual recipe begins "+kind);
-                foreach(var topping in o.RequiredToppings)Check(cook.AddTopping(0,topping),"required topping "+topping);
+                foreach(var topping in kind==PizzaKind.Seafood?o.RequiredToppings.Reverse():o.RequiredToppings)Check(cook.AddTopping(0,topping),"required topping "+topping);
                 Check(cook.JobFor(o).ToppingPoint && cook.PutInOven(0,0),"correct ingredients permit bake "+kind);
                 clock.Advance(cook.BakeDuration(o));Check(cook.TakeOut(0) && o.IsReady && o.Stars==3,"recipe bakes and auto packs "+kind);
                 int points=kind==PizzaKind.Seafood?150:kind==PizzaKind.Pepperoni?120:100;

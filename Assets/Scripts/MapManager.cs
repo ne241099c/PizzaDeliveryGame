@@ -33,7 +33,11 @@ public class MapManager : MonoBehaviour
     public bool UseSampleForValidation {get;set;}
     public int? SeedOverride {get;set;}
     public int? BlocksOverride {get;set;}
-    public string TodayCityInfo=>City==null?"いつもの街で営業します。":$"街区{City.blocks.Count} / "+(City.construction.Count==0?"工事なし":$"{City.construction[0]}は工事中・徐行（{citySettings.constructionDays}日ごとに更新）");
+    public string TodayCityInfo=>City==null?"いつもの街で営業します。":$"街区{City.blocks.Count} / "+(City.construction.Count==0?"工事なし":$"{RoadCaption(City.construction[0])}は工事中・徐行（{citySettings.constructionDays}日ごとに更新）");
+    public string RoadCaption(string edgeId)
+    {
+        if(City!=null){var block=City.blocks.FirstOrDefault(b=>edgeId.StartsWith($"B{b.index}_"));if(block!=null)return block.template.title+" "+(block.index+1)+"の通り";}return "駅前通り";
+    }
     public string TomorrowCityInfo(int day)=>City!=null && citySettings.Blocks(day+1)>City.blocks.Count?"あした、新しい街区が開きます。":"あしたも同じ街で営業します。";
     public void NewCampaignCity()
     {
@@ -54,7 +58,7 @@ public class MapManager : MonoBehaviour
             if(City!=null){var previousCity=City;City=null;LoadMap(null);Destroy(previousCity.map);}return;
         }
         int blocks=BlocksOverride??citySettings.Blocks(day);
-        if(City!=null && City.seed==CityState.seed && City.day==day && City.blocks.Count==blocks)return;
+        if(City!=null && CityState.blocks==blocks && City.seed==CityState.seed && City.day==day && City.blocks.Count==blocks)return;
         var old=City;var next=CityGenerator.Generate(CityState.seed,blocks,citySettings);
         if(day>=citySettings.constructionStartDay)
         {
@@ -74,6 +78,28 @@ public class MapManager : MonoBehaviour
         nodes.Clear();edges.Clear();nodeLookup.Clear();edgeLookup.Clear();outgoing.Clear();nodeViews.Clear();edgeViews.Clear();
         if(definition!=null){nodes.AddRange(definition.Nodes);edges.AddRange(definition.Edges);}else CreateMap();
         BuildViews();
+    }
+    private sealed class RenderChunk
+    {
+        public Bounds bounds;public readonly List<Renderer> renderers=new();
+    }
+    private readonly Dictionary<Vector2Int,RenderChunk> renderChunks=new();
+    public int RenderChunkCount=>renderChunks.Count;
+    public int MapRevision {get;private set;}
+    private void IndexRenderChunks()
+    {
+        renderChunks.Clear();float size=citySettings.blockSize+citySettings.blockGap;
+        foreach(var renderer in nodeViews.Values.SelectMany(v=>v.GetComponentsInChildren<Renderer>()).Concat(edgeViews.Values.SelectMany(v=>v.GetComponentsInChildren<Renderer>())).Where(r=>r.enabled))
+        {
+            var at=renderer.bounds.center;var key=new Vector2Int(Mathf.FloorToInt(at.x/size),Mathf.FloorToInt(at.y/size));
+            if(!renderChunks.TryGetValue(key,out var chunk)){chunk=new RenderChunk{bounds=renderer.bounds};renderChunks.Add(key,chunk);}else chunk.bounds.Encapsulate(renderer.bounds);
+            chunk.renderers.Add(renderer);
+        }
+    }
+    private void LateUpdate()
+    {
+        var camera=Camera.main;if(camera==null)return;var planes=GeometryUtility.CalculateFrustumPlanes(camera);
+        foreach(var chunk in renderChunks.Values){bool visible=GeometryUtility.TestPlanesAABB(planes,chunk.bounds);foreach(var renderer in chunk.renderers)if(renderer!=null && renderer.enabled!=visible)renderer.enabled=visible;}
     }
     private readonly List<MapNode> nodes = new();
     private readonly List<MapEdge> edges = new();
@@ -105,7 +131,7 @@ public class MapManager : MonoBehaviour
         ValidateAndIndex();
         foreach(var node in nodes){var view=Instantiate(nodeViewPrefab,nodesParent);view.Initialize(node);nodeViews.Add(node.Id,view);}
         foreach(var edge in edges){var view=Instantiate(edgeViewPrefab,edgesParent);view.Initialize(edge,nodeLookup[edge.NodeAId],nodeLookup[edge.NodeBId],this,false);edgeViews.Add(edge.Id,view);}
-        IsReady=true;PreviewRoute(Array.Empty<string>(),StoreNodeId,1);MapReady?.Invoke();
+        IndexRenderChunks();MapRevision++;IsReady=true;PreviewRoute(Array.Empty<string>(),StoreNodeId,1);MapReady?.Invoke();
     }
 
     private void Update()

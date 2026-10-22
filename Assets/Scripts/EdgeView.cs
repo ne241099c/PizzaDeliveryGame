@@ -65,7 +65,7 @@ public class EdgeView : MonoBehaviour
         var theme=UITheme.Active;bool main=road.RoadType==RoadType.Main;bool route=used || last;
         float width=Mathf.Min(main?theme.mapMainRoad:theme.mapBackRoad,theme.mapRoadMaxPixels*styledPixelScale);
         Color fill=route && !directionalView?theme.tomato:main?theme.mainRoadFill:theme.backRoadFill;
-        Color edge=route?theme.line:available?theme.tomato:main?theme.mainRoadEdge:theme.backRoadEdge;
+        Color edge=route?theme.line:available && !directionalView?theme.tomato:main?theme.mainRoadEdge:theme.backRoadEdge;
         lineRenderer.numCapVertices=6;lineRenderer.startWidth=lineRenderer.endWidth=width;lineRenderer.startColor=lineRenderer.endColor=fill;
         if(border!=null){border.numCapVertices=6;border.startWidth=border.endWidth=width+Mathf.Min(theme.mapRoadEdge,theme.mapRoadBorderPixels*styledPixelScale)*(available && !route?1.6f:1);border.startColor=border.endColor=edge;}
     }

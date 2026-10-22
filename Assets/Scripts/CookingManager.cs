@@ -18,6 +18,7 @@ public sealed class PizzaJob
     public float StartedAt {get;internal set;}
     public float AssembledAt {get;internal set;}
     public bool QueuedForOven {get;internal set;}
+    public long QueueSequence {get;internal set;}
     public float OvenStartedAt {get;internal set;}
     public float TakenOutAt {get;internal set;}
     public float PackingStartedAt {get;internal set;}
@@ -73,6 +74,7 @@ public sealed class CookingManager : MonoBehaviour
     private float[] benchFreeSince=Array.Empty<float>(),ovenFreeSince=Array.Empty<float>();
     private readonly HashSet<Order> expired=new();
     private float processed;
+    private long queueSequence;
     private ScoreManager score;
     private float Expires(Order order) { if(score==null)score=FindFirstObjectByType<ScoreManager>(); return score.CancellationAt(order); }
     public float PackSeconds=>packSeconds;
@@ -102,7 +104,7 @@ public sealed class CookingManager : MonoBehaviour
     public IReadOnlyList<PizzaJob> Jobs=>jobs;
     public IReadOnlyList<Order> CookingOrders=>ovens.Where(o=>o!=null).Select(o=>o.Order).ToArray();
     public PizzaJob BenchJob(int index)=>index>=0 && index<benches.Length?benches[index]:null;
-    public IEnumerable<PizzaJob> OvenQueue=>jobs.Where(j=>j.QueuedForOven).OrderBy(j=>j.AssembledAt);
+    public IEnumerable<PizzaJob> OvenQueue=>jobs.Where(j=>j.QueuedForOven).OrderBy(j=>j.AssembledAt).ThenBy(j=>j.QueueSequence);
     public PizzaJob OvenJob(int index)=>index>=0 && index<ovens.Length?ovens[index]:null;
     public IEnumerable<PizzaJob> Shelf=>jobs.Where(j=>j.Stage==PizzaStage.Baked).OrderBy(j=>j.TakenOutAt);
     public IEnumerable<PizzaJob> PackingTable=>jobs.Where(j=>j.Stage==PizzaStage.Boxed && j.Worker==PizzaWorker.Player);
@@ -130,7 +132,7 @@ public sealed class CookingManager : MonoBehaviour
         OperatingOvenCount=OvenCount;jobs.Clear();expired.Clear();staff.Clear();
         ovens=new PizzaJob[OvenCount];benches=new PizzaJob[BenchCount];ovenFreeSince=new float[OvenCount];benchFreeSince=new float[BenchCount];
         if(crew!=null){crew.ResetDailyState();foreach(var member in crew.People)staff.Add(new StaffSlot{Staff=member});}
-        MaximumQueueLength=0;BusySeconds=0;PackedByPlayer=0;packedByStaff.Clear();processed=clock!=null?clock.ElapsedSeconds:0;
+        MaximumQueueLength=0;queueSequence=0;BusySeconds=0;PackedByPlayer=0;packedByStaff.Clear();processed=clock!=null?clock.ElapsedSeconds:0;
     }
     private void Synchronize()=>AdvanceTo(clock.ElapsedSeconds);
     private void Tick(float before,float now)=>AdvanceTo(now);
@@ -187,7 +189,7 @@ public sealed class CookingManager : MonoBehaviour
         if(staff.Count==0 || order.Baking!=BakingState.Waiting)return null;
         var waiting=orders.Orders.Where(o=>o.Baking==BakingState.Waiting && JobFor(o)==null && !expired.Contains(o)).OrderBy(o=>o.SpawnedAt).ToList();
         int ahead=waiting.IndexOf(order);if(ahead<0)return null;
-        float work=staff.Average(s=>StaffWorkSeconds(s.Staff));
+        float work=staff.Average(s=>StaffWorkSeconds(s.Staff,order));
         float firstFree=staff.Min(s=>s.Task==null?0:Mathf.Max(0,s.Until-now));
         float cycle=Mathf.Max(work/Mathf.Max(1,Mathf.Min(staff.Count,BenchCount)),bakeSeconds/Mathf.Max(1,ovens.Length));
         return Mathf.Max(firstFree+ahead*cycle+work,ovenFree)+BakeDuration(order)+packSeconds;
@@ -292,7 +294,7 @@ public sealed class CookingManager : MonoBehaviour
     private int FreeBench(){for(int i=0;i<benches.Length;i++)if(benches[i]==null)return i;return -1;}
     private void QueueOven(PizzaJob job,float at)
     {
-        job.AssembledAt=at;job.QueuedForOven=true;
+        job.AssembledAt=at;job.QueueSequence=++queueSequence;job.QueuedForOven=true;
         if(job.Bench>=0 && benches[job.Bench]==job){benches[job.Bench]=null;benchFreeSince[job.Bench]=at;}
         job.Bench=-1;
     }
@@ -352,7 +354,7 @@ public sealed class CookingManager : MonoBehaviour
     public bool AddTopping(int bench,Topping topping)=>Step(bench,PizzaStage.Cheese,j=>
     {
         j.AddedToppings.Add(topping);j.AddedTopping=j.AddedToppings[0];
-        if(j.AddedToppings.Count>=j.Order.RequiredToppings.Length){j.ToppingPoint=j.AddedToppings.SequenceEqual(j.Order.RequiredToppings);j.Stage=PizzaStage.Topping;}
+        if(j.AddedToppings.Count>=j.Order.RequiredToppings.Length){j.ToppingPoint=j.AddedToppings.OrderBy(t=>t).SequenceEqual(j.Order.RequiredToppings.OrderBy(t=>t));j.Stage=PizzaStage.Topping;}
     });
     public bool PutInOven(int bench,int oven)
     {

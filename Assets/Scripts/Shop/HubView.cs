@@ -280,7 +280,7 @@ public sealed class HubView : MonoBehaviour
     }
     private void BuildFacilities()
     {
-        var items=new[]{(FacilityType.Oven,"fac_oven"),(FacilityType.Workbench,"fac_bench"),(FacilityType.Bike,"fac_bike"),(FacilityType.Menu,"fac_bench"),(FacilityType.Advertising,"fac_ad")};
+        var items=new[]{(FacilityType.Oven,"fac_oven"),(FacilityType.Workbench,"fac_bench"),(FacilityType.Bike,"fac_bike"),(FacilityType.Menu,"ticket"),(FacilityType.Advertising,"fac_ad")};
         float w=300;for(int i=0;i<items.Length;i++)FacilityCard(content,items[i].Item1,items[i].Item2,i*(w+22),w);
     }
     private void FacilityCard(Transform parent,FacilityType type,string picture,float x,float w)

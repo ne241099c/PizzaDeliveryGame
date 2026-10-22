@@ -28,7 +28,7 @@ public sealed class PizzaVisual
         bool hand=job.Worker==PizzaWorker.Player;
         sauce.enabled=visible>=2 && !hand;Blobs.gameObject.SetActive(hand && visible>=1);
         cheese.enabled=visible>=3;
-        topping.enabled=visible>=4 && job.AddedTopping.HasValue || staffAssembling && visible>=4;
+        topping.enabled=job.AddedToppings.Count>0 || visible>=4 && job.AddedTopping.HasValue || staffAssembling && visible>=4;
         var t=job.AddedTopping??job.Order.RequiredTopping;topping.sprite=UiKit.Art(t==Topping.Pepperoni?"pizza_pepperoni":t==Topping.Shrimp?"pizza_shrimp":"pizza_basil");
         secondTopping.enabled=visible>=4 && job.AddedToppings.Contains(Topping.Squid);
         bool baked=stage>=PizzaStage.Baked;var warm=new Color(.93f,.80f,.62f);dough.color=baked?warm:Color.white;
@@ -229,7 +229,7 @@ public sealed partial class BusinessView
                     case PizzaStage.Ticket:v.HintText.text="① 生地を置く";v.HintBar.Set(0);break;
                     case PizzaStage.Dough:{float c=Coverage(v);v.HintText.text=$"② ソースをなぞる {c*100:F0}% / 70%で★";v.HintBar.Set(c,cooking.SauceThreshold,c>=cooking.SauceThreshold?T.basil:T.cheese);break;}
                     case PizzaStage.Sauce:v.HintText.text="③ チーズをのせる";v.HintBar.Set(.5f,-1,T.cheese);break;
-                    case PizzaStage.Cheese:v.HintText.text="④ 具をのせる: "+ShopStrings.Topping(job.Order.RequiredToppings[Mathf.Min(job.AddedToppings.Count,job.Order.RequiredToppings.Length-1)]);v.HintBar.Set(.7f,-1,T.cheese);break;
+                    case PizzaStage.Cheese:v.HintText.text="④ 具をのせる: "+ShopStrings.Topping(job.Order.RequiredToppings.FirstOrDefault(t=>!job.AddedToppings.Contains(t)));v.HintBar.Set(.7f,-1,T.cheese);break;
                     default:v.HintText.text="⑤ 窯へ入れる";v.HintBar.Set(1,-1,T.basil);break;
                 }
             }

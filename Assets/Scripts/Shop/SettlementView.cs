@@ -102,6 +102,7 @@ public sealed class SettlementView : MonoBehaviour
         for(int i=0;i<26;i++){var z=UiKit.Box(receipt,"Zig"+i,10+i*30,650,22,22);z.localRotation=Quaternion.Euler(0,0,45);UiKit.Fill(z,T.paper,0);}
         right=UiKit.Box(root,"Right",980,204,820,640);
         BuildGrowth();BuildQuality();BuildAccidents();
+        var previousCityNotice=root.Find("CityTomorrow");if(previousCityNotice!=null)Destroy(previousCityNotice.gameObject);
         UiKit.Label(root,"CityTomorrow",FindFirstObjectByType<MapManager>().TomorrowCityInfo(campaign.DayNumber),120,962,1050,48,T.bodySize,T.line,FontRole.Black);
         foreach(var r in rows)r.row.gameObject.SetActive(false);
     }

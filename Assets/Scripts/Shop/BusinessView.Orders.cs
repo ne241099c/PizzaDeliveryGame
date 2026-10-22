@@ -119,6 +119,7 @@ public sealed partial class BusinessView
         if(o.IsReady)return ("焼けた",T.basil,Color.white);
         var job=cooking.JobFor(o);
         if(job==null)return ("調理待ち",T.disabled,T.line);
+        if(job.QueuedForOven)return (cooking.StageCaption(o),T.cheese,T.line);
         if(job.Stage>=PizzaStage.Baking)return ("焼いている",T.cheese,T.line);
         return ("調理中",job.Worker==PizzaWorker.Player?T.tomato:T.info,Color.white);
     }

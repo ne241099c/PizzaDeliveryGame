@@ -10,7 +10,9 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     [Range(.1f,2f)] public float demand=1;
     [Range(.1f,1f)] public float traffic=.9f;
     public Vector3 pizzaWeights=new(3,1,1);
-    public bool shortcut=true;
+    public bool shortcut=true,trees,buildings,river;
+    public Vector2[] roadPorts={new(0,0),new(1,0),new(1,-1),new(0,-1)};
+    public Vector2[] addressPositions={new(.6f,-.3f),new(.6f,-.7f)};
     public string title="住宅街";
 }
 [Serializable] public sealed class CityGenerationSettings
@@ -31,10 +33,10 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     [Min(.01f)] public float nearbyDistance=10;
     public DistrictTemplate[] templates={
         new(){kind=DistrictKind.Residential,title="住宅街",pizzaWeights=new(5,2,1)},
-        new(){kind=DistrictKind.Shopping,title="商店街",demand=1.3f,pizzaWeights=new(2,2,5),traffic=.75f},
-        new(){kind=DistrictKind.Park,title="公園通り",demand=.6f,shortcut=false,pizzaWeights=new(5,1,1)},
-        new(){kind=DistrictKind.Riverside,title="川沿い",demand=.9f,pizzaWeights=new(3,2,4)},
-        new(){kind=DistrictKind.Apartments,title="団地",demand=1.5f,pizzaWeights=new(2,5,1)}};
+        new(){kind=DistrictKind.Shopping,buildings=true,title="商店街",demand=1.3f,pizzaWeights=new(2,2,5),traffic=.75f},
+        new(){kind=DistrictKind.Park,trees=true,title="公園通り",demand=.6f,shortcut=false,pizzaWeights=new(5,1,1)},
+        new(){kind=DistrictKind.Riverside,river=true,title="川沿い",demand=.9f,pizzaWeights=new(3,2,4)},
+        new(){kind=DistrictKind.Apartments,buildings=true,title="団地",demand=1.5f,pizzaWeights=new(2,5,1)}};
     public int Stage(int day){int stage=0;for(int i=0;i<stageDays.Length;i++)if(day>=stageDays[i])stage=i;return Mathf.Min(stage,stageBlocks.Length-1);}
     public int Blocks(int day)=>stageBlocks[Stage(day)];
 }
@@ -69,7 +71,9 @@ public static class CityGenerator
             int col=i%s.columns,row=i/s.columns;float size=s.blockSize,x=7+col*(size+s.blockGap),y=-row*(size+s.blockGap);
             string a=$"B{i}_A",b=$"B{i}_B",c=$"B{i}_C",d=$"B{i}_D",h1=$"B{i}_H1",h2=$"B{i}_H2";
             var area=new Rect(x,y-size,size,size);var block=new CityBlock{index=i,template=template,area=area,addresses=new[]{h1,h2}};city.blocks.Add(block);
-            m.Nodes.AddRange(new[]{new MapNode(a,new(x,y),NodeType.Intersection,false),new MapNode(b,new(x+size,y),NodeType.Intersection,false),new MapNode(c,new(x+size,y-size),NodeType.Intersection,false),new MapNode(d,new(x,y-size),NodeType.Intersection,false),new MapNode(h1,new(x+size*.6f,y-size*.3f),NodeType.DeliveryAddress,false),new MapNode(h2,new(x+size*.6f,y-size*.7f),NodeType.DeliveryAddress,false)});
+            if(template.roadPorts.Length!=4 || template.addressPositions.Length!=2)throw new ArgumentException("Template needs four ports and two address candidates.");
+            Vector2 At(Vector2 local)=>new Vector2(x,y)+local*size;
+            m.Nodes.AddRange(new[]{new MapNode(a,At(template.roadPorts[0]),NodeType.Intersection,false),new MapNode(b,At(template.roadPorts[1]),NodeType.Intersection,false),new MapNode(c,At(template.roadPorts[2]),NodeType.Intersection,false),new MapNode(d,At(template.roadPorts[3]),NodeType.Intersection,false),new MapNode(h1,At(template.addressPositions[0]),NodeType.DeliveryAddress,false),new MapNode(h2,At(template.addressPositions[1]),NodeType.DeliveryAddress,false)});
             void Edge(string id,string from,string to,float distance,RoadType type=RoadType.Main,float traffic=1,bool both=true)=>m.Edges.Add(new MapEdge($"B{i}_"+id,from,to,distance,type,traffic,both));
             float length=size*s.roadDistanceScale;
             Edge("AB",a,b,length,traffic:template.traffic);Edge("BC",b,c,length,traffic:template.traffic);Edge("CD",c,d,length);Edge("DA",d,a,length);
@@ -89,7 +93,7 @@ public static class CityGenerator
         for(int attempt=0;attempt<s.retryCount;attempt++)
         {
             GeneratedCity city=null;
-            try{city=Build(seed,blocks,s,attempt);city.attempt=attempt;city.metrics=CityValidator.Measure(city,s);if(city.metrics.failures.Count==0)return city;}
+            try{city=Build(seed,blocks,s,attempt);city.attempt=attempt;city.metrics=CityValidator.Measure(city,s);if(city.metrics.failures.Count==0)return city;Debug.LogWarning($"City rejected seed {seed} attempt {attempt}: "+string.Join("/",city.metrics.failures));}
             catch(Exception ex){Debug.LogWarning("City generation rejected: "+ex.Message);}
             if(city!=null)UnityEngine.Object.Destroy(city.map);
         }
