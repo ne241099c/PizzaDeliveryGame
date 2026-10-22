@@ -9,6 +9,8 @@ public class MapManager : MonoBehaviour
 {
     [SerializeField] private FacilityManager facilities;
     [SerializeField, Min(0.01f)] private float baseSpeed = 10f;
+    [SerializeField, Min(0.01f), Tooltip("注文増加に合わせた全配達員共通の速度倍率")] private float deliverySpeedMultiplier=1.2f;
+    public float DeliverySpeedMultiplier=>deliverySpeedMultiplier;
     [SerializeField, Min(0f)] private float backstreetPenalty = 1f;
     [SerializeField, Min(0.01f)] private float sampleBackstreetDistance = 11f;
     [SerializeField, Min(0.01f)] private float drivingSpeedBase = 0.7f;
@@ -132,7 +134,7 @@ public class MapManager : MonoBehaviour
     public float GetTravelTime(string edgeId, float skillLevel = 1f)
     {
         MapEdge edge = GetEdge(edgeId);
-        float time = edge.Distance / (baseSpeed * edge.TrafficFactor * (facilities!=null?facilities.SpeedMultiplier:1));
+        float time = edge.Distance / (baseSpeed * deliverySpeedMultiplier * edge.TrafficFactor * (facilities!=null?facilities.SpeedMultiplier:1));
         if (edge.RoadType == RoadType.Backstreet)
             time *= 1f + (1f - Mathf.Clamp01(skillLevel)) * backstreetPenalty;
         return time;

@@ -128,7 +128,7 @@ public sealed partial class BusinessView
         v.GaugeBar=UiKit.Bar(v.Gauge,"Bar",12,30,w-24,18,T.cheese);
         v.Band=UiKit.Box(v.GaugeBar.transform,"Band",0,0,10,18);UiKit.Fill(v.Band,T.basil,4);
         var zone=v.Root.gameObject.AddComponent<DropZone>();zone.Glow=g;int o=index;
-        zone.Accepts=p=>p.Kind==DragKind.Pizza && p.Job!=null && p.Job.Stage==PizzaStage.Topping && p.Job.Worker==PizzaWorker.Player && cooking.OvenJob(o)==null;
+        zone.Accepts=p=>p.Kind==DragKind.Pizza && p.Job!=null && p.Job.Stage==PizzaStage.Topping && p.Job.Worker==PizzaWorker.Player;
         zone.Dropped=p=>{if(!cooking.PutInOven(p.Job.Bench,o))Toast("窯に入れられませんでした。",T.berry);};
         var click=v.Root.gameObject.AddComponent<DragSource>();click.Clicked=()=>ClickOven(o);
         ShopHand.Instance?.Register(zone);return v;
@@ -200,8 +200,7 @@ public sealed partial class BusinessView
     private void ClickBenchPizza(int bench)
     {
         var job=cooking.BenchJob(bench);if(job==null || job.Worker!=PizzaWorker.Player || job.Stage!=PizzaStage.Topping)return;
-        for(int o=0;o<cooking.OvenCount;o++)if(cooking.OvenJob(o)==null){cooking.PutInOven(bench,o);return;}
-        Toast("あいている窯がありません。",T.berry,null,"icon_flame");
+        if(cooking.PutInOven(bench,0) && cooking.OvenQueue.Any())Toast("窯の順番待ちに入れました。空くと自動で焼き始めます。",T.cheese,null,"icon_flame");
     }
     private void ClickOven(int oven)
     {
@@ -246,7 +245,7 @@ public sealed partial class BusinessView
             float elapsed=job!=null?now-job.OvenStartedAt:0;
             v.Fire.color=job!=null?new Color(1,1,1,.75f+.25f*Mathf.Sin(Time.unscaledTime*6)):new Color(1,1,1,.25f);
             bool player=job!=null && job.Worker==PizzaWorker.Player;v.Gauge.gameObject.SetActive(job!=null);
-            v.Title.text=$"窯{v.Index+1} ・ "+(job==null?"あいている":player?"焼いている":(job.Staff!=null?job.Staff.Name:"内勤")+"が見ている");
+            v.Title.text=$"窯{v.Index+1}（待ち{cooking.OvenQueue.Count()}） ・ "+(job==null?"あいている":player?"焼いている":(job.Staff!=null?job.Staff.Name:"内勤")+"が見ている");
             if(job!=null)
             {
                 float range=cooking.BurnAt;float progress=Mathf.Clamp01(elapsed/range);

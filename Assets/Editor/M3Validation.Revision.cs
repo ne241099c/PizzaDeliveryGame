@@ -11,8 +11,8 @@ public static partial class M3Validation
     {
         var person = new DeliveryPerson("Sora",0.9f,0.4f,1,0.3f,0.4f,0.3f);
         near(map.GetDrivingSpeedFactor(person),1.24f,"M4-2 driving speed factor");
-        near(map.GetTravelTime("Store-N1",person),1.25f/1.24f,"M4-2 main-road driving");
-        near(map.GetTravelTime("N1-N2-Backstreet",person),1.1f*1.6f/1.24f,"M4-2 backstreet driving and knowledge");
+        near(map.GetTravelTime("Store-N1",person),1.25f/1.24f/map.DeliverySpeedMultiplier,"M4-2 main-road driving");
+        near(map.GetTravelTime("N1-N2-Backstreet",person),1.1f*1.6f/1.24f/map.DeliverySpeedMultiplier,"M4-2 backstreet driving and knowledge");
         var ren=new DeliveryPerson("Ren",0.5f,0.3f,2,0.5f,0.9f,0.4f);
         check(map.GetTravelTime("Store-N1",person)<map.GetTravelTime("Store-N1",ren),"M4-2 faster driving wins on main road");
         check(map.GetTravelTime("N1-N2-Backstreet",ren)>map.GetTravelTime("N1-N2-Main",ren),"M4-2 Ren avoids backstreet");
@@ -35,8 +35,8 @@ public static partial class M3Validation
         near(spawner.DemandFactor(180),0.463463f,"M4-3 180 second demand");
         near(spawner.DemandFactor(1),2,"M4-3 demand upper clamp");
         near(spawner.DemandFactor(10000),0.4f,"M4-3 demand lower clamp");
-        near(spawner.ShortestArrivalSeconds("Goal1"),2.85f/1.3f*5,"M4-3 fastest one-way Goal1");
-        near(spawner.MinimumPromiseSeconds,2*3.05f/1.3f*5*1.1f+18,"M7 round-trip lower bound plus cooking (standard 18s: dough 2 + sauce 4 + assembly 6 + oven 6, no packing time)");
+        near(spawner.ShortestArrivalSeconds("Goal1"),2.85f/1.3f*5/map.DeliverySpeedMultiplier,"M4-3 fastest one-way Goal1");
+        near(spawner.MinimumPromiseSeconds,2*3.05f/1.3f*5*1.1f/map.DeliverySpeedMultiplier+18,"M7 round-trip lower bound plus cooking (standard 18s: dough 2 + sauce 4 + assembly 6 + oven 6, no packing time)");
         near(spawner.ReputationFactor,1,"M4-6 initial reputation gives factor one");
         float previousPromise=spawner.PromiseSeconds;
         try

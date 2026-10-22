@@ -68,7 +68,7 @@ public static class M7Validation
         var a=Start(1000);var b=new Order("Goal2","Second",0,1000);list.AddOrder(b);
         check(cook.Claim(a,0) && cook.ClaimRejection(b,0).Length>0 && !cook.Claim(b,0) && cook.Claim(b,1),"a workbench holds one pizza");
         cook.AddDough(0);cook.AddSauce(0,1);cook.AddCheese(0);cook.AddTopping(0,Topping.Basil);cook.AddDough(1);cook.AddSauce(1,1);cook.AddCheese(1);cook.AddTopping(1,Topping.Basil);
-        check(cook.PutInOven(0,0) && !cook.PutInOven(1,0),"an oven holds one pizza");
+        check(cook.PutInOven(0,0) && cook.PutInOven(1,0) && cook.OvenJob(0).Order==a && cook.OvenQueue.Single().Order==b,"one pizza bakes while the second queues");
         // Staff do not take a ticket the player claimed.
         campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();
         var busy=new Order("Goal1","Staff first",0,1000);list.AddOrder(busy);check(cook.JobFor(busy).Worker==PizzaWorker.Staff,"staff take tickets by default");

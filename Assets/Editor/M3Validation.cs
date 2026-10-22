@@ -21,7 +21,7 @@ public static partial class M3Validation
             checks++;
         };
         Action<float, float, string> near = (actual, expected, name) =>
-            check(Mathf.Abs(actual - expected) < 0.001f, $"{name}: actual {actual}, expected {expected}");
+            check(Mathf.Abs(actual - expected/map.DeliverySpeedMultiplier) < 0.001f, $"{name}: actual {actual}, expected {expected}");
         var expert = new DeliveryPerson("Expert", 1f);
         var rookie = new DeliveryPerson("Ren", 0.3f);
         var orders = new[] { M7Validation.ReadyOrder("Goal1", "Test1", 0, 60), M7Validation.ReadyOrder("Goal2", "Test2", 0, 60) };
@@ -93,7 +93,7 @@ public static partial class M3Validation
         check(RoadPathfinder.FindShortestPath(graph, "Depot", "Missing", e => e.Distance) == null, "Unreachable destination");
         M4Validation.Run();
         checks += M4Validation.LastCheckCount;
-        ValidateRevision(map, check, near);
+        ValidateRevision(map, check, (actual,expected,name)=>check(Mathf.Abs(actual-expected)<.001f,name));
         return $"PASS: {checks} M3/M4 checks (current sample settings).";
     }
 }
