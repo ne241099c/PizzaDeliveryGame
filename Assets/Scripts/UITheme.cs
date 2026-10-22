@@ -9,6 +9,7 @@ public sealed class UITheme : ScriptableObject
     [SerializeField] public Color background=Hex("#FBF3E4"),ink=Hex("#2B2118"),accent=Hex("#D8452B"),good=Hex("#4C8C4A"),money=Hex("#F2B632"),bad=Hex("#B3261E"),muted=Hex("#8A7A66"),block=Hex("#E6D5B8"),park=Hex("#BFD8A8");
     [SerializeField] public float heading=28,subheading=22,body=18,caption=14;
     [SerializeField] public int smallSpace=8,padding=16,largeSpace=24,cornerRadius=8;
+    [SerializeField,Range(0,1)] public float fontFaceDilate=.12f;
     [SerializeField] public TMP_FontAsset font;
     [SerializeField] public Sprite roundedPanel;
     [SerializeField] public Color[] courierColors={Hex("#27658A"),Hex("#835191"),Hex("#956129"),Hex("#3E7770"),Hex("#AC4E72"),Hex("#546536")};

@@ -8,7 +8,8 @@ public sealed class ThemedText : MonoBehaviour
     public void Apply(UITheme theme)
     {
         var text=GetComponent<TMP_Text>();text.font=theme.font;text.fontSize=theme.Size(size);text.fontSizeMin=theme.caption;text.fontSizeMax=theme.Size(size);text.color=theme.ink;
-        text.fontStyle=numeric?FontStyles.Bold:FontStyles.Normal;
+        text.fontStyle=numeric || size==ThemeTextSize.Heading?FontStyles.Bold:FontStyles.Normal;
+        if(theme.font.material.HasProperty(ShaderUtilities.ID_FaceDilate) && !Mathf.Approximately(theme.font.material.GetFloat(ShaderUtilities.ID_FaceDilate),theme.fontFaceDilate))theme.font.material.SetFloat(ShaderUtilities.ID_FaceDilate,theme.fontFaceDilate);
         text.margin=Vector4.zero;
     }
     private void OnEnable(){if(UITheme.Active!=null)Apply(UITheme.Active);}

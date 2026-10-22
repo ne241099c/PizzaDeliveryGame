@@ -14,5 +14,5 @@ public sealed class ThemedButton : MonoBehaviour
         var label=GetComponentInChildren<TMP_Text>(true);if(label!=null)label.color=kind==ThemeButtonKind.Primary || kind==ThemeButtonKind.Danger?Color.white:theme.ink;
         var outline=GetComponent<Outline>();if(outline==null)outline=gameObject.AddComponent<Outline>();outline.effectColor=kind==ThemeButtonKind.Selected?theme.accent:theme.muted;outline.effectDistance=Vector2.one;
     }
-    private void LateUpdate(){if(UITheme.Active!=null)Apply(UITheme.Active);}
+    private void LateUpdate(){if(!UIThemeDriver.RenderingSuspended && GetComponent<CanvasRenderer>().GetInheritedAlpha()>0 && UITheme.Active!=null)Apply(UITheme.Active);}
 }

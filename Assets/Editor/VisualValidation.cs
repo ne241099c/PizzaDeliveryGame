@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -21,6 +22,19 @@ public static class VisualValidation
             float original=theme.body;try{theme.body=22;text.Apply(theme);Check(label.GetComponent<TMP_Text>().fontSize==22,"theme edit updates component");}finally{theme.body=original;}
         }
         finally{UnityEngine.Object.DestroyImmediate(go);}
+        var driver=UnityEngine.Object.FindFirstObjectByType<UIThemeDriver>();if(driver!=null)
+        {
+            Check(UiStrings.Japanese("Start business")=="営業開始" && UiStrings.Japanese("Delivery promise: 60s").StartsWith("お届け目安"),"central Japanese table");
+            Check(UiStrings.Japanese("Aoi / Drive 0.6 / Goal1").Contains("Aoi / 運転 0.6 / Goal1"),"presentation preserves names IDs and numbers");
+            var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();driver.Refresh();
+            Check(canvas.GetComponentsInChildren<TMP_Text>(true).All(t=>t.font==theme.font && t.fontSize>=theme.caption),"all screens use readable Japanese theme font");
+            Check(canvas.GetComponentsInChildren<Button>(true).All(b=>b.GetComponent<ThemedButton>()!=null),"all button actions retain themed component");
+            foreach(var view in canvas.GetComponentsInChildren<CourierAbilitiesView>(true).Where(v=>v==v.GetComponent<CourierAbilitiesView>()))
+            {
+                var labels=new SerializedObject(view).FindProperty("labels");
+                for(int i=0;i<labels.arraySize;i++){var label=(TMP_Text)labels.GetArrayElementAtIndex(i).objectReferenceValue;var group=label.GetComponent<CanvasGroup>();Check(group==null || group.alpha==1,"actual ability label retained "+view.name+" / "+i);}
+            }
+        }
         return $"PASS: {count} visual checks.";
     }
 }
