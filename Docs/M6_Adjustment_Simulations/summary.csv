@@ -1,0 +1,7 @@
+policy,previous_days,current_days,previous_final_cash,current_final_cash,cash_delta,current_day20_cash,current_last_day_profit,current_late,current_training_count,current_training_cost,current_mean_busy,same_horizon
+A,30,30,10489.40,6292.20,-4197.20,5984.00,-63.40,0,0,0,0.796489,True
+B,30,30,5584.60,4734.00,-850.60,5247.80,-409.20,65,0,0,0.874430,True
+C,30,30,11987.74,11609.01,-378.73,8420.40,287.46,33,0,0,0.660829,True
+D,30,30,6856.84,8951.61,2094.77,5904.21,196.70,55,17,3210.99,0.646737,True
+E,8,1,-161.40,-774.6,-613.20,—,-904.6,12,1,170,0.720951,False
+E2,,1,,-474.6,,—,-904.6,12,1,170,0.720951,False

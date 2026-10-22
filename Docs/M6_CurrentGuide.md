@@ -4,6 +4,14 @@
 
 M6-0〜M6-6。式と初期値は [計画書_M6.md](計画書_M6.md) を正とする。既存M5へ差分実装し、配達・経路計算を再利用した。段階別の変更と判断は [M6_StageResults.md](M6_StageResults.md)、比較と数値の提案は [M6_BalanceReport.md](M6_BalanceReport.md)。
 
+## 調整後に試すこと
+
+SampleSceneでPlayし、準備で目安60秒を選んでStart business。注文とAoiを選び、Use this routeを押すとN1〜N2で裏道が選ばれる。同じ注文でRenを選び直してもう一度Use this routeを押すと大通りになる。道は引き続き自分でも組める。
+
+訓練費は80+150×現在値。Aoiの運転訓練は170で、初期300から払うと130残る。訓練の終了は営業時間の半分(150秒)。初日に30秒の目安で1人を訓練に出すと、今回の自動プレイでは配達が追いつかず破産したため、最初は60秒で動きを確かめると分かりやすい。
+
+通常ゲームの初期所持金は300。600のE2は検証専用の条件。現在のInspector値は固定費増加25/日、体力経験係数0.35、積載訓練300、シミュレーション予備金100。詳しい比較は [M6_Adjustment_Results.md](M6_Adjustment_Results.md)。
+
 ## 遊び方
 
 1. SampleSceneでPlay。セーブがある場合は **Continue** または **Start new** を選ぶ。初期名簿はAoi/Ren、所持金300、評判50。
