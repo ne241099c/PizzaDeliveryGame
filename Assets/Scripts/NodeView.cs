@@ -6,6 +6,7 @@ public class NodeView : MonoBehaviour
     [SerializeField] private SpriteRenderer spriteRenderer;
     private TextMeshPro nodeLabel;
     private string nodeId;
+    private string caption;
     private Color baseColor;
     private Vector3 baseScale;
 
@@ -15,22 +16,14 @@ public class NodeView : MonoBehaviour
         gameObject.name = "Node_" + node.Id;
         transform.position = node.Position;
 
-        if (node.IsStore)
+        var theme=UITheme.Active;
+        caption=node.IsStore?"ピザ屋":node.NodeType==NodeType.DeliveryAddress?"配達先 "+node.Id.Replace("Goal",""):node.Id;
+        spriteRenderer.sortingOrder=5;spriteRenderer.sprite=MapVisuals.Shape(node.IsStore || node.NodeType==NodeType.Intersection);spriteRenderer.color=node.IsStore?theme.accent:node.NodeType==NodeType.DeliveryAddress?theme.block:theme.muted;
+        transform.localScale=Vector3.one*(node.NodeType==NodeType.Intersection && !node.IsStore?theme.nodeSize*.5f:theme.nodeSize);
+        if(node.IsStore || node.NodeType==NodeType.DeliveryAddress)
         {
-            spriteRenderer.color = Color.red;
-            transform.localScale = Vector3.one * 0.45f;
+            var icon=new GameObject(node.IsStore?"PizzaSlice":"HouseRoof");icon.transform.SetParent(transform,false);var line=icon.AddComponent<LineRenderer>();line.sharedMaterial=spriteRenderer.sharedMaterial;line.useWorldSpace=false;line.positionCount=3;line.SetPosition(0,new Vector3(-.45f,.15f,0));line.SetPosition(1,new Vector3(0,.65f,0));line.SetPosition(2,new Vector3(.45f,.15f,0));line.startWidth=line.endWidth=.12f;line.startColor=line.endColor=node.IsStore?theme.money:theme.ink;line.sortingOrder=6;
         }
-        else if (node.NodeType == NodeType.DeliveryAddress)
-        {
-            spriteRenderer.color = Color.magenta;
-            transform.localScale = Vector3.one * 0.35f;
-        }
-        else
-        {
-            spriteRenderer.color = Color.white;
-            transform.localScale = Vector3.one * 0.3f;
-        }
-
         baseColor = spriteRenderer.color;
         baseScale = transform.localScale;
         var labelObject = new GameObject("NodeLabel");
@@ -39,9 +32,9 @@ public class NodeView : MonoBehaviour
         labelObject.transform.position = transform.position + Vector3.down * 0.55f;
         var label = labelObject.AddComponent<TextMeshPro>();
         nodeLabel = label;
-        label.font = TMP_Settings.defaultFontAsset;
-        label.text = node.Id;
-        label.fontSize = 4.5f;
+        label.font = UITheme.Active.font;
+        label.text = caption;
+        label.fontSize = UITheme.Active.worldLabelSize;
         label.alignment = TextAlignmentOptions.Center;
         label.rectTransform.sizeDelta = new Vector2(2f, 0.7f);
         label.GetComponent<MeshRenderer>().sortingOrder = 10;
@@ -49,10 +42,10 @@ public class NodeView : MonoBehaviour
 
     public void SetCurrent(bool current)
     {
-        spriteRenderer.color = current ? new Color(0.24f, 0.78f, 1f) : baseColor;
+        spriteRenderer.color = current ? UITheme.Active.accent : baseColor;
         transform.localScale = current ? baseScale * 1.25f : baseScale;
-        nodeLabel.text = nodeId + (current ? " *" : "");
-        nodeLabel.color = current ? new Color(0.24f, 0.78f, 1f) : Color.white;
+        nodeLabel.text = caption + (current ? " *" : "");
+        nodeLabel.color = current ? UITheme.Active.accent : UITheme.Active.ink;
     }
 
 }

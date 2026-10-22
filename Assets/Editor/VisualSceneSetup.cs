@@ -60,4 +60,10 @@ public static class VisualSceneSetup
                 if(System.Text.RegularExpressions.Regex.IsMatch(child.name,@"^(Ability\d+|AbilityBar\d+|XP\d+)$"))UIVisibility.Set(child.gameObject,keep.Contains(child));
         }
     }
+    public static void Map()
+    {
+        var theme=new SerializedObject(UITheme.Active);theme.FindProperty("worldLabelSize").floatValue=2.5f;theme.ApplyModifiedProperties();AssetDatabase.SaveAssets();
+        var go=GameObject.Find("GameManager");var visuals=go.GetComponent<MapVisuals>();if(visuals==null)visuals=Undo.AddComponent<MapVisuals>(go);ScreensSceneSetup.Bind(visuals,"map",UnityEngine.Object.FindFirstObjectByType<MapManager>());
+        var so=new SerializedObject(go.GetComponent<UIThemeDriver>());so.FindProperty("implementationStage").intValue=2;so.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(go.scene);
+    }
 }

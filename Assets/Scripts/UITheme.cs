@@ -14,6 +14,8 @@ public sealed class UITheme : ScriptableObject
     [SerializeField] public Sprite roundedPanel;
     [SerializeField] public Color[] courierColors={Hex("#27658A"),Hex("#835191"),Hex("#956129"),Hex("#3E7770"),Hex("#AC4E72"),Hex("#546536")};
     [SerializeField] public float mainRoadWidth=.18f,backstreetWidth=.10f,routeWidth=.24f,roadBorder=.07f,nodeSize=.4f,worldLabelSize=4.5f;
+    [SerializeField] public float congestionWidthScale=.35f,worldIconScale=.35f,routeArrowSize=4f;
+    public Color CourierColor(string name){var roster=Object.FindFirstObjectByType<DeliveryPersonSelector>();if(roster!=null){for(int i=0;i<roster.People.Count;i++)if(roster.People[i].Name==name)return courierColors[i%courierColors.Length];}uint hash=2166136261;foreach(char c in name)hash=unchecked((hash^c)*16777619);return courierColors[hash%(uint)courierColors.Length];}
     public float Size(ThemeTextSize size)=>size switch {ThemeTextSize.Heading=>heading,ThemeTextSize.Subheading=>subheading,ThemeTextSize.Caption=>caption,_=>body};
 }
 public enum ThemeTextSize {Heading,Subheading,Body,Caption}

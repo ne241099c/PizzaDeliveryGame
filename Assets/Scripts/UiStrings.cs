@@ -6,6 +6,7 @@ public static class UiStrings
 {
     private static readonly Dictionary<string,string> phrases=new()
     {
+        {"Click a road connected to the current node (*).\nBlue: next / Green: used / Yellow: last\nScroll: zoom / Middle-drag: pan","現在地（*）から道をクリック / 赤：自分の道順 / ホイール：拡大縮小 / 中ボタンのドラッグ：移動"},
         {"1 / ORDERS (select up to 2)","注文（2件まで選択）"},{"COURIERS / select an available courier","配達員 / 待機中から選択"},{"3 / YOUR ROUTE","自分の道順"},{"Undo last road","道を1つ戻す"},{"Clear route","道順を消す"},{"Dispatch with suggestion","推奨ルートで出発"},{"Dispatch","出発"},{"Reset","やり直し"},{"Fit","地図全体"},{"OPEN","営業中"},{"Time","所要時間"},{"Ability / Potential / 経験値","能力 / 素質 / 経験値"},{"Ability / Potential / XP","能力 / 素質 / 経験値"},
         {"Click a road connected to the current node (*).","現在地（*）につながる道をクリック"},{"Blue: next / Green: used / Yellow: last","つながる道を選び、店へ戻る道順を作ろう"},{"Scroll: zoom / Middle-drag: pan","ホイール：拡大縮小 / 中ボタンのドラッグ：移動"},
         {"PIZZA DELIVERY","ピザ配達ゲーム"},{"Start new","最初から"},{"fixed","固定費"},{"wages","日給合計"},{"cash","所持金"},{"Next ","次の費用 "},

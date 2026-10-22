@@ -21,9 +21,11 @@ public sealed class DeliveryMarkerView : MonoBehaviour
         var go = new GameObject("Courier_" + trip.Person.Name);
         go.transform.SetParent(markersParent, false);
         var text = go.AddComponent<TextMeshPro>();
-        text.font = TMP_Settings.defaultFontAsset;
+        text.font = UITheme.Active.font;
+        var dot=new GameObject("CourierDot");dot.transform.SetParent(go.transform,false);dot.transform.localScale=Vector3.one*UITheme.Active.worldIconScale;var sprite=dot.AddComponent<SpriteRenderer>();sprite.sprite=MapVisuals.Shape(true);sprite.color=UITheme.Active.CourierColor(trip.Person.Name);sprite.sortingOrder=29;
         text.text = MarkerCaption(trip,clock.ElapsedSeconds);
-        text.fontSize = markerFontSize;
+        var headingObject=new GameObject("Heading");headingObject.transform.SetParent(go.transform,false);var heading=headingObject.AddComponent<TextMeshPro>();heading.font=UITheme.Active.font;heading.text=">";heading.fontSize=UITheme.Active.routeArrowSize;heading.color=UITheme.Active.CourierColor(trip.Person.Name);heading.alignment=TextAlignmentOptions.Center;heading.rectTransform.sizeDelta=Vector2.one;headingObject.GetComponent<MeshRenderer>().sortingOrder=31;
+        text.fontSize = UITheme.Active.worldLabelSize;
         text.color = ColorFor(trip,clock.ElapsedSeconds);
         text.alignment = TextAlignmentOptions.Center;
         text.rectTransform.sizeDelta = new Vector2(2.2f, 1.2f);
@@ -44,6 +46,8 @@ public sealed class DeliveryMarkerView : MonoBehaviour
             pair.Value.transform.position = (Vector3)pair.Key.PositionAt(clock.ElapsedSeconds) + Vector3.up * markerOffset;
             pair.Value.text=MarkerCaption(pair.Key,clock.ElapsedSeconds);
             pair.Value.color=ColorFor(pair.Key,clock.ElapsedSeconds);
+            Vector2 direction=pair.Key.PositionAt(clock.ElapsedSeconds+.1f)-pair.Key.PositionAt(clock.ElapsedSeconds);var heading=pair.Value.transform.Find("Heading");
+            if(direction.sqrMagnitude>0){heading.localPosition=direction.normalized*UITheme.Active.worldIconScale;heading.rotation=Quaternion.Euler(0,0,Mathf.Atan2(direction.y,direction.x)*Mathf.Rad2Deg);}
         }
     }
     public static string MarkerCaption(DeliveryTrip trip,float now)
@@ -53,6 +57,5 @@ public sealed class DeliveryMarkerView : MonoBehaviour
         return trip.IsStoppedAt(now)?caption+$"\nSTOP {trip.StoppedUntil(now)-now:F0}s":caption;
     }
     private static Color ColorFor(DeliveryTrip trip,float now)
-        => trip.IsStoppedAt(now)?Color.red:trip.Person.LocalKnowledge>0.8f?Color.cyan
-            :trip.Person.LocalKnowledge>0.5f?Color.yellow:new Color(1,0.5f,0.3f);
+        => trip.IsStoppedAt(now)?UITheme.Active.bad:UITheme.Active.background;
 }

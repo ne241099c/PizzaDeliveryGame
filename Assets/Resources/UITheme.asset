@@ -21,7 +21,7 @@ Sprite:
   m_IsPolygon: 0
   m_PackingTag: 
   m_RenderDataKey:
-    00000000000000000000000000000000: 0
+    8ea4ff112c3a44bb4a2d6e20e2095fd9: -7732186575839875303
   m_AtlasTags: []
   m_SpriteAtlas: {fileID: 0}
   m_RD:
@@ -285,6 +285,7 @@ MonoBehaviour:
   padding: 16
   largeSpace: 24
   cornerRadius: 8
+  fontFaceDilate: 0.12
   font: {fileID: 11400000, guid: ce32a4130d85548658d2a569898e8eba, type: 2}
   roundedPanel: {fileID: -7732186575839875303}
   courierColors:
@@ -299,4 +300,7 @@ MonoBehaviour:
   routeWidth: 0.24
   roadBorder: 0.07
   nodeSize: 0.4
-  worldLabelSize: 4.5
+  worldLabelSize: 2.5
+  congestionWidthScale: 0.35
+  worldIconScale: 0.35
+  routeArrowSize: 4

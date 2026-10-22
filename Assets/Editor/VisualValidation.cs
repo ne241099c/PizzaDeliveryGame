@@ -35,6 +35,15 @@ public static class VisualValidation
                 for(int i=0;i<labels.arraySize;i++){var label=(TMP_Text)labels.GetArrayElementAtIndex(i).objectReferenceValue;var group=label.GetComponent<CanvasGroup>();Check(group==null || group.alpha==1,"actual ability label retained "+view.name+" / "+i);}
             }
         }
+        if(driver!=null && driver.ImplementationStage>=2)
+        {
+            var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var edges=UnityEngine.Object.FindObjectsByType<EdgeView>(FindObjectsSortMode.None);
+            Check(edges.Length==map.Edges.Count && edges.All(e=>e.GetComponentInChildren<UnityEngine.LineRenderer>()!=null),"existing edge views and click geometry retained");
+            Check(UnityEngine.Object.FindFirstObjectByType<MapVisuals>()!=null && GameObject.Find("CityBlock")!=null,"independent city decoration layer");
+            Check(UITheme.Active.CourierColor("Aoi")==UITheme.Active.CourierColor("Aoi") && UITheme.Active.CourierColor("Aoi")!=UITheme.Active.CourierColor("Ren"),"stable courier identity colors without random draws");
+            Check(UnityEngine.Object.FindObjectsByType<NodeView>(FindObjectsSortMode.None).Length==map.Nodes.Count,"existing node views reused");
+            var clone=UnityEngine.Object.Instantiate(edges[0]);try{var a=map.Nodes[0];var b=map.Nodes[1];var road=new MapEdge("ReviewOneWay",a.Id,b.Id,1,RoadType.Main,.5f){Bidirectional=false};clone.Initialize(road,a,b,map,false);Check(clone.transform.Find("OneWayArrow")!=null,"one-way road has a direction arrow");}finally{UnityEngine.Object.DestroyImmediate(clone.gameObject);}
+        }
         return $"PASS: {count} visual checks.";
     }
 }
