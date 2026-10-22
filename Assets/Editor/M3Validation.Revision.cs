@@ -36,7 +36,7 @@ public static partial class M3Validation
         near(spawner.DemandFactor(1),2,"M4-3 demand upper clamp");
         near(spawner.DemandFactor(10000),0.4f,"M4-3 demand lower clamp");
         near(spawner.ShortestArrivalSeconds("Goal1"),2.85f/1.3f*5,"M4-3 fastest one-way Goal1");
-        near(spawner.MinimumPromiseSeconds,2*3.05f/1.3f*5*1.1f+12,"M7 round-trip lower bound plus cooking");
+        near(spawner.MinimumPromiseSeconds,2*3.05f/1.3f*5*1.1f+10,"M7 round-trip lower bound plus cooking (standard 10s: assembly 6 + oven 4, no packing time)");
         near(spawner.ReputationFactor,1,"M4-6 initial reputation gives factor one");
         float previousPromise=spawner.PromiseSeconds;
         try

@@ -19,6 +19,7 @@ public sealed class HubView : MonoBehaviour
     [SerializeField, HideInInspector] private StickerButton[] tabs=new StickerButton[4];
     [SerializeField, HideInInspector] private RectTransform[] tabBadges=new RectTransform[4];
     private StickerButton startButton;
+    private Slider promiseSlider,managementSlider;private TextMeshProUGUI managementValue,managementDetail;
     private string signature="";private float messageUntil;private string lastMessage="";
     private readonly List<(int day,decimal revenue,decimal profit,decimal cash)> records=new();
     public int SelectedTab {get;private set;}
@@ -79,9 +80,8 @@ public sealed class HubView : MonoBehaviour
         forecastWages=values[0];forecastFixed=values[1];forecastMaintenance=values[2];forecastTraining=values[3];
         var divider=UiKit.Box(bottom,"Divider",660,22,3,124);UiKit.Fill(divider,T.paperDeep,0);
         UiKit.Label(bottom,"PromiseTitle",ShopStrings.Promise,700,30,200,30,18,T.inkSub,FontRole.Black);
-        UiKit.Button(bottom,"PromiseMinus","",StickerKind.Secondary,700,74,64,64,20,()=>spawner.SetPromiseSeconds(spawner.PromiseSeconds-10),FontRole.Black,"icon_minus");
-        promiseText=UiKit.Label(bottom,"Promise","60秒",772,70,140,72,40,T.line,FontRole.Display,TextAlignmentOptions.Center);
-        UiKit.Button(bottom,"PromisePlus","",StickerKind.Secondary,920,74,64,64,20,()=>spawner.SetPromiseSeconds(spawner.PromiseSeconds+10),FontRole.Black,"icon_plus");
+        promiseSlider=UiKit.Slider(bottom,"PromiseSlider",700,98,250,30,T.cheese,v=>spawner.SetPromiseSeconds(v));
+        promiseText=UiKit.Label(bottom,"Promise","60秒",960,70,140,72,40,T.line,FontRole.Display,TextAlignmentOptions.Center);
         startButton=UiKit.Button(bottom,"StartBusinessV2",ShopStrings.StartBusiness+" ▶",StickerKind.Primary,1120,26,436,112,52,()=>campaign.StartBusiness(),FontRole.Display);
         // dialog layer
         dialog=UiKit.Stretch(root,"Dialog");UiKit.Fill(dialog,new Color(T.line.r,T.line.g,T.line.b,.45f),0,true);UiKit.Group(dialog);UiKit.Show(dialog,false);
@@ -106,7 +106,7 @@ public sealed class HubView : MonoBehaviour
         decimal trainingFees=training.Assignments.Where(a=>!a.Completed).Sum(a=>a.Paid);
         forecastWages.text=UiKit.Yen(economy.TeamWages);forecastFixed.text=UiKit.Yen(economy.BaseFixedCost(campaign.DayNumber));
         forecastMaintenance.text=UiKit.Yen(facilities.Maintenance);forecastTraining.text=UiKit.Yen(trainingFees);
-        promiseText.text=$"{spawner.PromiseSeconds:F0}<size=24>秒</size>";
+        promiseText.text=$"{spawner.PromiseSeconds:F0}<size=24>秒</size>";UiKit.SyncPromise(promiseSlider,spawner,clock);UiKit.SyncPromise(managementSlider,spawner,clock);if(managementValue!=null)managementValue.text=$"{spawner.PromiseSeconds:F0}<size=28>秒</size>";if(managementDetail!=null)managementDetail.text=$"短いほど注文が増え、長いほど減ります。\n需要 x{spawner.DemandFactor(spawner.PromiseSeconds):0.00} ・ 約{spawner.ExpectedInterval:F0}秒ごとに注文\n下限 {spawner.MinimumPromiseSeconds:F1}秒（往復と調理の時間）\n評判 {reputation.Value:F0} ・ 注文 x{reputation.DemandFactor:0.00}";
         startButton.Interactable=clock.Phase==DayPhase.BeforeOpening && !campaign.IsBankrupt;
         string message=FirstNonEmpty(recruitment.LastMessage,training.LastMessage,facilities.LastMessage);
         if(message!=lastMessage){lastMessage=message;messageUntil=Time.unscaledTime+4;}
@@ -119,10 +119,10 @@ public sealed class HubView : MonoBehaviour
     private string Signature()
     {
         var parts=new List<string>{SelectedTab.ToString(),clock.Phase.ToString(),recruitment.MaximumPeople.ToString(),((long)economy.Cash).ToString()};
-        parts.AddRange(roster.People.Select(p=>p.Id+p.Capacity+p.Driving.ToString("F2")+p.LocalKnowledge.ToString("F2")+p.Status));
-        parts.AddRange(crew.People.Select(c=>c.Id));parts.AddRange(recruitment.Applicants.Select(a=>a.Person.Id));parts.AddRange(recruitment.KitchenApplicants.Select(a=>a.Staff.Id));
+        parts.AddRange(roster.People.Select(p=>UiKit.Ref(p)+p.Capacity+p.Driving.ToString("F2")+p.LocalKnowledge.ToString("F2")+p.Status));
+        parts.AddRange(crew.People.Select(c=>UiKit.Ref(c)));parts.AddRange(recruitment.Applicants.Select(a=>UiKit.Ref(a)));parts.AddRange(recruitment.KitchenApplicants.Select(a=>UiKit.Ref(a)));
         parts.AddRange(training.Assignments.Select(a=>a.PersonId+a.Ability));parts.Add(facilities.Capture().oven+"/"+facilities.Capture().bike+"/"+facilities.Capture().expansion+"/"+facilities.Capture().workbench+"/"+facilities.Advertisement);
-        parts.Add(spawner.PromiseSeconds.ToString("F0"));parts.Add(records.Count.ToString());
+        parts.Add(records.Count.ToString());
         return string.Join("|",parts);
     }
     private string Hint()
@@ -163,7 +163,7 @@ public sealed class HubView : MonoBehaviour
     private void Header(RectTransform card,string name,Color color,params (string text,Color fill,Color ink)[] badges)
     {
         UiKit.Avatar(card,"Avatar",20,20,92,color,Initial(name));
-        UiKit.Label(card,"Name",name,126,22,214,44,34,T.line,FontRole.Display);
+        UiKit.Label(card,"Name",name,126,14,214,54,34,T.line,FontRole.Display);
         float bx=126;foreach(var b in badges){var badge=UiKit.Badge(card,"Badge",b.text,bx,72,b.fill,b.ink,30,16);bx+=badge.sizeDelta.x+8;}
     }
     private void AbilityRow(RectTransform card,int index,string label,float value,float potential,float y,Color fill,float scale=1)
@@ -323,11 +323,9 @@ public sealed class HubView : MonoBehaviour
     {
         var policy=UiKit.Card(content,"Policy",0,0,620,CardH,T.paper);
         UiKit.Label(policy,"Title",ShopStrings.Promise,28,24,560,48,32,T.line,FontRole.Display);
-        UiKit.Button(policy,"Minus","",StickerKind.Secondary,28,100,72,72,20,()=>spawner.SetPromiseSeconds(spawner.PromiseSeconds-10),FontRole.Black,"icon_minus");
-        UiKit.Label(policy,"Value",$"{spawner.PromiseSeconds:F0}<size=28>秒</size>",110,94,200,84,56,T.line,FontRole.Display,TextAlignmentOptions.Center);
-        UiKit.Button(policy,"Plus","",StickerKind.Secondary,320,100,72,72,20,()=>spawner.SetPromiseSeconds(spawner.PromiseSeconds+10),FontRole.Black,"icon_plus");
-        string detail=$"短いほど注文が増え、長いほど減ります。\n需要 x{spawner.DemandFactor(spawner.PromiseSeconds):0.00} ・ 約{spawner.ExpectedInterval:F0}秒ごとに注文\n下限 {spawner.MinimumPromiseSeconds:F1}秒（往復と調理の時間）\n評判 {reputation.Value:F0} ・ 注文 x{reputation.DemandFactor:0.00}";
-        UiKit.Label(policy,"Detail",detail,28,206,564,200,20,T.line,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
+        managementSlider=UiKit.Slider(policy,"PromiseSlider",34,124,390,36,T.cheese,v=>spawner.SetPromiseSeconds(v));
+        managementValue=UiKit.Label(policy,"Value",$"{spawner.PromiseSeconds:F0}<size=28>秒</size>",436,94,160,84,56,T.line,FontRole.Display,TextAlignmentOptions.Center);
+        managementDetail=UiKit.Label(policy,"Detail","",28,206,564,200,20,T.line,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
         var history=UiKit.Card(content,"History",650,0,938,CardH,T.paper);
         UiKit.Label(history,"Title","これまでの営業",28,24,600,48,32,T.line,FontRole.Display);
         UiKit.Label(history,"Totals",$"累計売上 {UiKit.Yen(campaign.TotalRevenue)}  ・  最高売上 {UiKit.Yen(campaign.BestDailyRevenue)}",28,80,880,32,20,T.inkSub,FontRole.Black);

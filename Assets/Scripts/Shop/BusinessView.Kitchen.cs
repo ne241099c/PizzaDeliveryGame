@@ -78,6 +78,7 @@ public sealed partial class BusinessView
         for(int i=0;i<2;i++)UiKit.Fill(UiKit.Box(shelf,"Rail"+i,20,60+i*70,780,6),T.steel,3);
         shelfTitle=UiKit.Label(shelf,"Title","保温棚(焼き上がり 0枚)",20,156,780,30,18,T.inkSub,FontRole.Black,TextAlignmentOptions.Center);
         benchArea=UiKit.Box(kitchenZone,"Benches",40,560,1070,420);ovenArea=UiKit.Box(kitchenZone,"Ovens",1140,560,760,420);
+        BuildCounterStrip();
     }
     private void LayoutStations()
     {
@@ -256,22 +257,91 @@ public sealed partial class BusinessView
                 v.GaugeText.color=inBand && player?T.basil:over && player?T.berry:T.line;
             }
         }
-        var shelfJobs=cooking.Shelf.Concat(cooking.Jobs.Where(j=>j.Stage==PizzaStage.Boxed)).ToList();
-        string sig=string.Join(",",shelfJobs.Select(j=>j.Order.Id+j.Stage));
-        if(sig!=shelfSignature){shelfSignature=sig;RebuildShelf(shelfJobs);}
-        shelfTitle.text=$"自動梱包中 {shelfJobs.Count}枚 ／ 配達指示で積み込み";
+        // The shelf stocks packed boxes (and any baked pizza waiting for a free box slot).
+        var boxes=handover.RackOrders.ToList();var unboxed=cooking.Shelf.Concat(cooking.Jobs.Where(j=>j.Stage==PizzaStage.Boxed)).ToList();
+        string sig=string.Join(",",boxes.Select(o=>o.Id))+"|"+string.Join(",",unboxed.Select(j=>j.Order.Id+j.Stage));
+        if(sig!=shelfSignature){shelfSignature=sig;RebuildShelf(boxes,unboxed);}
+        shelfTitle.text=boxes.Count==0?"梱包済みのピザがここに並びます":$"梱包済み {boxes.Count} / {cooking.RackCapacity} ・ 店にいる配達員へドラッグして積む";
+        foreach(var item in shelfItems)
+        {
+            var order=boxes.FirstOrDefault(o=>item.name=="Box_"+Number(o));if(order==null)continue;
+            float fraction=Mathf.Clamp01((order.Deadline-clock.ElapsedSeconds)/Mathf.Max(.01f,order.TimeLimit));
+            var bar=item.Find("Deadline")?.GetComponent<UiBar>();if(bar!=null)bar.Set(fraction,-1,T.DeadlineColor(fraction));
+        }
+        RefreshCounterStrip();
     }
     private readonly List<RectTransform> shelfItems=new();
-    private void RebuildShelf(List<PizzaJob> jobs)
+    private void RebuildShelf(List<Order> boxes,List<PizzaJob> waiting)
     {
         foreach(var item in shelfItems)Destroy(item.gameObject);shelfItems.Clear();
-        for(int i=0;i<jobs.Count && i<5;i++)
+        int shown=0;
+        foreach(var order in boxes.Take(cooking.RackCapacity))
         {
-            var job=jobs[i];var slot=UiKit.Box(shelf,"ShelfPizza_"+Number(job.Order),24+i*158,8,140,140);shelfItems.Add(slot);
-            if(job.Stage==PizzaStage.Boxed){UiKit.Picture(slot,"Box","box_open",0,0,140,140);UiKit.Badge(slot,"Packing",(job.Staff!=null?job.Staff.Name:"内勤")+" 梱包中",4,104,T.info,Color.white,28,14);continue;}
-            var pizza=PizzaVisual.Make(slot,"Pizza",0,0,140);pizza.Show(job);
-            UiKit.Badge(slot,"Number","#"+Number(job.Order),0,0,T.paper,T.line,26,14);
-            UiKit.Badge(slot,"Wait","箱の空きを待っています",0,108,T.cheese,T.line,28,T.captionSize);
+            var slot=UiKit.Box(shelf,"Box_"+Number(order),20+shown*130,6,118,144);shelfItems.Add(slot);shown++;
+            var img=slot.gameObject.AddComponent<Image>();img.sprite=UiKit.Art("box_closed");img.preserveAspect=true;img.raycastTarget=true;
+            var number=UiKit.Label(slot,"Number","#"+Number(order),0,44,118,34,24,T.line,FontRole.Display,TextAlignmentOptions.Center);number.verticalAlignment=VerticalAlignmentOptions.Geometry;
+            UiKit.Label(slot,"Stars",new string('★',Mathf.Max(1,order.Stars)),0,84,118,24,18,T.cheese,FontRole.Black,TextAlignmentOptions.Center);
+            UiKit.Bar(slot,"Deadline",10,120,98,14,T.basil);
+            var source=slot.gameObject.AddComponent<DragSource>();var o=order;
+            source.Payload=()=>handover.RackOrders.Contains(o)?new DragPayload{Kind=DragKind.Box,Order=o,Sprite="box_closed",Size=new Vector2(110,110)}:null;
+            source.Clicked=()=>QuickBag(o);
         }
+        foreach(var job in waiting)
+        {
+            if(shown>=6)break;var slot=UiKit.Box(shelf,"Waiting_"+Number(job.Order),20+shown*130,6,118,144);shelfItems.Add(slot);shown++;
+            var pizza=PizzaVisual.Make(slot,"Pizza",4,4,110);pizza.Show(job);
+            UiKit.Badge(slot,"Wait","空き待ち",8,116,T.cheese,T.line,28,16);
+        }
+    }
+
+    // ---- couriers waiting at the counter (drop packed boxes on them) ----
+    private RectTransform counterStrip;private string counterStripSignature="";private readonly List<RectTransform> counterTokens=new();
+    private void BuildCounterStrip()
+    {
+        counterStrip=UiKit.Card(kitchenZone,"CounterStrip",1110,938,790,128,T.wood,16,6,3);
+        UiKit.Label(counterStrip,"Title","受け渡し",14,4,200,28,16,T.paper,FontRole.Black);
+    }
+    private void RefreshCounterStrip()
+    {
+        if(counterStrip==null)return;
+        string sig=string.Join(",",roster.People.Select(p=>UiKit.Ref(p)+p.Status+string.Join("/",handover.BagOf(p).Select(o=>o.Id))+p.Capacity+(roster.SelectedPerson==p)));
+        if(sig!=counterStripSignature)
+        {
+            counterStripSignature=sig;
+            foreach(var t in counterTokens){var z=t.GetComponent<DropZone>();if(z!=null)ShopHand.Instance?.Unregister(z);Destroy(t.gameObject);}counterTokens.Clear();
+            int n=Mathf.Max(1,roster.People.Count);float w=Mathf.Min(256,(762f-(n-1)*8)/n);
+            for(int i=0;i<roster.People.Count;i++)counterTokens.Add(CourierToken(roster.People[i],14+i*(w+8),30,w,90));
+        }
+        foreach(var t in counterTokens)
+        {
+            var person=roster.People.FirstOrDefault(p=>t.name=="Token_"+p.Name);var state=t.Find("State")?.GetComponent<TextMeshProUGUI>();
+            if(person!=null && state!=null)state.text=person.IsAvailable?(handover.BagOf(person).Count>0?"積み込み中":"待機"):person.Status==DeliveryStatus.Training?"訓練中":$"あと{Mathf.Max(0,(person.CurrentTrip?.ReturnsAt??0)-clock.ElapsedSeconds):F0}秒";
+        }
+    }
+    private RectTransform CourierToken(DeliveryPerson person,float x,float y,float w,float h)
+    {
+        bool here=person.IsAvailable;var bag=handover.BagOf(person);
+        var token=UiKit.Box(counterStrip,"Token_"+person.Name,x,y,w,h);
+        var glow=UiKit.Stretch(token,"Glow",-5,-5,-5,-5);var g=UiKit.Fill(glow,T.cheese,18);g.enabled=false;
+        // Dark wood token so the paper-coloured text stays readable; the selected courier gets a cheese edge.
+        if(roster.SelectedPerson==person)UiKit.Fill(UiKit.Stretch(token,"Selected",-3,-3,-3,-3),T.cheese,17);
+        var face=UiKit.Fill(UiKit.Stretch(token,"Face"),new Color(T.woodDark.r,T.woodDark.g,T.woodDark.b,.9f),14,true);
+        float size=Mathf.Min(64,h-12);UiKit.Avatar(token,"Avatar",6,(h-size)/2,size,here?T.CourierColor(person.Name):T.disabled,person.Name.Substring(0,1));
+        UiKit.Label(token,"Name",person.Name,size+12,4,w-size-16,30,20,T.paper,FontRole.Display);
+        UiKit.Label(token,"State",here?"待機":ShopStrings.Status(person.Status),size+12,32,w-size-16,24,16,T.paper,FontRole.Black);
+        float slotW=Mathf.Min(34,(w-size-18)/Mathf.Max(1,person.Capacity)-4);
+        for(int s=0;s<person.Capacity;s++)
+        {
+            var slot=UiKit.Box(token,"Bag"+s,size+12+s*(slotW+4),58,slotW,28);
+            if(s<bag.Count){var img=slot.gameObject.AddComponent<Image>();img.sprite=UiKit.Art("box_closed");img.preserveAspect=true;img.raycastTarget=false;}
+            else UiKit.Dashed(slot,new Color(1,1,1,.75f),6,4,2);
+        }
+        var zone=token.gameObject.AddComponent<DropZone>();zone.Glow=g;var p=person;
+        zone.Accepts=pl=>pl.Kind==DragKind.Box && handover.BagRejection(pl.Order,p).Length==0;
+        zone.Dropped=pl=>{if(!handover.Bag(pl.Order,p))Toast(handover.LastMessage,T.berry,null,"icon_box");};
+        ShopHand.Instance?.Register(zone);
+        var click=token.gameObject.AddComponent<DragSource>();click.Clicked=()=>ClickCourier(p);
+        if(!here)UiKit.Group(token).alpha=.55f;
+        return token;
     }
 }

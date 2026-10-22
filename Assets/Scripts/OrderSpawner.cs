@@ -20,6 +20,9 @@ public sealed class OrderSpawner : MonoBehaviour
     [SerializeField, Min(0f)] private float demandExponent = 0.7f;
     [SerializeField, Min(0.01f)] private float minimumDemand = 0.4f;
     [SerializeField, Min(0.01f)] private float maximumDemand = 2f;
+    [Tooltip("Orders already waiting when the shop opens, so the first minute is not idle.")]
+    [SerializeField, Min(0)] private int openingOrders = 2;
+    private bool openingPlaced;
     [SerializeField] private bool useFixedSeed;
     [SerializeField] private int randomSeed = 9187;
     private System.Random random;
@@ -71,7 +74,7 @@ public sealed class OrderSpawner : MonoBehaviour
             .Select(n=>ShortestRoundTripSeconds(n.Id)).DefaultIfEmpty(0).Max() * minimumPromiseMargin + (cooking!=null?cooking.CookSeconds:0);
         SetPromiseSeconds(PromiseSeconds);
     }
-    public void ResetForDay() { progress=0; jitter=1; scheduled=false; }
+    public void ResetForDay() { progress=0; jitter=1; scheduled=false; openingPlaced=false; }
     public void ResetPolicy() => SetPromiseSeconds(initialPromiseSeconds);
     public void SetPromiseSeconds(float seconds)
     {
@@ -101,13 +104,18 @@ public sealed class OrderSpawner : MonoBehaviour
     private void ScheduleFirst()
     {
         if (scheduled || !map.IsReady) return;
-        progress=0;NextJitter();scheduled=true;
+        progress=0;NextJitter();scheduled=true;openingPlaced=false;
     }
     private void Tick(float before, float now)
     {
         if (!scheduled || clock.Phase != DayPhase.Open || !map.IsReady) return;
         var destinations = map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress && !n.IsStore).ToArray();
         if (destinations.Length==0) return;
+        if (!openingPlaced)
+        {
+            openingPlaced=true;
+            for (int i=0;i<openingOrders;i++) { orders.AddOrder(CreateOrder(destinations[random.Next(destinations.Length)].Id,before)); stats?.RecordSpawn(); }
+        }
         float cursor=before;
         // Preserve progress through the current interval when the policy changes.
         while (cursor < now)

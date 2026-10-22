@@ -60,6 +60,13 @@ public static class ShopSceneSetup
         var businessUi=go.GetComponent<BusinessScreenUI>();var b=new SerializedObject(businessUi);b.FindProperty("planningZoom").floatValue=1;b.ApplyModifiedProperties();
         EditorSceneManager.MarkSceneDirty(go.scene);AssetDatabase.SaveAssets();
     }
+    /// <summary>2026-10-23 request: packing time is not counted (boxed as it leaves the oven).</summary>
+    public static void InstantPacking()
+    {
+        if(Application.isPlaying)throw new InvalidOperationException("Stop Play first.");
+        var cooking=Manager.GetComponent<CookingManager>();var so=new SerializedObject(cooking);so.FindProperty("packSeconds").floatValue=0;so.ApplyModifiedProperties();
+        EditorSceneManager.MarkSceneDirty(cooking.gameObject.scene);
+    }
     private static RectTransform Rect(Transform parent,string name,bool reuse=false)
     {
         var existing=parent.Find(name) as RectTransform;if(existing!=null)return existing;

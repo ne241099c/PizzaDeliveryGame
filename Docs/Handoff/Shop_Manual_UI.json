@@ -4,7 +4,7 @@
   "PASS: dough and sauce",
   "PASS: cheese topping oven",
   "PASS: bake band takeout",
-  "PASS: automatic packing",
+  "PASS: packed box on shelf",
   "PASS: open dispatch",
   "PASS: courier name click",
   "PASS: load named order",
@@ -18,5 +18,8 @@
   "PASS: delivery return settlement",
   "PASS: late order setup",
   "PASS: grace countdown visible",
-  "PASS: cancel reason stays visible"
+  "PASS: cancel reason stays visible",
+  "PASS: opening orders and shelf stock",
+  "PASS: drop box on courier",
+  "PASS: promise slider"
 ]

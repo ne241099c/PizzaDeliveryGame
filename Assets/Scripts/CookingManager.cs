@@ -43,10 +43,11 @@ public sealed class CookingManager : MonoBehaviour
     [SerializeField] private KitchenCrew crew;
     [SerializeField] private HandoverManager handover;
     [Tooltip("Standard total for one pizza by staff with speed 0.5. Used for the delivery promise minimum.")]
-    [SerializeField,Min(.01f)] private float cookSeconds=12;
     [SerializeField,Min(1)] private int initialOvens=1;
     [SerializeField,Min(1)] private int initialBenches=2;
-    [SerializeField,Min(.01f)] private float doughSeconds=1,sauceSeconds=2,assemblySeconds=3,bakeSeconds=4,packSeconds=2;
+    [SerializeField,Min(.01f)] private float doughSeconds=1,sauceSeconds=2,assemblySeconds=3,bakeSeconds=4;
+    [Tooltip("Boxing time after baking. 0 = packed the moment it leaves the oven (2026-10-23 request: ignore packing time).")]
+    [SerializeField,Min(0)] private float packSeconds=0;
     [SerializeField,Min(0)] private float bakeBandHalfWidth=.4f,burnAfterBand=5;
     [SerializeField] private float staffTimeBase=1.3f,staffTimeScale=.6f;
     [SerializeField,Range(0,1)] private float sauceThreshold=.7f;
@@ -72,7 +73,8 @@ public sealed class CookingManager : MonoBehaviour
 
     public bool ManualControlEnabled {get;set;}=true;
     public int? SeedOverride {get;set;}
-    public float CookSeconds=>cookSeconds;
+    /// <summary>Standard time for one pizza by staff with speed 0.5 (assembly + oven + packing). Used for the delivery promise minimum.</summary>
+    public float CookSeconds=>(doughSeconds+sauceSeconds+assemblySeconds)*(staffTimeBase-staffTimeScale*.5f)+bakeSeconds+packSeconds;
     public float BakeSeconds=>bakeSeconds;
     public float BandStart=>bakeSeconds-bakeBandHalfWidth;
     public float BandEnd=>bakeSeconds+bakeBandHalfWidth;
@@ -213,6 +215,7 @@ public sealed class CookingManager : MonoBehaviour
         {
             var job=ovens[i];if(job==null || job.Worker!=PizzaWorker.Staff || job.OvenStartedAt+bakeSeconds>t)continue;
             float at=job.OvenStartedAt+bakeSeconds;FinishOven(job,at);job.BakePoint=true;
+            if(packSeconds<=0 && RackCount<rackCapacity)Pack(job); // no packing time: boxed as it leaves the oven
             var waiting=jobs.Where(j=>j.Worker==PizzaWorker.Staff && j.Stage==PizzaStage.Topping && j.Bench>=0 && !StaffBusyWith(j)).OrderBy(j=>j.StartedAt).FirstOrDefault();
             if(waiting!=null)StartOven(waiting,i,at);
         }
@@ -220,6 +223,8 @@ public sealed class CookingManager : MonoBehaviour
     private void Assign(float t)
     {
         if(clock.Phase!=DayPhase.Open)return;
+        // Without packing time, staff pizzas waiting for rack space are boxed as soon as a slot frees; nobody has to stop work for it.
+        if(packSeconds<=0)foreach(var job in jobs.Where(j=>j.Worker==PizzaWorker.Staff && j.Stage==PizzaStage.Baked).OrderBy(j=>j.TakenOutAt).ToArray()){if(RackCount>=rackCapacity)break;Pack(job);}
         foreach(var job in jobs.Where(j=>j.Worker==PizzaWorker.Player && j.Stage==PizzaStage.Baked).OrderBy(j=>j.TakenOutAt))
         {
             if(RackCount>=rackCapacity || PackingTable.Count()>=packingSlots)break;

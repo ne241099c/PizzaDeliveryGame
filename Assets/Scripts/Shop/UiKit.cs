@@ -126,7 +126,7 @@ public static class UiKit
     {
         var root=Box(parent,name,x,y,10,height);var bg=Stretch(root,"Edge");Fill(bg,T.line,height/2f);
         var face=Stretch(bg,"Face",2,2,2,2);Fill(face,fill,height/2f-2);
-        var label=Label(root,"Text",text,0,0,10,height,Mathf.Max(size,T.captionSize),textColor,FontRole.Black,TextAlignmentOptions.Center);
+        var label=Label(root,"Text",text,0,0,10,height,Mathf.Max(size,T.captionSize),textColor,FontRole.Black,TextAlignmentOptions.Center);label.verticalAlignment=VerticalAlignmentOptions.Geometry;
         float width=Mathf.Max(minWidth,label.GetPreferredValues(text).x+height*.8f);root.sizeDelta=new Vector2(width,height);label.rectTransform.sizeDelta=new Vector2(width,height);
         return root;
     }
@@ -140,16 +140,45 @@ public static class UiKit
     {
         var root=Box(parent,name,x,y,size,size);var edge=Stretch(root,"Edge");var e=edge.gameObject.AddComponent<Image>();e.sprite=Circle;e.color=T.line;e.raycastTarget=false;
         float border=Mathf.Max(2,size*.045f);var face=Stretch(root,"Face",border,border,border,border);var f=face.gameObject.AddComponent<Image>();f.sprite=Circle;f.color=color;f.raycastTarget=false;
-        Label(root,"Initial",initial,0,0,size,size,size*.52f,Color.white,FontRole.Display,TextAlignmentOptions.Center).rectTransform.anchoredPosition=new Vector2(0,-size*.02f);
+        var initialText=Label(root,"Initial",initial,0,0,size,size,size*.52f,Color.white,FontRole.Display,TextAlignmentOptions.Center);initialText.verticalAlignment=VerticalAlignmentOptions.Geometry;
         return root;
     }
     public static void SetAvatar(RectTransform avatar,Color color,string initial)
     {if(avatar==null)return;avatar.Find("Face").GetComponent<Image>().color=color;avatar.Find("Initial").GetComponent<TextMeshProUGUI>().text=initial;}
+    /// <summary>Sticker-style slider: dark-edged track, coloured fill and a round tomato handle you can drag.</summary>
+    public static Slider Slider(Transform parent,string name,float x,float y,float w,float h,Color fill,UnityAction<float> onChange)
+    {
+        var root=Box(parent,name,x,y,w,h);var slider=root.gameObject.AddComponent<Slider>();
+        var track=Stretch(root,"Track");Fill(track,T.line,h*.5f,true);Fill(Stretch(track,"Face",3,3,3,3),T.paperDeep,h*.5f-3);
+        var area=Stretch(root,"FillArea",3,3,3,3);var fillRect=Stretch(area,"Fill");Fill(fillRect,fill,h*.5f-3);
+        var slide=Stretch(root,"HandleArea",h*.5f,0,h*.5f,0);float size=h*1.5f;
+        // Slider stretches the handle over the track height, so the extra size makes a round knob.
+        var handle=Box(slide,"Handle",0,0,size,size);handle.anchorMin=new Vector2(0,0);handle.anchorMax=new Vector2(0,1);handle.pivot=new Vector2(.5f,.5f);handle.anchoredPosition=Vector2.zero;handle.sizeDelta=new Vector2(size,size-h);
+        var drop=Stretch(handle,"Shadow",0,4,0,-4);var d=drop.gameObject.AddComponent<Image>();d.sprite=Circle;d.color=new Color(T.line.r,T.line.g,T.line.b,.3f);d.raycastTarget=false;
+        var edge=Stretch(handle,"Edge");var e=edge.gameObject.AddComponent<Image>();e.sprite=Circle;e.color=T.line;
+        var knob=Stretch(handle,"Knob",3,3,3,3);var k=knob.gameObject.AddComponent<Image>();k.sprite=Circle;k.color=T.tomato;k.raycastTarget=false;
+        slider.fillRect=fillRect;slider.handleRect=handle;slider.targetGraphic=e;slider.direction=UnityEngine.UI.Slider.Direction.LeftToRight;
+        slider.transition=Selectable.Transition.None;slider.navigation=new Navigation{mode=Navigation.Mode.None};slider.wholeNumbers=true;
+        // Only the player's drag changes the value: range/value updates from code do not call back.
+        if(onChange!=null)slider.onValueChanged.AddListener(v=>{if(!syncing)onChange(v);});
+        return slider;
+    }
+    /// <summary>Keeps a promise slider in step with the spawner (range = physical minimum .. maximum).</summary>
+    private static bool syncing;
+    public static void SyncPromise(Slider slider,OrderSpawner spawner,GameClock clock)
+    {
+        if(slider==null || spawner==null)return;syncing=true;try{
+        slider.minValue=Mathf.Ceil(spawner.MinimumPromiseSeconds);slider.maxValue=Mathf.Max(slider.minValue+1,Mathf.Floor(spawner.MaximumPromiseSeconds));
+        slider.SetValueWithoutNotify(spawner.PromiseSeconds);
+        slider.interactable=clock==null || clock.Phase==DayPhase.Open || clock.Phase==DayPhase.BeforeOpening;}finally{syncing=false;}
+    }
     public static UiBar Bar(Transform parent,string name,float x,float y,float w,float h,Color fill,bool marker=false)
     {
         var root=Box(parent,name,x,y,w,h);var bar=root.gameObject.AddComponent<UiBar>();bar.Build(fill,marker);return bar;
     }
 
+    /// <summary>Identity of an object for change detection. New-game rosters are copies with the same ids, so ids alone miss them.</summary>
+    public static string Ref(object o)=>o==null?"-":System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(o).ToString();
     // ---- formatting ----
     public static string Yen(decimal value)=>(value<0?"−":"")+"¥"+Math.Abs(Math.Round(value,0,MidpointRounding.AwayFromZero)).ToString("#,0");
     public static string Signed(decimal value)=>(value>=0?"+":"−")+"¥"+Math.Abs(Math.Round(value,0,MidpointRounding.AwayFromZero)).ToString("#,0");

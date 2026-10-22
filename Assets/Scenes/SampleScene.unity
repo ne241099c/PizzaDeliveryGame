@@ -36879,6 +36879,7 @@ MonoBehaviour:
   demandExponent: 0.7
   minimumDemand: 0.4
   maximumDemand: 2
+  openingOrders: 2
   useFixedSeed: 0
   randomSeed: 9187
 --- !u!114 &1404697818
@@ -37392,14 +37393,13 @@ MonoBehaviour:
   orders: {fileID: 1404697812}
   crew: {fileID: 1404697842}
   handover: {fileID: 1404697841}
-  cookSeconds: 12
   initialOvens: 1
   initialBenches: 2
   doughSeconds: 1
   sauceSeconds: 2
   assemblySeconds: 3
   bakeSeconds: 4
-  packSeconds: 2
+  packSeconds: 0
   bakeBandHalfWidth: 0.4
   burnAfterBand: 5
   staffTimeBase: 1.3

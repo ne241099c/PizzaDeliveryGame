@@ -71,7 +71,7 @@ public sealed partial class BusinessView
             float fraction=Mathf.Clamp01((order.Deadline-clock.ElapsedSeconds)/Mathf.Max(.01f,order.TimeLimit));item.Find("Number").GetComponent<TextMeshProUGUI>().color=fraction<=T.deadlineUrgent?T.berry:T.line;
         }
         // couriers at the counter
-        sig=string.Join(",",roster.People.Select(p=>p.Id+p.Status+handover.BagOf(p).Count+p.Capacity+(roster.SelectedPerson==p)));
+        sig=string.Join(",",roster.People.Select(p=>UiKit.Ref(p)+p.Status+handover.BagOf(p).Count+p.Capacity+(roster.SelectedPerson==p)));
         if(sig!=counterSignature){counterSignature=sig;RebuildCounter();}
         foreach(var item in counterItems)
         {

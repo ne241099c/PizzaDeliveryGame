@@ -14,16 +14,17 @@ public static class M7Validation
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var scope=save.SuppressSaving();
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         campaign.NewGame();clock.AutomaticTick=false;spawner.enabled=false;campaign.StartBusiness();
-        // One apprentice (speed 0.4): assembly 6x1.06, oven 4, packing 2x1.06. Two benches, one oven.
+        // One apprentice (speed 0.4): assembly 6x1.06, oven 4, no packing time (boxed as it leaves the oven). Two benches, one oven.
         var mio=UnityEngine.Object.FindFirstObjectByType<KitchenCrew>().People[0];float work=cook.StaffWorkSeconds(mio),pack=cook.StaffPackSeconds(mio),bake=cook.BakeSeconds;
-        Check(Mathf.Abs(work-6.36f)<.001f && Mathf.Abs(pack-2.12f)<.001f && bake==4,"apprentice step times");
+        Check(Mathf.Abs(work-6.36f)<.001f && pack==0 && bake==4 && Mathf.Abs(cook.CookSeconds-10)<.001f,"apprentice step times; packing takes no time; standard total 10s");
         var reference=new KitchenStaff("Reference",.5f,.5f);Check(Mathf.Abs(cook.StaffWorkSeconds(reference)+bake+cook.StaffPackSeconds(reference)-cook.CookSeconds)<.001f,"standard staff total equals cook seconds for the promise minimum");
         var first=new Order("Goal1","First pizza",0,100);var second=new Order("Goal2","Second pizza",0,100);list.AddOrder(first);list.AddOrder(second);
         Check(first.Baking==BakingState.Cooking && second.Baking==BakingState.Waiting,"single staff takes the oldest ticket first");
         Check(!list.SelectOnly(first) && !list.SelectOnly(second),"uncooked orders cannot be selected");Check(economy.Ledger.Materials==0,"no materials charged while cooking");
         clock.Advance(work+.001f);Check(cook.JobFor(first).Stage==PizzaStage.Baking && second.Baking==BakingState.Cooking && Mathf.Abs(cook.JobFor(second).StartedAt-work)<.001f,"assembled pizza enters the oven and the next ticket starts at the exact time");
-        clock.Advance(2*work+pack-.01f-clock.ElapsedSeconds);Check(!first.IsReady,"packing waits for the staff member");
-        clock.Advance(.02f);Check(first.IsReady && first.Stars>=2 && cook.JobFor(second).Stage==PizzaStage.Baking && Mathf.Abs(cook.JobFor(second).OvenStartedAt-2*work)<.001f,"first pizza packed after the second assembly; staff always earn the bake point");
+        clock.Advance(work+bake-.01f-clock.ElapsedSeconds);Check(!first.IsReady,"pizza bakes for the oven time");
+        clock.Advance(.02f);Check(first.IsReady && first.Stars>=2 && cook.JobFor(second).Worker==PizzaWorker.Staff && second.Baking==BakingState.Cooking,"first pizza is packed the moment it leaves the oven while staff keep assembling; staff always earn the bake point");
+        clock.Advance(2*work+.01f-clock.ElapsedSeconds);Check(cook.JobFor(second).Stage==PizzaStage.Baking && Mathf.Abs(cook.JobFor(second).OvenStartedAt-2*work)<.001f,"second assembly enters the free oven at the exact time");
         Check(list.SelectOnly(first),"packed order can be selected");Check(first.Deadline==100,"cooking does not rewrite deadline");
         clock.Advance(2*work+bake+pack+.01f-clock.ElapsedSeconds);Check(second.IsReady,"second pizza completes");
         campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();
@@ -49,7 +50,7 @@ public static class M7Validation
         {
             var order=Start(late?6:1000);Assemble(order,.75f,Topping.Basil);
             check(cook.PutInOven(0,0) && !cook.CanTakeOut(0),"raw pizza cannot be taken out");clock.Advance(cook.BakeSeconds);
-            check(cook.TakeOut(0) && cook.JobFor(order).Stage==PizzaStage.Boxed && !order.IsReady,"oven takeout starts automatic packing");
+            check(cook.TakeOut(0) && order.IsReady,"oven takeout packs the pizza at once (no packing time)");
             clock.Advance(cook.PackSeconds);
             check(order.IsReady && order.Stars==3,"sauce, correct topping and bake in the band give three stars");
             check(cook.BonusForArrival(order,order.Deadline)==20 && cook.BonusForArrival(order,order.Deadline+.01f)==0,"three-star bonus only on time inclusive");

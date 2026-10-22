@@ -137,7 +137,7 @@ public sealed partial class BusinessView
         chipTime.text=$"{Mathf.CeilToInt(clock.RemainingSeconds)/60}:{Mathf.CeilToInt(clock.RemainingSeconds)%60:00}";chipCash.text=UiKit.Yen(economy.Cash);chipReputation.text=Mathf.RoundToInt(reputation.Value).ToString();
         trafficButton.Kind=ShowCongestion?StickerKind.Selected:StickerKind.Secondary;
         var person=roster.SelectedPerson;
-        string sig=string.Join(",",roster.People.Select(p=>p.Id+p.Status+handover.BagOf(p).Count))+"|"+(person?.Id)+"|"+string.Join(",",handover.RackOrders.Select(o=>o.Id))+"|"+(planner.SelectedPlan!=null);
+        string sig=string.Join(",",roster.People.Select(p=>UiKit.Ref(p)+p.Status+handover.BagOf(p).Count))+"|"+UiKit.Ref(person)+"|"+string.Join(",",handover.RackOrders.Select(o=>o.Id))+"|"+(planner.SelectedPlan!=null);
         if(sig!=bagSignature){bagSignature=sig;RebuildCourierCard();}
         RefreshRouteSummary(person);
     }

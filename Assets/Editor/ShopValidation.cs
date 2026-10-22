@@ -94,6 +94,14 @@ public static class ShopValidation
             campaign.StartBusiness();spawner.enabled=false;var alone=new Order("Goal1","No staff",0,100);list.AddOrder(alone);clock.Advance(20);
             Check(alone.Baking==BakingState.Waiting,"without kitchen staff tickets wait for the player");
             clock.Advance(1000);campaign.NewGame();
+
+            // ---- 2026-10-23: orders waiting at opening, packing takes no time ----
+            spawner.enabled=true;campaign.StartBusiness();clock.Advance(.01f);
+            Check(list.OrderCount==2 && list.Orders.All(o=>o.SpawnedAt<.02f),"two orders are already waiting when the shop opens");
+            Check(cook.PackSeconds==0 && Mathf.Abs(cook.CookSeconds-10)<.001f && Mathf.Abs(spawner.MinimumPromiseSeconds-(spawner.ShortestRoundTripSeconds("Goal2")*1.1f+cook.CookSeconds))<.001f,"packing takes no time and the promise minimum follows the 10s standard");
+            clock.Advance(cook.StaffWorkSeconds(crew.People[0])+cook.BakeSeconds+.01f);
+            Check(list.Orders.Count(o=>o.IsReady)==1 && handover.RackOrders.Count()==1,"the first pizza is packed and stocked on the shelf as it leaves the oven");
+            spawner.enabled=false;clock.Advance(1000);campaign.NewGame();
         }
         finally{clock.AutomaticTick=tick;spawner.enabled=spawning;}
         return $"PASS: {count} shop checks.";

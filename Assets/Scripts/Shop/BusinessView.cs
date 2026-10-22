@@ -19,6 +19,7 @@ public sealed partial class BusinessView : MonoBehaviour
     private RectTransform world,hud,rail,railContent,dispatch,dragLayer,toasts;
     private CanvasGroup worldGroup,hudGroup,dispatchGroup;
     private TextMeshProUGUI dayText,timeText,cashText,reputationText,promiseText;
+    private Slider promiseSlider;
     private UiBar timeBar,reputationBar;private RectTransform cashDelta;
     // Unity must retain generated control references across an Editor script reload.
     [SerializeField, HideInInspector] private StickerButton[] zoneTabs=new StickerButton[3];
@@ -85,9 +86,8 @@ public sealed partial class BusinessView : MonoBehaviour
         reputationText=UiKit.Label(hud,"Reputation","50",1014,14,80,66,38,T.line,FontRole.Display);
         reputationBar=UiKit.Bar(hud,"ReputationBar",1092,36,140,24,T.cheese);
         UiKit.Label(hud,"PromiseTitle",ShopStrings.Promise,1268,24,120,46,20,T.line,FontRole.Black);
-        UiKit.Button(hud,"PromiseMinus","",StickerKind.Secondary,1392,16,58,58,20,()=>spawner.SetPromiseSeconds(spawner.PromiseSeconds-10),FontRole.Black,"icon_minus");
-        promiseText=UiKit.Label(hud,"Promise","60秒",1454,14,120,66,36,T.line,FontRole.Display,TextAlignmentOptions.Center);
-        UiKit.Button(hud,"PromisePlus","",StickerKind.Secondary,1578,16,58,58,20,()=>spawner.SetPromiseSeconds(spawner.PromiseSeconds+10),FontRole.Black,"icon_plus");
+        promiseSlider=UiKit.Slider(hud,"PromiseSlider",1390,34,240,28,T.cheese,v=>spawner.SetPromiseSeconds(v));
+        promiseText=UiKit.Label(hud,"Promise","60秒",1640,14,124,66,36,T.line,FontRole.Display,TextAlignmentOptions.Center);
         UiKit.Button(hud,"MenuButton","",StickerKind.Secondary,1772,14,64,64,20,()=>menu.ShowMenu(),FontRole.Black,"icon_menu");
     }
     private void RefreshHud()
@@ -98,7 +98,7 @@ public sealed partial class BusinessView : MonoBehaviour
         float fraction=clock.RemainingSeconds/clock.BusinessDuration;timeBar.Set(fraction,-1,fraction<=T.closingWarning?T.berry:T.basil);
         cashText.text=UiKit.Yen(economy.Cash);UiKit.SetBadge(cashDelta,"▲ +"+UiKit.Yen(economy.DailyRevenue).Replace("¥",""),T.basil,Color.white);
         reputationText.text=Mathf.RoundToInt(reputation.Value).ToString();reputationBar.Set(reputation.Value/reputation.Maximum);
-        promiseText.text=$"{spawner.PromiseSeconds:F0}<size=20>秒</size>";
+        promiseText.text=$"{spawner.PromiseSeconds:F0}<size=20>秒</size>";UiKit.SyncPromise(promiseSlider,spawner,clock);
     }
 
     // ---- ticket rail ----
