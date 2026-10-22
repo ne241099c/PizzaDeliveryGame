@@ -7,7 +7,7 @@ public enum DayPhase { BeforeOpening, Open, Closed, Ended }
 [DefaultExecutionOrder(-100)]
 public sealed class GameClock : MonoBehaviour
 {
-    [SerializeField, Min(1f)] private float businessDuration = 300f;
+    [SerializeField, Min(1f)] private float businessDuration = 180f;
     [SerializeField, Min(0.01f)] private float travelTimeMultiplier = 5f;
     [SerializeField, Range(0.05f, 1f)] private float planningTimeRate = 1f;
     [SerializeField] private bool autoStart = true;

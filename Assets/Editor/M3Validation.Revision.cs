@@ -36,18 +36,18 @@ public static partial class M3Validation
         near(spawner.DemandFactor(1),2,"M4-3 demand upper clamp");
         near(spawner.DemandFactor(10000),0.4f,"M4-3 demand lower clamp");
         near(spawner.ShortestArrivalSeconds("Goal1"),2.85f/1.3f*5,"M4-3 fastest one-way Goal1");
-        near(spawner.MinimumPromiseSeconds,2*3.05f/1.3f*5*1.1f+10,"M7 round-trip lower bound plus cooking (standard 10s: assembly 6 + oven 4, no packing time)");
+        near(spawner.MinimumPromiseSeconds,2*3.05f/1.3f*5*1.1f+18,"M7 round-trip lower bound plus cooking (standard 18s: dough 2 + sauce 4 + assembly 6 + oven 6, no packing time)");
         near(spawner.ReputationFactor,1,"M4-6 initial reputation gives factor one");
         float previousPromise=spawner.PromiseSeconds;
         try
         {
             spawner.SetPromiseSeconds(30);var existing=spawner.CreateOrder("Goal1",12);
             near(existing.Deadline,12+spawner.PromiseSeconds,"M7 deadline snapshots physically clamped promise");
-            near(spawner.ExpectedInterval,25/spawner.DemandFactor(spawner.PromiseSeconds),"M7 clamped short promise controls frequency");
+            near(spawner.ExpectedInterval,10/spawner.DemandFactor(spawner.PromiseSeconds),"M7 clamped short promise controls frequency (base interval 10s)");
             spawner.SetPromiseSeconds(180);
             near(existing.Deadline,12+Mathf.Max(30,spawner.MinimumPromiseSeconds),"M7 slider cannot rewrite an existing deadline");
             near(spawner.CreateOrder("Goal2",13).Deadline,193,"M4-3 only new orders get new promise");
-            near(spawner.ExpectedInterval,25/Mathf.Pow(1f/3f,0.7f),"M4-3 long promise reduces frequency");
+            near(spawner.ExpectedInterval,10/Mathf.Pow(1f/3f,0.7f),"M4-3 long promise reduces frequency");
             spawner.SetPromiseSeconds(0);near(spawner.PromiseSeconds,spawner.MinimumPromiseSeconds,"M4-3 physical lower bound enforced");
         }
         finally {spawner.SetPromiseSeconds(previousPromise);}

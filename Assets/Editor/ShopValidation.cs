@@ -68,7 +68,7 @@ public static class ShopValidation
             // ---- kitchen staff ----
             campaign.NewGame();
             Check(crew.Count==1 && crew.People[0].Name=="Mio" && Mathf.Approximately(crew.People[0].Speed,.4f) && recruitment.TeamCount==3,"start with Aoi, Ren and the apprentice Mio");
-            Check(economy.DailyWage(crew.People[0])==80,"kitchen wage 40 + 50 x (speed + care)");
+            Check(economy.DailyWage(crew.People[0])==48,"kitchen wage 24 + 30 x (speed + care)");
             var funding=new SerializedObject(economy);float initial=funding.FindProperty("initialCash").floatValue;funding.FindProperty("initialCash").floatValue=10000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=initial;funding.ApplyModifiedPropertiesWithoutUndo();
             int guard=0;while(recruitment.KitchenApplicants.Count==0 && guard++<20)recruitment.GenerateDay();
             Check(recruitment.KitchenApplicants.Count==1,"kitchen candidates appear in the applicant pool");
@@ -97,8 +97,8 @@ public static class ShopValidation
 
             // ---- 2026-10-23: orders waiting at opening, packing takes no time ----
             spawner.enabled=true;campaign.StartBusiness();clock.Advance(.01f);
-            Check(list.OrderCount==2 && list.Orders.All(o=>o.SpawnedAt<.02f),"two orders are already waiting when the shop opens");
-            Check(cook.PackSeconds==0 && Mathf.Abs(cook.CookSeconds-10)<.001f && Mathf.Abs(spawner.MinimumPromiseSeconds-(spawner.ShortestRoundTripSeconds("Goal2")*1.1f+cook.CookSeconds))<.001f,"packing takes no time and the promise minimum follows the 10s standard");
+            Check(list.OrderCount==3 && list.Orders.All(o=>o.SpawnedAt<.02f),"three orders are already waiting when the shop opens");
+            Check(cook.PackSeconds==0 && Mathf.Abs(cook.CookSeconds-18)<.001f && Mathf.Abs(spawner.MinimumPromiseSeconds-(spawner.ShortestRoundTripSeconds("Goal2")*1.1f+cook.CookSeconds))<.001f,"packing takes no time and the promise minimum follows the 18s standard");
             clock.Advance(cook.StaffWorkSeconds(crew.People[0])+cook.BakeSeconds+.01f);
             Check(list.Orders.Count(o=>o.IsReady)==1 && handover.RackOrders.Count()==1,"the first pizza is packed and stocked on the shelf as it leaves the oven");
             spawner.enabled=false;clock.Advance(1000);campaign.NewGame();

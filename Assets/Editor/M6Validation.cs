@@ -67,12 +67,12 @@ public static partial class M6Validation
         Check(training.Cancel(aoi) && economy.Cash==cash && aoi.IsAvailable,"cancel fully refunds and restores availability");
         Check(training.Request(aoi,CourierAbility.Driving),"cancel permits replacement request");campaign.StartBusiness();
         Check(!roster.SelectForDispatch(aoi) && roster.SelectForDispatch(roster.People[1]),"other couriers available during training");
-        clock.Advance(149.75f);Near(aoi.Driving,.6f,"ability unchanged before half day");Check(!aoi.IsAvailable,"training blocks first half");
+        clock.Advance(clock.BusinessDuration*.5f-.25f);Near(aoi.Driving,.6f,"ability unchanged before half day");Check(!aoi.IsAvailable,"training blocks first half");
         clock.Advance(.25f);Near(aoi.Driving,.7f,"training grants gain at half day");Check(roster.SelectForDispatch(aoi),"trained courier selectable in second half");
         Check(!training.Cancel(aoi) && !training.Request(aoi,CourierAbility.Service),"business cannot cancel or reorder training");
-        clock.Advance(1000);Check(economy.Ledger.Wages==404+economy.KitchenWages,"training day pays normal opening courier wage plus the apprentice");campaign.NewGame();
+        clock.Advance(1000);Check(economy.Ledger.Wages==242.4m+economy.KitchenWages,"training day pays normal opening courier wage plus the apprentice");campaign.NewGame();
         var config=new SerializedObject(training);config.FindProperty("trainingDurationRatio").floatValue=1;config.ApplyModifiedPropertiesWithoutUndo();
-        aoi=roster.People[0];Check(training.Request(aoi,CourierAbility.Driving),"full-day training request");campaign.StartBusiness();clock.Advance(299.75f);Check(!aoi.IsAvailable,"ratio one unavailable until closing");
+        aoi=roster.People[0];Check(training.Request(aoi,CourierAbility.Driving),"full-day training request");campaign.StartBusiness();clock.Advance(clock.BusinessDuration-.25f);Check(!aoi.IsAvailable,"ratio one unavailable until closing");
         clock.Advance(.25f);Near(aoi.Driving,.7f,"ratio one completes at closing");Check(clock.Phase==DayPhase.Ended,"full-day training permits settlement");
         config.FindProperty("trainingDurationRatio").floatValue=.5f;config.ApplyModifiedPropertiesWithoutUndo();campaign.NewGame();
     }
@@ -103,9 +103,9 @@ public static partial class M6Validation
         var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
         var person=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>().People[0];campaign.StartBusiness();
         rules.AwardExperience(person,CourierAbility.Driving,200);Near(person.Driving,.62f,"actual roster gains ability during business");
-        clock.Advance(clock.BusinessDuration+1);Check(economy.Ledger.Wages==404+economy.KitchenWages && economy.KitchenWages==80,"current-day courier (404) and apprentice (80) wages are frozen at opening");
+        clock.Advance(clock.BusinessDuration+1);Check(economy.Ledger.Wages==242.4m+economy.KitchenWages && economy.KitchenWages==48,"current-day courier (242.4) and apprentice (48) wages are frozen at opening");
         campaign.NextDay();Near(person.Driving,.62f,"growth carries to next day");
-        campaign.StartBusiness();clock.Advance(clock.BusinessDuration+1);Check(economy.Ledger.Wages==404.8m+economy.KitchenWages,"grown courier wage (404.8) applies to next settlement with the apprentice wage");
+        campaign.StartBusiness();clock.Advance(clock.BusinessDuration+1);Check(economy.Ledger.Wages==242.88m+economy.KitchenWages,"grown courier wage (242.88) applies to next settlement with the apprentice wage");
         campaign.NewGame();
     }
     private static void ValidatePotentials()
@@ -158,7 +158,7 @@ public static partial class M6Validation
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var savingScope=save?.SuppressSaving();
         Checks=0;string previous=M5Validation.Run()+" / "+M4PlayValidation.CheckReset();
         var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
-        Check(economy.FixedCost(1)==150 && economy.FixedCost(2)==175 && economy.FixedCost(30)==875,"fixed cost growth");
+        Check(economy.FixedCost(1)==90 && economy.FixedCost(2)==105 && economy.FixedCost(30)==525,"fixed cost growth");
         var settings=UnityEngine.Object.FindFirstObjectByType<DaySimulationSettings>();
         Near(settings.AdjustedPromise(60,0,90,1),60,"one successful day cannot shorten promise");
         Near(settings.AdjustedPromise(60,0,90,2),50,"two successful days shorten by ten");

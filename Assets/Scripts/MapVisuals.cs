@@ -18,7 +18,7 @@ public sealed class MapVisuals : MonoBehaviour
         if(previousAspect>0 && aspect>0 && !Mathf.Approximately(previousAspect,aspect))camera.orthographicSize*=previousAspect/aspect;
         previousAspect=aspect;
         float arrowSize=UITheme.Active.mapRouteArrowPixels*10*camera.orthographicSize*2/Mathf.Max(1,camera.pixelHeight);
-        foreach(var arrow in arrows)if(arrow!=null)arrow.fontSize=arrowSize;
+        foreach(var arrow in arrows)if(arrow!=null){arrow.fontSize=arrowSize;arrow.enabled=!BusinessView.HideMapArrows;}
         foreach(var c in congestion)if(c.dot!=null)c.dot.enabled=BusinessView.ShowCongestion;
     }
     private readonly List<TextMeshPro> arrows=new();

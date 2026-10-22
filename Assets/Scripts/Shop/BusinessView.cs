@@ -181,7 +181,7 @@ public sealed partial class BusinessView : MonoBehaviour
         Zone=zone;for(int i=0;i<zoneTabs.Length;i++)if(zoneTabs[i]!=null)zoneTabs[i].Kind=i==(int)zone?StickerKind.Primary:StickerKind.Secondary;
         bool dispatching=zone==ShopZone.Dispatch;
         worldGroup.alpha=dispatching?0:1;worldGroup.blocksRaycasts=worldGroup.interactable=!dispatching;
-        UiKit.Show(dispatch,dispatching);hudGroup.alpha=dispatching?0:1;hudGroup.blocksRaycasts=!dispatching;UiKit.Show(rail,!dispatching);
+        UiKit.Show(dispatch,dispatching);UiKit.Show(rail,!dispatching); // the top bar (time, money, promise) stays on both views
         UiKit.Show(zoneTabs[1],false);knobTarget=dispatching?ToggleW/2+3:6;if(immediate && zoneKnob!=null)zoneKnob.anchoredPosition=new Vector2(knobTarget,-6);
         float target=zone==ShopZone.Handover?HandoverPan:0;panFrom=world.anchoredPosition.x;panTo=target;panStarted=Time.unscaledTime;
         if(immediate){world.anchoredPosition=new Vector2(target,0);panFrom=target;}

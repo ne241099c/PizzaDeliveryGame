@@ -13,7 +13,7 @@ public sealed partial class BusinessView
 {
     private RectTransform stepsBar,bubble,minimapFrame,laneRow;
     [SerializeField, HideInInspector] private RectTransform[] steps=new RectTransform[2];
-    private TextMeshProUGUI chipTime,chipCash,chipReputation,bubbleText;
+    private TextMeshProUGUI bubbleText;
     private StickerButton trafficButton;
     private RawImage minimapImage;private Camera minimapCamera;private RenderTexture minimapTexture;
     private sealed class Lane
@@ -39,7 +39,7 @@ public sealed partial class BusinessView
     private void BuildDispatch()
     {
         // steps bar (to the right of the 厨房/配達指示 toggle)
-        stepsBar=UiKit.Box(dispatch,"Steps",392,20,720,76);
+        stepsBar=UiKit.Box(dispatch,"Steps",32,122,760,76);
         string[] names={ShopStrings.Step1,ShopStrings.Step2};float[] widths={360,320};float x=0;
         if(steps==null || steps.Length!=2)steps=new RectTransform[2]; // older scenes saved four steps
         for(int i=0;i<2;i++)
@@ -51,20 +51,17 @@ public sealed partial class BusinessView
             UiKit.Label(pill,"Text",names[i],68,0,widths[i]-78,68,T.bodySize,T.line,FontRole.Display);x+=widths[i];
             if(i==0){UiKit.Icon(stepsBar,"Arrow","icon_play",x+10,26,24,T.inkSub);x+=44;}
         }
-        // status chips
-        var chips=UiKit.Box(dispatch,"Chips",1430,22,458,72);
-        chipTime=Chip(chips,0,140,"icon_clock");chipCash=Chip(chips,150,180,"icon_coin");chipReputation=Chip(chips,340,118,"icon_star");
         BuildDispatchOrders();
         // guide bubble
-        bubble=UiKit.Card(dispatch,"Bubble",1000,112,600,112,T.paper,18,6,3);
+        bubble=UiKit.Card(dispatch,"Bubble",1140,126,620,112,T.paper,18,6,3);
         UiKit.Badge(bubble,"Here","いまここ",20,14,T.cheese,T.line,30,16);
         bubbleText=UiKit.Label(bubble,"Text","",20,50,560,56,T.captionSize,T.line,FontRole.Black,TextAlignmentOptions.TopLeft,true);
         // map controls
-        var zoom=UiKit.Card(dispatch,"Zoom",1808,112,76,150,T.paper,14,6,3);
+        var zoom=UiKit.Card(dispatch,"Zoom",1808,250,76,150,T.paper,14,6,3);
         UiKit.Button(zoom,"ZoomIn","",StickerKind.Secondary,4,4,68,68,20,()=>Zoom(.8f,Vector2.zero,false),FontRole.Black,"icon_plus");
         UiKit.Button(zoom,"ZoomOut","",StickerKind.Secondary,4,78,68,68,20,()=>Zoom(1.25f,Vector2.zero,false),FontRole.Black,"icon_minus");
-        UiKit.Button(dispatch,"Fit","",StickerKind.Secondary,1808,280,76,76,20,FitMap,FontRole.Black,"icon_target");
-        trafficButton=UiKit.Button(dispatch,"Traffic","混雑",StickerKind.Selected,1808,372,76,76,16,()=>{ShowCongestion=!ShowCongestion;},FontRole.Black);
+        UiKit.Button(dispatch,"Fit","",StickerKind.Secondary,1808,418,76,76,20,FitMap,FontRole.Black,"icon_target");
+        trafficButton=UiKit.Button(dispatch,"Traffic","混雑",StickerKind.Selected,1808,510,76,76,16,()=>{ShowCongestion=!ShowCongestion;},FontRole.Black);
         // minimap (above the lanes, bottom right)
         var mini=UiKit.Card(dispatch,"Minimap",1640,632,248,168,T.paper,14,6,3);
         minimapImage=UiKit.Stretch(mini,"Image",6,6,6,6).gameObject.AddComponent<RawImage>();minimapImage.raycastTarget=false;
@@ -90,7 +87,7 @@ public sealed partial class BusinessView
     {
         var cam=Camera.main;if(cam==null || map==null || !map.IsReady)return;
         float minX=map.Nodes.Min(n=>n.Position.x)-.9f,maxX=map.Nodes.Max(n=>n.Position.x)+.9f,minY=map.Nodes.Min(n=>n.Position.y)-.9f,maxY=map.Nodes.Max(n=>n.Position.y)+.9f;
-        float fl=400f/1920,fr=1610f/1920,fb=(1080-LaneTop+20)/1080f,ft=(1080-110f)/1080,aspect=cam.aspect;
+        float fl=400f/1920,fr=1610f/1920,fb=(1080-LaneTop+20)/1080f,ft=(1080-250f)/1080,aspect=cam.aspect;
         float size=Mathf.Max((maxY-minY)/(2*(ft-fb)),(maxX-minX)/(2*aspect*(fr-fl)));cam.orthographicSize=size;
         var centre=new Vector2((minX+maxX)/2,(minY+maxY)/2);var offset=new Vector2(((fl+fr)/2-.5f)*2*size*aspect,((fb+ft)/2-.5f)*2*size);
         cam.transform.position=new Vector3(centre.x-offset.x,centre.y-offset.y,cam.transform.position.z);
@@ -114,11 +111,25 @@ public sealed partial class BusinessView
         for(int i=0;i+1<stops.Count;i++)
         {
             string a=stops[i],b=stops[i+1];List<string> edges=null;
-            if(w!=null && w.TryGetValue((a,b),out var via)){var first=Path(a,via);var second=Path(via,b);if(first!=null && second!=null)edges=first.Concat(second).ToList();}
+            if(w!=null && w.TryGetValue((a,b),out var via))edges=Via(a,b,via);
             edges??=Path(a,b);if(edges==null)return new List<(string,string,List<string>)>();
             legs.Add((a,b,edges));
         }
         return legs;
+    }
+    /// <summary>A leg forced through a waypoint: an intersection id, or "E:" + a road id (the road is driven in the shorter direction).</summary>
+    private List<string> Via(string a,string b,string via)
+    {
+        if(!via.StartsWith("E:")){var first=Path(a,via);var second=Path(via,b);return first!=null && second!=null?first.Concat(second).ToList():null;}
+        var road=map.GetEdge(via.Substring(2));List<string> best=null;float bestLength=float.PositiveInfinity;
+        foreach(var (start,end) in new[]{(road.NodeAId,road.NodeBId),(road.NodeBId,road.NodeAId)})
+        {
+            if(!road.TryTraverse(start,out var to) || to!=end)continue;
+            var first=Path(a,start);var second=Path(end,b);if(first==null || second==null)continue;
+            var edges=first.Append(road.Id).Concat(second).ToList();float length=edges.Sum(id=>map.GetEdge(id).Distance);
+            if(length<bestLength){bestLength=length;best=edges;}
+        }
+        return best;
     }
     private List<string> RouteEdges(DeliveryPerson p,IReadOnlyList<Order> bag,bool automatic)=>Legs(p,bag,automatic).SelectMany(l=>l.edges).ToList();
     private float Seconds(IEnumerable<string> edges,DeliveryPerson p)=>clock.ToRealSeconds(edges.Sum(id=>map.GetTravelTime(id,p)));
@@ -137,9 +148,11 @@ public sealed partial class BusinessView
         var legs=Legs(person,handover.BagOf(person),false);if(legIndex<0 || legIndex>=legs.Count)return false;
         var (a,b,_)=legs[legIndex];
         if(nodeId==a || nodeId==b){Waypoints(person).Remove((a,b));SyncRoute();return true;}
-        if(Path(a,nodeId)==null || Path(nodeId,b)==null){Toast("そこを通る道がありません。",T.berry,null,"icon_map");return false;}
+        if(Via(a,b,nodeId)==null){Toast("そこを通る道がありません。",T.berry,null,"icon_map");return false;}
         Waypoints(person)[(a,b)]=nodeId;SyncRoute();return true;
     }
+    /// <summary>Route a leg along a road (the red line dragged onto it).</summary>
+    public bool SetWaypointRoad(DeliveryPerson person,int legIndex,string edgeId)=>SetWaypoint(person,legIndex,"E:"+edgeId);
     public void ResetRoute(DeliveryPerson person){if(person==null)return;Waypoints(person).Clear();SyncRoute();}
     public void Depart(DeliveryPerson person)
     {
@@ -305,8 +318,7 @@ public sealed partial class BusinessView
         bool showGuide=!guided || Carries(Held);UiKit.Show(bubble,showGuide);
         bubbleText.text=Carries(Held)?"伝票を持つと、近い注文のピンが光ります。配達員のレーンに入れると、まとめて運びます。"
             :step==0?(handover.RackOrders.Any()?"焼き上がった伝票を、下の配達員のレーンへドラッグします。":"焼き上がった注文が、左の一覧とピンに出ます。")
-            :"赤い線の丸いつまみをドラッグすると、通る道を変えられます。順番は、レーンの伝票を入れ替えます。";
-        chipTime.text=$"{Mathf.CeilToInt(clock.RemainingSeconds)/60}:{Mathf.CeilToInt(clock.RemainingSeconds)%60:00}";chipCash.text=UiKit.Yen(economy.Cash);chipReputation.text=Mathf.RoundToInt(reputation.Value).ToString();
+            :"赤い線（丸いつまみ）を、通りたい道までドラッグすると道順が変わります。届ける順番は、レーンの伝票を入れ替えます。";
         trafficButton.Kind=ShowCongestion?StickerKind.Selected:StickerKind.Secondary;
     }
 
@@ -401,6 +413,25 @@ public sealed partial class BusinessView
             h.root.gameObject.SetActive(true);h.root.localScale=Vector3.one*px;
             if(!(handleDragging && handlePress==i))h.root.position=new Vector3(at.x,at.y,-1.5f);
         }
+        // direction chevrons: outbound and return sit on their own side of the road, so both stay visible
+        var chevrons=new List<(Vector2 at,float angle)>();
+        if(legs.Count>0)
+        {
+            var line=Polyline(map.StoreNodeId,legs.SelectMany(l=>l.edges));float spacing=64*px,carry=spacing*.5f;
+            for(int i=0;i+1<line.Count;i+=2)
+            {
+                var a=line[i];var d=line[i+1]-a;float len=d.magnitude;if(len<=0)continue;var dir=d/len;var side=new Vector2(dir.y,-dir.x)*9*px;
+                for(float t=carry;t<len;t+=spacing)chevrons.Add((a+dir*t+side,Mathf.Atan2(dir.y,dir.x)*Mathf.Rad2Deg));
+                carry=(carry-len)%spacing;if(carry<0)carry+=spacing;
+            }
+        }
+        while(routeArrows.Count<chevrons.Count)routeArrows.Add(MakeChevron());
+        for(int i=0;i<routeArrows.Count;i++)
+        {
+            bool on=i<chevrons.Count;routeArrows[i].gameObject.SetActive(on);if(!on)continue;
+            routeArrows[i].position=new Vector3(chevrons[i].at.x,chevrons[i].at.y,-1.3f);routeArrows[i].rotation=Quaternion.Euler(0,0,chevrons[i].angle);routeArrows[i].localScale=Vector3.one*px;
+        }
+        HideMapArrows=router.Current==ScreenId.Business && Zone==ShopZone.Dispatch;
         // automatic route, shown only once the player's route differs from it
         var dots=new List<Vector2>();
         if(bag.Count>0)
@@ -414,6 +445,16 @@ public sealed partial class BusinessView
         }
         while(autoDots.Count<dots.Count){var s=new GameObject("AutoRoute").AddComponent<SpriteRenderer>();s.transform.SetParent(pinRoot,false);s.sprite=UiKit.Circle;s.color=new Color(.45f,.42f,.4f,.85f);s.sortingOrder=13;autoDots.Add(s);}
         for(int i=0;i<autoDots.Count;i++){bool on=i<dots.Count;autoDots[i].enabled=on;if(on){autoDots[i].transform.position=new Vector3(dots[i].x,dots[i].y,-1.2f);autoDots[i].transform.localScale=Vector3.one*8*px/1.28f;}}
+    }
+    private readonly List<Transform> routeArrows=new();
+    /// <summary>The map's own small "&gt;" route arrows give way to the dispatch board's chevrons.</summary>
+    public static bool HideMapArrows {get;private set;}
+    private Transform MakeChevron()
+    {
+        var root=new GameObject("RouteDirection").transform;root.SetParent(pinRoot,false);
+        void Part(string name,float size,Color c,int order){var s=new GameObject(name).AddComponent<SpriteRenderer>();s.transform.SetParent(root,false);s.sprite=UiKit.Art("icon_play");s.color=c;s.sortingOrder=order;float w=s.sprite!=null?s.sprite.bounds.size.x:1;s.transform.localScale=Vector3.one*size/Mathf.Max(.0001f,w);}
+        Part("Edge",22,T.line,14);Part("Face",15,Color.white,15);
+        return root;
     }
     private Transform MakeHandle()
     {
@@ -433,7 +474,40 @@ public sealed partial class BusinessView
     }
     private int HandleAt(Vector2 screen)
     {
-        var cam=Camera.main;for(int i=0;i<handles.Count;i++)if(handles[i].root.gameObject.activeSelf && ((Vector2)cam.WorldToScreenPoint(handles[i].at)-screen).magnitude<=30)return i;return -1;
+        var cam=Camera.main;for(int i=0;i<handles.Count;i++)if(handles[i].root.gameObject.activeSelf && ((Vector2)cam.WorldToScreenPoint(handles[i].at)-screen).magnitude<=30)return i;
+        // anywhere on the red line also grabs the leg under the pointer
+        var person=roster.SelectedPerson;if(person==null || !person.IsAvailable)return -1;var bag=handover.BagOf(person);if(bag.Count==0)return -1;
+        var legs=Legs(person,bag,false);int best=-1;float bestDistance=22;
+        for(int i=0;i<legs.Count;i++){var line=Polyline(legs[i].from,legs[i].edges);for(int k=0;k+1<line.Count;k+=2){float d=SegmentDistance(screen,cam.WorldToScreenPoint(line[k]),cam.WorldToScreenPoint(line[k+1]));if(d<bestDistance){bestDistance=d;best=i;}}}
+        return best;
+    }
+    private static float SegmentDistance(Vector2 p,Vector2 a,Vector2 b){var ab=b-a;float t=ab.sqrMagnitude<=0?0:Mathf.Clamp01(Vector2.Dot(p-a,ab)/ab.sqrMagnitude);return (a+ab*t-p).magnitude;}
+    /// <summary>The road under the pointer (screen distance), with backstreets drawn beside the main road.</summary>
+    private MapEdge RoadAt(Vector2 screen,float within=48)
+    {
+        var cam=Camera.main;MapEdge best=null;float bestDistance=within;
+        foreach(var e in map.Edges)
+        {
+            Vector2 a=NodeAt(e.NodeAId),b=NodeAt(e.NodeBId);if(e.RoadType==RoadType.Backstreet){var d=(b-a).normalized;var o=new Vector2(-d.y,d.x)*.35f;a+=o;b+=o;}
+            float dist=SegmentDistance(screen,cam.WorldToScreenPoint(a),cam.WorldToScreenPoint(b));if(dist<bestDistance){bestDistance=dist;best=e;}
+        }
+        return best;
+    }
+    /// <summary>Last map press as seen by the board (for checking input in the editor).</summary>
+    public string InputTrace {get;private set;}="";
+    private (string,string) dragLeg;private string dragOriginal,dragTarget;
+    private void BeginRouteDrag(int index)
+    {
+        var person=roster.SelectedPerson;var legs=Legs(person,handover.BagOf(person),false);
+        dragLeg=(legs[index].from,legs[index].to);Waypoints(person).TryGetValue(dragLeg,out dragOriginal);dragTarget=dragOriginal;
+    }
+    /// <summary>Live preview: the leg follows the road under the pointer while the line is dragged.</summary>
+    private void PreviewRouteDrag(Vector2 screen)
+    {
+        var person=roster.SelectedPerson;if(person==null)return;var road=RoadAt(screen);
+        string target=road!=null?"E:"+road.Id:dragOriginal;if(target==dragTarget)return;
+        if(target!=null && Via(dragLeg.Item1,dragLeg.Item2,target)==null)return;
+        dragTarget=target;var w=Waypoints(person);if(target==null)w.Remove(dragLeg);else w[dragLeg]=target;SyncRoute();
     }
     private Order PinOrderAt(Vector2 screen)
     {
@@ -457,40 +531,38 @@ public sealed partial class BusinessView
         var mouse=Mouse.current;var cam=Camera.main;if(mouse==null || cam==null || menu.MenuOpen || menu.HelpOpen)return;
         Vector2 pos=mouse.position.ReadValue();bool over=OverUi(pos);
         float scroll=mouse.scroll.ReadValue().y;if(scroll!=0 && !over)Zoom(Mathf.Pow(.85f,Mathf.Clamp(scroll/120f,-1,1)),pos,true);
-        if(mouse.leftButton.wasPressedThisFrame && !over && Held==null)
-        {
-            pressing=true;dragging=pinDragging=handleDragging=false;pressPosition=lastPointer=pos;
-            handlePress=HandleAt(pos);pinPress=handlePress<0?PinOrderAt(pos):null;
-        }
-        if(pressing && mouse.leftButton.isPressed)
-        {
-            if(!dragging && (pos-pressPosition).magnitude>8)
-            {
-                dragging=true;
-                if(handlePress>=0)handleDragging=true;
-                else if(PinPayload(pinPress) is DragPayload payload && ShopHand.Instance!=null){pinDragging=true;ShopHand.Instance.BeginAt(payload,pos);}
-            }
-            if(pinDragging)ShopHand.Instance?.MoveAt(pos);
-            else if(handleDragging){var w=cam.ScreenToWorldPoint(pos);handles[handlePress].root.position=new Vector3(w.x,w.y,-1.5f);}
-            else if(dragging)PanBy(pos-lastPointer,cam);
-            lastPointer=pos;
-        }
-        if(pressing && mouse.leftButton.wasReleasedThisFrame)
-        {
-            pressing=false;
-            if(pinDragging){pinDragging=false;ShopHand.Instance?.EndAt(pos);}
-            else if(handleDragging){handleDragging=false;DropHandle(handlePress,pos);}
-            else if(!dragging)Tap(pos);
-            handlePress=-1;pinPress=null;
-        }
+        if(mouse.leftButton.wasPressedThisFrame){if(over || Held!=null)InputTrace=$"press {pos} ignored (over UI {over})";else PointerDown(pos);}
+        if(pressing && mouse.leftButton.isPressed)PointerMove(pos);
+        if(pressing && mouse.leftButton.wasReleasedThisFrame)PointerUp(pos);
         if(mouse.middleButton.isPressed && !over)PanBy(mouse.delta.ReadValue(),cam);
     }
-    private void DropHandle(int index,Vector2 screen)
+    // Map pointer steps (screen pixels). The mouse drives them every frame; checks can call them directly.
+    public void PointerDown(Vector2 pos)
     {
-        var cam=Camera.main;var person=roster.SelectedPerson;if(person==null || index<0)return;
-        var nearest=map.Nodes.Where(n=>!n.IsStore).OrderBy(n=>((Vector2)cam.WorldToScreenPoint(n.Position)-screen).sqrMagnitude).FirstOrDefault();
-        if(nearest==null || ((Vector2)cam.WorldToScreenPoint(nearest.Position)-screen).magnitude>60){Toast("交差点の近くで離すと、そこを通るルートになります。",T.cheese,null,"icon_map");return;}
-        SetWaypoint(person,index,nearest.Id);
+        pressing=true;dragging=pinDragging=handleDragging=false;pressPosition=lastPointer=pos;
+        handlePress=HandleAt(pos);pinPress=handlePress<0?PinOrderAt(pos):null;InputTrace=$"press {pos} route leg {handlePress}";
+    }
+    public void PointerMove(Vector2 pos)
+    {
+        var cam=Camera.main;if(!pressing || cam==null)return;
+        if(!dragging && (pos-pressPosition).magnitude>8)
+        {
+            dragging=true;
+            if(handlePress>=0){handleDragging=true;BeginRouteDrag(handlePress);}
+            else if(PinPayload(pinPress) is DragPayload payload && ShopHand.Instance!=null){pinDragging=true;ShopHand.Instance.BeginAt(payload,pos);}
+        }
+        if(pinDragging)ShopHand.Instance?.MoveAt(pos);
+        else if(handleDragging){var w=cam.ScreenToWorldPoint(pos);if(handlePress<handles.Count)handles[handlePress].root.position=new Vector3(w.x,w.y,-1.5f);PreviewRouteDrag(pos);}
+        else if(dragging)PanBy(pos-lastPointer,cam);
+        lastPointer=pos;
+    }
+    public void PointerUp(Vector2 pos)
+    {
+        if(!pressing)return;pressing=false;
+        if(pinDragging){pinDragging=false;ShopHand.Instance?.EndAt(pos);}
+        else if(handleDragging){handleDragging=false;InputTrace+=$" / released {pos} on {RoadAt(pos)?.Id}";if(RoadAt(pos)==null)Toast("赤い線を、通りたい道の上まで引っぱって離します。",T.cheese,null,"icon_map");}
+        else if(!dragging)Tap(pos);
+        handlePress=-1;pinPress=null;
     }
     private static void PanBy(Vector2 delta,Camera cam){float scale=cam.orthographicSize*2f/cam.pixelHeight;cam.transform.position-=new Vector3(delta.x,delta.y,0)*scale;}
     private void Zoom(float factor,Vector2 screen,bool atCursor)

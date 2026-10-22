@@ -27,6 +27,7 @@ public sealed class GameOverView : MonoBehaviour
         UiKit.Label(card,"TeamTitle","育てたスタッフ",60,392,600,40,26,T.line,FontRole.Display);
         float x=60;foreach(var p in roster.People.Take(6)){UiKit.Avatar(card,"Avatar_"+p.Name,x,444,76,T.CourierColor(p.Name),p.Name.Substring(0,1));UiKit.Label(card,"Name_"+p.Name,p.Name,x-20,526,116,30,18,T.line,FontRole.Black,TextAlignmentOptions.Center);x+=128;}
         foreach(var c in crew.People.Take(2)){UiKit.Avatar(card,"Avatar_"+c.Name,x,444,76,T.info,c.Name.Substring(0,1));UiKit.Label(card,"Name_"+c.Name,c.Name,x-20,526,116,30,18,T.line,FontRole.Black,TextAlignmentOptions.Center);x+=128;}
+        if(save!=null)UiKit.Label(card,"Records",save.RecordsSummary,60,566,880,36,18,T.inkSub,FontRole.Black);
         UiKit.Button(card,"Retry","もう一度",StickerKind.Primary,520,620,420,100,40,()=>save.StartNewGame(),FontRole.Display);
         UiKit.Button(card,"ToTitle","タイトルへ",StickerKind.Secondary,60,630,300,84,28,()=>router.Show(ScreenId.Title),FontRole.Display);
     }

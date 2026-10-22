@@ -78,7 +78,7 @@ public sealed partial class BusinessView
         for(int i=0;i<2;i++)UiKit.Fill(UiKit.Box(shelf,"Rail"+i,20,60+i*70,780,6),T.steel,3);
         shelfTitle=UiKit.Label(shelf,"Title","保温棚(焼き上がり 0枚)",20,156,780,30,18,T.inkSub,FontRole.Black,TextAlignmentOptions.Center);
         benchArea=UiKit.Box(kitchenZone,"Benches",40,560,1070,420);ovenArea=UiKit.Box(kitchenZone,"Ovens",1140,560,760,420);
-        BuildCounterStrip();
+        // Handing boxes to couriers happens only on the dispatch board (2026-10-23 request).
     }
     private void LayoutStations()
     {
@@ -261,7 +261,7 @@ public sealed partial class BusinessView
         var boxes=handover.RackOrders.ToList();var unboxed=cooking.Shelf.Concat(cooking.Jobs.Where(j=>j.Stage==PizzaStage.Boxed)).ToList();
         string sig=string.Join(",",boxes.Select(o=>o.Id))+"|"+string.Join(",",unboxed.Select(j=>j.Order.Id+j.Stage));
         if(sig!=shelfSignature){shelfSignature=sig;RebuildShelf(boxes,unboxed);}
-        shelfTitle.text=boxes.Count==0?"梱包済みのピザがここに並びます":$"梱包済み {boxes.Count} / {cooking.RackCapacity} ・ 店にいる配達員へドラッグして積む";
+        shelfTitle.text=boxes.Count==0?"梱包済みのピザがここに並びます":$"梱包済み {boxes.Count} / {cooking.RackCapacity} ・ 配達指示でレーンに入れます（クリックで移動）";
         foreach(var item in shelfItems)
         {
             var order=boxes.FirstOrDefault(o=>item.name=="Box_"+Number(o));if(order==null)continue;
@@ -282,9 +282,8 @@ public sealed partial class BusinessView
             var number=UiKit.Label(slot,"Number","#"+Number(order),0,44,118,34,24,T.line,FontRole.Display,TextAlignmentOptions.Center);number.verticalAlignment=VerticalAlignmentOptions.Geometry;
             UiKit.Label(slot,"Stars",new string('★',Mathf.Max(1,order.Stars)),0,84,118,24,18,T.cheese,FontRole.Black,TextAlignmentOptions.Center);
             UiKit.Bar(slot,"Deadline",10,120,98,14,T.basil);
-            var source=slot.gameObject.AddComponent<DragSource>();var o=order;
-            source.Payload=()=>handover.RackOrders.Contains(o)?new DragPayload{Kind=DragKind.Box,Order=o,Sprite="box_closed",Size=new Vector2(110,110)}:null;
-            source.Clicked=()=>QuickBag(o);
+            var source=slot.gameObject.AddComponent<DragSource>();
+            source.Clicked=()=>ShowZone(ShopZone.Dispatch);
         }
         foreach(var job in waiting)
         {

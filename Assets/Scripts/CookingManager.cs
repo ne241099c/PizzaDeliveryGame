@@ -45,7 +45,7 @@ public sealed class CookingManager : MonoBehaviour
     [Tooltip("Standard total for one pizza by staff with speed 0.5. Used for the delivery promise minimum.")]
     [SerializeField,Min(1)] private int initialOvens=1;
     [SerializeField,Min(1)] private int initialBenches=2;
-    [SerializeField,Min(.01f)] private float doughSeconds=1,sauceSeconds=2,assemblySeconds=3,bakeSeconds=4;
+    [SerializeField,Min(.01f)] private float doughSeconds=2,sauceSeconds=4,assemblySeconds=6,bakeSeconds=6;
     [Tooltip("Boxing time after baking. 0 = packed the moment it leaves the oven (2026-10-23 request: ignore packing time).")]
     [SerializeField,Min(0)] private float packSeconds=0;
     [SerializeField,Min(0)] private float bakeBandHalfWidth=.4f,burnAfterBand=5;

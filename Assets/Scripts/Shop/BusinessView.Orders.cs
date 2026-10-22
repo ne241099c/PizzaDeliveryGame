@@ -27,20 +27,20 @@ public sealed partial class BusinessView
     }
     private void BuildDispatchOrders()
     {
-        var panel=UiKit.Card(dispatch,"Orders",32,112,344,700,T.paper);
+        var panel=UiKit.Card(dispatch,"Orders",32,212,344,604,T.paper);
         var glow=UiKit.Stretch(panel,"Glow",-8,-8,-8,-8);var g=UiKit.Fill(glow,T.cheese,24);g.enabled=false;glow.SetAsFirstSibling();
         var hit=panel.gameObject.AddComponent<Image>();hit.color=Color.clear;
         // A ticket dragged back here leaves its lane (before departure nothing is paid).
         var zone=panel.gameObject.AddComponent<DropZone>();zone.Glow=g;zone.Accepts=p=>p!=null && p.Kind==DragKind.Bagged;zone.Dropped=p=>handover.Unbag(p.Order);ShopHand.Instance?.Register(zone);
         dispatchOrderTitle=UiKit.Label(panel,"Title","注文",18,10,90,44,T.subheadingSize,T.line,FontRole.Display);
         readyCount=UiKit.Badge(panel,"ReadyCount","焼き上がり 0",100,18,T.basil,Color.white,30,16);
-        var viewport=UiKit.Box(panel,"Viewport",8,62,328,588);
+        var viewport=UiKit.Box(panel,"Viewport",8,62,328,492);
         viewport.gameObject.AddComponent<RectMask2D>();
         var back=viewport.gameObject.AddComponent<Image>();back.color=Color.clear;
-        dispatchOrderContent=UiKit.Box(viewport,"Content",0,0,328,588);
+        dispatchOrderContent=UiKit.Box(viewport,"Content",0,0,328,492);
         var scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.content=dispatchOrderContent;scroll.viewport=viewport;scroll.horizontal=false;scroll.vertical=true;scroll.movementType=ScrollRect.MovementType.Clamped;
         scroll.scrollSensitivity=T.largeSpace;
-        UiKit.Label(panel,"Hint","伝票を、下の配達員のレーンへドラッグ",18,656,308,32,T.captionSize,T.inkSub,FontRole.Black);
+        UiKit.Label(panel,"Hint","伝票を、下の配達員のレーンへドラッグ",18,560,308,32,T.captionSize,T.inkSub,FontRole.Black);
     }
     private void RefreshDispatchOrders()
     {
@@ -72,7 +72,7 @@ public sealed partial class BusinessView
                 source.Clicked=()=>TapOrder(o);
                 dispatchOrderRows.Add((o,card,detail,countdown,state));
             }
-            dispatchOrderContent.sizeDelta=new Vector2(328,Mathf.Max(588,shown.Count*RowHeight+8));
+            dispatchOrderContent.sizeDelta=new Vector2(328,Mathf.Max(492,shown.Count*RowHeight+8));
             if(shown.Count==0)UiKit.Label(dispatchOrderContent,"Empty","注文を待っています。\n調理中の注文もここに表示します。",16,16,296,100,T.bodySize,T.inkSub,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
         }
         foreach(var (o,card,detail,countdown,state) in dispatchOrderRows)
@@ -99,7 +99,7 @@ public sealed partial class BusinessView
         var eta=cooking.ReadyIn(o);var job=cooking.JobFor(o);
         if(eta.HasValue)return $"焼き上がり 約{Mathf.Max(1,Mathf.CeilToInt(eta.Value))}秒";
         if(job!=null && job.Worker==PizzaWorker.Player)return "あなたが調理中";
-        return "作り手を待っています";
+        return crew.People.Count>0?"調理待ち":"作り手なし（自分で作る）";
     }
     /// <summary>1 調理, 2 焼き, 3 梱包済み, 4 積載, 5 配達中 (0 = waiting for a cook).</summary>
     public int OrderStage(Order o)

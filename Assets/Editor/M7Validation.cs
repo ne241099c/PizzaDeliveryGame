@@ -14,9 +14,9 @@ public static class M7Validation
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var scope=save.SuppressSaving();
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         campaign.NewGame();clock.AutomaticTick=false;spawner.enabled=false;campaign.StartBusiness();
-        // One apprentice (speed 0.4): assembly 6x1.06, oven 4, no packing time (boxed as it leaves the oven). Two benches, one oven.
+        // One apprentice (speed 0.4): (2+4+6)x1.06, oven 6, no packing time (boxed as it leaves the oven). Two benches, one oven.
         var mio=UnityEngine.Object.FindFirstObjectByType<KitchenCrew>().People[0];float work=cook.StaffWorkSeconds(mio),pack=cook.StaffPackSeconds(mio),bake=cook.BakeSeconds;
-        Check(Mathf.Abs(work-6.36f)<.001f && pack==0 && bake==4 && Mathf.Abs(cook.CookSeconds-10)<.001f,"apprentice step times; packing takes no time; standard total 10s");
+        Check(Mathf.Abs(work-12.72f)<.001f && pack==0 && bake==6 && Mathf.Abs(cook.CookSeconds-18)<.001f,"apprentice step times; packing takes no time; standard total 18s");
         var reference=new KitchenStaff("Reference",.5f,.5f);Check(Mathf.Abs(cook.StaffWorkSeconds(reference)+bake+cook.StaffPackSeconds(reference)-cook.CookSeconds)<.001f,"standard staff total equals cook seconds for the promise minimum");
         var first=new Order("Goal1","First pizza",0,100);var second=new Order("Goal2","Second pizza",0,100);list.AddOrder(first);list.AddOrder(second);
         Check(first.Baking==BakingState.Cooking && second.Baking==BakingState.Waiting,"single staff takes the oldest ticket first");
@@ -31,8 +31,8 @@ public static class M7Validation
         var expired=new Order("Goal1","Expires on the bench",0,5);var next=new Order("Goal2","Next pizza",0,100);list.AddOrder(expired);list.AddOrder(next);clock.Advance(5);
         Check(expired.Status==OrderStatus.Pending && list.Contains(expired),"cooking continues after the promise deadline during grace");
         clock.Advance(UnityEngine.Object.FindFirstObjectByType<ScoreManager>().LateAcceptanceSeconds);
-        Check(expired.Status==OrderStatus.Cancelled && !list.Contains(expired),"unshipped order cancels at the end of grace");Check(next.IsReady,"next pizza completes while the first order is late");
-        campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();var closing=new Order("Goal1","Closing cooking",299,100);clock.Advance(299);list.AddOrder(closing);clock.Advance(1);
+        Check(expired.Status==OrderStatus.Cancelled && !list.Contains(expired),"unshipped order cancels at the end of grace");clock.Advance(work+bake);Check(next.IsReady,"next pizza completes while the first order is late");
+        campaign.NewGame();spawner.enabled=false;campaign.StartBusiness();float last=clock.BusinessDuration-1;var closing=new Order("Goal1","Closing cooking",last,100);clock.Advance(last);list.AddOrder(closing);clock.Advance(1);
         Check(closing.Status==OrderStatus.Cancelled && list.OrderCount==0,"closing cancels cooking and queue");
         Check(Mathf.Abs(spawner.MinimumPromiseSeconds-(spawner.ShortestRoundTripSeconds("Goal2")*1.1f+cook.CookSeconds))<.001f,"round trip and cooking minimum");
         spawner.SetPromiseSeconds(30);Check(spawner.PromiseSeconds>=spawner.MinimumPromiseSeconds,"requested 30 respects physical minimum");campaign.NewGame();
@@ -89,12 +89,12 @@ public static class M7Validation
         check(!facilities.Purchase(FacilityType.Oven) && facilities.LastMessage.Contains("cash"),"insufficient equipment cash rejected");
         var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=10000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
         decimal cash=economy.Cash;check(facilities.Purchase(FacilityType.Oven) && economy.Cash==cash-600 && economy.Ledger.FacilityPurchases==600,"oven purchase debits preparation once");
-        check(facilities.Purchase(FacilityType.Bike) && facilities.Purchase(FacilityType.Expansion),"bike and shop purchases");check(facilities.Maintenance==90 && economy.FixedCost(1)==240,"maintenance included once in fixed cost");
+        check(facilities.Purchase(FacilityType.Bike) && facilities.Purchase(FacilityType.Expansion),"bike and shop purchases");check(facilities.Maintenance==90 && economy.FixedCost(1)==180,"maintenance included once in fixed cost");
         check(facilities.Purchase(FacilityType.Advertising,2) && !facilities.Purchase(FacilityType.Advertising,1),"one advertising choice per day");
         string json=save.SnapshotJson();check(save.TryParse(json,out var data,out _) && data.facilities.oven==1 && data.facilities.bike==1 && data.facilities.expansion==1,"facility save schema validates");
         campaign.NewGame();campaign.RestorePreparation(data);check(facilities.Ovens==2 && facilities.BikeLevel==2 && facilities.MaximumPeople==5 && facilities.Advertisement==0,"restore equipment but not advertising");check(economy.Ledger.FacilityPurchases==CampaignSaveManager.Decimal(data.facilityPurchaseCosts) && economy.Cash==CampaignSaveManager.Decimal(data.cash),"facility spending and preparation money round trip");
         var legacy=save.Capture();legacy.version=1;legacy.facilities=null;legacy.facilityPurchaseCosts=null;check(save.TryParse(JsonUtility.ToJson(legacy),out var migrated,out _) && migrated.version==3 && migrated.facilities.oven==0 && migrated.facilities.workbench==0 && migrated.crew.Count==1 && migrated.crew[0].Name=="Mio","old version one migrates in memory to version three with the starting apprentice");
-        campaign.StartBusiness();check(!facilities.Purchase(FacilityType.Oven) && facilities.LastMessage.Contains("preparation"),"business blocks purchases");UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().enabled=false;clock.Advance(clock.BusinessDuration+1000);check(economy.Ledger.EquipmentMaintenance==90 && economy.Ledger.FixedCosts==240,"maintenance in real settlement");
+        campaign.StartBusiness();check(!facilities.Purchase(FacilityType.Oven) && facilities.LastMessage.Contains("preparation"),"business blocks purchases");UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().enabled=false;clock.Advance(clock.BusinessDuration+1000);check(economy.Ledger.EquipmentMaintenance==90 && economy.Ledger.FixedCosts==180,"maintenance in real settlement");
         campaign.NewGame();check(facilities.Ovens==1 && facilities.BikeLevel==1 && facilities.MaximumPeople==4,"new game resets facilities");
     }
     private static void ValidateEffects(Action<bool,string> check)

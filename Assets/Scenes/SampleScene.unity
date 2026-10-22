@@ -19549,6 +19549,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  nearPinSeconds: 8
 --- !u!225 &747307987
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -36870,7 +36871,7 @@ MonoBehaviour:
   map: {fileID: 937587058}
   orders: {fileID: 1404697812}
   reputation: {fileID: 1404697821}
-  interval: 25
+  interval: 10
   intervalVariation: 0.3
   initialPromiseSeconds: 60
   maximumPromiseSeconds: 240
@@ -36879,7 +36880,7 @@ MonoBehaviour:
   demandExponent: 0.7
   minimumDemand: 0.4
   maximumDemand: 2
-  openingOrders: 2
+  openingOrders: 3
   useFixedSeed: 0
   randomSeed: 9187
 --- !u!114 &1404697818
@@ -36906,7 +36907,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8e2a71741b84a469a743ad3bee14f3f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameClock
-  businessDuration: 300
+  businessDuration: 180
   travelTimeMultiplier: 5
   planningTimeRate: 1
   autoStart: 0
@@ -37035,15 +37036,15 @@ MonoBehaviour:
   flow: {fileID: 1404697814}
   roster: {fileID: 1404697813}
   crew: {fileID: 1404697842}
-  kitchenWageBase: 40
-  kitchenWageAbilityFactor: 50
+  kitchenWageBase: 24
+  kitchenWageAbilityFactor: 30
   materialCostPerOrder: 20
   fuelCostPerDistance: 0.4
-  wageBase: 50
-  wageAbilityFactor: 40
-  wageCapacityFactor: 30
-  dailyFixedCost: 150
-  fixedCostGrowthPerDay: 25
+  wageBase: 30
+  wageAbilityFactor: 24
+  wageCapacityFactor: 18
+  dailyFixedCost: 90
+  fixedCostGrowthPerDay: 15
   cashText: {fileID: 1514087125}
   initialCash: 300
 --- !u!114 &1404697825
@@ -37395,10 +37396,10 @@ MonoBehaviour:
   handover: {fileID: 1404697841}
   initialOvens: 1
   initialBenches: 2
-  doughSeconds: 1
-  sauceSeconds: 2
-  assemblySeconds: 3
-  bakeSeconds: 4
+  doughSeconds: 2
+  sauceSeconds: 4
+  assemblySeconds: 6
+  bakeSeconds: 6
   packSeconds: 0
   bakeBandHalfWidth: 0.4
   burnAfterBand: 5

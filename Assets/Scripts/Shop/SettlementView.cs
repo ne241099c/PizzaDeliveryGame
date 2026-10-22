@@ -74,6 +74,8 @@ public sealed class SettlementView : MonoBehaviour
         var root=(RectTransform)transform;var l=economy.Ledger;
         title.text=$"{campaign.DayNumber}日目 おつかれさま!";titleBadge.anchoredPosition=new Vector2(120+title.GetPreferredValues().x+24,-76);
         if(campaign.IsBankrupt){title.text=$"{campaign.DayNumber}日目 閉店です…";UiKit.SetBadge(titleBadge,"所持金がマイナス",T.berry,Color.white);}else UiKit.SetBadge(titleBadge,ShopStrings.Ended,T.paper,T.line);
+        var save=FindFirstObjectByType<CampaignSaveManager>();
+        if(!campaign.IsBankrupt && save!=null && save.NewRecords.Count>0)UiKit.SetBadge(titleBadge,"新記録！ "+string.Join("・",save.NewRecords),T.cheese,T.line);
         receipt=UiKit.Card(root,"Receipt",120,204,800,660,T.paper,16,8,3);
         int tips=trips.Sum(t=>t.Deliveries.Where(d=>d.Resolved).Sum(d=>score.TipForArrival(d.ArrivesAt,d.Order.Deadline,t.ServiceAtDispatch)));
         decimal quality=l.QualityBonus,basePoints=l.Revenue-tips-quality;

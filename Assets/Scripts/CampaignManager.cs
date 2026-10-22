@@ -46,6 +46,7 @@ public sealed class CampaignManager : MonoBehaviour
     {
         economy.SettleDay(); TotalDelivered+=stats.DeliveredCount; TotalScore+=stats.TotalScore;
         TotalRevenue+=economy.DailyRevenue;BestDailyRevenue=System.Math.Max(BestDailyRevenue,economy.DailyRevenue);
+        saveGame?.RecordDay(DayNumber,economy.DailyRevenue,TotalRevenue,TotalDelivered);
         ConsecutiveNegativeDays=economy.Cash<0 ? ConsecutiveNegativeDays+1 : 0;
         IsBankrupt=ShouldDeclareBankruptcy(economy.Cash,ConsecutiveNegativeDays);
         if(IsBankrupt){saveGame?.DeleteSave();facilities?.NewGame();}

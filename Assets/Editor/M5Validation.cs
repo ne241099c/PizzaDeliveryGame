@@ -49,8 +49,8 @@ public static class M5Validation
             check(economy.Cash-beforeCash==expected-20 && economy.DailyRevenue-beforeRevenue==expected,"arrival credits exact tip/late-adjusted score");
             check(late ? expected<100 : expected==116,"late reduction or on-time service tip included");
         }
-        check(economy.DailyWage(roster.People.First(p=>p.Name=="Aoi"))==220,"Aoi wage formula");
-        check(economy.DailyWage(roster.People.First(p=>p.Name=="Ren"))==184,"Ren wage formula");
+        check(economy.DailyWage(roster.People.First(p=>p.Name=="Aoi"))==132,"Aoi wage formula");
+        check(economy.DailyWage(roster.People.First(p=>p.Name=="Ren"))==110.4m,"Ren wage formula");
         check(economy.Ledger.Materials==40 && economy.Ledger.Distance>0,"actual dispatched materials and completed road distance");
         var sampleOrder=new[]{M7Validation.ReadyOrder("Goal1","Distance",0,100)};
         var samplePerson=roster.People.First(p=>p.Name=="Aoi");
@@ -73,7 +73,7 @@ public static class M5Validation
         clock.Advance(clock.BusinessDuration+1);
         check(clock.Phase==DayPhase.Ended && flow.ActiveTrips.Count==0,"settlement after close and all returns");
         var ledger=economy.Ledger;
-        check(ledger.Settled && ledger.FixedCosts==150 && ledger.Wages==economy.TeamWages && economy.KitchenWages>0,"settlement pays all courier and kitchen wages and fixed cost");
+        check(ledger.Settled && ledger.FixedCosts==90 && ledger.Wages==economy.TeamWages && economy.KitchenWages>0,"settlement pays all courier and kitchen wages and fixed cost");
         check(ledger.Fuel==economy.FuelCost(ledger.Distance),"fuel uses actual distance");
         check(economy.Cash==beforeSettlement-ledger.Fuel-ledger.Wages-ledger.FixedCosts-ledger.Repairs,"materials are not deducted twice");
         check(economy.Cash==ledger.OpeningCash+ledger.Profit,"profit reconciles to cash");

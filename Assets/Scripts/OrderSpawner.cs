@@ -11,7 +11,7 @@ public sealed class OrderSpawner : MonoBehaviour
     [SerializeField] private MapManager map;
     [SerializeField] private OrderListUI orders;
     [SerializeField] private ReputationManager reputation;
-    [SerializeField, Min(0.1f)] private float interval = 25f;
+    [SerializeField, Min(0.1f)] private float interval = 10f;
     [SerializeField, Range(0f, 0.9f)] private float intervalVariation = 0.3f;
     [SerializeField, Min(0.01f)] private float initialPromiseSeconds = 60f;
     [SerializeField, Min(0.01f)] private float maximumPromiseSeconds = 240f;
@@ -21,7 +21,7 @@ public sealed class OrderSpawner : MonoBehaviour
     [SerializeField, Min(0.01f)] private float minimumDemand = 0.4f;
     [SerializeField, Min(0.01f)] private float maximumDemand = 2f;
     [Tooltip("Orders already waiting when the shop opens, so the first minute is not idle.")]
-    [SerializeField, Min(0)] private int openingOrders = 2;
+    [SerializeField, Min(0)] private int openingOrders = 3;
     private bool openingPlaced;
     [SerializeField] private bool useFixedSeed;
     [SerializeField] private int randomSeed = 9187;

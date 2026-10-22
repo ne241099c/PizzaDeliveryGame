@@ -25,6 +25,11 @@ using UnityEngine.UI;
     public List<KitchenStaff> kitchenApplicants;
 }
 /// <summary>Only preparation snapshots are saved. Simulations/tests suppress all normal file changes.</summary>
+/// <summary>Best results over every game played (kept when a new game starts or the shop closes).</summary>
+[Serializable] public sealed class BestRecords
+{
+    public int bestDay,bestDelivered;public string bestDailyRevenue="0",bestTotalRevenue="0";
+}
 public sealed class CampaignSaveManager : MonoBehaviour
 {
     [SerializeField] private FacilityManager facilities;
@@ -60,9 +65,51 @@ public sealed class CampaignSaveManager : MonoBehaviour
     {
         get
         {
-            if(TryRead(out var data,out var reason))return $"Day {data.day} / Cash {data.cash} / Reputation {data.reputation:F1}";
-            return File.Exists(SavePath)?"Cannot load save: "+reason+" Start new.":"Start a new campaign.";
+            if(TryRead(out var data,out var reason))return $"続きから：{data.day}日目の開店準備 ・ 所持金 {UiKit.Yen(Decimal(data.cash))} ・ 評判 {data.reputation:F0}";
+            return File.Exists(SavePath)?"セーブを読めませんでした（"+reason+"）。最初から始めます。":"セーブはまだありません。最初から始めましょう。";
         }
+    }
+
+    // ---- best records (records.json next to the campaign save) ----
+    public string RecordsPath=>Path.Combine(Path.GetDirectoryName(SavePath),"records.json");
+    private BestRecords records;
+    public BestRecords Records
+    {
+        get
+        {
+            if(records!=null)return records;
+            try{records=File.Exists(RecordsPath)?JsonUtility.FromJson<BestRecords>(File.ReadAllText(RecordsPath)):null;}
+            catch(Exception e)when(e is IOException || e is UnauthorizedAccessException || e is ArgumentException){records=null;}
+            return records??=new BestRecords();
+        }
+    }
+    /// <summary>Records broken by the last settled day (for the settlement and game-over screens).</summary>
+    public IReadOnlyList<string> NewRecords=>newRecords;
+    private readonly List<string> newRecords=new();
+    public string RecordsSummary
+    {
+        get
+        {
+            var r=Records;if(r.bestDay==0)return "最高記録：まだありません";
+            return $"最高記録：{r.bestDay}日目まで ・ 1日の売上 {UiKit.Yen(Decimal(r.bestDailyRevenue))} ・ 通算売上 {UiKit.Yen(Decimal(r.bestTotalRevenue))} ・ 配達 {r.bestDelivered}件";
+        }
+    }
+    /// <summary>Called when a day is settled. Writes only while normal saving is enabled (validations suppress it).</summary>
+    public void RecordDay(int day,decimal dailyRevenue,decimal totalRevenue,int totalDelivered)
+    {
+        newRecords.Clear();var r=Records;
+        if(day>r.bestDay){r.bestDay=day;newRecords.Add("到達日数");}
+        if(dailyRevenue>Decimal(r.bestDailyRevenue)){r.bestDailyRevenue=dailyRevenue.ToString(CultureInfo.InvariantCulture);newRecords.Add("1日の売上");}
+        if(totalRevenue>Decimal(r.bestTotalRevenue)){r.bestTotalRevenue=totalRevenue.ToString(CultureInfo.InvariantCulture);newRecords.Add("通算売上");}
+        if(totalDelivered>r.bestDelivered){r.bestDelivered=totalDelivered;newRecords.Add("配達数");}
+        if(!AutomaticSavingEnabled){records=null;return;} // suppressed: forget the in-memory change too
+        if(newRecords.Count==0)return;
+        try
+        {
+            string path=RecordsPath,temp=path+".tmp";Directory.CreateDirectory(Path.GetDirectoryName(path));
+            File.WriteAllText(temp,JsonUtility.ToJson(r,true));if(File.Exists(path))File.Replace(temp,path,null);else File.Move(temp,path);
+        }
+        catch(Exception e)when(e is IOException || e is UnauthorizedAccessException){LastMessage="Could not save records: "+e.Message;}
     }
     public void Startup()
     {
