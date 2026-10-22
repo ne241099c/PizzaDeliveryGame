@@ -1,0 +1,94 @@
+# UNAPPLIED / UNVALIDATED candidate, retained for review only. Do not run automatically.
+from pathlib import Path
+r=Path(__file__).resolve().parents[2]
+p=r/'Assets/Scripts/UIThemeDriver.cs';s=p.read_text().replace('    [SerializeField] private Canvas canvas;','    private readonly System.Collections.Generic.Dictionary<Graphic,bool> originalGraphicState=new();\n    [SerializeField] private Canvas canvas;')
+s=s.replace('"OpenBusiness","Dispatch","DispatchSuggestion","Replay","Continue","AdvancePage"','"StartBusiness","DispatchRoute","DispatchSuggestion","ReplayDay","Continue","AdvancePage"')
+s=s.replace('        var theme=UITheme.Active;if(theme==null || canvas==null)return;','''        var theme=UITheme.Active;if(theme==null || canvas==null)return;
+        // CanvasGroup remains the visibility/input authority. Do not rebuild hidden graphics.
+        // Clearing their renderers also prevents cached TMP meshes from appearing after a resize.
+        foreach(var graphic in canvas.GetComponentsInChildren<Graphic>(true))
+        {
+            if(!originalGraphicState.ContainsKey(graphic))originalGraphicState[graphic]=graphic.enabled;
+            bool visible=graphic.gameObject.activeInHierarchy && graphic.canvasRenderer.GetInheritedAlpha()>0;
+            bool render=originalGraphicState[graphic] && visible;if(graphic.enabled!=render)graphic.enabled=render;
+        }''')
+s=s.replace('image.color=name.Contains("Experience")?theme.money:', 'image.color=name.Contains("Handle")?theme.accent:name.Contains("Experience")?theme.money:')
+s=s.replace('''        var button=text.GetComponentInParent<Button>();if(button!=null)return button.GetComponent<RectTransform>().rect.width<200?ThemeTextSize.Caption:ThemeTextSize.Body;''','''        if(text.name.StartsWith("Ability") || text.name.Contains("Profile"))return ThemeTextSize.Caption;
+        var button=text.GetComponentInParent<Button>();if(button!=null)return button.name=="UseSuggestedRoute" || button.GetComponent<RectTransform>().rect.width<200?ThemeTextSize.Caption:ThemeTextSize.Body;''')
+p.write_text(s)
+p=r/'Assets/Editor/VisualSceneSetup.cs';s=p.read_text();i=s.rfind('}');s=s[:i]+'''    public static void FinishLayout()
+    {
+        var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();var theme=UITheme.Active;
+        FinishHierarchy(canvas.gameObject,theme);
+        foreach(string path in new[]{"Assets/Prefabs/DeliveryPersonButton.prefab","Assets/Prefabs/OrderItem.prefab"})
+        {var root=PrefabUtility.LoadPrefabContents(path);try{FinishHierarchy(root,theme);PrefabUtility.SaveAsPrefabAsset(root,path);}finally{PrefabUtility.UnloadPrefabContents(root);}}
+        ScreensSceneSetup.Place(ScreensSceneSetup.Find("MapLegend"),340,748,1120,28);
+        SetTextRole(ScreensSceneSetup.Find("OrdersTitle"),ThemeTextSize.Body);SetTextRole(ScreensSceneSetup.Find("CourierBandTitle"),ThemeTextSize.Subheading);SetTextRole(ScreensSceneSetup.Find("RouteTitle"),ThemeTextSize.Subheading);SetTextRole(ScreensSceneSetup.Find("NextRoadsTitle"),ThemeTextSize.Subheading);
+        ScreensSceneSetup.Place(ScreensSceneSetup.Find("OrdersTitle"),12,0,256,44);ScreensSceneSetup.Place(ScreensSceneSetup.Find("CourierBandTitle"),24,792,1800,34);ScreensSceneSetup.Place(ScreensSceneSetup.Find("RouteTitle"),16,8,290,36);ScreensSceneSetup.Place(ScreensSceneSetup.Find("NextRoadsTitle"),16,200,350,34);
+        ScreensSceneSetup.Find("GameName").GetComponent<TMP_Text>().alignment=TextAlignmentOptions.Center;
+        var slider=UnityEngine.Object.FindFirstObjectByType<DeliveryPromiseUI>();var sliderSo=new SerializedObject(slider);var control=(Slider)sliderSo.FindProperty("promiseSlider").objectReferenceValue;
+        var background=control.transform.Find("Background");ScreensSceneSetup.Place(background,0,8,404,4);var image=background.GetComponent<Image>();image.sprite=null;image.type=Image.Type.Simple;image.color=theme.muted;
+        var handle=control.handleRect;handle.sizeDelta=new Vector2(theme.largeSpace,0);
+        var stage=new SerializedObject(GameObject.Find("GameManager").GetComponent<UIThemeDriver>());stage.FindProperty("implementationStage").intValue=4;stage.ApplyModifiedProperties();EditorSceneManager.MarkSceneDirty(canvas.gameObject.scene);AssetDatabase.SaveAssets();
+    }
+    private static void SetTextRole(Transform t,ThemeTextSize size){var style=t.GetComponent<ThemedText>();style.size=size;style.Apply(UITheme.Active);EditorUtility.SetDirty(style);}
+    private static void FinishHierarchy(GameObject root,UITheme theme)
+    {
+        foreach(var button in root.GetComponentsInChildren<Button>(true))
+        {
+            if(button.GetComponent<CourierAbilitiesView>()!=null || button.GetComponent<CookingCardUI>()!=null)continue;
+            var label=System.Linq.Enumerable.FirstOrDefault(button.GetComponentsInChildren<TMP_Text>(true),t=>t.GetComponentInParent<Button>()==button);if(label==null)continue;
+            var rect=label.rectTransform;rect.anchorMin=Vector2.zero;rect.anchorMax=Vector2.one;rect.offsetMin=new Vector2(theme.smallSpace,theme.smallSpace/2f);rect.offsetMax=-rect.offsetMin;label.alignment=TextAlignmentOptions.Center;
+        }
+        foreach(var view in root.GetComponentsInChildren<CourierAbilitiesView>(true))
+        {
+            if(view!=view.GetComponent<CourierAbilitiesView>())continue;var layout=view.GetComponent<LayoutElement>();float width=Mathf.Max(((RectTransform)view.transform).rect.width,layout!=null?layout.preferredWidth:0);
+            if(width>=400)continue;
+            var so=new SerializedObject(view);
+            for(int i=0;i<6;i++)
+            {
+                var text=(TMP_Text)so.FindProperty("labels").GetArrayElementAtIndex(i).objectReferenceValue;var fill=(RectTransform)so.FindProperty("fills").GetArrayElementAtIndex(i).objectReferenceValue;var xp=(RectTransform)so.FindProperty("experienceFills").GetArrayElementAtIndex(i).objectReferenceValue;
+                float y=64+i*26;ScreensSceneSetup.Place(text.transform,theme.smallSpace,y,width-theme.padding,18);ScreensSceneSetup.Place(fill.parent,theme.smallSpace,y+18,width-theme.padding,4);ScreensSceneSetup.Place(xp.parent,theme.smallSpace,y+24,width-theme.padding,2);
+                var style=text.GetComponent<ThemedText>();if(style!=null){style.size=ThemeTextSize.Caption;style.Apply(theme);}
+            }
+        }
+        foreach(var picker in root.GetComponentsInChildren<TrainingPickerUI>(true))
+        {
+            var so=new SerializedObject(picker);var controls=((CanvasGroup)so.FindProperty("choices").objectReferenceValue).transform;ScreensSceneSetup.Place(controls,8,122,664,136);
+            var panel=controls.GetComponent<Image>();if(panel==null)panel=controls.gameObject.AddComponent<Image>();panel.sprite=theme.roundedPanel;panel.type=Image.Type.Sliced;panel.color=theme.background;
+            for(int i=0;i<6;i++)ScreensSceneSetup.Place(controls.Find("Train"+i),16+(i%3)*216,16+(i/3)*60,200,44);controls.SetAsLastSibling();
+        }
+    }
+    public static void ReviewResolution(bool fullHd)
+    {
+        var window=System.Linq.Enumerable.First(UnityEngine.Resources.FindObjectsOfTypeAll<EditorWindow>(),w=>w.GetType().Name=="GameView");
+        var selection=new SerializedObject(window);int index=3;
+        if(!fullHd)
+        {
+            var sizes=System.Linq.Enumerable.First(UnityEngine.Resources.FindObjectsOfTypeAll<ScriptableObject>(),s=>s.GetType().Name=="GameViewSizes");var so=new SerializedObject(sizes);var custom=so.FindProperty("m_Standalone.m_Custom");
+            int found=-1;for(int i=0;i<custom.arraySize;i++){var item=custom.GetArrayElementAtIndex(i);if(item.FindPropertyRelative("m_Width").intValue==1280 && item.FindPropertyRelative("m_Height").intValue==720)found=i;}
+            if(found<0){found=custom.arraySize;custom.arraySize++;var item=custom.GetArrayElementAtIndex(found);item.FindPropertyRelative("m_Width").intValue=1280;item.FindPropertyRelative("m_Height").intValue=720;item.FindPropertyRelative("m_SizeType").enumValueIndex=1;item.FindPropertyRelative("m_BaseText").stringValue="Review 1280x720";so.ApplyModifiedPropertiesWithoutUndo();}index=7+found;
+        }
+        selection.FindProperty("m_SelectedSizes").GetArrayElementAtIndex(0).intValue=index;selection.ApplyModifiedPropertiesWithoutUndo();window.Focus();window.Repaint();
+    }
+'''+s[i:];p.write_text(s)
+p=r/'Assets/Editor/VisualValidation.cs';s=p.read_text().replace('        return $"PASS: {count} visual checks.";','''        if(driver!=null && driver.ImplementationStage>=4)
+        {
+            var router=UnityEngine.Object.FindFirstObjectByType<ScreenRouter>();var previous=router.Current;
+            foreach(ScreenId id in Enum.GetValues(typeof(ScreenId)))
+            {
+                router.Show(id,true);driver.Refresh();
+                foreach(ScreenId other in Enum.GetValues(typeof(ScreenId)))if(other!=id)Check(router.Root(other).GetComponentsInChildren<Graphic>(true).All(g=>!g.enabled),"hidden graphics follow CanvasGroup "+id+" / "+other);
+            }
+            router.Show(previous,true);driver.Refresh();
+            var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();var scaler=canvas.GetComponent<CanvasScaler>();Check(scaler.referenceResolution==new Vector2(1920,1080),"shared design resolution");
+            var root=(RectTransform)canvas.transform;var corners=new Vector3[4];
+            foreach(string name in new[]{"Selections","CourierViewport","MapViewportFrame","PlanningDrawer","Preparation","ResultCard","SaveChoice","PauseMenu","HelpOverlay","ReturnTitleConfirmation"})
+            {
+                var rect=(RectTransform)UIVisibility.Find(root,name);rect.GetWorldCorners(corners);Check(corners.All(p=>root.rect.xMin-2<=root.InverseTransformPoint(p).x && root.InverseTransformPoint(p).x<=root.rect.xMax+2 && root.rect.yMin-2<=root.InverseTransformPoint(p).y && root.InverseTransformPoint(p).y<=root.rect.yMax+2),"screen bounds "+name);
+            }
+            Check(UIVisibility.Find(root,"LedgerViewport").GetComponent<ScrollRect>().vertical,"settlement remains scrollable");
+        }
+        return $"PASS: {count} visual checks.";''');p.write_text(s)
+p=r/'Assets/Scripts/UIThemeDriver.cs';s=p.read_text().replace('''        // CanvasGroup remains''','''        foreach(var missing in originalGraphicState.Keys.Where(g=>g==null).ToArray())originalGraphicState.Remove(missing);
+        // CanvasGroup remains''');p.write_text(s)

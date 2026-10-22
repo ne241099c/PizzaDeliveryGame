@@ -37,3 +37,10 @@ This section is managed by KitWright MCP for Unity for Claude Code. Everything b
 - Project root: `/Users/soma/Unity/PizzaDeliveryGame`
 - Product name: `PizzaDeliveryGame`
 <!-- /KitWright Unity managed project skills -->
+
+
+## このプロジェクトの共同作業（KitWright管理ブロック外）
+
+まず `AGENTS.md`、次に `Docs/Handoff/Current.md`、`Docs/Handoff/Workboard.md` を読んでください。
+現在の引き継ぎはM3ではなく `Docs/Handoff/Current.md` です。会話履歴がなくても、この資料と参照先の設計書・実装・検証記録から再開できます。
+Claude Codeの初回担当はV-4候補の読み取りレビューです。担当外のファイル、Unity Editor、Git統合を同時に変更しないでください。

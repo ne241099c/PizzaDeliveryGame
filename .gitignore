@@ -115,3 +115,6 @@ InitTestScene*.unity*
 
 # Machine-specific MCP client configuration
 .mcp.json
+
+# Isolated local worktrees for Codex / Claude Code collaboration
+/.worktrees/
