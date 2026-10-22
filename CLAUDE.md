@@ -41,9 +41,9 @@ This section is managed by KitWright MCP for Unity for Claude Code. Everything b
 
 ## このプロジェクトの共同作業（KitWright管理ブロック外）
 
-まず `AGENTS.md`、`Docs/Handoff/Current.md`、`Docs/Handoff/Workboard.md`、`Docs/Handoff/Claude_Resume.md` を読んでください。M3やV-4の古い資料から再開しないでください。
+まず `AGENTS.md`、`Docs/Handoff/Current.md`、`Docs/Handoff/Workboard.md`、`Docs/Handoff/Codex_Resume.md` を読んでください。M3やV-4の古い資料から再開しないでください。
 
-2026-10-23、ユーザーの依頼によりCodexからClaude Codeへ元プロジェクトの実装・Unity操作を引き渡しました。現在は `shop`、ゲーム実装の最新コミットは `43e3cac`。Codexは作業を終了しており、同時にUnityを操作しません。Claudeは実装担当であり、レビュー専任ではありません。
+**2026-10-23（後）、ユーザーの依頼によりClaude CodeからCodexへ実装・Unity操作を再び引き渡しました。現在の担当はCodexです。** Claudeが再開を頼まれた場合は、まずWorkboardで担当とUnityの状態を確認し、Codexと同時にUnityを操作しないでください。以下はClaudeが担当していた時の記録です。2026-10-23、ユーザーの依頼によりCodexからClaude Codeへ元プロジェクトの実装・Unity操作を引き渡しました。現在は `shop`、ゲーム実装の最新コミットは `43e3cac`。Codexは作業を終了しており、同時にUnityを操作しません。Claudeは実装担当であり、レビュー専任ではありません。
 
 **毎回の全検証は不要です。** UI変更は変更箇所の表示・操作、計算やゲーム処理の変更は関連検証に絞ってください。全検証は大きな区切りか明示依頼時だけ行います。引き継ぎ直後に既存の3733項目や長時間シミュレーションを再実行しないでください。これは最新のユーザー指示で、旧「毎段階で全検証」を上書きします。
 
