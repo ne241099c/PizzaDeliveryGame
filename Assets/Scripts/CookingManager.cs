@@ -80,6 +80,10 @@ public sealed class CookingManager : MonoBehaviour
     public float PackSeconds=>packSeconds;
     private System.Random random;
 
+#if UNITY_EDITOR
+    /// <summary>Autoplay-only cook. Not in the roster, never paid or saved, absent from player builds.</summary>
+    public KitchenStaff EditorSubstitute {get;set;}
+#endif
     public bool ManualControlEnabled {get;set;}=true;
     public int? SeedOverride {get;set;}
     /// <summary>Standard time for one pizza by staff with speed 0.5 (assembly + oven + packing). Used for the delivery promise minimum.</summary>
@@ -132,6 +136,9 @@ public sealed class CookingManager : MonoBehaviour
         OperatingOvenCount=OvenCount;jobs.Clear();expired.Clear();staff.Clear();
         ovens=new PizzaJob[OvenCount];benches=new PizzaJob[BenchCount];ovenFreeSince=new float[OvenCount];benchFreeSince=new float[BenchCount];
         if(crew!=null){crew.ResetDailyState();foreach(var member in crew.People)staff.Add(new StaffSlot{Staff=member});}
+#if UNITY_EDITOR
+        if(staff.Count==0 && EditorSubstitute!=null)staff.Add(new StaffSlot{Staff=EditorSubstitute});
+#endif
         MaximumQueueLength=0;queueSequence=0;BusySeconds=0;PackedByPlayer=0;packedByStaff.Clear();processed=clock!=null?clock.ElapsedSeconds:0;
     }
     private void Synchronize()=>AdvanceTo(clock.ElapsedSeconds);

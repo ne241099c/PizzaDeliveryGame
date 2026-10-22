@@ -8,6 +8,14 @@ public sealed class DaySimulationSettings : MonoBehaviour
     [SerializeField] private int randomSeed = 20261022;
     [SerializeField, Min(.01f)] private float clockStepSeconds = .25f;
     [SerializeField, Min(1f)] private float maximumDaySeconds = 3600f;
+    [SerializeField,Min(-1)] private int initialKitchenStaff=-1;
+    [SerializeField] private bool hireKitchenStaff;
+    [SerializeField] private bool substituteWhenEmpty=true;
+    [SerializeField,Range(0,1)] private float substituteSpeed=.5f,substituteCare=.5f;
+    public int InitialKitchenStaff=>initialKitchenStaff;
+    public bool HireKitchenStaff=>hireKitchenStaff;
+    public bool SubstituteWhenEmpty=>substituteWhenEmpty;
+    public KitchenStaff Substitute()=>new KitchenStaff("自動プレイ代役",substituteSpeed,substituteCare);
     [SerializeField] private bool buyFacilities;
     [SerializeField,Min(0)] private float facilityReserve=100;
     public bool BuyFacilities=>buyFacilities;

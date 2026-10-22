@@ -31,6 +31,9 @@ public sealed class SimulationDayRecord
 
 public sealed class DaySimulationSession : IDisposable
 {
+    private readonly int? initialKitchen;
+    private readonly bool hireKitchen,substituteWhenEmpty;
+    private readonly KitchenStaff originalSubstitute;
     private readonly MapManager map;
     private readonly int? originalCitySeed,originalBlocks;
     private readonly bool originalSample;
@@ -78,8 +81,9 @@ public sealed class DaySimulationSession : IDisposable
     public event Action<SimulationDayRecord> DayCompleted;
     private static T Find<T>() where T:UnityEngine.Object => UnityEngine.Object.FindFirstObjectByType<T>()
         ?? throw new InvalidOperationException("Missing scene component: "+typeof(T).Name);
-    public DaySimulationSession(DaySimulationSettings settings,bool? batchOverride=null,bool? hireOverride=null,bool? adjustOverride=null,string name="comparison",int? daysOverride=null,float[] promisesOverride=null,bool? trainOverride=null,float? initialCashOverride=null,bool? facilityOverride=null,int? citySeedOverride=null,int? cityBlocksOverride=null)
+    public DaySimulationSession(DaySimulationSettings settings,bool? batchOverride=null,bool? hireOverride=null,bool? adjustOverride=null,string name="comparison",int? daysOverride=null,float[] promisesOverride=null,bool? trainOverride=null,float? initialCashOverride=null,bool? facilityOverride=null,int? citySeedOverride=null,int? cityBlocksOverride=null,int? kitchenStaffOverride=null,bool? hireKitchenOverride=null,bool? substituteOverride=null)
     {
+        initialKitchen=kitchenStaffOverride??(settings.InitialKitchenStaff>=0?(int?)settings.InitialKitchenStaff:null);hireKitchen=hireKitchenOverride??settings.HireKitchenStaff;substituteWhenEmpty=substituteOverride??settings.SubstituteWhenEmpty;
         map=Find<MapManager>();originalCitySeed=map.SeedOverride;originalBlocks=map.BlocksOverride;originalSample=map.UseSampleForValidation;
         if(citySeedOverride.HasValue){map.UseSampleForValidation=false;map.SeedOverride=citySeedOverride;}
         if(cityBlocksOverride.HasValue)map.BlocksOverride=cityBlocksOverride;
@@ -93,7 +97,7 @@ public sealed class DaySimulationSession : IDisposable
             throw new ArgumentException("Set valid simulation days, promises and clock step in the Inspector.");
         campaign=Find<CampaignManager>();clock=Find<GameClock>();spawner=Find<OrderSpawner>();dynamics=Find<DeliveryDynamics>();recruitment=Find<RecruitmentManager>();
         economy=Find<BusinessEconomy>();flow=Find<DeliveryFlowController>();roster=Find<DeliveryPersonSelector>();orders=Find<OrderListUI>();stats=Find<DayStats>();reputation=Find<ReputationManager>();planner=Find<DeliveryPlannerUI>();progression=Find<CourierProgression>();training=Find<TrainingManager>();
-        cooking=Find<CookingManager>();originalManualCooking=cooking.ManualControlEnabled;cooking.ManualControlEnabled=false;
+        cooking=Find<CookingManager>();originalSubstitute=cooking.EditorSubstitute;originalManualCooking=cooking.ManualControlEnabled;cooking.ManualControlEnabled=false;
         originalAutomaticTick=clock.AutomaticTick;originalSpawnerEnabled=spawner.enabled;
         originalOrderSeed=spawner.SeedOverride;originalDynamicsSeed=dynamics.SeedOverride;originalRecruitmentSeed=recruitment.SeedOverride;originalCookingSeed=cooking.SeedOverride;
         var canvas=Find<Canvas>();canvasGroup=canvas.GetComponent<CanvasGroup>();
@@ -116,6 +120,13 @@ public sealed class DaySimulationSession : IDisposable
         {
             if (initialCashOverride.HasValue) { initial.floatValue=initialCashOverride.Value;funding.ApplyModifiedPropertiesWithoutUndo(); }
             campaign.NewGame();
+            var kitchen=Find<KitchenCrew>();
+            if(initialKitchen.HasValue)
+            {
+                var prototype=kitchen.People.FirstOrDefault()??settings.Substitute();
+                kitchen.Restore(Enumerable.Range(0,initialKitchen.Value).Select(i=>new KitchenStaff(i==0?prototype.Name:prototype.Name+" "+(i+1),prototype.Speed,prototype.Care)));
+            }
+            cooking.EditorSubstitute=substituteWhenEmpty && kitchen.Count==0?settings.Substitute():null;
 
         }
         finally { initial.floatValue=originalCash;funding.ApplyModifiedPropertiesWithoutUndo(); }
@@ -138,6 +149,11 @@ public sealed class DaySimulationSession : IDisposable
                     if(!facilities.Purchase(type))throw new InvalidOperationException(facilities.LastMessage);
                     facilityPurchase=type.ToString();break;
                 }
+            }
+            if(hireKitchen)
+            {
+                foreach(var applicant in recruitment.KitchenApplicants.ToArray())
+                    if(economy.Cash>=recruitment.HiringCost(applicant.Staff)+settings.HiringReserve)recruitment.Hire(applicant);
             }
             operatingMinimum=spawner.MinimumPromiseSeconds;
             if(hire)
@@ -215,7 +231,7 @@ public sealed class DaySimulationSession : IDisposable
         campaign.NewGame();clock.AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();
         map.SeedOverride=originalCitySeed;map.BlocksOverride=originalBlocks;map.UseSampleForValidation=originalSample;
         savingScope?.Dispose();
-        cooking.ManualControlEnabled=originalManualCooking;
+        cooking.EditorSubstitute=originalSubstitute;cooking.ManualControlEnabled=originalManualCooking;
         clock.AutomaticTick=originalAutomaticTick;spawner.enabled=originalSpawnerEnabled;
         spawner.SeedOverride=originalOrderSeed;dynamics.SeedOverride=originalDynamicsSeed;recruitment.SeedOverride=originalRecruitmentSeed;cooking.SeedOverride=originalCookingSeed;
         canvasGroup.interactable=originalInteractable;canvasGroup.blocksRaycasts=originalRaycasts;

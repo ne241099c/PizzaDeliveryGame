@@ -1,3 +1,5 @@
+> 最新追補（2026-10-23）：Codexが速度1.2倍・窯FIFO・ピザ3種類・生成マップ・内勤方針を実装。最新はshopのgit logを参照。再開時は[Current](Current.md)と[実装/測定記録](../Menu_Map_Implementation.md)を優先。G-4とJ/K/Lの数値調整は判断待ち。以下はClaudeから受け取った時点の履歴。
+
 # Codexへの引き継ぎ — 2026-10-23（Claude Codeから）
 
 ユーザーの依頼で、Claude Codeから実装・Unity操作をCodexへ戻す。Codexは実装・Unity操作の担当（レビュー専任ではない）。まず `AGENTS.md`、[Current](Current.md)、[Workboard](Workboard.md)、この文書を読む。
