@@ -1,0 +1,19 @@
+using TMPro;
+using UnityEngine;
+[CreateAssetMenu(menuName="Pizza Delivery/UI Theme")]
+public sealed class UITheme : ScriptableObject
+{
+    private static UITheme active;
+    public static UITheme Active=>active!=null?active:(active=Resources.Load<UITheme>("UITheme"));
+    private static Color Hex(string hex){ColorUtility.TryParseHtmlString(hex,out var value);return value;}
+    [SerializeField] public Color background=Hex("#FBF3E4"),ink=Hex("#2B2118"),accent=Hex("#D8452B"),good=Hex("#4C8C4A"),money=Hex("#F2B632"),bad=Hex("#B3261E"),muted=Hex("#8A7A66"),block=Hex("#E6D5B8"),park=Hex("#BFD8A8");
+    [SerializeField] public float heading=28,subheading=22,body=18,caption=14;
+    [SerializeField] public int smallSpace=8,padding=16,largeSpace=24,cornerRadius=8;
+    [SerializeField] public TMP_FontAsset font;
+    [SerializeField] public Sprite roundedPanel;
+    [SerializeField] public Color[] courierColors={Hex("#27658A"),Hex("#835191"),Hex("#956129"),Hex("#3E7770"),Hex("#AC4E72"),Hex("#546536")};
+    [SerializeField] public float mainRoadWidth=.18f,backstreetWidth=.10f,routeWidth=.24f,roadBorder=.07f,nodeSize=.4f,worldLabelSize=4.5f;
+    public float Size(ThemeTextSize size)=>size switch {ThemeTextSize.Heading=>heading,ThemeTextSize.Subheading=>subheading,ThemeTextSize.Caption=>caption,_=>body};
+}
+public enum ThemeTextSize {Heading,Subheading,Body,Caption}
+public enum ThemeButtonKind {Primary,Secondary,Danger,Disabled,Selected}
