@@ -43,4 +43,4 @@ This section is managed by KitWright MCP for Unity for Claude Code. Everything b
 
 まず `AGENTS.md`、次に `Docs/Handoff/Current.md`、`Docs/Handoff/Workboard.md` を読んでください。
 現在の引き継ぎはM3ではなく `Docs/Handoff/Current.md` です。会話履歴がなくても、この資料と参照先の設計書・実装・検証記録から再開できます。
-Claude Codeの初回担当はV-4候補の読み取りレビューです。担当外のファイル、Unity Editor、Git統合を同時に変更しないでください。
+Claude CodeとCodexは両方とも実装担当です。Claude Codeは現在、元のプロジェクトでV-4のレイアウト実装、Unity操作、全検証、撮影、統合を担当します。レビュー限定の旧指示は撤回済みです。Codexは別worktreeで担当ファイルを実装します。具体的な所有範囲と再開指示はWorkboardに従ってください。

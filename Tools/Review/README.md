@@ -1,7 +1,7 @@
 # レビュー・再開用ツール
 
 Python 3.11以上。元のUnityプロジェクトで、Unity操作担当者だけが使用する。
-Claudeのレビュー用worktreeではUnity操作をしない。
+現在のUnity操作担当はClaude Code。Codexの並行実装用worktreeからは実行しない。担当はWorkboardに従って交代できる。
 
 - `unity_call.py <tool> ['JSON' | @args.json]`：既存KitWright MCPのツール呼び出し。エラー時は非ゼロ終了。
 - `run_suite.py <label>`：全単体・シミュレーション検証を順次実行。事前にSampleSceneのPlayと接続を確認。失敗時は停止。

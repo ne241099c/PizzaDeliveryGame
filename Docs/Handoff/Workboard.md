@@ -1,39 +1,59 @@
 # 共同作業ボード
 
-更新: 2026-10-22。引き継ぎ準備時点。実行状況は各担当が追記する。
+更新: 2026-10-22。**Codex / Claude Codeは両方とも実装担当。レビュー専任に分けない。**
+ユーザーの最新指示により、以前の「Claudeはレビュー限定」を撤回。
 
-| 担当 | 作業 | 変更可能な範囲 | 状態 |
+## 現在の担当と所有ファイル
+
+| 担当 | 実装する内容 | 所有ファイル | 作業場所・状態 |
 |---|---|---|---|
-| Codex | Unity接続確認、V-4の実装・2解像度での撮影・全検証・ui→main統合 | UI表示コード、Editor配置/検証、シーン/Prefab/テーマ、最終画像・実装報告 | V-3完了。最新設定でMCP接続確認済み、Play中。V-4未着手 |
-| Claude Code | V-4候補、既存UI、検証漏れ、資料の整合性の読み取りレビュー | `Docs/Handoff/Claude_Review.md` のみ | 参加用worktreeを準備。Claudeの実行・レビュー完了は未確認 |
+| Claude Code | V-4のレイアウト、2解像度対応、画面確認、撮影、全検証、ui→main統合 | UIThemeDriver、VisualSceneSetup、VisualValidation、その他必要な表示/配置コード、シーン/Prefab/UITheme、最終画像・報告。UiStrings.csは除く | 元プロジェクト / ui。引き継ぎ準備完了、Claude実行は未確認 |
+| Codex | 未翻訳の画面文言の整備。表示文字表のコードを実装する | Assets/Scripts/UiStrings.cs。成果記録はDocs/Handoff/Codex_Implementation.md | .worktrees/codex-text / codex/v4-text。未着手 |
 
-## Claude Codeへ渡す最初の依頼
+双方の共通所有：このボードは自分の状態欄と成果欄だけを更新。相手の作業中はファイル全体を上書きしない。新規タスクの分担はここで具体的なファイルを指定する。
 
-```text
-AGENTS.md、CLAUDE.md、Docs/Handoff/Current.md、Docs/Handoff/Workboard.mdを読み、現状から参加してください。
-担当はV-4の読み取りレビューです。ゲームやUIの実装、Unity操作、既存資料の変更、Git統合は行わないでください。
-Docs/計画書_見た目.mdのV-4と、Docs/Handoff/V4_candidate.py.txt（未適用・未検証）を既存実装と照合してください。
-とくにCanvasGroupとGraphic.enabledの関係、能力ラベルのサイズ、訓練UI、解像度変更、画面境界検証の不足を確認してください。
-確実な不具合と提案を分け、ファイル名と行番号、再現条件、修正案、Unityで確認すべき点をDocs/Handoff/Claude_Review.mdへ記録してください。
-候補スクリプトは実行しないでください。全検証の合格を推測しないでください。レビュー結果だけローカルコミットし、ハッシュを返してください。pushは禁止です。
+## Unity操作の所有権
+
+**現在：Claude Code**。Codexは並行作業中に元プロジェクトへ書き込まず、MCP/Play/撮影/全検証/ブランチ変更を実行しない。
+Unityは現在の元プロジェクトをそのまま使用する。別worktreeへLibrary/Tempや認証設定をコピーして二重にEditorを起動しない。
+
+交代時は、所有者が保存済みシーン、Playの状態、実行中の検証、未コミット差分を記録して操作を終える。次の所有者がそれを確認してから操作する。Codexも後続タスクではUnity担当になれる。
+
+## Claude Codeの開始場所
+
+```sh
+cd /Users/soma/Unity/PizzaDeliveryGame
+claude
 ```
 
-## 作業の受け渡し
+以前作った `.worktrees/claude-review` は旧レビュー用で、今回の実装には使わない。そこで既にClaudeが作業中なら作業状態を報告してから終了し、元フォルダで新しいセッションを開始する。同時に二つのClaudeセッションから実装しない。
 
-1. 担当が成果ファイル、コミット、確認したこと、未確認事項を返す。
-2. Codexが元プロジェクトで `git show <hash>` を読み、担当範囲と除外対象を確認する。
-3. 必要なコミットだけをcherry-pickする。Unityで検証が通る前に段階完了としない。
-4. 次に実装を分担するときは、ここに具体的なファイルの所有者を追加してから作業する。
+## Claude Codeへ渡す依頼（このまま使う）
 
-元プロジェクトに対して二人が同時にgit操作する運用にはしない。worktreeではLibrary/Tempを共有しない。Claudeの初回レビューではUnityを開かない。
+```text
+AGENTS.md、CLAUDE.md、Docs/Handoff/Current.md、Docs/Handoff/Workboard.mdを読み、実装担当として再開してください。
+旧「Claudeはレビューのみ」の制限は撤回済みです。あなたとCodexの両方が実装を担当します。
+あなたは元プロジェクトのuiブランチとUnity Editorを担当し、Docs/計画書_見た目.mdのV-4を最後まで実装してください。
+Codexは別worktreeでAssets/Scripts/UiStrings.csだけを実装します。このファイルは直接変更せず、必要な文言を共有してください。
+V4_candidate.py.txtは未適用・未検証の参考案です。実装を調べ、必要な差分だけ反映し、候補を無条件に実行しないでください。
+1920x1080と1280x720で全11画面を確認・修正し、最終画像を保存してください。Unity操作、配置コード、シーン/Prefab編集、検証、撮影、ローカルコミット、main統合もあなたが担当して構いません。Codexの承認待ちは不要です。
+全検証の直前にCodexの完了コミットがあれば差分を確認して取り込んでください。未着手・未完了なら待たずに自分の作業を進め、残件として報告してください。
+各段階の全検証が通った場合だけローカルコミットしてください。既存検証が失敗したら原因を報告してそこで止め、次段階へ進まないでください。
+通過後はuiをmainへ統合して全検証を再確認し、段階別の変更・実測検証数・判断した点・画像を報告してください。
+ゲームロジックは変更しない。CanvasGroupで画面表示を管理し、色/文字サイズ/余白はUIThemeへ集める。既存部品を再利用する。V-5と数値調整は対象外です。
+push禁止。Packages変更、.DS_Store、.codex、_Recoveryはコミットに混ぜないでください。通常セーブを保護してください。
+接続先は最新のローカルMCP設定を使い、旧9085の決め打ちはしないでください。Tools/Reviewに検証・撮影の補助ツールがあります。
+```
 
+## Codexの並行実装
 
-## 作業場所
+- 専用worktreeでUiStrings.csの現行文字表と実際の表示メッセージを照合し、未翻訳を整える。識別子、名前、計算、正規表現の仕様を不用意に変えない。
+- そのworktree内でソース変更と確認を行い、Unityは操作しない。全検証未実行であることを明記する。
+- 成果は専用ブランチへローカルコミットする。V-4全検証前なので、段階完了を意味する`V-4:`コミットは作らず、`ui: ...`等の作業コミットとする。
+- `Docs/Handoff/Codex_Implementation.md`へコミット・変更ファイル・確認・未確認を書き、ハッシュをClaudeへ渡す。今は会話の自動中継はないため、ユーザーがハッシュ/完了報告を渡すか、ClaudeがGitログと成果ファイルを確認する。
+- Claudeが差分を読んでcherry-pickし、統合後の実物をUnityで検証する。
 
-- Codex：`/Users/soma/Unity/PizzaDeliveryGame` / `ui`
-- Claude Code：`/Users/soma/Unity/PizzaDeliveryGame/.worktrees/claude-review` / `claude/review-v4`
-- `.worktrees/`はGit対象外。専用worktreeの`.git`は元リポジトリへの参照なので、フォルダ内のgit操作は専用ブランチに限る。
-- Claude起動例：上の専用フォルダで `claude` を実行し、「Claude Codeへ渡す最初の依頼」を貼る。既に起動しているClaudeは元フォルダで編集せず、この専用フォルダから新しいセッションを開始する。
-- 最初のレビューにMCP接続設定は不要。認証付き設定をworktreeへコピーしない。
+## 現在の確認済み状態
 
-接続確認の訂正：旧一時ツールの9085固定が失敗原因。移設版ツールは現在の設定を読み、Editor状態取得に成功。現在のPlay状態には触れていない。
+V-3全3656項目通過、V-4未実装。接続は前回の確認で成功しPlay中・コンパイルエラー/警告なし。ただし起動時に実際の現在状態を再取得する。
+今回の分担設定ではゲームコードとUnity状態を変更していない。両クライアントを自動起動したわけではない。
