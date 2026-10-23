@@ -103,7 +103,9 @@ public static partial class M6Validation
             Near(aoi.Driving,.7f,"driving grows immediately");
             Check(training.Cost(aoi,CourierAbility.Driving)>170,"next price rises with ability");
             Check(training.Request(aoi,CourierAbility.Driving),"same ability can be bought twice in the same day");
-            Near(aoi.Driving,.8f,"second purchase immediately reaches potential");
+            Near(aoi.Driving,.8f,"second purchase applies immediately");
+            Check(training.Request(aoi,CourierAbility.Driving),"another purchase can reach the remaining potential");
+            Near(aoi.Driving,aoi.Potential(CourierAbility.Driving),"purchase clamps to the actual configured potential");
             Check(!training.Request(aoi,CourierAbility.Driving),"potential remains the hard ceiling");
             for(int i=1;i<5;i++)
             {
