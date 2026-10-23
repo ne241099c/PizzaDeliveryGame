@@ -44,6 +44,8 @@ public class NodeView : MonoBehaviour
             foreach(var line in GetComponentsInChildren<LineRenderer>())line.enabled=false;
         }
         else if(node.NodeType==NodeType.Intersection){spriteRenderer.color=theme.backRoadEdge;transform.localScale=Vector3.one*theme.nodeSize*.45f;}
+        // Delivery homes stand out from the decorative roadside buildings.
+        else if(node.NodeType==NodeType.DeliveryAddress){spriteRenderer.color=theme.mapHomeFill;transform.localScale=Vector3.one*theme.nodeSize*theme.mapHomeScale;}
         baseColor = spriteRenderer.color;
         baseScale = transform.localScale;
         var labelObject = new GameObject("NodeLabel");

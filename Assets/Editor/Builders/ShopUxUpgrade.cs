@@ -84,7 +84,7 @@ public static class ShopUxUpgrade
         settings.FindProperty("deliverySpeedMultiplier").floatValue=1.6f;
         settings.FindProperty("backstreetVisualOffset").floatValue=.85f;
         settings.FindProperty("citySettings.housesPerBlock").intValue=4;
-        settings.FindProperty("citySettings.maximumDestinations").intValue=64;
+        settings.FindProperty("citySettings.maximumDestinations").intValue=128;
         var templates=settings.FindProperty("citySettings.templates");
         for(int i=0;i<templates.arraySize;i++)
         {

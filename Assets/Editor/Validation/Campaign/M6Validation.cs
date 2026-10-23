@@ -108,7 +108,7 @@ public static partial class M6Validation
         Check(roster.SelectForDispatch(aoi),"trained courier selectable in second half");
         Check(!training.Cancel(aoi) && !training.Request(aoi,CourierAbility.Service),"business cannot cancel or reorder training");
         clock.Advance(1000);
-        Check(economy.Ledger.Wages==242.4m+economy.KitchenWages,"training day pays normal opening courier wage plus the apprentice");
+        Check(economy.Ledger.Wages==260.4m+economy.KitchenWages,"training day pays normal opening courier wage plus the apprentice");
         campaign.NewGame();
         var config=new SerializedObject(training);
         config.FindProperty("trainingDurationRatio").floatValue=1;
@@ -166,11 +166,11 @@ public static partial class M6Validation
         var person=UnityEngine.Object.FindFirstObjectByType<CourierRoster>().People[0];campaign.StartBusiness();
         rules.AwardExperience(person,CourierAbility.Driving,200);Near(person.Driving,.62f,"actual roster gains ability during business");
         clock.Advance(clock.BusinessDuration+1);
-        Check(economy.Ledger.Wages==242.4m+economy.KitchenWages && economy.KitchenWages==48,"current-day courier (242.4) and apprentice (48) wages are frozen at opening");
+        Check(economy.Ledger.Wages==260.4m+economy.KitchenWages && economy.KitchenWages==48,"current-day courier (260.4) and apprentice (48) wages are frozen at opening");
         campaign.NextDay();Near(person.Driving,.62f,"growth carries to next day");
         campaign.StartBusiness();
         clock.Advance(clock.BusinessDuration+1);
-        Check(economy.Ledger.Wages==242.88m+economy.KitchenWages,"grown courier wage (242.88) applies to next settlement with the apprentice wage");
+        Check(economy.Ledger.Wages==260.88m+economy.KitchenWages,"grown courier wage (260.88) applies to next settlement with the apprentice wage");
         campaign.NewGame();
     }
     private static void ValidatePotentials()

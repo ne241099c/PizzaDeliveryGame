@@ -26,11 +26,11 @@ public static class CityValidator
         if(m.failures.Count>0)return m;
         var goals=map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress && !n.IsStore).ToArray();m.destinations=goals.Length;
         float Cost(MapEdge e)=>e.Distance/e.TrafficFactor;
+        var byId=map.Edges.ToDictionary(e=>e.Id);
         float Distance(string from,string to,IEnumerable<MapEdge> edges,Func<MapEdge,float> cost)
         {
-            var list=edges.ToArray();
-            var path=RoadPathfinder.FindShortestPath(list,from,to,cost);
-            return path==null?float.PositiveInfinity:path.Sum(id=>cost(list.First(e=>e.Id==id)));
+            var path=RoadPathfinder.FindShortestPath(edges as IReadOnlyList<MapEdge> ?? edges.ToArray(),from,to,cost);
+            return path==null?float.PositiveInfinity:path.Sum(id=>cost(byId[id]));
         }
         var distances=new List<float>();
         foreach(var node in map.Nodes)
@@ -70,7 +70,15 @@ public static class CityValidator
             }
         }
         Fail(m.near>0 && m.middle>0 && m.far>0,"distance distribution");
-        for(int a=0;a<goals.Length;a++)for(int b=a+1;b<goals.Length;b++)if(Distance(goals[a].Id,goals[b].Id,map.Edges,Cost)<=s.nearbyDistance)m.nearPairs++;
+        // A route costs at least (cheapest cost per straight-line unit) x (straight-line distance), so pairs that are
+        // too far apart even in a straight line cannot be near and need no search. The count is the same.
+        var at=map.Nodes.ToDictionary(n=>n.Id,n=>n.Position);
+        float perUnit=map.Edges.Min(e=>{float length=Vector2.Distance(at[e.NodeAId],at[e.NodeBId]);return length>0?Cost(e)/length:0;});
+        for(int a=0;a<goals.Length;a++)for(int b=a+1;b<goals.Length;b++)
+        {
+            if(perUnit*Vector2.Distance(goals[a].Position,goals[b].Position)>s.nearbyDistance)continue;
+            if(Distance(goals[a].Id,goals[b].Id,map.Edges,Cost)<=s.nearbyDistance)m.nearPairs++;
+        }
         Fail(m.nearPairs>0,"batch opportunity");
         Fail(m.bridges>=2 && city.bridges.All(id=>map.Edges.Any(e=>e.Id==id)),"river bridges");
         for(int a=0;a<map.Nodes.Count;a++)for(int b=a+1;b<map.Nodes.Count;b++)m.minimumSpacing=Mathf.Min(m.minimumSpacing,Vector2.Distance(map.Nodes[a].Position,map.Nodes[b].Position));

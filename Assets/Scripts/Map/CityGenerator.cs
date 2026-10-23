@@ -24,6 +24,10 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     public int[] stageBlocks=>networkStageBlocks;
     public int[] legacyStageBlocks={3,5,8,12};
     [Range(2,4), Tooltip("新規ゲームの街区ごとの家の数。既存セーブには保存時の数を使います。 ")] public int housesPerBlock=4;
+    [Range(2,10), Tooltip("v7の地区ごとの配達先の数。v7の保存データは保存時の数を、v6以前から作り直した街はこの数を使います。")] public int networkHousesPerDistrict=7;
+    /// <summary>Delivery addresses per district for a town of this version (saved = the save's own count, 0 = none).</summary>
+    public int HousesFor(int version,int saved)=>version>=7?Mathf.Clamp(saved>0?saved:networkHousesPerDistrict,2,10)
+        :version<4?2:Mathf.Clamp(saved>0?saved:housesPerBlock,2,4);
     public int BlocksForVersion(int day,int version)=>version<=2?legacyStageBlocks[Mathf.Min(Stage(day),legacyStageBlocks.Length-1)]:version<7?campaignStageBlocks[Mathf.Min(Stage(day),campaignStageBlocks.Length-1)]:Blocks(day);
     [Min(1)] public int retryCount=6;
     [Min(1)] public int columns=4;
@@ -46,7 +50,7 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     [Min(0)] public float minimumShortcutSaving=.03f;
     [Range(0,1)] public float maximumShortcutSaving=.7f,maximumDeadEndFraction=.3f;
     [Min(0)] public float minimumNodeSpacing=.5f;
-    [Min(1)] public int minimumEdges=6,maximumEdges=300,minimumDestinations=2,maximumDestinations=64;
+    [Min(1)] public int minimumEdges=6,maximumEdges=300,minimumDestinations=2,maximumDestinations=128;
     [Min(1)] public float maximumTotalDistance=4000;
     [Min(1)] public int constructionStartDay=11,constructionDays=3;
     [Range(.1f,1f)] public float constructionTraffic=.45f;
@@ -82,6 +86,7 @@ public sealed class GeneratedCity
 public static class CityGenerator
 {
     public const int CurrentVersion=7;
+    private static readonly Dictionary<string,int> validatedNetworkVariants=new();
     public static GeneratedCity Build(int seed,int blockCount,CityGenerationSettings s,int variant=0,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
         if(blockCount<1 || s.templates==null || s.templates.Length<1)throw new ArgumentException("City needs blocks and templates.");
@@ -181,7 +186,7 @@ public static class CityGenerator
     // node and edge when the next district is unlocked.
     private static GeneratedCity BuildStreetNetwork(int seed,int blockCount,CityGenerationSettings s,int variant,int version,int savedHousesPerBlock)
     {
-        int houses=Mathf.Clamp(savedHousesPerBlock>0?savedHousesPerBlock:s.housesPerBlock,2,4);
+        int houses=s.HousesFor(version,savedHousesPerBlock);
         var city=new GeneratedCity{seed=seed,version=version,housesPerBlock=houses,map=ScriptableObject.CreateInstance<MapDefinition>()};
         var map=city.map;map.hideFlags=HideFlags.DontSave;
         var positions=new Dictionary<string,Vector2>();
@@ -436,6 +441,11 @@ public static class CityGenerator
             // Retrying only the requested size could move the old town when an
             // expansion happens to need another variant.
             int[] sizes=s.stageBlocks.Concat(new[]{blocks}).Distinct().OrderBy(n=>n).ToArray();
+            string key=seed+"/"+version+"/"+savedHousesPerBlock+"/"+string.Join(",",sizes)+"/"+JsonUtility.ToJson(s);
+            if(validatedNetworkVariants.TryGetValue(key,out int chosen))
+            {
+                var cached=Build(seed,blocks,s,chosen,version,savedHousesPerBlock);cached.attempt=chosen;cached.metrics=CityValidator.Measure(cached,s);return cached;
+            }
             for(int attempt=0;attempt<s.retryCount;attempt++)
             {
                 GeneratedCity requested=null;bool accepted=true;
@@ -453,7 +463,7 @@ public static class CityGenerator
                     if(candidate!=null)UnityEngine.Object.Destroy(candidate.map);
                     if(!accepted)break;
                 }
-                if(accepted && requested!=null)return requested;
+                if(accepted && requested!=null){validatedNetworkVariants[key]=attempt;return requested;}
                 if(requested!=null)UnityEngine.Object.Destroy(requested.map);
             }
             var fallback=SafeCity(seed,blocks,s,version,savedHousesPerBlock);
@@ -484,7 +494,7 @@ public static class CityGenerator
     }
     public static GeneratedCity SafeCity(int seed,int blocks,CityGenerationSettings settings,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
-        var safe=Build(seed%2==0?1401:1402,blocks,new CityGenerationSettings{networkInitialRadius=settings.networkInitialRadius,networkGrowthSpacing=settings.networkGrowthSpacing,networkPointSpacing=settings.networkPointSpacing,networkRoadClearance=settings.networkRoadClearance,networkMaximumConnection=settings.networkMaximumConnection,networkLoopChance=settings.networkLoopChance,networkShortcutChance=settings.networkShortcutChance,networkMaximumOneWayRoads=settings.networkMaximumOneWayRoads,columns=settings.columns,organicMinimumBlockSize=settings.organicMinimumBlockSize,organicMaximumBlockSize=settings.organicMaximumBlockSize,organicJunctionJitter=settings.organicJunctionJitter,organicShortcutDistanceFactor=settings.organicShortcutDistanceFactor,radialFirstBlockDistance=settings.radialFirstBlockDistance,blockSize=settings.blockSize,blockGap=settings.blockGap,roadDistanceScale=settings.roadDistanceScale,shortcutDistance=settings.shortcutDistance,housesPerBlock=settings.housesPerBlock},version:version,savedHousesPerBlock:savedHousesPerBlock);
+        var safe=Build(seed%2==0?1401:1402,blocks,new CityGenerationSettings{networkHousesPerDistrict=settings.networkHousesPerDistrict,networkInitialRadius=settings.networkInitialRadius,networkGrowthSpacing=settings.networkGrowthSpacing,networkPointSpacing=settings.networkPointSpacing,networkRoadClearance=settings.networkRoadClearance,networkMaximumConnection=settings.networkMaximumConnection,networkLoopChance=settings.networkLoopChance,networkShortcutChance=settings.networkShortcutChance,networkMaximumOneWayRoads=settings.networkMaximumOneWayRoads,columns=settings.columns,organicMinimumBlockSize=settings.organicMinimumBlockSize,organicMaximumBlockSize=settings.organicMaximumBlockSize,organicJunctionJitter=settings.organicJunctionJitter,organicShortcutDistanceFactor=settings.organicShortcutDistanceFactor,radialFirstBlockDistance=settings.radialFirstBlockDistance,blockSize=settings.blockSize,blockGap=settings.blockGap,roadDistanceScale=settings.roadDistanceScale,shortcutDistance=settings.shortcutDistance,housesPerBlock=settings.housesPerBlock},version:version,savedHousesPerBlock:savedHousesPerBlock);
         safe.seed=seed;safe.metrics=CityValidator.Measure(safe,settings);return safe;
     }
 }

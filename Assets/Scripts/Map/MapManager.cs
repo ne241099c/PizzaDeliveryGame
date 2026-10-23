@@ -47,15 +47,20 @@ public class MapManager : MonoBehaviour
             var block=City.blocks.FirstOrDefault(b=>edgeId.StartsWith($"B{b.index}_"));
             if(block!=null)return block.template.title+" "+(block.index+1)+"の通り";
         }
+        if(City!=null && City.version>=7)
+        {
+            var road=GetEdge(edgeId);int index=edges.FindIndex(e=>e.Id==edgeId)+1;
+            return (road.RoadType==RoadType.Backstreet?"裏道":edgeId.Contains("_Local")?"生活道路":"通り")+" "+index;
+        }
         return "駅前通り";
     }
     public string TomorrowCityInfo(int day)=>City!=null && citySettings.BlocksForVersion(day+1,CityState.version)>City.blocks.Count?"あした、新しい街区が開きます。":"あしたも同じ街で営業します。";
     public void NewCampaignCity()
     {
-        CityState=generateCampaignCity && !UseSampleForValidation?new CitySaveState{generated=true,housesPerBlock=Mathf.Clamp(citySettings.housesPerBlock,2,4),seed=SeedOverride??Guid.NewGuid().GetHashCode(),day=1}:null;
+        CityState=generateCampaignCity && !UseSampleForValidation?new CitySaveState{generated=true,housesPerBlock=citySettings.HousesFor(CityGenerator.CurrentVersion,0),seed=SeedOverride??Guid.NewGuid().GetHashCode(),day=1}:null;
     }
     public CitySaveState CaptureCity()=>CityState==null?null:new CitySaveState{generated=true,version=CityState.version,seed=CityState.seed,blocks=CityState.blocks,day=CityState.day,housesPerBlock=CityState.housesPerBlock};
-    public bool ValidCity(CitySaveState state,int day)=>state==null || !state.generated || (state.version>=1 && state.version<=CityGenerator.CurrentVersion) && (state.version<4 || state.housesPerBlock>=2 && state.housesPerBlock<=4) && state.day==day && state.blocks==citySettings.BlocksForVersion(day,state.version);
+    public bool ValidCity(CitySaveState state,int day)=>state==null || !state.generated || (state.version>=1 && state.version<=CityGenerator.CurrentVersion) && (state.version<4 || state.housesPerBlock==citySettings.HousesFor(state.version,state.housesPerBlock)) && state.day==day && state.blocks==citySettings.BlocksForVersion(day,state.version);
     public void RestoreCity(CitySaveState state)
     {
         CityState=state==null || !state.generated?null:new CitySaveState{generated=true,version=state.version,seed=state.seed,blocks=state.blocks,day=state.day,housesPerBlock=state.housesPerBlock};
@@ -64,7 +69,8 @@ public class MapManager : MonoBehaviour
             // Saves contain preparation state only: no active route or order depends on old roads.
             CityState.version=CityGenerator.CurrentVersion;
             CityState.blocks=citySettings.Blocks(CityState.day);
-            CityState.housesPerBlock=CityState.housesPerBlock>=2?CityState.housesPerBlock:Mathf.Clamp(citySettings.housesPerBlock,2,4);
+            // The roads are new as well, so the old density does not carry over.
+            CityState.housesPerBlock=citySettings.HousesFor(CityState.version,0);
         }
         else ExpandRestoredCityHomes();
         PrepareCity(state?.day??1);
@@ -111,7 +117,7 @@ public class MapManager : MonoBehaviour
         var old=City;var next=CityGenerator.Generate(CityState.seed,blocks,citySettings,CityState.version,CityState.housesPerBlock);
         if(day>=citySettings.constructionStartDay)
         {
-            var candidates=next.map.Edges.Where(e=>e.Id.EndsWith("AB") && !next.bridges.Contains(e.Id)).ToArray();
+            var candidates=next.map.Edges.Where(e=>(next.version>=7?e.Id.Contains("_Street"):e.Id.EndsWith("AB")) && !next.bridges.Contains(e.Id)).ToArray();
             if(candidates.Length>0)
             {
                 var e=candidates[(int)((uint)(CityState.seed^(day/citySettings.constructionDays))%(uint)candidates.Length)];

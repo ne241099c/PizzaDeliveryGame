@@ -2322,13 +2322,27 @@ MonoBehaviour:
   citySettings:
     stageDays: 01000000060000000b00000015000000
     campaignStageBlocks: 05000000080000000a0000000c000000
+    networkStageBlocks: 080000000a0000000c0000000e000000
     legacyStageBlocks: 0300000005000000080000000c000000
     housesPerBlock: 4
+    networkHousesPerDistrict: 7
     retryCount: 6
     columns: 4
     blockSize: 4
     blockGap: 1
     radialFirstBlockDistance: 11
+    organicMinimumBlockSize: 5
+    organicMaximumBlockSize: 8
+    organicJunctionJitter: 0.45
+    organicShortcutDistanceFactor: 1
+    networkInitialRadius: 7
+    networkGrowthSpacing: 1.8
+    networkPointSpacing: 2.1
+    networkRoadClearance: 0.65
+    networkMaximumConnection: 11
+    networkLoopChance: 0.95
+    networkShortcutChance: 0.65
+    networkMaximumOneWayRoads: 0
     roadDistanceScale: 1.5
     shortcutDistance: 9
     minimumShortcutSaving: 0.03
@@ -2338,7 +2352,7 @@ MonoBehaviour:
     minimumEdges: 6
     maximumEdges: 300
     minimumDestinations: 2
-    maximumDestinations: 64
+    maximumDestinations: 128
     maximumTotalDistance: 4000
     constructionStartDay: 11
     constructionDays: 3

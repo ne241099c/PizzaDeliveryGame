@@ -95,7 +95,7 @@ public static class M7Validation
         list.AddOrder(first);
         list.AddOrder(second);
         Check(first.Baking==BakingState.Cooking && second.Baking==BakingState.Waiting,"single staff takes the oldest ticket first");
-        Check(!list.SelectOnly(first) && !list.SelectOnly(second),"uncooked orders cannot be selected");
+        Check(list.CanReserve(first) && list.CanReserve(second) && !list.CanSelect(first) && !list.CanSelect(second),"uncooked orders can be reserved but do not count as ready");
         Check(economy.Ledger.Materials==0,"no materials charged while cooking");
         clock.Advance(work+.001f);
         Check(cook.JobFor(first).Stage==PizzaStage.Baking && second.Baking==BakingState.Cooking && Mathf.Abs(cook.JobFor(second).StartedAt-work)<.001f,"assembled pizza enters the oven and the next ticket starts at the exact time");

@@ -79,7 +79,7 @@ public static class CityCampaignValidation
                 Check(map.CaptureCity().version==CityGenerator.CurrentVersion && map.City.blocks.Count==map.CitySettings.Blocks(data.day),"legacy layout becomes current irregular map "+version);
                 Check(migrated.day==oldLayout.day && migrated.cash==balance && migrated.people.Count==oldLayout.people.Count,"layout migration keeps day funds and staff "+version);
                 Check(map.City.metrics.failures.Count==0,"migrated layout remains connected and valid "+version);
-                Check(map.CaptureCity().housesPerBlock==(version>=4?3:map.CitySettings.housesPerBlock),"migration respects saved density when present "+version);
+                Check(map.CaptureCity().housesPerBlock==map.CitySettings.networkHousesPerDistrict,"a rebuilt layout uses the street-network density "+version);
             }
             data.city=null;
             Check(save.TryParse(JsonUtility.ToJson(data),out var legacyData,out _),"legacy null city JSON round trip");

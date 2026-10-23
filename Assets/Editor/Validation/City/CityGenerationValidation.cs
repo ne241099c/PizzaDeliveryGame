@@ -15,7 +15,7 @@ public static class CityGenerationValidation
         foreach(int seed in new[]{1401,1402,9187})
         {
             int initial=settings.Blocks(1),maximum=settings.Blocks(21);
-            var city=CityGenerator.Build(seed,initial,settings);var copy=CityGenerator.Build(seed,initial,settings);var larger=CityGenerator.Build(seed,maximum,settings);
+            var city=CityGenerator.Generate(seed,initial,settings);var copy=CityGenerator.Generate(seed,initial,settings);var larger=CityGenerator.Generate(seed,maximum,settings);
             var legacy=CityGenerator.Build(seed,5,settings,version:6);
             try
             {

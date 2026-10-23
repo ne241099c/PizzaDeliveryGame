@@ -37,6 +37,9 @@ public static class M5Validation
         funding.ApplyModifiedPropertiesWithoutUndo();
         economy.NewGame();
         funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
+        // Starting abilities: the deliveries below earn experience and can raise them (and so the wage).
+        check(economy.DailyWage(roster.People.First(p=>p.Name=="Aoi"))==150,"Aoi wage formula (three boxes since the capacity update)");
+        check(economy.DailyWage(roster.People.First(p=>p.Name=="Ren"))==110.4m,"Ren wage formula");
         foreach(bool late in new[]{false,true})
         {
             var person=roster.People.First(p=>p.Name=="Aoi");
@@ -53,8 +56,6 @@ public static class M5Validation
             check(economy.Cash-beforeCash==expected-20 && economy.DailyRevenue-beforeRevenue==expected,"arrival credits exact tip/late-adjusted score");
             check(late ? expected<100 : expected==116,"late reduction or on-time service tip included");
         }
-        check(economy.DailyWage(roster.People.First(p=>p.Name=="Aoi"))==132,"Aoi wage formula");
-        check(economy.DailyWage(roster.People.First(p=>p.Name=="Ren"))==110.4m,"Ren wage formula");
         check(economy.Ledger.Materials==40 && economy.Ledger.Distance>0,"actual dispatched materials and completed road distance");
         var sampleOrder=new[]{M7Validation.ReadyOrder("Goal1","Distance",0,100)};
         var samplePerson=roster.People.First(p=>p.Name=="Aoi");
