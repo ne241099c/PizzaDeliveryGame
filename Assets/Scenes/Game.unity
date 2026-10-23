@@ -2108,7 +2108,7 @@ MonoBehaviour:
     id: 
     driving: 0.6
     localKnowledge: 0.6
-    capacity: 2
+    capacity: 3
     service: 0.8
     endurance: 0.7
     safety: 0.8
@@ -2124,7 +2124,7 @@ MonoBehaviour:
     - 0
     - 0
     - 0
-    capacityPotential: 2
+    capacityPotential: 3
     status: 0
   - Name: Ren
     Archetype: 2
@@ -2147,7 +2147,7 @@ MonoBehaviour:
     - 0
     - 0
     - 0
-    capacityPotential: 2
+    capacityPotential: 3
     status: 0
   initialPotentialBonus: 0.25
 --- !u!114 &884947492
@@ -2318,6 +2318,7 @@ MonoBehaviour:
   mapDefinition: {fileID: 0}
   generateCampaignCity: 1
   expandExistingCityHomes: 1
+  upgradeRestoredCityLayout: 1
   citySettings:
     stageDays: 01000000060000000b00000015000000
     campaignStageBlocks: 05000000080000000a0000000c000000
@@ -2327,6 +2328,7 @@ MonoBehaviour:
     columns: 4
     blockSize: 4
     blockGap: 1
+    radialFirstBlockDistance: 11
     roadDistanceScale: 1.5
     shortcutDistance: 9
     minimumShortcutSaving: 0.03
@@ -4032,7 +4034,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameClock
   businessDuration: 180
   travelTimeMultiplier: 5
-  planningTimeRate: 1
+  planningTimeRate: 0.1
   autoStart: 0
   automaticTick: 1
   closedPlaybackSpeed: 8
@@ -4147,6 +4149,11 @@ MonoBehaviour:
   initialOvens: 1
   initialBikeLevel: 1
   initialWorkbenches: 2
+  maximumEquipmentLevel: 10
+  additionalUpgradePriceMultiplier: 1.6
+  additionalBikeSpeedPerLevel: 0.08
+  additionalBikeRiskReduction: 0.1
+  minimumBikeRisk: 0.2
   implementationStage: 4
 --- !u!114 &1737208722
 MonoBehaviour:
@@ -4293,7 +4300,8 @@ MonoBehaviour:
   newcomerPotential: {x: 0.3, y: 0.5}
   experiencedPotential: {x: 0.05, y: 0.15}
   standardPotential: {x: 0.15, y: 0.3}
-  newcomerCapacityPotentialTwo: 0.7
+  newcomerCapacityPotentialThree: 0.7
+  capacityGrowthLimit: 3
   experiencedCapacityTwo: 0.6
   potentialHiringFactor: 400
   baselineRange: {x: 0.3, y: 0.7}
@@ -4342,6 +4350,7 @@ MonoBehaviour:
   lateServiceExperience: 5
   enduranceExperiencePerSecond: 0.35
   safetyExperiencePerRoad: 4
+  earnedExperienceMultiplier: 3
   automaticGrowth: 1
 --- !u!114 &1737208728
 MonoBehaviour:

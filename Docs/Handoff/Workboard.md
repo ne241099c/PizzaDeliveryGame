@@ -1,3 +1,7 @@
+> **完了：Codexが店舗四方の地図v5・調理前予約・道順編集中0.1倍・最大3件・成長表示と経験倍率・設備Lv10・地図外通知を実装。** shop、ローカルのみ、pushなし。関連264項目と厨房スクロール追加4条件が通過。通常セーブ／最高記録は開始時とバイト一致。Unity編集モードへ復帰。画面2枚と判断事項は [実装記録](../Results/Shop_Planning_Reservations.md)。既存フォント・Packages変更は保護。次のUnity操作担当はCodex（交代時はここを更新）。
+
+> **現在：ユーザーのClaude完了報告と追加依頼によりCodexが実装・Unity操作を再開。** shop / c4a4bd3。今回の範囲は四方への配達先、経路計画中の時間確保、焼成前予約、3件持ち、成長表示・速度、設備上限、通知。マップと成長・設備は独立worktree、統合とUnity操作はCodex本体のみ。開始時Unity編集モード。既存フォント・Packages変更は保護。
+
 > **現在（2026-10-23 夜）：Codexが利用制限で停止したため、ユーザーの依頼でClaude Codeが引き継ぎ。Unity操作の所有者：Claude Code。** Codexの未コミット分を確認・検証し、小さな修正2件を加えてコミット済み（詳細：[実装・確認記録](../Results/Shop_UX_Structure_Improvements.md)の最終節）。Unityは編集モード。Codexは同じUnityを操作しない。
 
 > （直前）**現在：Codexが追加UX改善・家の増加の実装とUnity操作を担当。** 開始時 shop / b647cfe、Unityは編集モード・コンパイルなし。Claudeの完了コミット後、ユーザーの最新依頼で再開。独立したソース作業は /private/tmp の専用worktreeで分担し、Unity操作・統合はCodex本体のみ。

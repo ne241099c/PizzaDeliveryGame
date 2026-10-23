@@ -4,6 +4,13 @@ using System.Text.RegularExpressions;
 /// <summary>Presentation-only Japanese string table; persistent IDs and calculation inputs stay unchanged.</summary>
 public static class UiStrings
 {
+    public const string ReserveHint="焼く前の注文も、クリックかドラッグで配達員へ予約できます。";
+    public const string ReserveShortHint="焼く前でも予約OK・下のレーンへ";
+    public const string DepartureWaiting="準備待ち";
+    public const string WaitingForBaking="焼き上がり待ち";
+    public const string NextSection="次の区間へ";
+    public const string FinishRoute="編集完了";
+    public static string SlowPlanning(float rate)=>$"道順を計画中 ×{rate:0.##} ／ 右クリックでも終了";
     private static readonly Dictionary<string,string> phrases=new()
     {
         {"Click a road connected to the current node (*).\nBlue: next / Green: used / Yellow: last\nScroll: zoom / Middle-drag: pan","現在地（*）から道をクリック / 赤：自分の道順 / ホイール：拡大縮小 / 中ボタンのドラッグ：移動"},

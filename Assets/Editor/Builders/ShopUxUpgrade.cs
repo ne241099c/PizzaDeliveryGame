@@ -13,6 +13,43 @@ using UnityEngine.UI;
 public static class ShopUxUpgrade
 {
     private static RectTransform Part(SerializedObject owner,string field)=>(RectTransform)owner.FindProperty(field).objectReferenceValue;
+    public static string ApplyPlanningUpgrade()
+    {
+        if(Application.isPlaying)throw new InvalidOperationException("Exit Play first.");
+        const string path="Assets/Prefabs/UI/BusinessView.prefab";
+        var root=PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var so=new SerializedObject(root.GetComponent<BusinessView>());
+            var bubble=Part(so,"bubble");UiKit.Place(bubble,840,196,944,48);
+            var here=bubble.Find("Here") as RectTransform;if(here!=null)UiKit.Place(here,12,10,96,28);
+            var text=(TMPro.TextMeshProUGUI)so.FindProperty("bubbleText").objectReferenceValue;
+            UiKit.Place(text.rectTransform,120,4,812,40);
+            text.fontSize=UITheme.Active.captionSize;text.enableAutoSizing=true;text.fontSizeMin=UITheme.Active.captionSize;
+            var content=Part(so,"dispatchOrderContent");var hint=content.parent.parent.Find("Hint").GetComponent<TMPro.TextMeshProUGUI>();
+            hint.text=UiStrings.ReserveShortHint;hint.enableAutoSizing=true;hint.textWrappingMode=TMPro.TextWrappingModes.NoWrap;hint.overflowMode=TMPro.TextOverflowModes.Ellipsis;
+            PrefabUtility.SaveAsPrefabAsset(root,path);
+        }
+        finally{PrefabUtility.UnloadPrefabContents(root);}
+        var clock=Object.FindFirstObjectByType<GameClock>();
+        if(clock==null)throw new InvalidOperationException("Open Game scene first.");
+        var c=new SerializedObject(clock);c.FindProperty("planningTimeRate").floatValue=.1f;c.ApplyModifiedProperties();
+        var roster=Object.FindFirstObjectByType<CourierRoster>();var r=new SerializedObject(roster);
+        var people=r.FindProperty("deliveryPeople");
+        for(int i=0;i<people.arraySize;i++)
+        {
+            var person=people.GetArrayElementAtIndex(i);person.FindPropertyRelative("capacityPotential").intValue=DeliveryPerson.MaximumCapacity;
+            if(person.FindPropertyRelative("Name").stringValue=="Aoi")person.FindPropertyRelative("capacity").intValue=DeliveryPerson.MaximumCapacity;
+        }
+        r.ApplyModifiedProperties();
+        var progression=new SerializedObject(Object.FindFirstObjectByType<CourierProgression>());
+        progression.FindProperty("earnedExperienceMultiplier").floatValue=3;progression.ApplyModifiedProperties();
+        var facility=new SerializedObject(Object.FindFirstObjectByType<FacilityManager>());
+        facility.FindProperty("maximumEquipmentLevel").intValue=10;facility.ApplyModifiedProperties();
+        EditorSceneManager.MarkSceneDirty(clock.gameObject.scene);
+        EditorSceneManager.SaveScene(clock.gameObject.scene);
+        return "Applied planning clock, initial Aoi capacity, reservation guide and compact guide prefab.";
+    }
     public static string Apply()
     {
         if(Application.isPlaying)throw new InvalidOperationException("Exit Play before applying prefab changes.");

@@ -23,6 +23,7 @@ public sealed partial class BusinessView
     [SerializeField] private StickerButton trafficButton;
     [SerializeField] private RawImage minimapImage;
     private Camera minimapCamera;private RenderTexture minimapTexture;
+    private int minimapRevision=-1;
     private sealed class Lane
     {
         public DeliveryPerson Person;public RectTransform Root,StateBadge,Diff;public TextMeshProUGUI Time,Note;
@@ -63,9 +64,9 @@ public sealed partial class BusinessView
         }
         BuildDispatchOrders();
         // guide bubble
-        bubble=UiKit.Card(dispatch,"Bubble",1140,126,620,112,T.paper,18,6,3);
-        UiKit.Badge(bubble,"Here","いまここ",20,14,T.cheese,T.line,30,16);
-        bubbleText=UiKit.Label(bubble,"Text","",20,50,560,56,T.captionSize,T.line,FontRole.Black,TextAlignmentOptions.TopLeft,true);
+        bubble=UiKit.Card(dispatch,"Bubble",840,196,944,48,T.paper,14,3,2);
+        UiKit.Badge(bubble,"Here","いまここ",12,10,T.cheese,T.line,28,T.captionSize);
+        bubbleText=UiKit.Label(bubble,"Text","",120,4,812,40,T.captionSize,T.line,FontRole.Black,TextAlignmentOptions.TopLeft,true);
         // map controls
         var zoom=UiKit.Card(dispatch,"Zoom",1808,250,76,150,T.paper,14,6,3);
         zoomIn=UiKit.Button(zoom,"ZoomIn","",StickerKind.Secondary,4,4,68,68,20,null,FontRole.Black,"icon_plus");
@@ -206,8 +207,8 @@ public sealed partial class BusinessView
     {
         var bag=handover.BagOf(person);
         if(!person.IsAvailable || bag.Count<2)return false;
-        bool moved=handover.Move(bag[1],person,0);
-        if(moved){handover.Select(person);editingPerson=null;editingLeg=-1;SyncRoute();}
+        bool moved=handover.Move(bag[0],person,bag.Count-1);
+        if(moved){handover.Select(person);EndRouteEdit();SyncRoute();}
         return moved;
     }
     private string RouteEditCaption()
@@ -218,14 +219,17 @@ public sealed partial class BusinessView
         string Name(string id)=>id==map.StoreNodeId?ShopStrings.Store:ShopStrings.House(map,id);
         return Name(leg.from)+" → "+Name(leg.to);
     }
+    public bool IsEditingRoute=>editingPerson!=null && editingLeg>=0;
+    public void EndRouteEdit(){editingPerson=null;editingLeg=-1;if(clock!=null)clock.IsPlanning=false;}
     public bool BeginRouteEdit(DeliveryPerson person)
     {
         if(person==null || !person.IsAvailable || handover.BagOf(person).Count==0)return false;
         handover.Select(person);
         int count=Legs(person,handover.BagOf(person),false).Count;
         if(count==0)return false;
-        editingLeg=editingPerson==person?(editingLeg+1)%count:0;
-        editingPerson=person;
+        if(editingPerson==person && editingLeg+1>=count){EndRouteEdit();return true;}
+        editingLeg=editingPerson==person?editingLeg+1:0;
+        editingPerson=person;clock.IsPlanning=true;
         return true;
     }
     public void Depart(DeliveryPerson person)
@@ -235,7 +239,7 @@ public sealed partial class BusinessView
         SyncRoute();
         string reason=flow.DispatchRejectionReason(planner.SelectedPlan,person);
         if(reason.Length>0){Toast(handover.BagOf(person).Count==0?"レーンに伝票を入れましょう。":UiStrings.Japanese(reason),T.berry,null,"icon_bike");return;}
-        editingPerson=null;editingLeg=-1;planner.Dispatch();Toast($"{person.Name} 出発!",T.basil,null,"icon_bike");guided=true;waypoints.Remove(person);
+        EndRouteEdit();planner.Dispatch();Toast($"{person.Name} 出発!",T.basil,null,"icon_bike");guided=true;waypoints.Remove(person);
         var next=roster.People.FirstOrDefault(p=>p.IsAvailable && handover.BagOf(p).Count>0);if(next!=null)handover.Select(next);
     }
     private int Late(List<string> edges,DeliveryPerson person,IReadOnlyList<Order> bag)
@@ -275,6 +279,7 @@ public sealed partial class BusinessView
         {
             ShopHand.Instance?.Unregister(lane.Zone);
             foreach(var z in lane.Slots)ShopHand.Instance?.Unregister(z);
+            lane.Root.SetParent(null,false);
             Destroy(lane.Root.gameObject);
         }
         lanes.Clear();
@@ -323,7 +328,7 @@ public sealed partial class BusinessView
                 {
                     var o=bag[s];UiKit.Card(slot,"Ticket",0,0,slotW,60,T.paper,10,3,2);
                     UiKit.Label(slot,"Title",$"{s+1}  #{Number(o)} {ShortHouse(o)}",10,4,slotW-16,30,18,T.line,FontRole.Black);
-                    UiKit.Label(slot,"Pizza",o.PizzaName,10,32,slotW-16,24,16,T.inkSub,FontRole.Bold);
+                    UiKit.Label(slot,"Pizza",o.IsReady?o.PizzaName:UiStrings.WaitingForBaking,10,32,slotW-16,24,16,T.inkSub,FontRole.Bold);
                     var source=slot.gameObject.AddComponent<DragSource>();var img=slot.gameObject.AddComponent<Image>();img.color=Color.clear;
                     source.Payload=()=>new DragPayload{Kind=DragKind.Bagged,Order=o,Sprite="box_closed",Size=new Vector2(96,96)};
                     source.Clicked=()=>handover.Unbag(o);slot.name="Bag_"+Number(o);
@@ -335,8 +340,8 @@ public sealed partial class BusinessView
                     var add=slot.gameObject.AddComponent<DragSource>();
                     add.Clicked=()=>
                     {
-                        var next=handover.RackOrders.FirstOrDefault();
-                        if(next==null)Toast("焼き上がった注文がありません。",T.cheese,null,"icon_box");
+                        var next=handover.ReservableOrders.FirstOrDefault();
+                        if(next==null)Toast("予約できる注文がありません。",T.cheese,null,"icon_box");
                         else LaneDrop(new DragPayload{Kind=DragKind.Box,Order=next},p);
                     };
                 }
@@ -388,7 +393,7 @@ public sealed partial class BusinessView
             lane.ReturnProgress.Set(trip==null?1:Mathf.InverseLerp(trip.StartedAt,trip.ReturnsAt,clock.ElapsedSeconds));
             UiKit.Show(lane.ReturnProgress,!here && trip!=null);
             bool editing=editingPerson==p && editingLeg>=0;
-            lane.Edit.Text=editing?ShopStrings.RoadSection(editingLeg+1):ShopStrings.ChooseRoad;
+            lane.Edit.Text=editing?(editingLeg+1>=Legs(p,bag,false).Count?UiStrings.FinishRoute:ShopStrings.RoadSection(editingLeg+1)+" / "+UiStrings.NextSection):ShopStrings.ChooseRoad;
             lane.Edit.Kind=editing?StickerKind.Selected:StickerKind.Secondary;
             string state=here?(bag.Count>0?$"{bag.Count} / {p.Capacity}箱":"待機中"):p.Status==DeliveryStatus.Training?"訓練中":$"{ShopStrings.Status(p.Status)}・あと{Mathf.Max(0,(p.CurrentTrip?.ReturnsAt??0)-clock.ElapsedSeconds):F0}秒";
             UiKit.SetBadge(lane.StateBadge,state,here?(bag.Count>=p.Capacity?T.cheese:T.basil):T.disabled,here && bag.Count<p.Capacity?Color.white:T.line);
@@ -429,18 +434,28 @@ public sealed partial class BusinessView
                 note.rectTransform.sizeDelta=new Vector2(lane.Root.sizeDelta.x-32,40);
             }
             note.text=noteText;lane.Time.gameObject.SetActive(showTime);lane.Diff.gameObject.SetActive(showDiff);UiKit.Show(lane.Reset,showReset);
-            if(lane.Depart!=null)lane.Depart.Interactable=here && bag.Count>0 && clock.Phase==DayPhase.Open;
+            if(here && bag.Any(o=>!o.IsReady))
+            {
+                note.text=UiStrings.WaitingForBaking+"："+string.Join(" / ",bag.Where(o=>!o.IsReady).Select(o=>"#"+Number(o)));
+                note.color=T.info;
+            }
+            if(lane.Depart!=null)
+            {
+                lane.Depart.Interactable=here && handover.ReadyToDepart(p) && clock.Phase==DayPhase.Open;
+                lane.Depart.Text=bag.Any(o=>!o.IsReady)?UiStrings.DepartureWaiting:ShopStrings.Depart+" ▶";
+            }
         }
     }
 
     private int Step()=>roster.People.Any(p=>p.IsAvailable && handover.BagOf(p).Count>0)?1:0;
     private void RefreshDispatch()
     {
-        if(editingPerson!=null && (!editingPerson.IsAvailable || roster.SelectedPerson!=editingPerson || handover.BagOf(editingPerson).Count==0)){editingPerson=null;editingLeg=-1;}
+        if(editingPerson!=null && (!editingPerson.IsAvailable || roster.SelectedPerson!=editingPerson || handover.BagOf(editingPerson).Count==0)){EndRouteEdit();}
+        clock.IsPlanning=Zone==ShopZone.Dispatch && clock.Phase==DayPhase.Open && IsEditingRoute;
         UpdatePins();
         if(Zone!=ShopZone.Dispatch)return;
         RefreshDispatchOrders();
-        string sig=string.Join(",",roster.People.Select(p=>UiKit.Ref(p)+p.Status+p.Capacity+string.Join("/",handover.BagOf(p).Select(o=>o.Id))))+"|"+UiKit.Ref(roster.SelectedPerson);
+        string sig=string.Join(",",roster.People.Select(p=>UiKit.Ref(p)+p.Status+p.Capacity+string.Join("/",handover.BagOf(p).Select(o=>o.Id+":"+o.IsReady))))+"|"+UiKit.Ref(roster.SelectedPerson);
         if(sig!=laneSignature){laneSignature=sig;RebuildLanes();}
         FocusSelectedLane();SyncRoute();RefreshLanes();
         Navigate();UpdateMinimap();UpdateRouteMarks();
@@ -452,8 +467,8 @@ public sealed partial class BusinessView
             stepNumbers[i].SetActive(!done);stepChecks[i].SetActive(done);
         }
         bool showGuide=editingPerson!=null || !guided || Carries(Held);UiKit.Show(bubble,showGuide);
-        bubbleText.text=editingPerson!=null?RouteEditCaption()+ShopStrings.RoadEditHint:Carries(Held)?"伝票を持つと、近い注文のピンが光ります。配達員のレーンに入れると、まとめて運びます。"
-            :step==0?(handover.RackOrders.Any()?"焼き上がった伝票を、下の配達員のレーンへドラッグします。":"焼き上がった注文が、左の一覧とピンに出ます。")
+        bubbleText.text=editingPerson!=null?RouteEditCaption()+" ／ "+UiStrings.SlowPlanning(clock.PlanningTimeRate):Carries(Held)?"伝票を持つと、近い注文のピンが光ります。配達員のレーンに入れると、まとめて運びます。"
+            :step==0?UiStrings.ReserveHint
             :ShopStrings.RouteControlsHint;
         trafficButton.Kind=ShowCongestion?StickerKind.Selected:StickerKind.Secondary;
     }
@@ -814,14 +829,14 @@ public sealed partial class BusinessView
     }
     private DragPayload PinPayload(Order o)
     {
-        if(o==null || o.Status!=OrderStatus.Pending || !o.IsReady)return null;
+        if(o==null || o.Status!=OrderStatus.Pending)return null;
         return new DragPayload{Kind=handover.IsBagged(o)?DragKind.Bagged:DragKind.Box,Order=o,Sprite="box_closed",Size=new Vector2(96,96)};
     }
     private void Navigate()
     {
         var mouse=Mouse.current;var cam=Camera.main;if(mouse==null || cam==null || menu.MenuOpen || menu.HelpOpen)return;
         Vector2 pos=mouse.position.ReadValue();bool over=OverUi(pos);
-        if(mouse.rightButton.wasPressedThisFrame){editingPerson=null;editingLeg=-1;}
+        if(mouse.rightButton.wasPressedThisFrame){EndRouteEdit();}
         float scroll=mouse.scroll.ReadValue().y;if(scroll!=0 && !over)Zoom(Mathf.Pow(.85f,Mathf.Clamp(scroll/120f,-1,1)),pos,true);
         if(mouse.leftButton.wasPressedThisFrame){if(over || Held!=null)InputTrace=$"press {pos} ignored (over UI {over})";else PointerDown(pos);}
         if(pressing && mouse.leftButton.isPressed)PointerMove(pos);
@@ -891,12 +906,6 @@ public sealed partial class BusinessView
     {
         if(order.Status!=OrderStatus.Pending)return;
         if(handover.IsBagged(order)){handover.Select(handover.Holder(order));return;}
-        if(!order.IsReady)
-        {
-            var eta=cooking.ReadyIn(order);
-            Toast(eta.HasValue?$"#{Number(order)} はまだ焼けていません（あと約{Mathf.CeilToInt(eta.Value)}秒）。":$"#{Number(order)} はまだ焼けていません。",T.cheese,null,"icon_pizza");
-            return;
-        }
         QuickBag(order);
     }
 
@@ -925,6 +934,13 @@ public sealed partial class BusinessView
     private void UpdateMinimap()
     {
         var cam=Camera.main;if(minimapCamera==null || cam==null)return;
+        if(map!=null && map.IsReady && minimapRevision!=map.MapRevision)
+        {
+            float minX=map.Nodes.Min(n=>n.Position.x)-2,maxX=map.Nodes.Max(n=>n.Position.x)+2,minY=map.Nodes.Min(n=>n.Position.y)-2,maxY=map.Nodes.Max(n=>n.Position.y)+2;
+            minimapCamera.transform.position=new Vector3((minX+maxX)/2,(minY+maxY)/2,-10);
+            minimapCamera.orthographicSize=Mathf.Max((maxY-minY)/2,(maxX-minX)/3);
+            minimapRevision=map.MapRevision;
+        }
         var rect=minimapImage.rectTransform.rect;
         Vector3 a=minimapCamera.WorldToViewportPoint(cam.ViewportToWorldPoint(new Vector3(0,0,0))),b=minimapCamera.WorldToViewportPoint(cam.ViewportToWorldPoint(new Vector3(1,1,0)));
         float x0=Mathf.Clamp01(a.x)*rect.width,y0=(1-Mathf.Clamp01(b.y))*rect.height,x1=Mathf.Clamp01(b.x)*rect.width,y1=(1-Mathf.Clamp01(a.y))*rect.height;

@@ -47,7 +47,7 @@ public sealed partial class BusinessView
         scroll.vertical=true;
         scroll.movementType=ScrollRect.MovementType.Clamped;
         scroll.scrollSensitivity=T.largeSpace;
-        UiKit.Label(panel,"Hint","伝票を、下の配達員のレーンへドラッグ",18,496,308,32,T.captionSize,T.inkSub,FontRole.Black);
+        UiKit.Label(panel,"Hint",UiStrings.ReserveShortHint,18,496,308,32,T.captionSize,T.inkSub,FontRole.Black);
     }
     private void BindDispatchOrders(){ordersZone.Accepts=p=>p!=null && p.Kind==DragKind.Bagged;ordersZone.Dropped=p=>handover.Unbag(p.Order);}
     private void RefreshDispatchOrders()
@@ -64,7 +64,7 @@ public sealed partial class BusinessView
         if(sig!=dispatchOrdersSignature)
         {
             dispatchOrdersSignature=sig;dispatchOrderRows.Clear();
-            for(int i=dispatchOrderContent.childCount-1;i>=0;i--)Destroy(dispatchOrderContent.GetChild(i).gameObject);
+            for(int i=dispatchOrderContent.childCount-1;i>=0;i--){var old=dispatchOrderContent.GetChild(i);old.SetParent(null,false);Destroy(old.gameObject);}
             for(int i=0;i<shown.Count;i++)
             {
                 var o=shown[i];
@@ -81,7 +81,7 @@ public sealed partial class BusinessView
                 for(int k=0;k<5;k++)steps[k]=UiKit.Fill(UiKit.Box(card,"Step"+k,12+k*59,116,55,5),T.disabled,2.5f);
                 var hit=card.gameObject.AddComponent<Image>();hit.color=Color.clear;
                 var source=card.gameObject.AddComponent<DragSource>();
-                source.Payload=()=>o.Status==OrderStatus.Pending && o.IsReady?new DragPayload{Kind=handover.IsBagged(o)?DragKind.Bagged:DragKind.Box,Order=o,Sprite="box_closed",Size=new Vector2(96,96)}:null;
+                source.Payload=()=>o.Status==OrderStatus.Pending?new DragPayload{Kind=handover.IsBagged(o)?DragKind.Bagged:DragKind.Box,Order=o,Sprite="box_closed",Size=new Vector2(96,96)}:null;
                 source.Clicked=()=>TapOrder(o);
                 dispatchOrderRows.Add((o,card,detail,progress,countdown,state,steps));
             }
@@ -112,18 +112,19 @@ public sealed partial class BusinessView
         if(o.Status==OrderStatus.Cancelled)return "キャンセル";
         if(o.Status==OrderStatus.Dispatched)return "配達中";
         if(o.Status==OrderStatus.Delivered)return "お届け済み";
-        if(handover.IsBagged(o))return handover.Holder(o).Name+" のレーン";
+        string reservation=handover.IsBagged(o)?handover.Holder(o).Name+" 予約 ／ ":"";
+        if(handover.IsBagged(o) && o.IsReady)return handover.Holder(o).Name+" 出発OK";
         if(o.IsReady)return "焼き上がり済み";
         var eta=cooking.ReadyIn(o);var job=cooking.JobFor(o);
-        if(eta.HasValue)return $"焼き上がり 約{Mathf.Max(1,Mathf.CeilToInt(eta.Value))}秒";
-        if(job!=null && job.Worker==PizzaWorker.Player)return "あなたが調理中";
-        return crew.People.Count>0?"調理待ち":"作り手なし（自分で作る）";
+        if(eta.HasValue)return reservation+$"焼き上がり 約{Mathf.Max(1,Mathf.CeilToInt(eta.Value))}秒";
+        if(job!=null && job.Worker==PizzaWorker.Player)return reservation+"あなたが調理中";
+        return reservation+(crew.People.Count>0?"調理待ち":"作り手なし（自分で作る）");
     }
     /// <summary>1 調理, 2 焼き, 3 梱包済み, 4 積載, 5 配達中 (0 = waiting for a cook).</summary>
     public int OrderStage(Order o)
     {
         if(o.Status==OrderStatus.Dispatched || o.Status==OrderStatus.Delivered)return 5;if(o.Status==OrderStatus.Cancelled)return 0;
-        if(handover.IsBagged(o))return 4;if(o.IsReady)return 3;
+        if(handover.IsBagged(o) && o.IsReady)return 4;if(o.IsReady)return 3;
         var job=cooking.JobFor(o);if(job==null)return 0;return job.Stage>=PizzaStage.Baking?2:1;
     }
     private (string text,Color fill,Color ink) OrderState(Order o)
@@ -133,7 +134,7 @@ public sealed partial class BusinessView
         float left=o.Deadline-clock.ElapsedSeconds;
         if(left<=0)return ("遅れ",T.berry,Color.white);
         if(left/Mathf.Max(.01f,o.TimeLimit)<=T.deadlineUrgent)return ("もうすぐ期限",T.berry,Color.white);
-        if(handover.IsBagged(o)){var holder=handover.Holder(o);return (holder.Name,T.CourierColor(holder.Name),Color.white);}
+        if(handover.IsBagged(o)){var holder=handover.Holder(o);return (holder.Name+(o.IsReady?"":"予約"),T.CourierColor(holder.Name),Color.white);}
         if(o.IsReady)return ("焼けた",T.basil,Color.white);
         var job=cooking.JobFor(o);
         if(job!=null && job.NeedsDecision)return (ShopStrings.FailureWaiting,T.berry,Color.white);

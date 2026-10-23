@@ -35,8 +35,10 @@ public static class CapacityReservationValidation
             var legacy=saved.people.First(p=>p.Id==aoi.Id);legacy.Capacity=2;legacy.SetPotential(CourierAbility.Capacity,2);
             Check(save.TryParse(JsonUtility.ToJson(saved),out var old,out reason),"old one/two-box profile still parses: "+reason);
             Check(old.people.First(p=>p.Id==aoi.Id).Capacity==2,"loading legacy data retains earned capacity");
+            var limited=new DeliveryPerson("Limited recruit",.5f,.5f,1,.5f,.5f,.5f);limited.SetPotential(CourierAbility.Capacity,1);old.people.Add(limited.Clone());
             roster.RestoreRoster(old.people);
-            Check(roster.People.First(p=>p.Id==aoi.Id).Capacity==2 && roster.People.All(p=>p.Potential(CourierAbility.Capacity)==3),"legacy roster unlocks third-box training without granting capacity");
+            Check(roster.People.First(p=>p.Id==aoi.Id).Capacity==2 && roster.People.Where(p=>p.Id!=limited.Id).All(p=>p.Potential(CourierAbility.Capacity)==3),"legacy roster unlocks third-box training without granting capacity");
+            Check(roster.People.Single(p=>p.Id==limited.Id).Potential(CourierAbility.Capacity)==1 && roster.People.Single(p=>p.Id==limited.Id).Capacity==1,"continue preserves deliberately limited recruit potential");
             campaign.NewGame();aoi=roster.People[0];Find<KitchenCrew>().Restore(Array.Empty<KitchenStaff>());campaign.StartBusiness();
             string[] homes=map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress).Select(n=>n.Id).Take(3).ToArray();
             Check(homes.Length==3,"three distinct delivery destinations are available");

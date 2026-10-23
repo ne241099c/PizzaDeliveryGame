@@ -33,6 +33,8 @@ public sealed class HandoverManager : MonoBehaviour
     public IReadOnlyList<Order> BagOf(DeliveryPerson person)=>person!=null && bags.TryGetValue(person,out var bag)?bag:Array.Empty<Order>();
     public bool IsBagged(Order order)=>bags.Values.Any(b=>b.Contains(order));
     public DeliveryPerson Holder(Order order)=>bags.FirstOrDefault(p=>p.Value.Contains(order)).Key;
+    public bool ReadyToDepart(DeliveryPerson person)=>BagOf(person).Count>0 && BagOf(person).All(o=>orders.Contains(o) && o.IsReady);
+    public IEnumerable<Order> ReservableOrders=>orders.Orders.Where(o=>!IsBagged(o) && orders.CanReserve(o)).OrderBy(o=>o.Deadline);
     public IEnumerable<Order> RackOrders=>orders.Orders.Where(o=>o.IsReady && !IsBagged(o)).OrderBy(o=>o.Deadline);
     public string BagRejection(Order order,DeliveryPerson person)
     {
@@ -40,7 +42,7 @@ public sealed class HandoverManager : MonoBehaviour
         if(person==null || !roster.People.Contains(person))return "配達員を選んでください。";
         if(person.Status==DeliveryStatus.Training)return person.Name+" は訓練中です。";
         if(!person.IsAvailable)return person.Name+" は店にいません。";
-        if(order==null || !orders.Contains(order) || !order.IsReady)return "梱包済みの箱だけ渡せます。";
+        if(order==null || !orders.Contains(order) || order.Status!=OrderStatus.Pending)return "受付中の注文だけ予約できます。";
         if(clock.ElapsedSeconds>=FindFirstObjectByType<ScoreManager>().CancellationAt(order))return "期限が切れています。";
         if(IsBagged(order))return "この箱はもう誰かのバッグに入っています。";
         if(BagOf(person).Count>=person.Capacity)return $"{person.Name} のバッグはいっぱいです（{person.Capacity}箱まで）。";

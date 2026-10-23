@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-23",
+  "branch": "shop",
+  "base": "c4a4bd3",
+  "targeted_checks": {
+    "CityGenerationValidation.RunBasic": 75,
+    "CityCampaignValidation.Run": 50,
+    "CapacityReservationValidation.Run": 50,
+    "M7Validation.RunGrowthFacilitiesOnly": 45,
+    "ShopUxValidation.RunReservations": 24,
+    "ShopUxValidation.Run": 20
+  },
+  "passed": 264,
+  "failed_final": 0,
+  "full_suite_run": false,
+  "equipment_scroll_visual_assertions": 4,
+  "save_files_unchanged": {
+    "campaign.json": true,
+    "records.json": true
+  },
+  "save_backup": "Library/ReviewBackups/20261023-231313-reservations",
+  "screenshots": [
+    "Docs/UI_Screens/shop-planning-reservations/dispatch.png",
+    "Docs/UI_Screens/shop-planning-reservations/kitchen-level10.png"
+  ],
+  "resolution": [
+    1920,
+    1080
+  ],
+  "console_errors": 0,
+  "console_warnings": [
+    "Main Camera lacks additional camera data",
+    "Editor not in automated mode"
+  ],
+  "resolved_during_verification": [
+    "Old deferred-destruction UI elements could be selected in same-frame rebuild; detached before Destroy and related checks passed.",
+    "Preserve intentionally limited capacity-one recruit potential when continuing."
+  ],
+  "pushed": false
+}

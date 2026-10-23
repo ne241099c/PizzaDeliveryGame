@@ -1,3 +1,5 @@
+> **完了：Codexが店舗四方の地図v5・調理前予約・道順編集中0.1倍・最大3件・成長表示と経験倍率・設備Lv10・地図外通知を実装。** shop、ローカルのみ、pushなし。関連264項目と厨房スクロール追加4条件が通過。通常セーブ／最高記録は開始時とバイト一致。Unity編集モードへ復帰。画面2枚と判断事項は [実装記録](../Results/Shop_Planning_Reservations.md)。既存フォント・Packages変更は保護。次のUnity操作担当はCodex（交代時はここを更新）。
+
 # 最新：配達・厨房の操作と構成の改善（Codex、2026-10-23）
 
 ユーザーの追加依頼でCodexが実装・Unity操作を担当。shop、pushなし。作業開始はb647cfe。詳細：[実装・確認記録](../Results/Shop_UX_Structure_Improvements.md)。

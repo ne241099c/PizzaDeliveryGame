@@ -74,7 +74,7 @@ public class DeliveryPlanner : MonoBehaviour
     private void Update()
     {
         if(people.SelectedPerson!=null && Mathf.Abs(people.SelectedPerson.CurrentStamina-previewStamina)>0.005f)OnPersonChanged();
-        clock.IsPlanning=clock.Phase==DayPhase.Open && orders.SelectedOrders.Count>0 && people.SelectedPerson!=null;
+
     }
     public void PrepareDay()
     {

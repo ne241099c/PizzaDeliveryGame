@@ -10,6 +10,62 @@ using Object=UnityEngine.Object;
 /// <summary>Focused operations for scroll input, bag controls, route picking, queue display and state pins.</summary>
 public static class ShopUxValidation
 {
+    public static string RunReservations()
+    {
+        if(!Application.isPlaying)throw new InvalidOperationException("Play required.");
+        CampaignSaveManager.SessionSavingLocked=true;
+        var save=Find<CampaignSaveManager>();using var suppress=save.SuppressSaving();
+        using var sample=new SampleMapValidationScope();
+        var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var roster=Find<CourierRoster>();
+        var orders=Find<OrderBook>();var hand=Find<HandoverManager>();var cook=Find<CookingManager>();
+        var business=Find<BusinessView>();var flow=Find<DeliveryFlowController>();var planner=Find<DeliveryPlanner>();
+        int count=0;void Check(bool ok,string label){if(!ok)throw new Exception("Reservation UX: "+label);count++;}
+        try
+        {
+            campaign.NewGame();clock.AutomaticTick=false;Find<OrderSpawner>().enabled=false;
+            Find<KitchenCrew>().Restore(Array.Empty<KitchenStaff>());campaign.StartBusiness();
+            business.ShowZone(ShopZone.Dispatch,true);
+            var p=roster.People[0];Check(p.Capacity==3,"Aoi starts with three slots");
+            var raw=new Order("Goal1","raw",0,150);
+            var ready=new Order("Goal2","ready",0,150,BakingState.Ready);
+            var third=new Order("Goal1","third",0,150,BakingState.Ready);
+            orders.AddOrder(raw);orders.AddOrder(ready);orders.AddOrder(third);
+            Check(hand.Bag(raw,p) && hand.Bag(ready,p) && hand.Bag(third,p),"reserve three including unbaked order");
+            Check(orders.SelectedOrders.SequenceEqual(hand.BagOf(p)),"reserved orders selected for planning");
+            Check(!hand.ReadyToDepart(p),"mixed bag is not ready to depart");
+            business.RefreshPresentation();
+            Check(planner.SelectedPlan!=null,"route can be planned before baking");
+            Check(flow.DispatchRejectionReason(planner.SelectedPlan,p).Contains("cooking"),"flow refuses raw pizza");
+            var depart=business.GetComponentsInChildren<StickerButton>().First(b=>b.name=="Depart_"+p.Name);
+            Check(!depart.Interactable && depart.Text==UiStrings.DepartureWaiting,"departure button waits for baking");
+            Check(business.OrderProgress(raw).Contains("予約"),"order shows reservation and kitchen progress");
+            Check(business.OrderStage(raw)==0,"reservation does not fake cooking completion");
+            Check(business.BeginRouteEdit(p) && clock.IsPlanning,"route edit enables slow time");
+            float before=clock.ElapsedSeconds;clock.AdvanceAutomatically(10);
+            Check(Mathf.Abs(clock.ElapsedSeconds-before-10*clock.PlanningTimeRate)<.001f,"planning slows the shared simulation clock");
+            Check(raw.Deadline==150,"planning does not rewrite deadlines");
+            business.ShowZone(ShopZone.Kitchen,true);
+            Check(!clock.IsPlanning && !business.IsEditingRoute,"leaving dispatch ends slow time");
+            Check(cook.Claim(raw,0) && cook.AddDough(0) && cook.AddSauce(0,1) && cook.AddCheese(0) && cook.AddTopping(0,Topping.Basil) && cook.PutInOven(0,0),"reserved pizza can still be cooked");
+            clock.Advance(cook.BakeDuration(raw));Check(cook.TakeOut(0),"reserved pizza leaves oven");
+            var job=cook.JobFor(raw);if(!raw.IsReady){cook.Box(job);cook.CloseBox(job);}
+            Check(raw.IsReady && hand.ReadyToDepart(p),"baked reservation automatically becomes ready");
+            business.ShowZone(ShopZone.Dispatch,true);business.RefreshPresentation();
+            depart=business.GetComponentsInChildren<StickerButton>().Last(b=>b.name=="Depart_"+p.Name);
+            Check(depart.Interactable,"departure button automatically enables");
+            Check(business.SwapDeliveryOrder(p) && hand.BagOf(p).SequenceEqual(new[]{ready,third,raw}),"three-stop lane button rotates all orders");
+            Check(hand.Unbag(third) && !hand.IsBagged(third),"reservation can be removed without dispatch");
+            Check(hand.Bag(third,p),"released pizza can be reserved again");
+            business.SyncRoute();Check(flow.CanDispatch(planner.SelectedPlan,p),"all three ready pizzas can depart");
+            business.Toast("通知配置の確認",UITheme.Active.info);business.RefreshPresentation();
+            var toastRoot=(RectTransform)new SerializedObject(business).FindProperty("toasts").objectReferenceValue;
+            Check(-toastRoot.anchoredPosition.y+toastRoot.rect.height<=250,"notification is above map content");
+            business.Depart(p);Check(p.CurrentTrip!=null && p.CurrentTrip.Deliveries.Count==3,"three orders really dispatch");
+            Check(hand.BagOf(p).Count==0,"departure releases reservation lane");
+            return $"PASS: {count} reservation / planning UX checks.";
+        }
+        finally{business.EndRouteEdit();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
+    }
     private static T Find<T>() where T:Object=>Object.FindFirstObjectByType<T>();
     public static string Run()
     {

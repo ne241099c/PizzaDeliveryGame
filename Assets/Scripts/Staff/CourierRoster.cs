@@ -39,8 +39,9 @@ public class CourierRoster : MonoBehaviour
     public void RestoreRoster(IEnumerable<DeliveryPerson> people)
     {
         deliveryPeople=new List<DeliveryPerson>(people);
-        // Existing one/two-box couriers keep their ability; training can now unlock a third box.
-        foreach(var person in deliveryPeople)person.SetPotential(CourierAbility.Capacity,DeliveryPerson.MaximumCapacity);
+        // Expand the former two-box ceiling, preserving deliberately limited recruits and earned capacity.
+        foreach(var person in deliveryPeople)
+            if(person.Potential(CourierAbility.Capacity)==2)person.SetPotential(CourierAbility.Capacity,DeliveryPerson.MaximumCapacity);
         ResetDailyState();
     }
     public void ResetToInitialRoster(){deliveryPeople=startingRoster.ConvertAll(Copy);ResetDailyState();}

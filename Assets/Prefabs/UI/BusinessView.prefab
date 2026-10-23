@@ -3470,7 +3470,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u4F1D\u7968\u3092\u3001\u4E0B\u306E\u914D\u9054\u54E1\u306E\u30EC\u30FC\u30F3\u3078\u30C9\u30E9\u30C3\u30B0"
+  m_text: "\u713C\u304F\u524D\u3067\u3082\u4E88\u7D04OK\u30FB\u4E0B\u306E\u30EC\u30FC\u30F3\u3078"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d8f3190cdfc9a4970a4ef1d20f72c23d, type: 2}
   m_sharedMaterial: {fileID: 4339337552394441723, guid: d8f3190cdfc9a4970a4ef1d20f72c23d, type: 2}
@@ -3500,7 +3500,7 @@ MonoBehaviour:
   m_fontSize: 16
   m_fontSizeBase: 16
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
@@ -3515,7 +3515,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 1
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
@@ -12675,8 +12675,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 20, y: -14}
-  m_SizeDelta: {x: 88.01, y: 30}
+  m_AnchoredPosition: {x: 12, y: -10}
+  m_SizeDelta: {x: 96, y: 28}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &2523665194855323080
 MonoBehaviour:
@@ -22964,8 +22964,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 1140, y: -126}
-  m_SizeDelta: {x: 620, y: 112}
+  m_AnchoredPosition: {x: 840, y: -196}
+  m_SizeDelta: {x: 944, y: 48}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &840502069005654978
 MonoBehaviour:
@@ -31616,8 +31616,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 20, y: -50}
-  m_SizeDelta: {x: 560, y: 56}
+  m_AnchoredPosition: {x: 120, y: -4}
+  m_SizeDelta: {x: 812, y: 40}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &6376662572984031267
 CanvasRenderer:
@@ -31677,8 +31677,8 @@ MonoBehaviour:
   m_fontSize: 16
   m_fontSizeBase: 16
   m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
+  m_enableAutoSizing: 1
+  m_fontSizeMin: 16
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 1

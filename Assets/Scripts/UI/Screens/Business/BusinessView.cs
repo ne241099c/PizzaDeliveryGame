@@ -74,6 +74,7 @@ public sealed partial class BusinessView : MonoBehaviour
     }
     private void OnDisable()
     {
+        EndRouteEdit();
         if(clock==null)return;clock.OnDayStarted-=DayStarted;orders.OrdersChanged-=AssignNumbers;flow.Returned-=Returned;flow.Message-=FlowMessage;
         if(router!=null)router.Changed-=ScreenChanged;
         if(roster!=null)roster.SelectionChanged-=RequestLaneFocus;
@@ -90,7 +91,7 @@ public sealed partial class BusinessView : MonoBehaviour
     }
     private void AssignNumbers(){foreach(var o in orders.Orders){observedOrders.Add(o);if(!numbers.ContainsKey(o))numbers[o]=nextNumber++;}}
     public int Number(Order o){if(!numbers.TryGetValue(o,out int n)){AssignNumbers();numbers.TryGetValue(o,out n);}return n;}
-    private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}}
+    private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){EndRouteEdit();hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}}
 
     /// <summary>Editor only (ScreenPrefabs): creates the fixed layout under this object, reading sizes from the open scene's
     /// managers (rack capacity, waste cost). Actions are not attached here: Bind does that at runtime.</summary>
@@ -251,6 +252,7 @@ public sealed partial class BusinessView : MonoBehaviour
     public void ShowZone(ShopZone zone,bool immediate=false)
     {
         if(zone==ShopZone.Handover)zone=ShopZone.Dispatch;
+        if(zone!=ShopZone.Dispatch)EndRouteEdit();
         Zone=zone;for(int i=0;i<zoneTabs.Length;i++)if(zoneTabs[i]!=null)zoneTabs[i].Kind=i==(int)zone?StickerKind.Primary:StickerKind.Secondary;
         bool dispatching=zone==ShopZone.Dispatch;
         worldGroup.alpha=dispatching?0:1;worldGroup.blocksRaycasts=worldGroup.interactable=!dispatching;
@@ -285,25 +287,36 @@ public sealed partial class BusinessView : MonoBehaviour
     public void Toast(string message,Color accent,Action onClick=null,string icon="icon_bell")
     {
         if(UiRendering.Suspended || string.IsNullOrEmpty(message))return;
-        var card=UiKit.Card(toasts,"Toast",20,0,400,74,T.paper,14,4,3,accent);
+        bool compact=Zone==ShopZone.Dispatch;
+        var size=compact?T.dispatchNoticeSize:new Vector2(400,74);
+        var card=UiKit.Card(toasts,"Toast",0,0,size.x,size.y,T.paper,14,4,3,accent);
         UiKit.Icon(card,"Icon",icon,16,18,38,T.line);
-        UiKit.Label(card,"Text",message,64,6,320,62,18,T.line,FontRole.Black,TextAlignmentOptions.MidlineLeft,true);
+        UiKit.Label(card,"Text",message,64,6,size.x-80,size.y-12,T.bodySize,T.line,FontRole.Black,TextAlignmentOptions.MidlineLeft,true);
         if(onClick!=null)
         {
             var b=card.gameObject.AddComponent<Button>();
             card.gameObject.AddComponent<StickerCardAction>().Apply();
             b.onClick.AddListener(()=>onClick());
         }
-        toastCards.Insert(0,(card,Time.unscaledTime+5));
+        toastCards.Insert(0,(card,Time.unscaledTime+T.notificationSeconds));
     }
     private void RefreshToasts()
     {
-        for(int i=toastCards.Count-1;i>=0;i--)if(Time.unscaledTime>toastCards[i].until || i>=3)
+        bool compact=Zone==ShopZone.Dispatch;
+        Vector2 position=compact?T.dispatchNoticePosition:new Vector2(1360,300);
+        toasts.anchoredPosition=new Vector2(position.x,-position.y);
+        toasts.sizeDelta=compact?T.dispatchNoticeSize:new Vector2(420,300);
+        for(int i=toastCards.Count-1;i>=0;i--)if(Time.unscaledTime>toastCards[i].until || i>=(compact?1:3))
         {
             if(toastCards[i].card!=null)Destroy(toastCards[i].card.gameObject);
             toastCards.RemoveAt(i);
         }
-        for(int i=0;i<toastCards.Count;i++)toastCards[i].card.anchoredPosition=Vector2.Lerp(toastCards[i].card.anchoredPosition,new Vector2(0,-i*90),.25f);
+        for(int i=0;i<toastCards.Count;i++)
+        {
+            var c=toastCards[i].card;var size=compact?T.dispatchNoticeSize:new Vector2(400,74);c.sizeDelta=size;
+            c.anchoredPosition=Vector2.Lerp(c.anchoredPosition,new Vector2(0,-i*90),.25f);
+            var label=c.Find("Text") as RectTransform;UiKit.Place(label,64,6,size.x-80,size.y-12);
+        }
     }
     private void Returned(DeliveryTrip trip){Toast($"{trip.Person.Name} が帰還  配達指示へ →",T.basil,()=>ShowZone(ShopZone.Dispatch));}
     private void FlowMessage(string message)

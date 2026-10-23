@@ -9,7 +9,7 @@ public sealed class GameClock : MonoBehaviour
 {
     [SerializeField, Min(1f)] private float businessDuration = 180f;
     [SerializeField, Min(0.01f)] private float travelTimeMultiplier = 5f;
-    [SerializeField, Range(0.05f, 1f)] private float planningTimeRate = 1f;
+    [SerializeField, Range(0.01f, 1f), Tooltip("道順を編集している間の進行倍率。調理・配達・期限を同じ倍率で進めます。") ] private float planningTimeRate = .1f;
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool automaticTick = true;
 
@@ -21,6 +21,7 @@ public sealed class GameClock : MonoBehaviour
     public float BusinessDuration => businessDuration;
     public float TravelTimeMultiplier => travelTimeMultiplier;
     public bool IsPlanning { get; set; }
+    public float PlanningTimeRate=>Mathf.Clamp(planningTimeRate,.01f,1f);
     public bool AutomaticTick { get => automaticTick; set => automaticTick = value; }
     public void PrepareDay()
     {
@@ -49,7 +50,7 @@ public sealed class GameClock : MonoBehaviour
         if(realSeconds<0 || float.IsNaN(realSeconds) || float.IsInfinity(realSeconds))throw new ArgumentOutOfRangeException(nameof(realSeconds));
         if(Phase==DayPhase.Open)
         {
-            float openWall=Mathf.Min(realSeconds,RemainingSeconds/(IsPlanning?planningTimeRate:1f));
+            float openWall=Mathf.Min(realSeconds,RemainingSeconds/(IsPlanning?PlanningTimeRate:1f));
             Advance(openWall);realSeconds=Mathf.Max(0,realSeconds-openWall);
         }
         if(Phase==DayPhase.Closed && realSeconds>0)Advance(realSeconds*ClosedPlaybackSpeed);
@@ -60,7 +61,7 @@ public sealed class GameClock : MonoBehaviour
     {
         if (realSeconds < 0 || float.IsNaN(realSeconds) || float.IsInfinity(realSeconds))
             throw new ArgumentOutOfRangeException(nameof(realSeconds));
-        float remaining = realSeconds * (Phase==DayPhase.Open && IsPlanning ? planningTimeRate : 1f);
+        float remaining = realSeconds * (Phase==DayPhase.Open && IsPlanning ? PlanningTimeRate : 1f);
         if (Phase == DayPhase.Open)
         {
             float step = Mathf.Min(remaining, RemainingSeconds);

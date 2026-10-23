@@ -88,6 +88,21 @@ public sealed partial class BusinessView
         trashZone.Accepts=p=>p!=null && (p.Kind==DragKind.Pizza || p.Kind==DragKind.Box || p.Kind==DragKind.Bagged) && cooking.CanDiscard(Job(p));
         trashZone.Dropped=p=>cooking.Discard(Job(p));
     }
+    /// <summary>Keep equipment at usable size; the existing equipment area becomes scroll content.</summary>
+    private void EnsureStationScroll(RectTransform content,float viewportWidth)
+    {
+        if(content.parent.GetComponent<ScrollRect>()!=null)return;
+        var viewport=UiKit.Box(kitchenZone,content.name+"Viewport",content.anchoredPosition.x,-content.anchoredPosition.y,viewportWidth,420);
+        viewport.gameObject.AddComponent<RectMask2D>().padding=new Vector4(-8,-8,-8,-T.padding);
+        content.SetParent(viewport,false);UiKit.Place(content,0,0,viewportWidth,420);
+        var scroll=viewport.gameObject.AddComponent<ScrollRect>();
+        scroll.content=content;scroll.viewport=viewport;scroll.horizontal=true;scroll.vertical=false;
+        ScrollNavigation.Configure(scroll,true);
+        // Put the handle in the gap above the equipment, away from the trash and queue below.
+        var track=(RectTransform)scroll.horizontalScrollbar.transform;
+        track.anchorMin=new Vector2(0,1);track.anchorMax=new Vector2(1,1);track.pivot=new Vector2(.5f,0);
+        track.offsetMin=new Vector2(T.smallSpace,0);track.offsetMax=new Vector2(-T.smallSpace,T.padding);
+    }
     private void LayoutStations()
     {
         int n=cooking.BenchCount,m=cooking.OvenCount;if(benches.Count==n && ovens.Count==m)return;
@@ -106,9 +121,14 @@ public sealed partial class BusinessView
             Destroy(o.Gauge.gameObject);
         }
         ovens.Clear();
-        float bw=(1070-(n-1)*24f)/n;for(int i=0;i<n;i++)benches.Add(BuildBench(i,i*(bw+24),bw));
+        EnsureStationScroll(benchArea,1070);EnsureStationScroll(ovenArea,760);
+        float bw=Mathf.Max(T.minimumBenchWidth,(1070-(n-1)*24f)/n);
+        benchArea.sizeDelta=new Vector2(Mathf.Max(1070,n*(bw+24)-24),420);
+        for(int i=0;i<n;i++)benches.Add(BuildBench(i,i*(bw+24),bw));
         // Ovens keep a sensible size (max 340 wide) and sit centred in their area.
-        float ow=Mathf.Min(340,(760-(m-1)*16f)/m),start=(760-(m*ow+(m-1)*16f))/2f;for(int i=0;i<m;i++)ovens.Add(BuildOven(i,start+i*(ow+16),ow));
+        float ow=Mathf.Clamp((760-(m-1)*16f)/m,T.minimumOvenWidth,340),width=Mathf.Max(760,m*(ow+16)-16),start=(width-(m*ow+(m-1)*16f))/2f;
+        ovenArea.sizeDelta=new Vector2(width,420);
+        for(int i=0;i<m;i++)ovens.Add(BuildOven(i,start+i*(ow+16),ow));
     }
     private BenchView BuildBench(int index,float x,float w)
     {
