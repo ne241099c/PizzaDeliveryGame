@@ -161,10 +161,11 @@ public static class UiKit
         var knob=Stretch(handle,"Knob",3,3,3,3);var k=knob.gameObject.AddComponent<Image>();k.sprite=Circle;k.color=T.tomato;k.raycastTarget=false;
         slider.fillRect=fillRect;slider.handleRect=handle;slider.targetGraphic=e;slider.direction=UnityEngine.UI.Slider.Direction.LeftToRight;
         slider.transition=Selectable.Transition.None;slider.navigation=new Navigation{mode=Navigation.Mode.None};slider.wholeNumbers=true;
-        // Only the player's drag changes the value: range/value updates from code do not call back.
-        if(onChange!=null)slider.onValueChanged.AddListener(v=>{if(!syncing)onChange(v);});
+        BindSlider(slider,onChange);
         return slider;
     }
+    /// <summary>Calls onChange only for the player's drag: range/value updates from SyncPromise do not call back.</summary>
+    public static void BindSlider(Slider slider,UnityAction<float> onChange){if(slider!=null && onChange!=null)slider.onValueChanged.AddListener(v=>{if(!syncing)onChange(v);});}
     /// <summary>Keeps a promise slider in step with the spawner (range = physical minimum .. maximum).</summary>
     private static bool syncing;
     public static void SyncPromise(Slider slider,OrderSpawner spawner,GameClock clock)

@@ -4,8 +4,9 @@ using UnityEngine.UI;
 /// <summary>Rounded bar with a dark edge. Optional ▼ marker shows a ceiling (potential) the value cannot pass.</summary>
 public sealed class UiBar : MonoBehaviour
 {
-    private RectTransform fillRect,marker;
-    private Image fill;
+    // Serialized so a bar built into a prefab keeps its parts.
+    [SerializeField] private RectTransform fillRect,marker;
+    [SerializeField] private Image fill;
     public float Value {get;private set;}
     public void Build(Color color,bool withMarker)
     {

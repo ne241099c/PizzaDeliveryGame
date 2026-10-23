@@ -16,6 +16,8 @@ public static class ScreenPrefabs
 
     [MenuItem("Tools/Screens/Build And Install Game Over")]
     public static void GameOverMenu()=>Debug.Log(BuildGameOver()+" | "+Install("GameOverView"));
+    [MenuItem("Tools/Screens/Build And Install Hub")]
+    public static void HubMenu()=>Debug.Log(BuildHub()+" | "+Install("HubView"));
     [MenuItem("Tools/Screens/Build And Install Settlement")]
     public static void SettlementMenu()=>Debug.Log(BuildSettlement()+" | "+Install("SettlementView"));
 
@@ -70,6 +72,56 @@ public static class ScreenPrefabs
         if(importer.textureType!=TextureImporterType.Sprite || importer.textureCompression!=TextureImporterCompression.Uncompressed)
         {importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;importer.mipmapEnabled=false;importer.wrapMode=TextureWrapMode.Clamp;importer.textureCompression=TextureImporterCompression.Uncompressed;importer.SaveAndReimport();}
         return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+    }
+
+    // ---- 開店準備の事務室 (4-2): the frame; the cards in Content are built by HubView ----
+    public static string BuildHub()
+    {
+        var go=Root("HubView",out var root);var view=go.AddComponent<HubView>();
+        var bg=UiKit.Stretch(root,"Background");UiKit.Fill(bg,T.floorA,0,true);
+        for(int y=140;y<1080;y+=120){var line=UiKit.Box(bg,"Stripe",0,y,1920,3);UiKit.Fill(line,new Color(T.floorB.r,T.floorB.g,T.floorB.b,.6f),0);}
+        var top=UiKit.Card(root,"TopBar",32,24,1856,92,T.paper);
+        UiKit.Icon(top,"Sun","icon_sun",30,24,44,T.line);
+        var day=UiKit.Label(top,"Day","1日目",86,10,180,72,40,T.line,FontRole.Display);
+        var phase=UiKit.Label(top,"Phase",ShopStrings.Preparation,230,30,150,36,20,T.inkSub,FontRole.Black);
+        UiKit.Icon(top,"Coin","icon_coin",400,24,44,T.line);
+        var cash=UiKit.Label(top,"Cash","¥0",456,10,260,72,40,T.line,FontRole.Display);
+        var cashDelta=UiKit.Badge(top,"CashDelta","▲ +0",700,30,T.basil,Color.white,34,18);
+        UiKit.Icon(top,"Star","icon_star",880,24,44,T.line);
+        var reputation=UiKit.Label(top,"Reputation","50",936,10,90,72,38,T.line,FontRole.Display);
+        var reputationBar=UiKit.Bar(top,"ReputationBar",1020,34,150,24,T.cheese);
+        var message=UiKit.Label(top,"Message","",1200,20,560,52,18,T.inkSub,FontRole.Bold,TextAlignmentOptions.MidlineRight,true);
+        var menuButton=UiKit.Button(top,"MenuButton","",StickerKind.Secondary,1774,12,64,64,20,null,FontRole.Black,"icon_menu");
+        string[] names={ShopStrings.Staff,ShopStrings.Applicants,ShopStrings.Facilities,ShopStrings.Management};
+        var tabs=new StickerButton[4];var badges=new RectTransform[4];
+        for(int i=0;i<4;i++)
+        {
+            tabs[i]=UiKit.Button(root,"Tab"+i,names[i],StickerKind.Secondary,32,156+i*104,236,82,32,null,FontRole.Display);
+            tabs[i].Label.alignment=TextAlignmentOptions.MidlineLeft;tabs[i].Label.rectTransform.offsetMin=new Vector2(24,0);tabs[i].Label.fontSize=tabs[i].Label.fontSizeMax=i<2?28:32;
+            if(i<2)badges[i]=UiKit.Badge(tabs[i].Face,"Count","0",150,26,T.paper,T.line,30,16,56);
+        }
+        tabs[0].Kind=StickerKind.Primary;
+        var note=UiKit.Label(root,"TeamNote","",32,640,236,120,17,T.inkSub,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
+        var content=UiKit.Box(root,"Content",300,152,1600,624);
+        var hint=UiKit.Box(root,"Hint",300,792,1588,48);UiKit.Badge(hint,"HintBadge","ヒント",0,8,T.cheese,T.line,34,18,88);
+        var hintText=UiKit.Label(hint,"HintText","",104,0,1480,48,20,T.line,FontRole.Black);
+        var bottom=UiKit.Card(root,"BottomBar",300,872,1588,168,T.paper);
+        UiKit.Label(bottom,"ForecastTitle","今日の見通し",30,22,300,30,18,T.inkSub,FontRole.Black);
+        string[] heads={"日給の合計","固定費","維持費","訓練費"};var values=new TextMeshProUGUI[4];
+        for(int i=0;i<4;i++){UiKit.Label(bottom,"Head"+i,heads[i],30+i*150,56,150,28,17,T.inkSub,FontRole.Black);values[i]=UiKit.Label(bottom,"Value"+i,"¥0",30+i*150,88,150,50,32,T.line,FontRole.Display);}
+        var divider=UiKit.Box(bottom,"Divider",660,22,3,124);UiKit.Fill(divider,T.paperDeep,0);
+        UiKit.Label(bottom,"PromiseTitle",ShopStrings.Promise,700,30,200,30,18,T.inkSub,FontRole.Black);
+        var slider=UiKit.Slider(bottom,"PromiseSlider",700,98,250,30,T.cheese,null);
+        var promise=UiKit.Label(bottom,"Promise","60秒",960,70,140,72,40,T.line,FontRole.Display,TextAlignmentOptions.Center);
+        var start=UiKit.Button(bottom,"StartBusinessV2",ShopStrings.StartBusiness+" ▶",StickerKind.Primary,1120,26,436,112,52,null,FontRole.Display);
+        var dialog=UiKit.Stretch(root,"Dialog");UiKit.Fill(dialog,new Color(T.line.r,T.line.g,T.line.b,.45f),0,true);var group=UiKit.Group(dialog);group.alpha=0;group.interactable=group.blocksRaycasts=false;
+        var so=new SerializedObject(view);
+        Set(so,"content",content);Set(so,"dialog",dialog);Set(so,"dayText",day);Set(so,"phaseText",phase);Set(so,"cashText",cash);Set(so,"reputationText",reputation);
+        Set(so,"hintText",hintText);Set(so,"noteText",note);Set(so,"forecastWages",values[0]);Set(so,"forecastFixed",values[1]);Set(so,"forecastMaintenance",values[2]);Set(so,"forecastTraining",values[3]);
+        Set(so,"promiseText",promise);Set(so,"messageText",message);Set(so,"cashDelta",cashDelta);Set(so,"reputationBar",reputationBar);
+        SetArray(so,"tabs",tabs);SetArray(so,"tabBadges",badges);Set(so,"startButton",start);Set(so,"menuButton",menuButton);Set(so,"promiseSlider",slider);
+        so.ApplyModifiedPropertiesWithoutUndo();
+        return Save(go,"HubView");
     }
 
     // ---- 今日のまとめ (4-3): the frame; the receipt is built by SettlementView each day ----

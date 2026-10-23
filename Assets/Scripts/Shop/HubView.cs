@@ -6,20 +6,23 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>開店準備の事務室 (UI_Mock/Hub.png): top bar, tabs, team/applicant/facility/management cards and the start button.
-/// Presentation only: every action calls the existing managers.</summary>
+/// Presentation only: every action calls the existing managers. The frame (bars, tabs, start button) is the prefab
+/// Assets/Prefabs/UI/HubView.prefab (ScreenPrefabs); the cards in Content follow the data and are built here.</summary>
 public sealed class HubView : MonoBehaviour
 {
     private CampaignManager campaign;private GameClock clock;private BusinessEconomy economy;private DeliveryPersonSelector roster;private KitchenCrew crew;
     private RecruitmentManager recruitment;private TrainingManager training;private FacilityManager facilities;private OrderSpawner spawner;private ReputationManager reputation;
     private TitleMenuUI menu;private CourierProgression progression;private ScreenRouter router;private CookingManager cooking;
     private UITheme T=>UiKit.T;
-    private RectTransform content,dialog,dialogCard;
-    private TextMeshProUGUI dayText,phaseText,cashText,reputationText,hintText,noteText,forecastWages,forecastFixed,forecastMaintenance,forecastTraining,promiseText,messageText;
-    private RectTransform cashDelta;private UiBar reputationBar;
-    [SerializeField, HideInInspector] private StickerButton[] tabs=new StickerButton[4];
-    [SerializeField, HideInInspector] private RectTransform[] tabBadges=new RectTransform[4];
-    private StickerButton startButton;
-    private Slider promiseSlider,managementSlider;private TextMeshProUGUI managementValue,managementDetail;
+    [SerializeField] private RectTransform content,dialog;
+    [SerializeField] private TextMeshProUGUI dayText,phaseText,cashText,reputationText,hintText,noteText,forecastWages,forecastFixed,forecastMaintenance,forecastTraining,promiseText,messageText;
+    [SerializeField] private RectTransform cashDelta;[SerializeField] private UiBar reputationBar;
+    [SerializeField] private StickerButton[] tabs=new StickerButton[4];
+    /// <summary>Count badges on the staff and applicant tabs ([2] and [3] stay empty).</summary>
+    [SerializeField] private RectTransform[] tabBadges=new RectTransform[4];
+    [SerializeField] private StickerButton startButton,menuButton;
+    [SerializeField] private Slider promiseSlider;
+    private RectTransform dialogCard;private Slider managementSlider;private TextMeshProUGUI managementValue,managementDetail;
     private string signature="";private float messageUntil;private string lastMessage="";
     private readonly List<(int day,decimal revenue,decimal profit,decimal cash)> records=new();
     public int SelectedTab {get;private set;}
@@ -30,7 +33,14 @@ public sealed class HubView : MonoBehaviour
         campaign=Find<CampaignManager>();clock=Find<GameClock>();economy=Find<BusinessEconomy>();roster=Find<DeliveryPersonSelector>();crew=Find<KitchenCrew>();
         recruitment=Find<RecruitmentManager>();training=Find<TrainingManager>();facilities=Find<FacilityManager>();spawner=Find<OrderSpawner>();reputation=Find<ReputationManager>();
         menu=Find<TitleMenuUI>();progression=Find<CourierProgression>();router=Find<ScreenRouter>();cooking=Find<CookingManager>();
-        Build();
+    }
+    private void Start()
+    {
+        for(int i=0;i<tabs.Length;i++){int tab=i;tabs[i].Button.onClick.AddListener(()=>ShowTab(tab));}
+        menuButton.Button.onClick.AddListener(()=>menu.ShowMenu());
+        startButton.Button.onClick.AddListener(()=>campaign.StartBusiness());
+        UiKit.BindSlider(promiseSlider,v=>spawner.SetPromiseSeconds(v));
+        UiKit.Show(dialog,false);ShowTab(0);
     }
     private static TComp Find<TComp>() where TComp:UnityEngine.Object=>FindFirstObjectByType<TComp>();
     private void OnEnable(){if(clock!=null)clock.OnDayEnded+=Record;}
@@ -39,53 +49,6 @@ public sealed class HubView : MonoBehaviour
     {
         var l=economy.Ledger;if(campaign.DayNumber==1)records.Clear();
         records.RemoveAll(r=>r.day==campaign.DayNumber);records.Add((campaign.DayNumber,l.Revenue,l.Profit,economy.Cash));
-    }
-
-    private void Build()
-    {
-        var root=(RectTransform)transform;
-        var bg=UiKit.Stretch(root,"Background");UiKit.Fill(bg,T.floorA,0,true);
-        for(int y=140;y<1080;y+=120){var line=UiKit.Box(bg,"Stripe",0,y,1920,3);UiKit.Fill(line,new Color(T.floorB.r,T.floorB.g,T.floorB.b,.6f),0);}
-        // top bar
-        var top=UiKit.Card(root,"TopBar",32,24,1856,92,T.paper);
-        UiKit.Icon(top,"Sun","icon_sun",30,24,44,T.line);
-        dayText=UiKit.Label(top,"Day","1日目",86,10,180,72,40,T.line,FontRole.Display);
-        phaseText=UiKit.Label(top,"Phase",ShopStrings.Preparation,230,30,150,36,20,T.inkSub,FontRole.Black);
-        UiKit.Icon(top,"Coin","icon_coin",400,24,44,T.line);
-        cashText=UiKit.Label(top,"Cash","¥0",456,10,260,72,40,T.line,FontRole.Display);
-        cashDelta=UiKit.Badge(top,"CashDelta","▲ +0",700,30,T.basil,Color.white,34,18);
-        UiKit.Icon(top,"Star","icon_star",880,24,44,T.line);
-        reputationText=UiKit.Label(top,"Reputation","50",936,10,90,72,38,T.line,FontRole.Display);
-        reputationBar=UiKit.Bar(top,"ReputationBar",1020,34,150,24,T.cheese);
-        messageText=UiKit.Label(top,"Message","",1200,20,560,52,18,T.inkSub,FontRole.Bold,TextAlignmentOptions.MidlineRight,true);
-        UiKit.Button(top,"MenuButton","",StickerKind.Secondary,1774,12,64,64,20,()=>menu.ShowMenu(),FontRole.Black,"icon_menu");
-        // tabs
-        string[] names={ShopStrings.Staff,ShopStrings.Applicants,ShopStrings.Facilities,ShopStrings.Management};
-        for(int i=0;i<4;i++)
-        {
-            int tab=i;tabs[i]=UiKit.Button(root,"Tab"+i,names[i],StickerKind.Secondary,32,156+i*104,236,82,32,()=>ShowTab(tab),FontRole.Display);
-            tabs[i].Label.alignment=TextAlignmentOptions.MidlineLeft;tabs[i].Label.rectTransform.offsetMin=new Vector2(24,0);tabs[i].Label.fontSize=tabs[i].Label.fontSizeMax=i<2?28:32;
-            if(i<2){tabBadges[i]=UiKit.Badge(tabs[i].transform.Find("Face"),"Count","0",150,26,T.paper,T.line,30,16,56);}
-        }
-        noteText=UiKit.Label(root,"TeamNote","",32,640,236,120,17,T.inkSub,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
-        content=UiKit.Box(root,"Content",300,152,1600,624);
-        // hint
-        var hint=UiKit.Box(root,"Hint",300,792,1588,48);UiKit.Badge(hint,"HintBadge","ヒント",0,8,T.cheese,T.line,34,18,88);
-        hintText=UiKit.Label(hint,"HintText","",104,0,1480,48,20,T.line,FontRole.Black);
-        // bottom bar
-        var bottom=UiKit.Card(root,"BottomBar",300,872,1588,168,T.paper);
-        UiKit.Label(bottom,"ForecastTitle","今日の見通し",30,22,300,30,18,T.inkSub,FontRole.Black);
-        string[] heads={"日給の合計","固定費","維持費","訓練費"};var values=new TextMeshProUGUI[4];
-        for(int i=0;i<4;i++){UiKit.Label(bottom,"Head"+i,heads[i],30+i*150,56,150,28,17,T.inkSub,FontRole.Black);values[i]=UiKit.Label(bottom,"Value"+i,"¥0",30+i*150,88,150,50,32,T.line,FontRole.Display);}
-        forecastWages=values[0];forecastFixed=values[1];forecastMaintenance=values[2];forecastTraining=values[3];
-        var divider=UiKit.Box(bottom,"Divider",660,22,3,124);UiKit.Fill(divider,T.paperDeep,0);
-        UiKit.Label(bottom,"PromiseTitle",ShopStrings.Promise,700,30,200,30,18,T.inkSub,FontRole.Black);
-        promiseSlider=UiKit.Slider(bottom,"PromiseSlider",700,98,250,30,T.cheese,v=>spawner.SetPromiseSeconds(v));
-        promiseText=UiKit.Label(bottom,"Promise","60秒",960,70,140,72,40,T.line,FontRole.Display,TextAlignmentOptions.Center);
-        startButton=UiKit.Button(bottom,"StartBusinessV2",ShopStrings.StartBusiness+" ▶",StickerKind.Primary,1120,26,436,112,52,()=>campaign.StartBusiness(),FontRole.Display);
-        // dialog layer
-        dialog=UiKit.Stretch(root,"Dialog");UiKit.Fill(dialog,new Color(T.line.r,T.line.g,T.line.b,.45f),0,true);UiKit.Group(dialog);UiKit.Show(dialog,false);
-        ShowTab(0);
     }
 
     public void ShowTab(int tab){SelectedTab=tab;for(int i=0;i<tabs.Length;i++)tabs[i].Kind=i==tab?StickerKind.Primary:StickerKind.Secondary;signature="";}
