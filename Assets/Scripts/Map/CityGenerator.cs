@@ -27,6 +27,7 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     [Min(1)] public int retryCount=6;
     [Min(1)] public int columns=4;
     [Min(1)] public float blockSize=4,blockGap=1;
+    [Min(1), Tooltip("店舗から四方向の最初の街区までの距離。既存v1〜4の配置には影響しません。 ")] public float radialFirstBlockDistance=11;
     [Min(.1f)] public float roadDistanceScale=1.5f;
     [Min(.1f)] public float shortcutDistance=9;
     [Min(0)] public float minimumShortcutSaving=.03f;
@@ -67,14 +68,23 @@ public sealed class GeneratedCity
 /// <summary>Deterministic template placement. Prefixes and each block's RNG are independent of later expansion.</summary>
 public static class CityGenerator
 {
-    public const int CurrentVersion=4;
+    public const int CurrentVersion=5;
     public static GeneratedCity Build(int seed,int blockCount,CityGenerationSettings s,int variant=0,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
         if(blockCount<1 || s.templates==null || s.templates.Length<1)throw new ArgumentException("City needs blocks and templates.");
-        int houseCount=version<CurrentVersion?2:Mathf.Clamp(savedHousesPerBlock>0?savedHousesPerBlock:s.housesPerBlock,2,4);
+        int houseCount=version<4?2:Mathf.Clamp(savedHousesPerBlock>0?savedHousesPerBlock:s.housesPerBlock,2,4);
         var city=new GeneratedCity{seed=seed,version=version,housesPerBlock=houseCount,map=ScriptableObject.CreateInstance<MapDefinition>()};city.map.hideFlags=HideFlags.DontSave;
         var m=city.map;
         m.Nodes.AddRange(new[]{new MapNode("Store",new(-4,0),NodeType.Intersection,true),new MapNode("N1",new(-1.5f,0),NodeType.Intersection,false),new MapNode("N2",new(1.5f,0),NodeType.Intersection,false),new MapNode("Goal1",new(4,-1),NodeType.DeliveryAddress,false),new MapNode("Goal2",new(4,-3),NodeType.DeliveryAddress,false)});
+        if(version>=5)
+        {
+            // Keep the small authored east approach, but make the shop the town's origin.
+            for(int n=0;n<m.Nodes.Count;n++)
+            {
+                var node=m.Nodes[n];
+                m.Nodes[n]=new MapNode(node.Id,node.Position+new Vector2(4,0),node.NodeType,node.IsStore);
+            }
+        }
         m.Edges.AddRange(new[]{new MapEdge("Store-N1","Store","N1",10,RoadType.Main,.8f),new MapEdge("N1-N2-Main","N1","N2",10,RoadType.Main,.6f),new MapEdge("N1-N2-Backstreet","N1","N2",11,RoadType.Backstreet,1),new MapEdge("N2-Goal1","N2","Goal1",5,RoadType.Main,1),new MapEdge("N2-Goal2","N2","Goal2",7,RoadType.Main,1),new MapEdge("Goal1-Goal2","Goal1","Goal2",3,RoadType.Main,1)});
         for(int i=0;i<blockCount;i++)
         {
@@ -82,13 +92,25 @@ public static class CityGenerator
             // Force a park and a river in the initial prefix so variety and bridge safety never depend on later blocks.
             var template=i==0?s.templates.FirstOrDefault(t=>t.kind==DistrictKind.Park)??s.templates[0]:i==1?s.templates.FirstOrDefault(t=>t.kind==DistrictKind.Riverside)??s.templates[0]:s.templates[rng.Next(s.templates.Length)];
             int col=i%s.columns,row=i/s.columns;float size=s.blockSize,x=7+col*(size+s.blockGap),y=-row*(size+s.blockGap);
+            if(version>=5)
+            {
+                x=s.radialFirstBlockDistance+(i/4)*(size+s.blockGap);
+                y=size*.5f;
+            }
             string a=$"B{i}_A",b=$"B{i}_B",c=$"B{i}_C",d=$"B{i}_D",h1=$"B{i}_H1",h2=$"B{i}_H2";
-            var area=new Rect(x,y-size,size,size);
+            Vector2 Rotate(Vector2 point)
+            {
+                if(version<5)return point;
+                return (i%4) switch {1=>new(-point.y,point.x),2=>-point,3=>new(point.y,-point.x),_=>point};
+            }
+            var corner1=Rotate(new Vector2(x,y-size));
+            var corner2=Rotate(new Vector2(x+size,y));
+            var area=Rect.MinMaxRect(Mathf.Min(corner1.x,corner2.x),Mathf.Min(corner1.y,corner2.y),Mathf.Max(corner1.x,corner2.x),Mathf.Max(corner1.y,corner2.y));
             var addresses=Enumerable.Range(1,houseCount).Select(h=>$"B{i}_H{h}").ToArray();
             var block=new CityBlock{index=i,template=template,area=area,addresses=addresses};
             city.blocks.Add(block);
             if(template.roadPorts.Length!=4 || template.addressPositions.Length!=2)throw new ArgumentException("Template needs four ports and two address candidates.");
-            Vector2 At(Vector2 local)=>new Vector2(x,y)+local*size;
+            Vector2 At(Vector2 local)=>Rotate(new Vector2(x,y)+local*size);
             m.Nodes.AddRange(new[]{new MapNode(a,At(template.roadPorts[0]),NodeType.Intersection,false),new MapNode(b,At(template.roadPorts[1]),NodeType.Intersection,false),new MapNode(c,At(template.roadPorts[2]),NodeType.Intersection,false),new MapNode(d,At(template.roadPorts[3]),NodeType.Intersection,false),new MapNode(h1,At(template.addressPositions[0]),NodeType.DeliveryAddress,false),new MapNode(h2,At(template.addressPositions[1]),NodeType.DeliveryAddress,false)});
             void Edge(string id,string from,string to,float distance,RoadType type=RoadType.Main,float traffic=1,bool both=true)=>m.Edges.Add(new MapEdge($"B{i}_"+id,from,to,distance,type,traffic,both));
             float length=size*s.roadDistanceScale;
@@ -115,7 +137,20 @@ public static class CityGenerator
             if(template.shortcut)Edge("Shortcut",a,c,s.shortcutDistance,RoadType.Backstreet);
             // A one-way local service road never replaces the bidirectional perimeter.
             if(i>=3 && rng.Next(2)==0)Edge("OneWay",d,h2,length*.7f,RoadType.Backstreet,1,false);
-            if(col>0){Edge("JoinTop",$"B{i-1}_B",a,s.blockGap*s.roadDistanceScale);Edge("JoinBottom",$"B{i-1}_C",d,s.blockGap*s.roadDistanceScale);}
+            if(version>=5)
+            {
+                if(i>=4)
+                {
+                    Edge("JoinTop",$"B{i-4}_B",a,s.blockGap*s.roadDistanceScale);
+                    Edge("JoinBottom",$"B{i-4}_C",d,s.blockGap*s.roadDistanceScale);
+                }
+                else
+                {
+                    Edge("Entry",i==0?"N2":"Store",a,i==0?8:s.radialFirstBlockDistance*s.roadDistanceScale);
+                    Edge("Loop","Store",d,s.radialFirstBlockDistance*s.roadDistanceScale);
+                }
+            }
+            else if(col>0){Edge("JoinTop",$"B{i-1}_B",a,s.blockGap*s.roadDistanceScale);Edge("JoinBottom",$"B{i-1}_C",d,s.blockGap*s.roadDistanceScale);}
             else if(row>0)
             {
                 Edge("JoinLeft",$"B{i-s.columns}_D",a,s.blockGap*s.roadDistanceScale);
@@ -151,7 +186,7 @@ public static class CityGenerator
     }
     public static GeneratedCity SafeCity(int seed,int blocks,CityGenerationSettings settings,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
-        var safe=Build(seed%2==0?1401:1402,blocks,new CityGenerationSettings{columns=settings.columns,blockSize=settings.blockSize,blockGap=settings.blockGap,roadDistanceScale=settings.roadDistanceScale,shortcutDistance=settings.shortcutDistance,housesPerBlock=settings.housesPerBlock},version:version,savedHousesPerBlock:savedHousesPerBlock);
+        var safe=Build(seed%2==0?1401:1402,blocks,new CityGenerationSettings{columns=settings.columns,radialFirstBlockDistance=settings.radialFirstBlockDistance,blockSize=settings.blockSize,blockGap=settings.blockGap,roadDistanceScale=settings.roadDistanceScale,shortcutDistance=settings.shortcutDistance,housesPerBlock=settings.housesPerBlock},version:version,savedHousesPerBlock:savedHousesPerBlock);
         safe.seed=seed;safe.metrics=CityValidator.Measure(safe,settings);return safe;
     }
 }

@@ -28,7 +28,7 @@ public static class CityGenerationValidation
         var edited=CityGenerator.Build(72,3,custom);
         try
         {
-            Check(Mathf.Abs(edited.map.Nodes.First(n=>n.Id=="B0_H1").Position.x-(7+.7f*custom.blockSize))<.001f,"template address positions are data");
+            Check(Mathf.Abs(edited.map.Nodes.First(n=>n.Id=="B0_H1").Position.x-(custom.radialFirstBlockDistance+.7f*custom.blockSize))<.001f,"template address positions are data");
         }
         finally
         {
@@ -36,13 +36,14 @@ public static class CityGenerationValidation
         }
         var dense=CityGenerator.Build(1401,5,settings);
         var legacy=CityGenerator.Build(1401,5,settings,version:3);
+        var denseLegacy=CityGenerator.Build(1401,5,settings,version:4);
         var tuned=CityGenerator.Build(1401,5,settings,savedHousesPerBlock:3);
         try
         {
             Check(dense.map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==22,"new town has four homes per block plus two original homes");
             Check(legacy.map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==12,"version three keeps two homes per block");
             Check(tuned.map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==17,"saved Inspector house count is respected");
-            Check(legacy.map.Nodes.All(n=>dense.map.Nodes.Any(d=>d.Id==n.Id && d.Position==n.Position)),"density increase preserves legacy addresses and junctions");
+            Check(legacy.map.Nodes.All(n=>denseLegacy.map.Nodes.Any(d=>d.Id==n.Id && d.Position==n.Position)),"density increase preserves legacy addresses and junctions");
             foreach(var city in new[]{dense,legacy,tuned})
             {
                 foreach(string address in city.blocks.SelectMany(block=>block.addresses))
@@ -51,6 +52,23 @@ public static class CityGenerationValidation
                           RoadPathfinder.FindShortestPath(city.map.Edges,address,"Store",e=>e.Distance)!=null,"each generated home can receive deliveries and return: "+address);
                 }
             }
+            var store=dense.map.Nodes.Single(n=>n.IsStore).Position;
+            Check(store==Vector2.zero,"new town shop is at the origin");
+            var homes=dense.map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress).ToArray();
+            Check(homes.Any(n=>n.Position.x>store.x+settings.blockSize),"destinations east of shop");
+            Check(homes.Any(n=>n.Position.x<store.x-settings.blockSize),"destinations west of shop");
+            Check(homes.Any(n=>n.Position.y>store.y+settings.blockSize),"destinations north of shop");
+            Check(homes.Any(n=>n.Position.y<store.y-settings.blockSize),"destinations south of shop");
+            float Distance(string from,string to)
+            {
+                var path=RoadPathfinder.FindShortestPath(dense.map.Edges,from,to,e=>e.Distance);
+                return path.Sum(id=>dense.map.Edges.First(e=>e.Id==id).Distance);
+            }
+            float Individual(string a,string b)=>Distance("Store",a)+Distance(a,"Store")+Distance("Store",b)+Distance(b,"Store");
+            float Batch(string a,string b)=>Distance("Store",a)+Distance(a,b)+Distance(b,"Store");
+            Check(Batch("B1_H1","B1_H2")<Individual("B1_H1","B1_H2"),"nearby homes reward grouping");
+            Check(Mathf.Abs(Batch("B1_H1","B3_H1")-Individual("B1_H1","B3_H1"))<.001f,"opposite directions give no travel saving from batching");
+            Check(denseLegacy.version==4 && denseLegacy.housesPerBlock==4,"v4 keeps saved four-home density after v5 release");
             var road=new MapEdge("test","a","b",10,RoadType.Backstreet,1);
             var points=RoadGeometry.Points(road,Vector2.zero,new Vector2(4,0),.85f);
             Check(points.Length==4 && points[0]==Vector2.zero && points[3]==new Vector2(4,0),"backstreet remains attached at both junctions");
@@ -63,6 +81,7 @@ public static class CityGenerationValidation
         {
             UnityEngine.Object.Destroy(dense.map);
             UnityEngine.Object.Destroy(legacy.map);
+            UnityEngine.Object.Destroy(denseLegacy.map);
             UnityEngine.Object.Destroy(tuned.map);
         }
         return $"PASS: {checks} city generation checks.";

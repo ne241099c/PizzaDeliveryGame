@@ -15,6 +15,7 @@ public static class CityCampaignValidation
         var clock=Find<GameClock>();
         var spawner=Find<OrderSpawner>();
         var roster=Find<CourierRoster>();
+        bool upgrade=map.UpgradeRestoredCityLayout;
         var original=map.SeedOverride;bool legacy=map.UseSampleForValidation;int checks=0;
         void Check(bool ok,string name){if(!ok)throw new Exception("City campaign: "+name);checks++;}
         try
@@ -39,6 +40,7 @@ public static class CityCampaignValidation
                 Check(CityGenerationValidation.Fingerprint(map.City)==f,"same day and seed reproduce construction "+day);
                 Check(map.City.metrics.failures.Count==0,"daily traffic remains safe "+day);
             }
+            map.UpgradeRestoredCityLayout=false;
             data.day=1;data.city.day=1;data.city.version=1;data.city.blocks=map.CitySettings.BlocksForVersion(1,1);
             Check(save.TryParse(JsonUtility.ToJson(data),out var oldTown,out _),"version one town remains a valid save");
             campaign.RestorePreparation(oldTown);
@@ -55,7 +57,7 @@ public static class CityCampaignValidation
                 campaign.RestorePreparation(versionThreeTown);
                 int expectedHomes=map.ExpandExistingCityHomes?map.CitySettings.housesPerBlock:2;
                 Check(map.City.blocks.Count==5 && map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==5*expectedHomes+2,"version three gains homes when migration is enabled");
-                Check(map.CaptureCity().version==(map.ExpandExistingCityHomes && expectedHomes>2?CityGenerator.CurrentVersion:3),"expanded city records new density version");
+                Check(map.CaptureCity().version==(map.ExpandExistingCityHomes && expectedHomes>2?4:3),"expanded city records new density version");
                 Check(originalTown.map.Nodes.All(node=>map.Nodes.Any(other=>node.Id==other.Id && node.Position==other.Position && node.NodeType==other.NodeType)),"expansion preserves every original house and junction");
                 Check(originalTown.map.Edges.All(road=>map.Edges.Any(other=>road.Id==other.Id && road.NodeAId==other.NodeAId && road.NodeBId==other.NodeBId && road.Distance==other.Distance && road.TrafficFactor==other.TrafficFactor && road.Bidirectional==other.Bidirectional && road.RoadType==other.RoadType)),"expansion preserves every original road and traversal cost");
             }
@@ -64,6 +66,21 @@ public static class CityCampaignValidation
             Check(save.TryParse(JsonUtility.ToJson(data),out var customDensity,out _),"custom new-town density saves");
             campaign.RestorePreparation(customDensity);
             Check(map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==17 && map.CaptureCity().housesPerBlock==3,"Continue uses saved density rather than current Inspector default");
+            foreach(int version in new[]{1,2,3,4})
+            {
+                map.UpgradeRestoredCityLayout=true;
+                data.city.version=version;
+                data.city.blocks=map.CitySettings.BlocksForVersion(data.day,version);
+                data.city.housesPerBlock=version>=4?3:0;
+                Check(save.TryParse(JsonUtility.ToJson(data),out var oldLayout,out _),"legacy town parses before layout upgrade "+version);
+                string balance=oldLayout.cash;
+                campaign.RestorePreparation(oldLayout);
+                var migrated=save.Capture();
+                Check(map.CaptureCity().version==5 && map.City.blocks.Count==map.CitySettings.Blocks(data.day),"legacy layout becomes current four-direction map "+version);
+                Check(migrated.day==oldLayout.day && migrated.cash==balance && migrated.people.Count==oldLayout.people.Count,"layout migration keeps day funds and staff "+version);
+                Check(map.City.metrics.failures.Count==0,"migrated layout remains connected and valid "+version);
+                Check(map.CaptureCity().housesPerBlock==(version>=4?3:map.CitySettings.housesPerBlock),"migration respects saved density when present "+version);
+            }
             data.city=null;
             Check(save.TryParse(JsonUtility.ToJson(data),out var legacyData,out _),"legacy null city JSON round trip");
             campaign.RestorePreparation(legacyData);
@@ -72,6 +89,7 @@ public static class CityCampaignValidation
         }
         finally
         {
+            map.UpgradeRestoredCityLayout=upgrade;
             map.UseSampleForValidation=legacy;
             map.SeedOverride=original;
             save.StartNewGame();
