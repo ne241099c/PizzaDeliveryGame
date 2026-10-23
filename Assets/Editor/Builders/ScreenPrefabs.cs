@@ -34,7 +34,12 @@ public static class ScreenPrefabs
         var instance=(GameObject)PrefabUtility.InstantiatePrefab(prefab,shop.transform);Undo.RegisterCreatedObjectUndo(instance,"Install "+name);
         instance.transform.SetSiblingIndex(old.GetSiblingIndex());
         var oldGroup=old.GetComponent<CanvasGroup>();var group=instance.GetComponent<CanvasGroup>();
-        if(oldGroup!=null && group!=null){group.alpha=oldGroup.alpha;group.interactable=oldGroup.interactable;group.blocksRaycasts=oldGroup.blocksRaycasts;}
+        if(oldGroup!=null && group!=null)
+        {
+            group.alpha=oldGroup.alpha;
+            group.interactable=oldGroup.interactable;
+            group.blocksRaycasts=oldGroup.blocksRaycasts;
+        }
         // Re-point references from anywhere in the scene to the old root (its GameObject or root components, by type).
         // References to the old root or to a child with the same path in the prefab (e.g. MapViewportUI -> MapArea) move over.
         var map=new Dictionary<Object,Object>();
@@ -50,11 +55,27 @@ public static class ScreenPrefabs
         {
             if(mb==null || mb.transform.IsChildOf(old))continue;
             var so=new SerializedObject(mb);var p=so.GetIterator();bool changed=false;
-            while(p.Next(true))if(p.propertyType==SerializedPropertyType.ObjectReference && p.objectReferenceValue!=null && map.TryGetValue(p.objectReferenceValue,out var to)){p.objectReferenceValue=to;changed=true;moved++;}
+            while(p.Next(true))if(p.propertyType==SerializedPropertyType.ObjectReference && p.objectReferenceValue!=null && map.TryGetValue(p.objectReferenceValue,out var to))
+            {
+                p.objectReferenceValue=to;
+                changed=true;
+                moved++;
+            }
             if(changed)so.ApplyModifiedProperties();
         }
-        var leftover=Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include,FindObjectsSortMode.None).Where(mb=>mb!=null && !mb.transform.IsChildOf(old)).SelectMany(mb=>{var so=new SerializedObject(mb);var p=so.GetIterator();var l=new List<string>();while(p.Next(true))if(p.propertyType==SerializedPropertyType.ObjectReference && p.objectReferenceValue is Component c && c!=null && c.transform.IsChildOf(old))l.Add(mb.GetType().Name+"."+p.propertyPath);return l;}).ToList();
-        if(leftover.Count>0){Undo.DestroyObjectImmediate(instance);return "not installed: references into the old "+name+" children: "+string.Join(", ",leftover);}
+        var leftover=Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include,FindObjectsSortMode.None).Where(mb=>mb!=null && !mb.transform.IsChildOf(old)).SelectMany(mb=>
+        {
+            var so=new SerializedObject(mb);
+            var p=so.GetIterator();
+            var l=new List<string>();
+            while(p.Next(true))if(p.propertyType==SerializedPropertyType.ObjectReference && p.objectReferenceValue is Component c && c!=null && c.transform.IsChildOf(old))l.Add(mb.GetType().Name+"."+p.propertyPath);
+            return l;
+        }).ToList();
+        if(leftover.Count>0)
+        {
+            Undo.DestroyObjectImmediate(instance);
+            return "not installed: references into the old "+name+" children: "+string.Join(", ",leftover);
+        }
         Undo.DestroyObjectImmediate(old.gameObject);instance.name=name;
         EditorSceneManager.MarkSceneDirty(instance.scene);
         return $"installed {name} ({moved} references moved)";
@@ -68,18 +89,43 @@ public static class ScreenPrefabs
     }
     private static string Save(GameObject root,string name)
     {
-        try{Directory.CreateDirectory(Folder);PrefabUtility.SaveAsPrefabAsset(root,Folder+name+".prefab",out bool ok);AssetDatabase.SaveAssets();return ok?"saved "+Folder+name+".prefab":"save failed "+name;}
+        try
+        {
+            Directory.CreateDirectory(Folder);
+            PrefabUtility.SaveAsPrefabAsset(root,Folder+name+".prefab",out bool ok);
+            AssetDatabase.SaveAssets();
+            return ok?"saved "+Folder+name+".prefab":"save failed "+name;
+        }
         finally{Object.DestroyImmediate(root);}
     }
-    private static void Set(SerializedObject so,string field,Object value){var p=so.FindProperty(field);if(p==null)throw new System.Exception(so.targetObject.GetType().Name+" has no field "+field);p.objectReferenceValue=value;}
-    private static void SetArray(SerializedObject so,string field,Object[] values){var p=so.FindProperty(field);p.arraySize=values.Length;for(int i=0;i<values.Length;i++)p.GetArrayElementAtIndex(i).objectReferenceValue=values[i];}
+    private static void Set(SerializedObject so,string field,Object value)
+    {
+        var p=so.FindProperty(field);
+        if(p==null)throw new System.Exception(so.targetObject.GetType().Name+" has no field "+field);
+        p.objectReferenceValue=value;
+    }
+    private static void SetArray(SerializedObject so,string field,Object[] values)
+    {
+        var p=so.FindProperty(field);
+        p.arraySize=values.Length;
+        for(int i=0;i<values.Length;i++)p.GetArrayElementAtIndex(i).objectReferenceValue=values[i];
+    }
 
     /// <summary>Background images in Assets/Art/Screens as uncompressed sprites (gradients band when compressed).</summary>
     private static Sprite ScreenArt(string name)
     {
-        string path="Assets/Art/Screens/"+name+".png";var importer=AssetImporter.GetAtPath(path) as TextureImporter;if(importer==null)throw new System.Exception("missing "+path+" (run Tools/Art/title_art.py)");
+        string path="Assets/Art/Screens/"+name+".png";
+        var importer=AssetImporter.GetAtPath(path) as TextureImporter;
+        if(importer==null)throw new System.Exception("missing "+path+" (run Tools/Art/title_art.py)");
         if(importer.textureType!=TextureImporterType.Sprite || importer.textureCompression!=TextureImporterCompression.Uncompressed)
-        {importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;importer.mipmapEnabled=false;importer.wrapMode=TextureWrapMode.Clamp;importer.textureCompression=TextureImporterCompression.Uncompressed;importer.SaveAndReimport();}
+        {
+            importer.textureType=TextureImporterType.Sprite;
+            importer.spriteImportMode=SpriteImportMode.Single;
+            importer.mipmapEnabled=false;
+            importer.wrapMode=TextureWrapMode.Clamp;
+            importer.textureCompression=TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+        }
         return AssetDatabase.LoadAssetAtPath<Sprite>(path);
     }
 
@@ -95,7 +141,12 @@ public static class ScreenPrefabs
     }
     private static string SaveCard(GameObject root,string name)
     {
-        try{Directory.CreateDirectory(CardFolder);PrefabUtility.SaveAsPrefabAsset(root,CardFolder+name+".prefab",out bool ok);return ok?name:"FAILED "+name;}
+        try
+        {
+            Directory.CreateDirectory(CardFolder);
+            PrefabUtility.SaveAsPrefabAsset(root,CardFolder+name+".prefab",out bool ok);
+            return ok?name:"FAILED "+name;
+        }
         finally{Object.DestroyImmediate(root);}
     }
     private static void Header(SerializedProperty header,RectTransform card)
@@ -170,8 +221,14 @@ public static class ScreenPrefabs
             so.ApplyModifiedPropertiesWithoutUndo();log.Add(SaveCard(go,"KitchenCard"));
         }
         {   // facility
-            const float w=300;var go=CardRoot("FacilityCard",w,CardH,out var card);var view=go.AddComponent<FacilityCardView>();var so=new SerializedObject(view);
-            var picture=UiKit.Box(card,"Picture",w/2-56,22,112,112).gameObject.AddComponent<Image>();picture.raycastTarget=false;picture.preserveAspect=true;Set(so,"picture",picture);
+            const float w=300;
+            var go=CardRoot("FacilityCard",w,CardH,out var card);
+            var view=go.AddComponent<FacilityCardView>();
+            var so=new SerializedObject(view);
+            var picture=UiKit.Box(card,"Picture",w/2-56,22,112,112).gameObject.AddComponent<Image>();
+            picture.raycastTarget=false;
+            picture.preserveAspect=true;
+            Set(so,"picture",picture);
             Set(so,"title",UiKit.Label(card,"Title","",0,146,w,44,30,T.line,FontRole.Display,TextAlignmentOptions.Center));
             Set(so,"level",UiKit.Badge(card,"Level","",0,196,T.cheeseLight,T.line,32,18,120));
             Set(so,"effect",UiKit.Label(card,"Effect","",20,244,w-40,80,19,T.line,FontRole.Bold,TextAlignmentOptions.Top,true));
@@ -183,16 +240,22 @@ public static class ScreenPrefabs
             so.ApplyModifiedPropertiesWithoutUndo();log.Add(SaveCard(go,"FacilityCard"));
         }
         {   // the dashed "find a teammate" card
-            var go=CardRoot("FindTeammateCard",CardW,CardH,out var card,false);var view=go.AddComponent<FindTeammateCardView>();var so=new SerializedObject(view);
+            var go=CardRoot("FindTeammateCard",CardW,CardH,out var card,false);
+            var view=go.AddComponent<FindTeammateCardView>();
+            var so=new SerializedObject(view);
             UiKit.Fill(UiKit.Stretch(card,"Face"),new Color(T.paper.r,T.paper.g,T.paper.b,.45f),T.cardRadius);UiKit.Dashed(card,T.line,16,10,3);
-            var plus=UiKit.Box(card,"Plus",CardW/2-50,170,100,100);UiKit.Dashed(plus,T.line,10,8,3);UiKit.Icon(plus,"Icon","icon_plus",25,25,50,T.line);
+            var plus=UiKit.Box(card,"Plus",CardW/2-50,170,100,100);
+            UiKit.Dashed(plus,T.line,10,8,3);
+            UiKit.Icon(plus,"Icon","icon_plus",25,25,50,T.line);
             UiKit.Label(card,"Title",ShopStrings.FindTeammate,0,290,CardW,50,32,T.line,FontRole.Display,TextAlignmentOptions.Center);
             Set(so,"detail",UiKit.Label(card,"Detail","",0,350,CardW,64,18,T.inkSub,FontRole.Black,TextAlignmentOptions.Center,true));
             Set(so,"seeApplicants",UiKit.Button(card,"SeeApplicants",ShopStrings.SeeApplicants,StickerKind.Secondary,58,430,240,70,24,null));
             so.ApplyModifiedPropertiesWithoutUndo();log.Add(SaveCard(go,"FindTeammateCard"));
         }
         {   // management tab
-            var go=CardRoot("ManagementPanel",1588,CardH,out var panel,false);var view=go.AddComponent<ManagementPanelView>();var so=new SerializedObject(view);
+            var go=CardRoot("ManagementPanel",1588,CardH,out var panel,false);
+            var view=go.AddComponent<ManagementPanelView>();
+            var so=new SerializedObject(view);
             var policy=UiKit.Card(panel,"Policy",0,0,620,CardH,T.paper);
             UiKit.Label(policy,"Title",ShopStrings.Promise,28,24,560,48,32,T.line,FontRole.Display);
             Set(so,"promise",UiKit.Slider(policy,"PromiseSlider",34,124,390,36,T.cheese,null));
@@ -248,7 +311,9 @@ public static class ScreenPrefabs
         for(int i=0;i<4;i++)
         {
             tabs[i]=UiKit.Button(root,"Tab"+i,names[i],StickerKind.Secondary,32,156+i*104,236,82,32,null,FontRole.Display);
-            tabs[i].Label.alignment=TextAlignmentOptions.MidlineLeft;tabs[i].Label.rectTransform.offsetMin=new Vector2(24,0);tabs[i].Label.fontSize=tabs[i].Label.fontSizeMax=i<2?28:32;
+            tabs[i].Label.alignment=TextAlignmentOptions.MidlineLeft;
+            tabs[i].Label.rectTransform.offsetMin=new Vector2(24,0);
+            tabs[i].Label.fontSize=tabs[i].Label.fontSizeMax=i<2?28:32;
             if(i<2)badges[i]=UiKit.Badge(tabs[i].Face,"Count","0",150,26,T.paper,T.line,30,16,56);
         }
         tabs[0].Kind=StickerKind.Primary;
@@ -259,14 +324,24 @@ public static class ScreenPrefabs
         var bottom=UiKit.Card(root,"BottomBar",300,872,1588,168,T.paper);
         UiKit.Label(bottom,"ForecastTitle","今日の見通し",30,22,300,30,18,T.inkSub,FontRole.Black);
         string[] heads={"日給の合計","固定費","維持費","訓練費"};var values=new TextMeshProUGUI[4];
-        for(int i=0;i<4;i++){UiKit.Label(bottom,"Head"+i,heads[i],30+i*150,56,150,28,17,T.inkSub,FontRole.Black);values[i]=UiKit.Label(bottom,"Value"+i,"¥0",30+i*150,88,150,50,32,T.line,FontRole.Display);}
+        for(int i=0;i<4;i++)
+        {
+            UiKit.Label(bottom,"Head"+i,heads[i],30+i*150,56,150,28,17,T.inkSub,FontRole.Black);
+            values[i]=UiKit.Label(bottom,"Value"+i,"¥0",30+i*150,88,150,50,32,T.line,FontRole.Display);
+        }
         var divider=UiKit.Box(bottom,"Divider",660,22,3,124);UiKit.Fill(divider,T.paperDeep,0);
         UiKit.Label(bottom,"PromiseTitle",ShopStrings.Promise,700,30,200,30,18,T.inkSub,FontRole.Black);
         var slider=UiKit.Slider(bottom,"PromiseSlider",700,98,250,30,T.cheese,null);
         var promise=UiKit.Label(bottom,"Promise","60秒",960,70,140,72,40,T.line,FontRole.Display,TextAlignmentOptions.Center);
         var start=UiKit.Button(bottom,"StartBusinessV2",ShopStrings.StartBusiness+" ▶",StickerKind.Primary,1120,26,436,112,52,null,FontRole.Display);
-        var dialog=UiKit.Stretch(root,"Dialog");UiKit.Fill(dialog,new Color(T.line.r,T.line.g,T.line.b,.45f),0,true);var group=UiKit.Group(dialog);group.alpha=0;group.interactable=group.blocksRaycasts=false;
-        var trainingCard=UiKit.Card(dialog,"TrainingDialog",560,200,800,620,T.paper);var training=trainingCard.gameObject.AddComponent<TrainingDialogView>();var ts=new SerializedObject(training);
+        var dialog=UiKit.Stretch(root,"Dialog");
+        UiKit.Fill(dialog,new Color(T.line.r,T.line.g,T.line.b,.45f),0,true);
+        var group=UiKit.Group(dialog);
+        group.alpha=0;
+        group.interactable=group.blocksRaycasts=false;
+        var trainingCard=UiKit.Card(dialog,"TrainingDialog",560,200,800,620,T.paper);
+        var training=trainingCard.gameObject.AddComponent<TrainingDialogView>();
+        var ts=new SerializedObject(training);
         Set(ts,"title",UiKit.Label(trainingCard,"Title","",36,28,700,52,36,T.line,FontRole.Display));
         UiKit.Label(trainingCard,"Note","営業の前半は休みになり、その間は配達できません。",36,88,720,32,20,T.inkSub,FontRole.Black);
         SetArray(ts,"abilities",Enumerable.Range(0,6).Select(i=>(Object)UiKit.Button(trainingCard,"Train"+i,"",StickerKind.Secondary,36+(i%2)*372,140+(i/2)*104,356,84,22,null)).ToArray());
@@ -274,12 +349,30 @@ public static class ScreenPrefabs
         ts.ApplyModifiedPropertiesWithoutUndo();
         var so=new SerializedObject(view);
         Set(so,"trainingDialog",training);
-        Set(so,"courierCard",Card<CourierCardView>("CourierCard"));Set(so,"applicantCard",Card<ApplicantCardView>("ApplicantCard"));Set(so,"kitchenCard",Card<KitchenCardView>("KitchenCard"));
-        Set(so,"facilityCard",Card<FacilityCardView>("FacilityCard"));Set(so,"findTeammateCard",Card<FindTeammateCardView>("FindTeammateCard"));Set(so,"managementPanel",Card<ManagementPanelView>("ManagementPanel"));
-        Set(so,"content",content);Set(so,"dialog",dialog);Set(so,"dayText",day);Set(so,"phaseText",phase);Set(so,"cashText",cash);Set(so,"reputationText",reputation);
-        Set(so,"hintText",hintText);Set(so,"noteText",note);Set(so,"forecastWages",values[0]);Set(so,"forecastFixed",values[1]);Set(so,"forecastMaintenance",values[2]);Set(so,"forecastTraining",values[3]);
+        Set(so,"courierCard",Card<CourierCardView>("CourierCard"));
+        Set(so,"applicantCard",Card<ApplicantCardView>("ApplicantCard"));
+        Set(so,"kitchenCard",Card<KitchenCardView>("KitchenCard"));
+        Set(so,"facilityCard",Card<FacilityCardView>("FacilityCard"));
+        Set(so,"findTeammateCard",Card<FindTeammateCardView>("FindTeammateCard"));
+        Set(so,"managementPanel",Card<ManagementPanelView>("ManagementPanel"));
+        Set(so,"content",content);
+        Set(so,"dialog",dialog);
+        Set(so,"dayText",day);
+        Set(so,"phaseText",phase);
+        Set(so,"cashText",cash);
+        Set(so,"reputationText",reputation);
+        Set(so,"hintText",hintText);
+        Set(so,"noteText",note);
+        Set(so,"forecastWages",values[0]);
+        Set(so,"forecastFixed",values[1]);
+        Set(so,"forecastMaintenance",values[2]);
+        Set(so,"forecastTraining",values[3]);
         Set(so,"promiseText",promise);Set(so,"messageText",message);Set(so,"cashDelta",cashDelta);Set(so,"reputationBar",reputationBar);
-        SetArray(so,"tabs",tabs);SetArray(so,"tabBadges",badges);Set(so,"startButton",start);Set(so,"menuButton",menuButton);Set(so,"promiseSlider",slider);
+        SetArray(so,"tabs",tabs);
+        SetArray(so,"tabBadges",badges);
+        Set(so,"startButton",start);
+        Set(so,"menuButton",menuButton);
+        Set(so,"promiseSlider",slider);
         so.ApplyModifiedPropertiesWithoutUndo();
         return Save(go,"HubView");
     }
@@ -289,25 +382,46 @@ public static class ScreenPrefabs
     {
         var go=Root("SettlementView",out var root);var view=go.AddComponent<SettlementView>();
         var sky=UiKit.Stretch(root,"Sky").gameObject.AddComponent<Image>();sky.sprite=ScreenArt("settlement_sky");sky.raycastTarget=true;
-        var sun=UiKit.Box(root,"Sun",1480,120,240,240);var s=sun.gameObject.AddComponent<Image>();s.sprite=UiKit.Circle;s.color=new Color(1,.92f,.70f,.9f);s.raycastTarget=false;
+        var sun=UiKit.Box(root,"Sun",1480,120,240,240);
+        var s=sun.gameObject.AddComponent<Image>();
+        s.sprite=UiKit.Circle;
+        s.color=new Color(1,.92f,.70f,.9f);
+        s.raycastTarget=false;
         var city=UiKit.Box(root,"Skyline",0,900,1920,180);
-        float[] xs={0,90,240,400,520,610,720,860,990,1110,1200,1390,1500,1720,1800};float[] hs={150,110,140,80,120,70,140,110,60,140,90,130,70,120,90};
-        for(int i=0;i<xs.Length;i++){var b=UiKit.Box(city,"B"+i,xs[i],180-hs[i],(i+1<xs.Length?xs[i+1]-xs[i]:120)+10,hs[i]);UiKit.Fill(b,new Color(.62f,.30f,.25f,.55f+.1f*(i%2)),0);}
+        float[] xs={0,90,240,400,520,610,720,860,990,1110,1200,1390,1500,1720,1800};
+        float[] hs={150,110,140,80,120,70,140,110,60,140,90,130,70,120,90};
+        for(int i=0;i<xs.Length;i++)
+        {
+            var b=UiKit.Box(city,"B"+i,xs[i],180-hs[i],(i+1<xs.Length?xs[i+1]-xs[i]:120)+10,hs[i]);
+            UiKit.Fill(b,new Color(.62f,.30f,.25f,.55f+.1f*(i%2)),0);
+        }
         var title=UiKit.Label(root,"Title","",120,48,1100,96,64,T.line,FontRole.Display);
         var badge=UiKit.Badge(root,"Closed",ShopStrings.Ended,760,76,T.paper,T.line,38,18);
         var legend=UiKit.Box(root,"Legend",120,150,700,40);
         string[] names={"売上","コスト","損益","成長と評判"};float x=0;var dots=new Image[4];
         for(int i=0;i<4;i++)
         {
-            var dot=UiKit.Box(legend,"Dot"+i,x,4,28,28);var e=dot.gameObject.AddComponent<Image>();e.sprite=UiKit.Circle;e.color=T.line;e.raycastTarget=false;
-            dots[i]=UiKit.Stretch(dot,"Fill",3,3,3,3).gameObject.AddComponent<Image>();dots[i].sprite=UiKit.Circle;dots[i].color=T.paper;dots[i].raycastTarget=false;
+            var dot=UiKit.Box(legend,"Dot"+i,x,4,28,28);
+            var e=dot.gameObject.AddComponent<Image>();
+            e.sprite=UiKit.Circle;
+            e.color=T.line;
+            e.raycastTarget=false;
+            dots[i]=UiKit.Stretch(dot,"Fill",3,3,3,3).gameObject.AddComponent<Image>();
+            dots[i].sprite=UiKit.Circle;
+            dots[i].color=T.paper;
+            dots[i].raycastTarget=false;
             var l=UiKit.Label(legend,"Name"+i,names[i],x+36,0,160,36,20,T.line,FontRole.Black);x+=36+l.GetPreferredValues().x+28;
         }
         var city2=UiKit.Label(root,"CityTomorrow","",120,962,1050,48,T.bodySize,T.line,FontRole.Black);
         var skip=UiKit.Button(root,"Skip","スキップ",StickerKind.Secondary,1296,896,150,80,24,null);
         var next=UiKit.Button(root,"NextDay","次の日へ ▶",StickerKind.Primary,1460,880,340,104,42,null,FontRole.Display);
         var so=new SerializedObject(view);
-        Set(so,"title",title);Set(so,"cityTomorrow",city2);Set(so,"titleBadge",badge);SetArray(so,"legendDots",dots);Set(so,"nextButton",next);Set(so,"skipButton",skip);
+        Set(so,"title",title);
+        Set(so,"cityTomorrow",city2);
+        Set(so,"titleBadge",badge);
+        SetArray(so,"legendDots",dots);
+        Set(so,"nextButton",next);
+        Set(so,"skipButton",skip);
         so.ApplyModifiedPropertiesWithoutUndo();
         return Save(go,"SettlementView");
     }
@@ -322,14 +436,24 @@ public static class ScreenPrefabs
         UiKit.Label(card,"Title","閉店しました",0,42,1000,98,64,T.line,FontRole.Display,TextAlignmentOptions.Center);
         var days=UiKit.Label(card,"Days","",0,140,1000,40,26,T.inkSub,FontRole.Black,TextAlignmentOptions.Center);
         string[] heads={"通算売上","最高の日の売上","配達した数"};var values=new TextMeshProUGUI[3];
-        for(int i=0;i<3;i++){var c=UiKit.Card(card,"Stat"+i,60+i*300,210,280,150,T.paperDeep,16,0,2);UiKit.Label(c,"Head",heads[i],0,18,280,32,20,T.inkSub,FontRole.Black,TextAlignmentOptions.Center);values[i]=UiKit.Label(c,"Value","",0,58,280,70,44,T.line,FontRole.Display,TextAlignmentOptions.Center);}
+        for(int i=0;i<3;i++)
+        {
+            var c=UiKit.Card(card,"Stat"+i,60+i*300,210,280,150,T.paperDeep,16,0,2);
+            UiKit.Label(c,"Head",heads[i],0,18,280,32,20,T.inkSub,FontRole.Black,TextAlignmentOptions.Center);
+            values[i]=UiKit.Label(c,"Value","",0,58,280,70,44,T.line,FontRole.Display,TextAlignmentOptions.Center);
+        }
         UiKit.Label(card,"TeamTitle","育てたスタッフ",60,392,600,40,26,T.line,FontRole.Display);
         var team=UiKit.Box(card,"Team",60,444,880,116);
         var records=UiKit.Label(card,"Records","",60,566,880,36,18,T.inkSub,FontRole.Black);
         var retry=UiKit.Button(card,"Retry","もう一度",StickerKind.Primary,520,620,420,100,40,null,FontRole.Display);
         var toTitle=UiKit.Button(card,"ToTitle","タイトルへ",StickerKind.Secondary,60,630,300,84,28,null,FontRole.Display);
         var so=new SerializedObject(view);
-        Set(so,"days",days);SetArray(so,"statValues",values);Set(so,"team",team);Set(so,"records",records);Set(so,"retry",retry);Set(so,"toTitle",toTitle);
+        Set(so,"days",days);
+        SetArray(so,"statValues",values);
+        Set(so,"team",team);
+        Set(so,"records",records);
+        Set(so,"retry",retry);
+        Set(so,"toTitle",toTitle);
         so.ApplyModifiedPropertiesWithoutUndo();
         return Save(go,"GameOverView");
     }

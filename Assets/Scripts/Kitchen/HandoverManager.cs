@@ -14,8 +14,22 @@ public sealed class HandoverManager : MonoBehaviour
     private readonly Dictionary<DeliveryPerson,List<Order>> bags=new();
     public event Action Changed;
     public string LastMessage {get;private set;}="";
-    private void OnEnable(){orders.OrdersChanged+=Prune;flow.Dispatched+=Dispatched;flow.TripsCleared+=Clear;clock.OnDayStarted+=Clear;clock.OnClosed+=Clear;}
-    private void OnDisable(){orders.OrdersChanged-=Prune;flow.Dispatched-=Dispatched;flow.TripsCleared-=Clear;clock.OnDayStarted-=Clear;clock.OnClosed-=Clear;}
+    private void OnEnable()
+    {
+        orders.OrdersChanged+=Prune;
+        flow.Dispatched+=Dispatched;
+        flow.TripsCleared+=Clear;
+        clock.OnDayStarted+=Clear;
+        clock.OnClosed+=Clear;
+    }
+    private void OnDisable()
+    {
+        orders.OrdersChanged-=Prune;
+        flow.Dispatched-=Dispatched;
+        flow.TripsCleared-=Clear;
+        clock.OnDayStarted-=Clear;
+        clock.OnClosed-=Clear;
+    }
     public IReadOnlyList<Order> BagOf(DeliveryPerson person)=>person!=null && bags.TryGetValue(person,out var bag)?bag:Array.Empty<Order>();
     public bool IsBagged(Order order)=>bags.Values.Any(b=>b.Contains(order));
     public DeliveryPerson Holder(Order order)=>bags.FirstOrDefault(p=>p.Value.Contains(order)).Key;

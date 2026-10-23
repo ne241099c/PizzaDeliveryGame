@@ -10,13 +10,21 @@ public sealed class GameOverView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI[] statValues;
     [SerializeField] private RectTransform team;
     [SerializeField] private StickerButton retry,toTitle;
-    private ScreenRouter router;private CampaignManager campaign;private CourierRoster roster;private KitchenCrew crew;private CampaignSaveManager save;
+    private ScreenRouter router;
+    private CampaignManager campaign;
+    private CourierRoster roster;
+    private KitchenCrew crew;
+    private CampaignSaveManager save;
     private UITheme T=>UiKit.T;private ScreenId last=(ScreenId)(-1);
     public StickerButton Retry=>retry;
     public StickerButton ToTitle=>toTitle;
     private void Awake()
     {
-        router=FindFirstObjectByType<ScreenRouter>();campaign=FindFirstObjectByType<CampaignManager>();roster=FindFirstObjectByType<CourierRoster>();crew=FindFirstObjectByType<KitchenCrew>();save=FindFirstObjectByType<CampaignSaveManager>();
+        router=FindFirstObjectByType<ScreenRouter>();
+        campaign=FindFirstObjectByType<CampaignManager>();
+        roster=FindFirstObjectByType<CourierRoster>();
+        crew=FindFirstObjectByType<KitchenCrew>();
+        save=FindFirstObjectByType<CampaignSaveManager>();
     }
     private void Start()
     {

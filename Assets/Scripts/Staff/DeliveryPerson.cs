@@ -42,13 +42,28 @@ public class DeliveryPerson : ISerializationCallbackReceiver
     public void SetAbility(CourierAbility ability,float value)
     {
         switch(ability)
-        {case CourierAbility.Driving:Driving=value;break;case CourierAbility.LocalKnowledge:LocalKnowledge=value;break;case CourierAbility.Service:Service=value;break;case CourierAbility.Endurance:Endurance=value;break;case CourierAbility.Safety:Safety=value;break;case CourierAbility.Capacity:Capacity=Mathf.FloorToInt(value);break;}
+        {
+            case CourierAbility.Driving:Driving=value;
+            break;
+            case CourierAbility.LocalKnowledge:LocalKnowledge=value;
+            break;
+            case CourierAbility.Service:Service=value;
+            break;
+            case CourierAbility.Endurance:Endurance=value;
+            break;
+            case CourierAbility.Safety:Safety=value;
+            break;
+            case CourierAbility.Capacity:Capacity=Mathf.FloorToInt(value);
+            break;
+        }
     }
     public float Potential(CourierAbility ability) {EnsureData();return ability==CourierAbility.Capacity?capacityPotential:potentials[(int)ability];}
     public float Experience(CourierAbility ability) {EnsureData();return ability==CourierAbility.Capacity?0:experience[(int)ability];}
     public void SetPotential(CourierAbility ability,float value)
     {
-        EnsureData();if(ability==CourierAbility.Capacity)capacityPotential=Mathf.Clamp(Mathf.FloorToInt(value),1,2);else potentials[(int)ability]=Mathf.Clamp01(value);
+        EnsureData();
+        if(ability==CourierAbility.Capacity)capacityPotential=Mathf.Clamp(Mathf.FloorToInt(value),1,2);
+        else potentials[(int)ability]=Mathf.Clamp01(value);
         SetAbility(ability,Ability(ability));if(ability!=CourierAbility.Capacity && Ability(ability)>=Potential(ability))experience[(int)ability]=0;
     }
     public void SetExperience(CourierAbility ability,float value)
@@ -57,10 +72,17 @@ public class DeliveryPerson : ISerializationCallbackReceiver
     {for(int i=0;i<5;i++)SetPotential((CourierAbility)i,Ability((CourierAbility)i)+bonus);SetPotential(CourierAbility.Capacity,2);}
     public DeliveryPerson Clone() { _=Id;return JsonUtility.FromJson<DeliveryPerson>(JsonUtility.ToJson(this)); }
     private void EnsureData()
-    {if(potentials==null || potentials.Length!=5)potentials=new[]{1f,1f,1f,1f,1f};if(experience==null || experience.Length!=5)experience=new float[5];}
+    {
+        if(potentials==null || potentials.Length!=5)potentials=new[]{1f,1f,1f,1f,1f};
+        if(experience==null || experience.Length!=5)experience=new float[5];
+    }
     public void OnBeforeSerialize() { }
     public void OnAfterDeserialize()
-    {EnsureData();capacityPotential=Mathf.Clamp(capacityPotential,1,2);for(int i=0;i<6;i++)SetPotential((CourierAbility)i,Potential((CourierAbility)i));}
+    {
+        EnsureData();
+        capacityPotential=Mathf.Clamp(capacityPotential,1,2);
+        for(int i=0;i<6;i++)SetPotential((CourierAbility)i,Potential((CourierAbility)i));
+    }
     public DeliveryPerson(string name,float driving,float knowledge,int capacity,float service,float endurance,float safety):this(name,knowledge)
     {Driving=driving;Capacity=capacity;Service=service;Endurance=endurance;Safety=safety;}
     public DeliveryPerson(string name,float skillLevel) {Name=name;LocalKnowledge=skillLevel;Status=DeliveryStatus.Idle;}

@@ -104,7 +104,12 @@ public sealed partial class CookingManager
         var order=job.Order;int oldBench=job.Bench;
         if(handover!=null && handover.IsBagged(order))handover.Unbag(order);
         Release(job,at);order.Baking=BakingState.Waiting;order.Stars=0;
-        if(orders.SelectedOrders.Contains(order)){var remaining=orders.SelectedOrders.Where(o=>o!=order).ToArray();if(remaining.Length==0)orders.ClearSelection();else orders.SelectForDispatch(remaining);}
+        if(orders.SelectedOrders.Contains(order))
+        {
+            var remaining=orders.SelectedOrders.Where(o=>o!=order).ToArray();
+            if(remaining.Length==0)orders.ClearSelection();
+            else orders.SelectForDispatch(remaining);
+        }
         redoCounts[order]=RedoCount(order)+1;redoPriority.Add(order);redoQueuedAt[order]=at;
         FindFirstObjectByType<BusinessEconomy>().ChargeWaste(WasteCost);
         if(!automatic)

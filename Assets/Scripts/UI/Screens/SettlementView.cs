@@ -14,8 +14,18 @@ public sealed class SettlementView : MonoBehaviour
     [SerializeField] private RectTransform titleBadge;
     [SerializeField] private Image[] legendDots;
     [SerializeField] private StickerButton nextButton,skipButton;
-    private ScreenRouter router;private GameClock clock;private CampaignManager campaign;private BusinessEconomy economy;private DayStats stats;private CourierRoster roster;
-    private KitchenCrew crew;private DeliveryFlowController flow;private ScoreManager score;private ReputationManager reputation;private CourierProgression progression;private CookingManager cooking;
+    private ScreenRouter router;
+    private GameClock clock;
+    private CampaignManager campaign;
+    private BusinessEconomy economy;
+    private DayStats stats;
+    private CourierRoster roster;
+    private KitchenCrew crew;
+    private DeliveryFlowController flow;
+    private ScoreManager score;
+    private ReputationManager reputation;
+    private CourierProgression progression;
+    private CookingManager cooking;
     private UITheme T=>UiKit.T;
     private RectTransform receipt,right;
     private readonly List<DeliveryTrip> trips=new();private float openingReputation;
@@ -28,9 +38,18 @@ public sealed class SettlementView : MonoBehaviour
 
     private void Awake()
     {
-        router=FindFirstObjectByType<ScreenRouter>();clock=FindFirstObjectByType<GameClock>();campaign=FindFirstObjectByType<CampaignManager>();economy=FindFirstObjectByType<BusinessEconomy>();
-        stats=FindFirstObjectByType<DayStats>();roster=FindFirstObjectByType<CourierRoster>();crew=FindFirstObjectByType<KitchenCrew>();flow=FindFirstObjectByType<DeliveryFlowController>();
-        score=FindFirstObjectByType<ScoreManager>();reputation=FindFirstObjectByType<ReputationManager>();progression=FindFirstObjectByType<CourierProgression>();cooking=FindFirstObjectByType<CookingManager>();
+        router=FindFirstObjectByType<ScreenRouter>();
+        clock=FindFirstObjectByType<GameClock>();
+        campaign=FindFirstObjectByType<CampaignManager>();
+        economy=FindFirstObjectByType<BusinessEconomy>();
+        stats=FindFirstObjectByType<DayStats>();
+        roster=FindFirstObjectByType<CourierRoster>();
+        crew=FindFirstObjectByType<KitchenCrew>();
+        flow=FindFirstObjectByType<DeliveryFlowController>();
+        score=FindFirstObjectByType<ScoreManager>();
+        reputation=FindFirstObjectByType<ReputationManager>();
+        progression=FindFirstObjectByType<CourierProgression>();
+        cooking=FindFirstObjectByType<CookingManager>();
     }
     private void Start(){skipButton.Button.onClick.AddListener(RevealAll);nextButton.Button.onClick.AddListener(Next);}
     private void OnEnable(){if(clock==null)return;clock.OnDayStarted+=Opening;clock.OnDayEnded+=Closed;flow.Dispatched+=Trip;}
@@ -55,10 +74,19 @@ public sealed class SettlementView : MonoBehaviour
 
     private void BuildContent()
     {
-        if(receipt!=null)Destroy(receipt.gameObject);if(right!=null)Destroy(right.gameObject);rows.Clear();built=true;revealed=0;shownAt=Time.unscaledTime;
+        if(receipt!=null)Destroy(receipt.gameObject);
+        if(right!=null)Destroy(right.gameObject);
+        rows.Clear();
+        built=true;
+        revealed=0;
+        shownAt=Time.unscaledTime;
         var root=(RectTransform)transform;var l=economy.Ledger;
         title.text=$"{campaign.DayNumber}日目 おつかれさま!";titleBadge.anchoredPosition=new Vector2(120+title.GetPreferredValues().x+24,-76);
-        if(campaign.IsBankrupt){title.text=$"{campaign.DayNumber}日目 閉店です…";UiKit.SetBadge(titleBadge,"所持金がマイナス",T.berry,Color.white);}else UiKit.SetBadge(titleBadge,ShopStrings.Ended,T.paper,T.line);
+        if(campaign.IsBankrupt)
+        {
+            title.text=$"{campaign.DayNumber}日目 閉店です…";
+            UiKit.SetBadge(titleBadge,"所持金がマイナス",T.berry,Color.white);
+        }else UiKit.SetBadge(titleBadge,ShopStrings.Ended,T.paper,T.line);
         var save=FindFirstObjectByType<CampaignSaveManager>();
         if(!campaign.IsBankrupt && save!=null && save.NewRecords.Count>0)UiKit.SetBadge(titleBadge,"新記録！ "+string.Join("・",save.NewRecords),T.cheese,T.line);
         receipt=UiKit.Card(root,"Receipt",120,204,800,706,T.paper,16,8,3);
@@ -81,7 +109,8 @@ public sealed class SettlementView : MonoBehaviour
         var profitLabel=UiKit.Label(receipt,"ProfitName","今日の損益",44,y+40,300,60,30,T.line,FontRole.Black);
         var profit=UiKit.Label(receipt,"Profit","",300,y+16,420,96,T.titleSize,l.Profit>=0?T.basil:T.berry,FontRole.Display,TextAlignmentOptions.MidlineRight);
         rows.Add((profitLabel.rectTransform,2,0,null,null));rows.Add((profit.rectTransform,2,l.Profit,profit,"signed"));
-        var badge=UiKit.Badge(receipt,"ProfitBadge",l.Profit>=0?"▲ 黒字":"▼ 赤字",650,y+96,l.Profit>=0?T.basil:T.berry,Color.white,40,20);rows.Add((badge,2,0,null,null));
+        var badge=UiKit.Badge(receipt,"ProfitBadge",l.Profit>=0?"▲ 黒字":"▼ 赤字",650,y+96,l.Profit>=0?T.basil:T.berry,Color.white,40,20);
+        rows.Add((badge,2,0,null,null));
         var cash=UiKit.Label(receipt,"Cash",$"所持金  <color={UiKit.Html(T.inkSub)}>{UiKit.Yen(economy.OpeningCash)}</color>  →  {UiKit.Yen(economy.Cash)}",44,y+136,720,60,32,T.line,FontRole.Display);
         rows.Add((cash.rectTransform,2,0,null,null));
         // zigzag bottom
@@ -94,7 +123,8 @@ public sealed class SettlementView : MonoBehaviour
     private void Row(RectTransform card,ref float y,int page,string name,string detail,decimal amount,bool small=false,bool emphasis=false)
     {
         var row=UiKit.Box(card,"Row_"+name,36,y,728,emphasis?56:40);
-        var n=UiKit.Label(row,"Name",name,8,0,220,emphasis?50:40,emphasis?T.headingSize:T.subheadingSize,T.line,FontRole.Display);float w=n.GetPreferredValues().x;
+        var n=UiKit.Label(row,"Name",name,8,0,220,emphasis?50:40,emphasis?T.headingSize:T.subheadingSize,T.line,FontRole.Display);
+        float w=n.GetPreferredValues().x;
         UiKit.Label(row,"Detail",detail,16+w,4,Mathf.Max(1,424-w),emphasis?44:32,T.captionSize,T.inkSub,FontRole.Black);
         var v=UiKit.Label(row,"Value","",440,0,288,emphasis?50:40,emphasis?T.headingSize:T.subheadingSize,amount<0?T.berry:T.line,FontRole.Display,TextAlignmentOptions.MidlineRight);
         if(emphasis){var u=UiKit.Box(row,"Under",0,54,728,3);UiKit.Fill(u,T.line,0);}else UiKit.DashedLine(row,0,40,728,T.disabled,6,5,2);
@@ -104,7 +134,9 @@ public sealed class SettlementView : MonoBehaviour
     {
         var row=UiKit.Box(card,"Sub_"+name,60,y,704,32);UiKit.Label(row,"Name",name,8,0,200,32,T.bodySize,T.line,FontRole.Black);
         UiKit.Label(row,"Detail",detail,150,0,300,32,T.captionSize,T.inkSub,FontRole.Black);
-        var v=UiKit.Label(row,"Value","",404,0,300,32,T.bodySize,T.line,FontRole.Bold,TextAlignmentOptions.MidlineRight);rows.Add((row,page,amount,v,"yen"));y+=32;
+        var v=UiKit.Label(row,"Value","",404,0,300,32,T.bodySize,T.line,FontRole.Bold,TextAlignmentOptions.MidlineRight);
+        rows.Add((row,page,amount,v,"yen"));
+        y+=32;
     }
     private void BuildGrowth()
     {
@@ -132,7 +164,12 @@ public sealed class SettlementView : MonoBehaviour
         UiKit.Label(card,"RepNote","期限内が多いと、評判が上がり、注文が増えます",34,180,360,44,15,T.inkSub,FontRole.Black,TextAlignmentOptions.TopLeft,true);
         var divider=UiKit.Box(card,"Divider",400,24,3,184);UiKit.Fill(divider,T.paperDeep,0);
         UiKit.Label(card,"PizzaTitle","ピザの出来",430,18,300,44,30,T.line,FontRole.Display);
-        for(int s=3;s>=1;s--){float x=430+(3-s)*110;UiKit.Label(card,"Stars"+s,new string('★',s),x,70,110,36,22,T.cheese,FontRole.Black,TextAlignmentOptions.Center);UiKit.Label(card,"Count"+s,stats.StarCounts[s].ToString(),x,104,110,56,40,T.line,FontRole.Display,TextAlignmentOptions.Center);}
+        for(int s=3;s>=1;s--)
+        {
+            float x=430+(3-s)*110;
+            UiKit.Label(card,"Stars"+s,new string('★',s),x,70,110,36,22,T.cheese,FontRole.Black,TextAlignmentOptions.Center);
+            UiKit.Label(card,"Count"+s,stats.StarCounts[s].ToString(),x,104,110,56,40,T.line,FontRole.Display,TextAlignmentOptions.Center);
+        }
         string staff=string.Join("、",cooking.PackedByStaff.Select(p=>$"{p.Key} は {p.Value}枚"));
         UiKit.Label(card,"Makers",$"自分で作ったのは {cooking.PackedByPlayer}枚"+(staff.Length>0?"、"+staff:""),430,172,370,48,16,T.inkSub,FontRole.Black,TextAlignmentOptions.TopLeft,true);
     }

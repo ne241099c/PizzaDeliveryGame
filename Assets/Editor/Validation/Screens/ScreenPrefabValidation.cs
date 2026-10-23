@@ -26,12 +26,17 @@ public static class ScreenPrefabValidation
         var hubButtons=hub.GetComponentsInChildren<StickerButton>(true);
         hubButtons.First(b=>b.name=="Tab2").Button.onClick.Invoke();Check(hub.SelectedTab==2,"facility tab opens");
         hubButtons.First(b=>b.name=="Tab0").Button.onClick.Invoke();Check(hub.SelectedTab==0,"staff tab opens");
-        var spawner=Find<OrderSpawner>();float promise=spawner.PromiseSeconds;var slider=hub.GetComponentsInChildren<UnityEngine.UI.Slider>(true).First(x=>x.name=="PromiseSlider");
+        var spawner=Find<OrderSpawner>();
+        float promise=spawner.PromiseSeconds;
+        var slider=hub.GetComponentsInChildren<UnityEngine.UI.Slider>(true).First(x=>x.name=="PromiseSlider");
         UiKit.SyncPromise(slider,spawner,Find<GameClock>()); // the view syncs its range every frame; this call is in the same frame
-        slider.value=Mathf.Clamp(promise+10,slider.minValue,slider.maxValue);Check(Mathf.Approximately(spawner.PromiseSeconds,slider.value),"promise slider sets the promise");spawner.SetPromiseSeconds(promise);
+        slider.value=Mathf.Clamp(promise+10,slider.minValue,slider.maxValue);
+        Check(Mathf.Approximately(spawner.PromiseSeconds,slider.value),"promise slider sets the promise");
+        spawner.SetPromiseSeconds(promise);
         Check(VisualValidation.LayoutReport()=="","hub layout: "+VisualValidation.LayoutReport());
         var startClock=Find<GameClock>();bool startTick=startClock.AutomaticTick;startClock.AutomaticTick=false;
-        hubButtons.First(b=>b.name=="StartBusinessV2").Button.onClick.Invoke();Check(startClock.Phase==DayPhase.Open && router.Current==ScreenId.Business,"営業開始 opens the shop");
+        hubButtons.First(b=>b.name=="StartBusinessV2").Button.onClick.Invoke();
+        Check(startClock.Phase==DayPhase.Open && router.Current==ScreenId.Business,"営業開始 opens the shop");
         startClock.AutomaticTick=startTick;
 
         // 今日のまとめ (4-3): a day with no deliveries, then the buttons on the receipt screen.

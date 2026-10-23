@@ -35,7 +35,8 @@ public static class ScreenValidation
             var order=M7Validation.ReadyOrder("Goal1","Screen route",clock.ElapsedSeconds,100);list.AddOrder(order);
             Check(list.SelectOnly(order) && roster.SelectForDispatch(roster.People[0]),"a ready order and an idle courier can be selected");
             float before=clock.ElapsedSeconds;clock.Advance(1);Check(clock.ElapsedSeconds>before,"planning does not pause game time");
-            planner.DispatchWithSuggestion();Check(list.SelectedOrders.Count==0 && !roster.People[0].IsAvailable,"dispatch sends the courier and clears the selection");
+            planner.DispatchWithSuggestion();
+            Check(list.SelectedOrders.Count==0 && !roster.People[0].IsAvailable,"dispatch sends the courier and clears the selection");
             clock.Advance(clock.BusinessDuration+1000);Check(router.Current==ScreenId.Settlement,"last return and settlement event");
         }
         finally{spawner.enabled=spawning;}
@@ -46,11 +47,15 @@ public static class ScreenValidation
         try
         {
             campaign.StartBusiness();menu.ShowMenu();Check(menu.MenuOpen && !clock.AutomaticTick,"menu pauses the automatic clock");
-            menu.ShowHelp();Check(menu.HelpOpen,"help opens over menu");menu.CloseHelp();Check(menu.MenuOpen && !clock.AutomaticTick,"closing help keeps the pause");
+            menu.ShowHelp();
+            Check(menu.HelpOpen,"help opens over menu");
+            menu.CloseHelp();
+            Check(menu.MenuOpen && !clock.AutomaticTick,"closing help keeps the pause");
             menu.RequestTitle();Check(menu.ConfirmationOpen,"leaving during business asks first");
             var buttons=menu.GetComponentsInChildren<StickerButton>(true).Concat(UnityEngine.Object.FindObjectsByType<StickerButton>(FindObjectsInactive.Include,FindObjectsSortMode.None)).ToArray();
             Check(buttons.Any(b=>b.name=="ModalConfirm"),"the confirmation offers タイトルへ");
-            buttons.First(b=>b.name=="ModalCancel").Button.onClick.Invoke();Check(!menu.ConfirmationOpen && menu.MenuOpen && router.Current==ScreenId.Business,"営業に戻る keeps the business day");
+            buttons.First(b=>b.name=="ModalCancel").Button.onClick.Invoke();
+            Check(!menu.ConfirmationOpen && menu.MenuOpen && router.Current==ScreenId.Business,"営業に戻る keeps the business day");
             menu.Resume();Check(!menu.MenuOpen && clock.AutomaticTick,"resume restores ticking");
         }
         finally{menu.Resume();clock.AutomaticTick=automatic;save.StartNewGame();}

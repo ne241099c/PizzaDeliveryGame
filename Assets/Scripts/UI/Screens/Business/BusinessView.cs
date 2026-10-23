@@ -15,9 +15,18 @@ public enum ShopZone { Kitchen, Handover, Dispatch }
 /// pins follow the data and are built here.</summary>
 public sealed partial class BusinessView : MonoBehaviour
 {
-    private ScreenRouter router;private GameClock clock;private BusinessEconomy economy;private ReputationManager reputation;private OrderSpawner spawner;
+    private ScreenRouter router;
+    private GameClock clock;
+    private BusinessEconomy economy;
+    private ReputationManager reputation;
+    private OrderSpawner spawner;
     private OrderBook orders;private CookingManager cooking;private KitchenCrew crew;private CourierRoster roster;private HandoverManager handover;
-    private DeliveryFlowController flow;private DeliveryPlanner planner;private MapManager map;private GameMenu menu;private FacilityManager facilities;private CampaignManager campaign;
+    private DeliveryFlowController flow;
+    private DeliveryPlanner planner;
+    private MapManager map;
+    private GameMenu menu;
+    private FacilityManager facilities;
+    private CampaignManager campaign;
     private UITheme T=>UiKit.T;
     [Header("Frame")]
     [SerializeField] private RectTransform mapArea,world,hud,rail,railContent,dispatch,dragLayer,toasts,zoneKnob,cashDelta;
@@ -38,9 +47,22 @@ public sealed partial class BusinessView : MonoBehaviour
 
     private void Awake()
     {
-        router=Find<ScreenRouter>();clock=Find<GameClock>();economy=Find<BusinessEconomy>();reputation=Find<ReputationManager>();spawner=Find<OrderSpawner>();
-        orders=Find<OrderBook>();cooking=Find<CookingManager>();crew=Find<KitchenCrew>();roster=Find<CourierRoster>();handover=Find<HandoverManager>();
-        flow=Find<DeliveryFlowController>();planner=Find<DeliveryPlanner>();map=Find<MapManager>();menu=Find<GameMenu>();facilities=Find<FacilityManager>();campaign=Find<CampaignManager>();
+        router=Find<ScreenRouter>();
+        clock=Find<GameClock>();
+        economy=Find<BusinessEconomy>();
+        reputation=Find<ReputationManager>();
+        spawner=Find<OrderSpawner>();
+        orders=Find<OrderBook>();
+        cooking=Find<CookingManager>();
+        crew=Find<KitchenCrew>();
+        roster=Find<CourierRoster>();
+        handover=Find<HandoverManager>();
+        flow=Find<DeliveryFlowController>();
+        planner=Find<DeliveryPlanner>();
+        map=Find<MapManager>();
+        menu=Find<GameMenu>();
+        facilities=Find<FacilityManager>();
+        campaign=Find<CampaignManager>();
     }
     private void Start(){Bind();ShowZone(ShopZone.Kitchen,true);}
     private static TComp Find<TComp>() where TComp:UnityEngine.Object=>FindFirstObjectByType<TComp>();
@@ -55,7 +77,15 @@ public sealed partial class BusinessView : MonoBehaviour
         if(router!=null)router.Changed-=ScreenChanged;
         if(map!=null)map.PointerInputEnabled=true;
     }
-    private void DayStarted(){numbers.Clear();nextNumber=1;observedOrders.Clear();cancelledNotices.Clear();dispatchOrdersSignature=null;ShowZone(ShopZone.Kitchen,true);}
+    private void DayStarted()
+    {
+        numbers.Clear();
+        nextNumber=1;
+        observedOrders.Clear();
+        cancelledNotices.Clear();
+        dispatchOrdersSignature=null;
+        ShowZone(ShopZone.Kitchen,true);
+    }
     private void AssignNumbers(){foreach(var o in orders.Orders){observedOrders.Add(o);if(!numbers.ContainsKey(o))numbers[o]=nextNumber++;}}
     public int Number(Order o){if(!numbers.TryGetValue(o,out int n)){AssignNumbers();numbers.TryGetValue(o,out n);}return n;}
     private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}}
@@ -120,21 +150,34 @@ public sealed partial class BusinessView : MonoBehaviour
     {
         int seconds=Mathf.CeilToInt(clock.RemainingSeconds);
         string phase=clock.Phase==DayPhase.Open?ShopStrings.Open:ShopStrings.Closed;
-        dayText.text=clock.Phase==DayPhase.Closed?$"閉店・帰還待ち ×{clock.ClosedPlaybackSpeed:0.#}":$"{campaign.DayNumber}{ShopStrings.Day} {phase}";timeText.text=$"{seconds/60}:{seconds%60:00}";
+        dayText.text=clock.Phase==DayPhase.Closed?$"閉店・帰還待ち ×{clock.ClosedPlaybackSpeed:0.#}":$"{campaign.DayNumber}{ShopStrings.Day} {phase}";
+        timeText.text=$"{seconds/60}:{seconds%60:00}";
         float fraction=clock.RemainingSeconds/clock.BusinessDuration;timeBar.Set(fraction,-1,fraction<=T.closingWarning?T.berry:T.basil);
-        cashText.text=UiKit.Yen(economy.Cash);UiKit.SetBadge(cashDelta,"▲ +"+UiKit.Yen(economy.DailyRevenue).Replace("¥",""),T.basil,Color.white);cashDelta.anchoredPosition=new Vector2(446+Mathf.Clamp(cashText.textBounds.size.x,0,200)+8,-30);
+        cashText.text=UiKit.Yen(economy.Cash);
+        UiKit.SetBadge(cashDelta,"▲ +"+UiKit.Yen(economy.DailyRevenue).Replace("¥",""),T.basil,Color.white);
+        cashDelta.anchoredPosition=new Vector2(446+Mathf.Clamp(cashText.textBounds.size.x,0,200)+8,-30);
         reputationText.text=Mathf.RoundToInt(reputation.Value).ToString();reputationBar.Set(reputation.Value/reputation.Maximum);
         promiseText.text=$"{spawner.PromiseSeconds:F0}<size=20>秒</size>";UiKit.SyncPromise(promiseSlider,spawner,clock);
     }
 
     // ---- ticket rail ----
-    private readonly List<(Order order,RectTransform card)> tickets=new();private string railSignature="";
+    /// <summary>A ticket on the rail and the parts that change while it waits.</summary>
+    private sealed class Ticket {public Order Order;public RectTransform Card,Status;public TextMeshProUGUI Seconds;public UiBar Deadline;public Image Edge;}
+    private readonly List<Ticket> tickets=new();private string railSignature="";
     private void BuildRail()
     {
         rail=UiKit.Box(transform,"TicketRail",0,124,1920,196);
-        var rod=UiKit.Box(rail,"Rod",24,8,1872,14);UiKit.Fill(rod,T.steel,7);var rodEdge=UiKit.Stretch(rod,"Edge",0,0,0,0);UiKit.Fill(rodEdge,new Color(0,0,0,0),0);
+        var rod=UiKit.Box(rail,"Rod",24,8,1872,14);
+        UiKit.Fill(rod,T.steel,7);
+        var rodEdge=UiKit.Stretch(rod,"Edge",0,0,0,0);
+        UiKit.Fill(rodEdge,new Color(0,0,0,0),0);
         var viewport=UiKit.Box(rail,"Viewport",24,10,1872,186);viewport.gameObject.AddComponent<RectMask2D>().padding=new Vector4(-4,-4,-4,-10);
-        railContent=UiKit.Box(viewport,"Content",0,0,10,186);var scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.content=railContent;scroll.horizontal=true;scroll.vertical=false;scroll.movementType=ScrollRect.MovementType.Clamped;
+        railContent=UiKit.Box(viewport,"Content",0,0,10,186);
+        var scroll=viewport.gameObject.AddComponent<ScrollRect>();
+        scroll.content=railContent;
+        scroll.horizontal=true;
+        scroll.vertical=false;
+        scroll.movementType=ScrollRect.MovementType.Clamped;
     }
     private void RefreshRail()
     {
@@ -142,34 +185,40 @@ public sealed partial class BusinessView : MonoBehaviour
         string sig=string.Join(",",shown.Select(o=>o.Id));
         if(sig!=railSignature)
         {
-            railSignature=sig;foreach(var t in tickets)Destroy(t.card.gameObject);tickets.Clear();
-            for(int i=0;i<shown.Count;i++)tickets.Add((shown[i],TicketCard(railContent,shown[i],i*248,6)));
+            railSignature=sig;foreach(var t in tickets)Destroy(t.Card.gameObject);tickets.Clear();
+            for(int i=0;i<shown.Count;i++)tickets.Add(TicketCard(railContent,shown[i],i*248,6));
             railContent.sizeDelta=new Vector2(Mathf.Max(10,shown.Count*248),186);
         }
-        foreach(var (order,card) in tickets)UpdateTicket(order,card);
+        foreach(var ticket in tickets)UpdateTicket(ticket);
     }
-    private RectTransform TicketCard(Transform parent,Order order,float x,float y)
+    private Ticket TicketCard(Transform parent,Order order,float x,float y)
     {
         var card=UiKit.Card(parent,"Ticket_"+Number(order),x,y,232,160,T.paper,12);
+        var ticket=new Ticket{Order=order,Card=card,Edge=card.GetComponent<UiCard>().Edge};
         var clip=UiKit.Box(card,"Clip",100,-12,32,22);UiKit.Fill(clip,T.steel,6);
         UiKit.Label(card,"Number","#"+Number(order),16,14,80,30,20,T.line,FontRole.Bold);
-        UiKit.Badge(card,"Status","順番待ち",96,14,T.disabled,T.line,28,15);
+        ticket.Status=UiKit.Badge(card,"Status","順番待ち",96,14,T.disabled,T.line,28,15);
         UiKit.Label(card,"Pizza",order.PizzaName,16,48,200,40,28,T.line,FontRole.Display);
-        for(int i=0;i<order.RequiredToppings.Length;i++){var t=order.RequiredToppings[i];UiKit.Icon(card,"Ingredient"+i,t==Topping.Squid?"tray_squid":t==Topping.Shrimp?"tray_shrimp":t==Topping.Pepperoni?"tray_pepperoni":"tray_basil",168+i*24,86,24,Color.white);}
+        for(int i=0;i<order.RequiredToppings.Length;i++)
+        {
+            var t=order.RequiredToppings[i];
+            UiKit.Icon(card,"Ingredient"+i,t==Topping.Squid?"tray_squid":t==Topping.Shrimp?"tray_shrimp":t==Topping.Pepperoni?"tray_pepperoni":"tray_basil",168+i*24,86,24,Color.white);
+        }
         UiKit.Label(card,"Destination","→ "+ShopStrings.House(map,order.DestinationNodeId),16,88,200,30,19,T.inkSub,FontRole.Black);
-        UiKit.Bar(card,"Deadline",16,134,200,14,T.basil);
-        UiKit.Label(card,"Seconds","",16,112,200,24,T.captionSize,T.line,FontRole.Black);
+        ticket.Deadline=UiKit.Bar(card,"Deadline",16,134,200,14,T.basil);
+        ticket.Seconds=UiKit.Label(card,"Seconds","",16,112,200,24,T.captionSize,T.line,FontRole.Black);
         var source=card.gameObject.AddComponent<DragSource>();var hit=card.gameObject.AddComponent<Image>();hit.color=new Color(0,0,0,0);
         source.Payload=()=>order.Baking==BakingState.Waiting && cooking.ManualControlEnabled?new DragPayload{Kind=DragKind.Ticket,Order=order,Sprite="ticket",Size=new Vector2(150,110)}:null;
         source.Clicked=()=>ClickTicket(order);
-        return card;
+        return ticket;
     }
-    private void UpdateTicket(Order order,RectTransform card)
+    private void UpdateTicket(Ticket ticket)
     {
+        var order=ticket.Order;
         float left=order.Deadline-clock.ElapsedSeconds,fraction=Mathf.Clamp01(left/Mathf.Max(.01f,order.TimeLimit));
         bool urgent=fraction<=T.deadlineUrgent;
-        card.Find("Seconds").GetComponent<TextMeshProUGUI>().text=OrderCountdown(order);
-        card.Find("Deadline").GetComponent<UiBar>().Set(fraction,-1,T.DeadlineColor(fraction));
+        ticket.Seconds.text=OrderCountdown(order);
+        ticket.Deadline.Set(fraction,-1,T.DeadlineColor(fraction));
         string text;Color fill,ink=Color.white;
         var job=cooking.JobFor(order);
         if(cooking.IsRedo(order)){text=ShopStrings.Redo;fill=T.cheese;ink=T.line;}
@@ -183,8 +232,10 @@ public sealed partial class BusinessView : MonoBehaviour
         else if(job.Stage==PizzaStage.Baking){text="焼いている";fill=T.cheese;ink=T.line;}
         else if(job.Worker==PizzaWorker.Player){text="あなたが調理中";fill=T.tomato;}
         else{text=(job.Staff!=null?job.Staff.Name:"内勤")+" 調理中";fill=T.info;}
-        var badge=(RectTransform)card.Find("Status");UiKit.SetBadge(badge,text,fill,ink);badge.anchoredPosition=new Vector2(232-16-badge.sizeDelta.x,-14);
-        card.Find("Edge").GetComponent<Image>().color=urgent?T.berry:T.line;
+        var badge=ticket.Status;
+        UiKit.SetBadge(badge,text,fill,ink);
+        badge.anchoredPosition=new Vector2(232-16-badge.sizeDelta.x,-14);
+        ticket.Edge.color=urgent?T.berry:T.line;
     }
     private void ClickTicket(Order order)
     {
@@ -202,7 +253,9 @@ public sealed partial class BusinessView : MonoBehaviour
         bool dispatching=zone==ShopZone.Dispatch;
         worldGroup.alpha=dispatching?0:1;worldGroup.blocksRaycasts=worldGroup.interactable=!dispatching;
         UiKit.Show(dispatch,dispatching);UiKit.Show(rail,!dispatching); // the top bar (time, money, promise) stays on both views
-        UiKit.Show(zoneTabs[1],false);knobTarget=dispatching?ToggleW/2+3:6;if(immediate && zoneKnob!=null)zoneKnob.anchoredPosition=new Vector2(knobTarget,-6);
+        UiKit.Show(zoneTabs[1],false);
+        knobTarget=dispatching?ToggleW/2+3:6;
+        if(immediate && zoneKnob!=null)zoneKnob.anchoredPosition=new Vector2(knobTarget,-6);
         float target=zone==ShopZone.Handover?HandoverPan:0;panFrom=world.anchoredPosition.x;panTo=target;panStarted=Time.unscaledTime;
         if(immediate){world.anchoredPosition=new Vector2(target,0);panFrom=target;}
         if(map!=null)map.PointerInputEnabled=!dispatching;
@@ -219,7 +272,9 @@ public sealed partial class BusinessView : MonoBehaviour
     private void Keys()
     {
         var k=Keyboard.current;if(k==null || menu.MenuOpen || menu.HelpOpen)return;
-        if(k.digit1Key.wasPressedThisFrame)ShowZone(ShopZone.Kitchen);if(k.digit2Key.wasPressedThisFrame)ShowZone(ShopZone.Dispatch);if(k.digit3Key.wasPressedThisFrame)ShowZone(ShopZone.Dispatch);
+        if(k.digit1Key.wasPressedThisFrame)ShowZone(ShopZone.Kitchen);
+        if(k.digit2Key.wasPressedThisFrame)ShowZone(ShopZone.Dispatch);
+        if(k.digit3Key.wasPressedThisFrame)ShowZone(ShopZone.Dispatch);
         if(k.qKey.wasPressedThisFrame)ShowZone(ShopZone.Kitchen);if(k.eKey.wasPressedThisFrame)ShowZone(ShopZone.Dispatch);
     }
 
@@ -231,16 +286,29 @@ public sealed partial class BusinessView : MonoBehaviour
         var card=UiKit.Card(toasts,"Toast",20,0,400,74,T.paper,14,4,3,accent);
         UiKit.Icon(card,"Icon",icon,16,18,38,T.line);
         UiKit.Label(card,"Text",message,64,6,320,62,18,T.line,FontRole.Black,TextAlignmentOptions.MidlineLeft,true);
-        if(onClick!=null){var b=card.gameObject.AddComponent<Button>();card.gameObject.AddComponent<StickerCardAction>().Apply();b.onClick.AddListener(()=>onClick());}
+        if(onClick!=null)
+        {
+            var b=card.gameObject.AddComponent<Button>();
+            card.gameObject.AddComponent<StickerCardAction>().Apply();
+            b.onClick.AddListener(()=>onClick());
+        }
         toastCards.Insert(0,(card,Time.unscaledTime+5));
     }
     private void RefreshToasts()
     {
-        for(int i=toastCards.Count-1;i>=0;i--)if(Time.unscaledTime>toastCards[i].until || i>=3){if(toastCards[i].card!=null)Destroy(toastCards[i].card.gameObject);toastCards.RemoveAt(i);}
+        for(int i=toastCards.Count-1;i>=0;i--)if(Time.unscaledTime>toastCards[i].until || i>=3)
+        {
+            if(toastCards[i].card!=null)Destroy(toastCards[i].card.gameObject);
+            toastCards.RemoveAt(i);
+        }
         for(int i=0;i<toastCards.Count;i++)toastCards[i].card.anchoredPosition=Vector2.Lerp(toastCards[i].card.anchoredPosition,new Vector2(0,-i*90),.25f);
     }
     private void Returned(DeliveryTrip trip){Toast($"{trip.Person.Name} が帰還  配達指示へ →",T.basil,()=>ShowZone(ShopZone.Dispatch));}
-    private void FlowMessage(string message){if(message.Contains("cancelled"))Toast("注文キャンセル："+(clock.Phase==DayPhase.Open?"受付猶予を過ぎました。":"閉店しました。"),T.berry);if(message.StartsWith("ACCIDENT"))Toast("事故: "+UiStrings.Japanese(message).Replace("ACCIDENT: ",""),T.berry,null,"icon_flame");}
+    private void FlowMessage(string message)
+    {
+        if(message.Contains("cancelled"))Toast("注文キャンセル："+(clock.Phase==DayPhase.Open?"受付猶予を過ぎました。":"閉店しました。"),T.berry);
+        if(message.StartsWith("ACCIDENT"))Toast("事故: "+UiStrings.Japanese(message).Replace("ACCIDENT: ",""),T.berry,null,"icon_flame");
+    }
 
     private void Update()
     {

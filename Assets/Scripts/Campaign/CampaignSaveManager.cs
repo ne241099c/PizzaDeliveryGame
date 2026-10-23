@@ -56,9 +56,23 @@ public sealed class CampaignSaveManager : MonoBehaviour
     public string LastMessage {get;private set;}="";
     public void ClearNotice()=>LastMessage="";
     private void OnEnable()
-    {campaign.PreparationEntered+=SavePreparation;recruitment.Changed+=SavePreparation;if(crew!=null)crew.Changed+=SavePreparation;training.Changed+=SavePreparation;spawner.PolicyChanged+=SavePreparation;if(facilities!=null)facilities.Changed+=SavePreparation;}
+    {
+        campaign.PreparationEntered+=SavePreparation;
+        recruitment.Changed+=SavePreparation;
+        if(crew!=null)crew.Changed+=SavePreparation;
+        training.Changed+=SavePreparation;
+        spawner.PolicyChanged+=SavePreparation;
+        if(facilities!=null)facilities.Changed+=SavePreparation;
+    }
     private void OnDisable()
-    {campaign.PreparationEntered-=SavePreparation;recruitment.Changed-=SavePreparation;if(crew!=null)crew.Changed-=SavePreparation;training.Changed-=SavePreparation;spawner.PolicyChanged-=SavePreparation;if(facilities!=null)facilities.Changed-=SavePreparation;}
+    {
+        campaign.PreparationEntered-=SavePreparation;
+        recruitment.Changed-=SavePreparation;
+        if(crew!=null)crew.Changed-=SavePreparation;
+        training.Changed-=SavePreparation;
+        spawner.PolicyChanged-=SavePreparation;
+        if(facilities!=null)facilities.Changed-=SavePreparation;
+    }
     public static decimal Decimal(string value)=>CampaignSaveFile.Decimal(value);
     // ---- best records (records.json next to the campaign save) ----
     public string RecordsPath=>CampaignSaveFile.RecordsPath(SavePath);
@@ -129,7 +143,12 @@ public sealed class CampaignSaveManager : MonoBehaviour
         {
             data=JsonUtility.FromJson<CampaignSaveData>(json);var candidate=data;
             // Version 1 had no equipment. Normalize in memory without overwriting the original file.
-            if(candidate!=null && candidate.version==1){candidate.version=2;candidate.facilities=new FacilitySaveData();candidate.facilityPurchaseCosts="0";}
+            if(candidate!=null && candidate.version==1)
+            {
+                candidate.version=2;
+                candidate.facilities=new FacilitySaveData();
+                candidate.facilityPurchaseCosts="0";
+            }
             // Version 2 had no kitchen staff or workbenches. The starting apprentice joins independently of headcount.
             if(candidate!=null && candidate.version==2 && formatVersion==3)
             {
@@ -143,7 +162,9 @@ public sealed class CampaignSaveManager : MonoBehaviour
             var kitchen=candidate.crew.Concat(candidate.kitchenApplicants).ToArray();
             if(kitchen.Any(k=>k==null || string.IsNullOrWhiteSpace(k.Name) || !Finite(k.Speed) || !Finite(k.Care)) || kitchen.Select(k=>k.Name).Concat(candidate.people.Select(p=>p.Name)).Distinct().Count()!=kitchen.Length+candidate.people.Count)throw new FormatException("Duplicate or invalid kitchen staff.");
             if(Decimal(candidate.facilityPurchaseCosts)<0 || Decimal(candidate.facilityPurchaseCosts)>Decimal(candidate.preparationCosts))throw new FormatException("Invalid facility purchases.");
-            _=Decimal(candidate.cash);_=Decimal(candidate.openingCash);if(Decimal(candidate.preparationCosts)<0 || Decimal(candidate.totalRevenue)<0 || Decimal(candidate.bestDailyRevenue)<0)throw new FormatException("Invalid amounts.");
+            _=Decimal(candidate.cash);
+            _=Decimal(candidate.openingCash);
+            if(Decimal(candidate.preparationCosts)<0 || Decimal(candidate.totalRevenue)<0 || Decimal(candidate.bestDailyRevenue)<0)throw new FormatException("Invalid amounts.");
             if(Decimal(candidate.cash)!=Decimal(candidate.openingCash)-Decimal(candidate.preparationCosts))throw new FormatException("Preparation cash does not reconcile.");
             if(!Finite(candidate.reputation) || candidate.reputation<0 || candidate.reputation>reputation.Maximum || !Finite(candidate.promise) || candidate.promise<=0)throw new FormatException("Invalid policy or reputation.");
             var all=candidate.people.Concat(candidate.applicants.Select(a=>a.person)).ToArray();

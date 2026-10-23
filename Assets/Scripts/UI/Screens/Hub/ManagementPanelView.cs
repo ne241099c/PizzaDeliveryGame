@@ -21,7 +21,9 @@ public sealed class ManagementPanelView : MonoBehaviour
             var r=shown[i];float y=i*62;
             UiKit.Label(rows,"Day"+i,r.day+ShopStrings.Day,0,y,100,48,22,T.line,FontRole.Black);
             UiKit.Label(rows,"Revenue"+i,"売上 "+UiKit.Yen(r.revenue),102,y,220,48,20,T.line,FontRole.Bold);
-            float width=(float)(System.Math.Abs(r.profit)/scale)*260;var bar=UiKit.Box(rows,"Bar"+i,332,y+14,Mathf.Max(6,width),22);UiKit.Fill(bar,r.profit>=0?T.basil:T.berry,8);
+            float width=(float)(System.Math.Abs(r.profit)/scale)*260;
+            var bar=UiKit.Box(rows,"Bar"+i,332,y+14,Mathf.Max(6,width),22);
+            UiKit.Fill(bar,r.profit>=0?T.basil:T.berry,8);
             UiKit.Label(rows,"Profit"+i,UiKit.Signed(r.profit),612,y,130,48,22,r.profit>=0?T.basil:T.berry,FontRole.Black,TextAlignmentOptions.MidlineRight);
             UiKit.Label(rows,"Cash"+i,UiKit.Yen(r.cash),752,y,130,48,20,T.inkSub,FontRole.Bold,TextAlignmentOptions.MidlineRight);
         }

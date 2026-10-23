@@ -12,15 +12,27 @@ public static class CitySimulationValidation
     public static string Status {get;private set;}="Not run";
     private static IDisposable protection;private static CampaignSaveManager save;private static MapManager map;private static GameClock clock;
     private static DaySimulationSession session;private static DaySimulationSettings settings;
-    private static int run;private static StringBuilder csv;private static int mainRoads,backRoads;private static int? seed,blocks;private static bool sample;
+    private static int run;
+    private static StringBuilder csv;
+    private static int mainRoads,backRoads;
+    private static int? seed,blocks;
+    private static bool sample;
     private static byte[] campaignBytes,recordBytes;private static string campaignPath,recordsPath;
     private static byte[] Bytes(string path)=>File.Exists(path)?File.ReadAllBytes(path):null;
     private static bool Same(byte[] a,byte[] b)=>a==null?b==null:b!=null && a.SequenceEqual(b);
     public static string Begin()
     {
         if(!Application.isPlaying || protection!=null)throw new InvalidOperationException("Play required; audit already active");
-        save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();map=UnityEngine.Object.FindFirstObjectByType<MapManager>();clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();settings=UnityEngine.Object.FindFirstObjectByType<DaySimulationSettings>();
-        campaignPath=save.SavePath;recordsPath=save.RecordsPath;campaignBytes=Bytes(campaignPath);recordBytes=Bytes(recordsPath);protection=save.SuppressSaving();clock.AutomaticTick=false;
+        save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();
+        map=UnityEngine.Object.FindFirstObjectByType<MapManager>();
+        clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
+        settings=UnityEngine.Object.FindFirstObjectByType<DaySimulationSettings>();
+        campaignPath=save.SavePath;
+        recordsPath=save.RecordsPath;
+        campaignBytes=Bytes(campaignPath);
+        recordBytes=Bytes(recordsPath);
+        protection=save.SuppressSaving();
+        clock.AutomaticTick=false;
         seed=map.SeedOverride;blocks=map.BlocksOverride;sample=map.UseSampleForValidation;
         csv=new StringBuilder("group,map_seed,blocks,mean_knowledge,main_traversals,backstreet_traversals,"+SimulationDayRecord.Header+"\n");run=0;
         UnityEngine.Object.FindFirstObjectByType<DeliveryFlowController>().Dispatched+=Track;
@@ -43,7 +55,8 @@ public static class CitySimulationValidation
     private static void Record(SimulationDayRecord r)
     {
         float knowledge=UnityEngine.Object.FindFirstObjectByType<CourierRoster>().People.Average(p=>p.LocalKnowledge);
-        csv.AppendLine(FormattableString.Invariant($"{(run<100?"safety":"balance")},{map.CityState.seed},{map.City.blocks.Count},{knowledge},{mainRoads},{backRoads},")+r.Csv);mainRoads=backRoads=0;
+        csv.AppendLine(FormattableString.Invariant($"{(run<100?"safety":"balance")},{map.CityState.seed},{map.City.blocks.Count},{knowledge},{mainRoads},{backRoads},")+r.Csv);
+        mainRoads=backRoads=0;
     }
     private static void Tick()
     {
@@ -56,7 +69,11 @@ public static class CitySimulationValidation
             if(run<100 && (session.Records.Count!=3 || session.Records.Any(r=>r.Bankrupt)))throw new Exception($"safety seed {run} did not finish three days");
             session.Dispose();session=null;run++;
             if(run<104){StartRun();return;}
-            Directory.CreateDirectory("Docs/Simulations/MapGeneration");File.WriteAllText("Docs/Simulations/MapGeneration/Autoplay.csv",csv.ToString());Status="PASS: 100 towns x 3 days completed; four 30-day-limit balance runs recorded (bankruptcy ends a run).";File.WriteAllText("Docs/Simulations/MapGeneration/Autoplay_Summary.txt",Status+"\nSafety uses 10000 experimental cash to isolate map completion; balance uses normal cash and rules.\n");Cleanup();
+            Directory.CreateDirectory("Docs/Simulations/MapGeneration");
+            File.WriteAllText("Docs/Simulations/MapGeneration/Autoplay.csv",csv.ToString());
+            Status="PASS: 100 towns x 3 days completed; four 30-day-limit balance runs recorded (bankruptcy ends a run).";
+            File.WriteAllText("Docs/Simulations/MapGeneration/Autoplay_Summary.txt",Status+"\nSafety uses 10000 experimental cash to isolate map completion; balance uses normal cash and rules.\n");
+            Cleanup();
         }
         catch(Exception ex){Status="FAIL: "+ex.Message;UnityEngine.Debug.LogError(Status);Cleanup();}
     }

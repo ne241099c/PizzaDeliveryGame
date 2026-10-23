@@ -25,7 +25,15 @@ public sealed class TestResultFile : ICallbacks
     public void RunFinished(ITestResultAdaptor result)
     {
         var text=new StringBuilder($"{result.ResultState} passed={result.PassCount} failed={result.FailCount} skipped={result.SkipCount} inconclusive={result.InconclusiveCount} seconds={result.Duration:F1}\n");
-        void Walk(ITestResultAdaptor r){if(!r.HasChildren){text.Append($"{r.ResultState,-12} {r.Test.FullName}{(string.IsNullOrEmpty(r.Message)?"":" — "+r.Message.Trim().Replace('\n',' '))}\n");return;}foreach(var c in r.Children)Walk(c);}
+        void Walk(ITestResultAdaptor r)
+        {
+            if(!r.HasChildren)
+            {
+                text.Append($"{r.ResultState,-12} {r.Test.FullName}{(string.IsNullOrEmpty(r.Message)?"":" — "+r.Message.Trim().Replace('\n',' '))}\n");
+                return;
+            }
+            foreach(var c in r.Children)Walk(c);
+        }
         Walk(result);
         Directory.CreateDirectory(Path.GetDirectoryName(PathName));File.WriteAllText(PathName,text.ToString());
     }

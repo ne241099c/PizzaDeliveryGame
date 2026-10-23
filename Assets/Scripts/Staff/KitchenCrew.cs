@@ -11,7 +11,13 @@ public sealed class KitchenCrew : MonoBehaviour
     public int Count=>crew.Count;
     public event Action Changed;
     private void Awake()=>starting=crew.ConvertAll(s=>s.Clone());
-    public bool Add(KitchenStaff staff){if(staff==null || crew.Exists(s=>s.Name==staff.Name))return false;crew.Add(staff);Changed?.Invoke();return true;}
+    public bool Add(KitchenStaff staff)
+    {
+        if(staff==null || crew.Exists(s=>s.Name==staff.Name))return false;
+        crew.Add(staff);
+        Changed?.Invoke();
+        return true;
+    }
     public bool Remove(KitchenStaff staff){if(!crew.Remove(staff))return false;Changed?.Invoke();return true;}
     public void ResetToInitial(){if(starting==null)Awake();crew=starting.ConvertAll(s=>s.Clone());Changed?.Invoke();}
     public void Restore(IEnumerable<KitchenStaff> restored){crew=new List<KitchenStaff>(restored);Changed?.Invoke();}

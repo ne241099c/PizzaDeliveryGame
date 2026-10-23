@@ -115,7 +115,11 @@ public sealed class OrderSpawner : MonoBehaviour
         double roll=random.NextDouble()*destinations.Sum(Weight);
         foreach(var node in destinations){roll-=Weight(node);if(roll<=0)return node.Id;}return destinations[destinations.Length-1].Id;
     }
-    private void NextJitter() { if(random==null)ResetRandom();jitter=Mathf.Lerp(1f-intervalVariation,1f+intervalVariation,(float)random.NextDouble()); }
+    private void NextJitter()
+    {
+        if(random==null)ResetRandom();
+        jitter=Mathf.Lerp(1f-intervalVariation,1f+intervalVariation,(float)random.NextDouble());
+    }
     private void ScheduleFirst()
     {
         if (scheduled || !map.IsReady) return;

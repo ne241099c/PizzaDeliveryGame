@@ -30,15 +30,34 @@ public sealed class BusinessEconomy : MonoBehaviour
     public decimal DailyRevenue => Ledger.Revenue;
     public decimal OpeningCash => Ledger.OpeningCash;
     private void Awake() => NewGame();
-    private void OnEnable() { flow.RevenueEarned+=CreditArrival;flow.QualityBonusEarned+=RecordQualityBonus; flow.Dispatched+=ChargeMaterials; flow.Returned+=RecordDistance;clock.OnDayStarted+=CaptureWages; }
-    private void OnDisable() { flow.RevenueEarned-=CreditArrival;flow.QualityBonusEarned-=RecordQualityBonus; flow.Dispatched-=ChargeMaterials; flow.Returned-=RecordDistance;clock.OnDayStarted-=CaptureWages; }
+    private void OnEnable()
+    {
+        flow.RevenueEarned+=CreditArrival;
+        flow.QualityBonusEarned+=RecordQualityBonus;
+        flow.Dispatched+=ChargeMaterials;
+        flow.Returned+=RecordDistance;
+        clock.OnDayStarted+=CaptureWages;
+    }
+    private void OnDisable()
+    {
+        flow.RevenueEarned-=CreditArrival;
+        flow.QualityBonusEarned-=RecordQualityBonus;
+        flow.Dispatched-=ChargeMaterials;
+        flow.Returned-=RecordDistance;
+        clock.OnDayStarted-=CaptureWages;
+    }
     private void RecordQualityBonus(int amount)=>Ledger.QualityBonus+=amount;
     private void CreditArrival(int points) { Cash+=points; Ledger.Revenue+=points; }
     public void RestorePreparation(decimal cash,decimal opening,decimal costs,int day)
     {Cash=cash;dayNumber=day;Ledger=new DayLedger(opening){PreparationCosts=costs};openingWages.Clear();}
     public void NewGame() { Cash=(decimal)initialCash; PrepareDay(); }
     public void PrepareDay(int day=1) { dayNumber=day; Ledger=new DayLedger(Cash); }
-    private void CaptureWages() {openingWages.Clear();foreach(var person in roster.People)openingWages[person.Id]=DailyWage(person);if(crew!=null)foreach(var staff in crew.People)openingWages[staff.Id]=DailyWage(staff);}
+    private void CaptureWages()
+    {
+        openingWages.Clear();
+        foreach(var person in roster.People)openingWages[person.Id]=DailyWage(person);
+        if(crew!=null)foreach(var staff in crew.People)openingWages[staff.Id]=DailyWage(staff);
+    }
     public decimal FixedCost(int day) => BaseFixedCost(day)+(facilities!=null?facilities.Maintenance:0);
     public decimal BaseFixedCost(int day) => Money((decimal)dailyFixedCost+(decimal)fixedCostGrowthPerDay*System.Math.Max(0,day-1));
     public static decimal Money(decimal amount) => System.Math.Round(amount,2,System.MidpointRounding.AwayFromZero);
@@ -55,9 +74,20 @@ public sealed class BusinessEconomy : MonoBehaviour
     {
         decimal cost=MaterialCost(trip.Deliveries.Count); Cash-=cost; Ledger.Materials+=cost;
     }
-    public void ChargeWaste(decimal cost) {if(cost<0)throw new System.ArgumentOutOfRangeException(nameof(cost));Cash-=cost;Ledger.Waste+=cost;Ledger.WastedPizzas++;}
+    public void ChargeWaste(decimal cost)
+    {
+        if(cost<0)throw new System.ArgumentOutOfRangeException(nameof(cost));
+        Cash-=cost;
+        Ledger.Waste+=cost;
+        Ledger.WastedPizzas++;
+    }
     private void RecordDistance(DeliveryTrip trip) => Ledger.Distance+=(decimal)trip.DistanceAt(trip.ReturnsAt);
-    public void RefundPreparation(decimal amount) {if(amount<0 || amount>Ledger.PreparationCosts)throw new System.ArgumentOutOfRangeException(nameof(amount));Cash+=amount;Ledger.PreparationCosts-=amount;}
+    public void RefundPreparation(decimal amount)
+    {
+        if(amount<0 || amount>Ledger.PreparationCosts)throw new System.ArgumentOutOfRangeException(nameof(amount));
+        Cash+=amount;
+        Ledger.PreparationCosts-=amount;
+    }
     public void SpendPreparation(decimal amount)
     {
         if(amount<0)throw new System.ArgumentOutOfRangeException(nameof(amount));

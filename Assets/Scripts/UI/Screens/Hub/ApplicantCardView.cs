@@ -11,7 +11,13 @@ public sealed class ApplicantCardView : MonoBehaviour
     public StickerButton Hire=>hire;
     public void ShowHeader(string name,Color color,(string,Color,Color) role,(string,Color,Color) type)=>header.Show(name,color,role,type);
     public void ShowAbility(int index,string name,float value,float potential)=>abilities[index].Show(name,value,potential);
-    public void ShowDetails(string capacity,string strong,string wageText,string cost){capacityValue.text=capacity;strengths.text=strong;wage.text=wageText;hireCost.text=cost;}
+    public void ShowDetails(string capacity,string strong,string wageText,string cost)
+    {
+        capacityValue.text=capacity;
+        strengths.text=strong;
+        wage.text=wageText;
+        hireCost.text=cost;
+    }
     /// <summary>Why hiring is not possible now; empty enables the button.</summary>
     public void ShowRejection(string text){reason.text=text;reason.gameObject.SetActive(text.Length>0);hire.Interactable=text.Length==0;}
 }

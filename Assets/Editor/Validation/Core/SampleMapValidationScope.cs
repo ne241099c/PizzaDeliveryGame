@@ -9,14 +9,22 @@ public sealed class SampleMapValidationScope:IDisposable
     {
         if(!Application.isPlaying)throw new InvalidOperationException("Play required for sample validation.");
         save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();protection=save.SuppressSaving();
-        map=UnityEngine.Object.FindFirstObjectByType<MapManager>();original=map.UseSampleForValidation;map.UseSampleForValidation=true;map.RestoreCity(null);
+        map=UnityEngine.Object.FindFirstObjectByType<MapManager>();
+        original=map.UseSampleForValidation;
+        map.UseSampleForValidation=true;
+        map.RestoreCity(null);
     }
     public void Dispose()
     {
         try
         {
             map.UseSampleForValidation=original;
-            if(!original){save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
+            if(!original)
+            {
+                save.StartNewGame();
+                UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;
+                CampaignSaveManager.SessionSavingLocked=true;
+            }
         }
         finally{protection.Dispose();}
     }

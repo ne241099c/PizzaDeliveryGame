@@ -27,7 +27,8 @@ public static class TitleValidation
             Check(view.LogoText==GameInfo.DisplayName,"logo shows GameInfo: "+view.LogoText);
             Check(Path.GetFileName(CampaignSaveFile.Directory)==GameInfo.SaveFolder,"save folder does not follow the display name: "+CampaignSaveFile.Directory);
             // Play Mode copies lose their prefab link, so check the asset: every serialized reference is set.
-            var prefab=AssetDatabase.LoadAssetAtPath<TitleView>(TitleViewBuilder.PrefabPath);Check(prefab!=null,"prefab "+TitleViewBuilder.PrefabPath);
+            var prefab=AssetDatabase.LoadAssetAtPath<TitleView>(TitleViewBuilder.PrefabPath);
+            Check(prefab!=null,"prefab "+TitleViewBuilder.PrefabPath);
             var missing=MissingReferences(prefab);Check(missing=="","prefab references set: "+missing);
 
             // First launch: no file.
@@ -47,7 +48,10 @@ public static class TitleValidation
 
             // Help and credits open over the title and close again.
             view.HelpButton.Button.onClick.Invoke();Check(title.HelpOpen,"help opens");title.CloseHelp();Check(!title.HelpOpen,"help closes");
-            view.CreditsButton.onClick.Invoke();Check(title.CreditsOpen,"credits open from the footer");title.CloseCredits();Check(!title.CreditsOpen,"credits close");
+            view.CreditsButton.onClick.Invoke();
+            Check(title.CreditsOpen,"credits open from the footer");
+            title.CloseCredits();
+            Check(!title.CreditsOpen,"credits close");
             Check(new SerializedObject(title).FindProperty("creditsText").objectReferenceValue is TextAsset t && t.text.Contains("Mochiy Pop One"),"credits text comes from Docs/Credits.md");
 
             // Art: separate layers and decoration never takes clicks.
@@ -88,7 +92,11 @@ public static class TitleValidation
         {
             if(p.propertyType==SerializedPropertyType.ObjectReference && p.name!="m_Script" && p.objectReferenceValue==null)missing+=p.propertyPath+" ";
             if(p.isArray && p.propertyType==SerializedPropertyType.Generic)
-                for(int i=0;i<p.arraySize;i++){var e=p.GetArrayElementAtIndex(i);if(e.propertyType==SerializedPropertyType.ObjectReference && e.objectReferenceValue==null)missing+=e.propertyPath+" ";}
+                for(int i=0;i<p.arraySize;i++)
+                {
+                    var e=p.GetArrayElementAtIndex(i);
+                    if(e.propertyType==SerializedPropertyType.ObjectReference && e.objectReferenceValue==null)missing+=e.propertyPath+" ";
+                }
         }
         return missing.Trim();
     }

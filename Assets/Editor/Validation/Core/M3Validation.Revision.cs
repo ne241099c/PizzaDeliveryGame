@@ -128,7 +128,14 @@ public static partial class M3Validation
             check(Vector2.Distance(clean.PositionAt(2),stopped.PositionAt(2))>0,"M4-5 one stopped courier does not stop another");
             near(Vector2.Distance(stopped.PositionAt(stopped.ReturnsAt+1),map.Nodes.First(n=>n.IsStore).Position),0,"M4-5 delayed trip finishes at store");
             var other=dynamicsFixture.AddComponent<DeliveryDynamics>();
-            foreach(var d in new[]{rules,other}){var settings=new SerializedObject(d);settings.FindProperty("useFixedSeed").boolValue=true;settings.FindProperty("randomSeed").intValue=7;settings.ApplyModifiedPropertiesWithoutUndo();d.ResetForDay();}
+            foreach(var d in new[]{rules,other})
+            {
+                var settings=new SerializedObject(d);
+                settings.FindProperty("useFixedSeed").boolValue=true;
+                settings.FindProperty("randomSeed").intValue=7;
+                settings.ApplyModifiedPropertiesWithoutUndo();
+                d.ResetForDay();
+            }
             var firstRoll=rules.CreateRoller();var secondRoll=other.CreateRoller();
             check(Enumerable.Range(0,10).All(_=>firstRoll()==secondRoll()),"M4-7 fixed seed reproduces draws");
         }
@@ -139,7 +146,9 @@ public static partial class M3Validation
         {
             var selector=rosterFixture.AddComponent<CourierRoster>();var fixtureClock=rosterFixture.AddComponent<GameClock>();
             var settings=new SerializedObject(selector);settings.FindProperty("clock").objectReferenceValue=fixtureClock;
-            var entries=settings.FindProperty("deliveryPeople");entries.arraySize=5;entries.GetArrayElementAtIndex(4).FindPropertyRelative("Name").stringValue="Extra";
+            var entries=settings.FindProperty("deliveryPeople");
+            entries.arraySize=5;
+            entries.GetArrayElementAtIndex(4).FindPropertyRelative("Name").stringValue="Extra";
             settings.ApplyModifiedPropertiesWithoutUndo();rosterFixture.SetActive(true);fixtureClock.BeginDay();
             check(selector.People.Count==5,"M4-0 fifth inspector courier joins the roster");
             check(selector.SelectForDispatch(selector.People[4]) && selector.SelectedPerson==selector.People[4],"M4-0 fifth courier is selectable");

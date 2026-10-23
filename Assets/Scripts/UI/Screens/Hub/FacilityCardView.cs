@@ -29,6 +29,15 @@ public sealed class FacilityCardView : MonoBehaviour
     public void ShowTiers(int count,System.Func<int,string> caption,System.Func<int,bool> interactable)
     {
         buy.gameObject.SetActive(false);price.gameObject.SetActive(false);maintenance.gameObject.SetActive(false);reason.gameObject.SetActive(false);
-        for(int i=0;i<tiers.Length;i++){bool on=i<count;tiers[i].gameObject.SetActive(on);if(on){tiers[i].Text=caption(i+1);tiers[i].Interactable=interactable(i+1);}}
+        for(int i=0;i<tiers.Length;i++)
+        {
+            bool on=i<count;
+            tiers[i].gameObject.SetActive(on);
+            if(on)
+            {
+                tiers[i].Text=caption(i+1);
+                tiers[i].Interactable=interactable(i+1);
+            }
+        }
     }
 }

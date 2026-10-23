@@ -20,7 +20,11 @@ public sealed class ShopHand : MonoBehaviour
     {
         Instance=this;layer=dragLayer;
         ghost=UiKit.Box(layer,"Held",0,0,140,140);ghost.pivot=new Vector2(.5f,.5f);
-        var shadow=UiKit.Stretch(ghost,"Shadow",8,14,-8,-14);ghostShadow=shadow.gameObject.AddComponent<Image>();ghostShadow.color=new Color(0,0,0,.22f);ghostShadow.raycastTarget=false;ghostShadow.preserveAspect=true;
+        var shadow=UiKit.Stretch(ghost,"Shadow",8,14,-8,-14);
+        ghostShadow=shadow.gameObject.AddComponent<Image>();
+        ghostShadow.color=new Color(0,0,0,.22f);
+        ghostShadow.raycastTarget=false;
+        ghostShadow.preserveAspect=true;
         ghostImage=UiKit.Stretch(ghost,"Item").gameObject.AddComponent<Image>();ghostImage.raycastTarget=false;ghostImage.preserveAspect=true;
         ghost.gameObject.SetActive(false);
         // BuildKitchen/BuildDispatch create fixed zones before the hand exists. Later station zones register themselves.
@@ -37,7 +41,11 @@ public sealed class ShopHand : MonoBehaviour
     {
         if(payload.Job!=null)UnityEngine.Object.FindFirstObjectByType<CookingManager>()?.Touch(payload.Job);
         Held=payload;ghost.gameObject.SetActive(true);ghost.SetAsLastSibling();ghost.sizeDelta=payload.Size;
-        var sprite=UiKit.Art(payload.Sprite);ghostImage.sprite=sprite;ghostShadow.sprite=sprite;ghostImage.color=payload.Job!=null && payload.Job.Burnt?UiKit.T.line:Color.white;MoveAt(screen,eventCamera);
+        var sprite=UiKit.Art(payload.Sprite);
+        ghostImage.sprite=sprite;
+        ghostShadow.sprite=sprite;
+        ghostImage.color=payload.Job!=null && payload.Job.Burnt?UiKit.T.line:Color.white;
+        MoveAt(screen,eventCamera);
     }
     public void MoveAt(Vector2 screen,Camera eventCamera=null)
     {
@@ -45,7 +53,12 @@ public sealed class ShopHand : MonoBehaviour
         RectTransformUtility.ScreenPointToLocalPointInRectangle(layer,screen,eventCamera,out var local);
         ghost.localPosition=local;
         var over=ZoneAt(screen);
-        foreach(var zone in zones){if(zone==null)continue;bool ok=zone.isActiveAndEnabled && zone.Accepts!=null && zone.Accepts(Held);zone.SetGlow(ok,ok && zone==over);}
+        foreach(var zone in zones)
+        {
+            if(zone==null)continue;
+            bool ok=zone.isActiveAndEnabled && zone.Accepts!=null && zone.Accepts(Held);
+            zone.SetGlow(ok,ok && zone==over);
+        }
         if(over!=null && over.Accepts!=null && over.Accepts(Held))over.Hovering?.Invoke(Held,screen);
     }
     public void EndAt(Vector2 screen)
@@ -54,7 +67,13 @@ public sealed class ShopHand : MonoBehaviour
         if(over!=null && over.Accepts!=null && over.Accepts(payload))over.Dropped?.Invoke(payload);
         Released?.Invoke(payload);
     }
-    public void Cancel(){if(Held!=null)cancelledFrame=Time.frameCount;Held=null;if(ghost!=null)ghost.gameObject.SetActive(false);foreach(var zone in zones)if(zone!=null)zone.SetGlow(false,false);}
+    public void Cancel()
+    {
+        if(Held!=null)cancelledFrame=Time.frameCount;
+        Held=null;
+        if(ghost!=null)ghost.gameObject.SetActive(false);
+        foreach(var zone in zones)if(zone!=null)zone.SetGlow(false,false);
+    }
     private DropZone ZoneAt(Vector2 screen)
     {
         if(EventSystem.current==null)return null;hits.Clear();

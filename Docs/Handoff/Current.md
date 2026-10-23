@@ -2,25 +2,36 @@
 
 ## 最新：D-5aタイトルと構造の整理（Claude Code、2026-10-23）
 
-担当：**Claude Code（Unity操作の所有者）**。shop、pushなし。コミット a9bc3e6 → d7f17c1 → d28f01e → 72aee10 → a86dda4。
+担当：**Claude Code（Unity操作の所有者）**。shop、pushなし。第1弾 a9bc3e6 → d7f17c1 → d28f01e → 72aee10 → a86dda4、第2弾は下の節。
 
 - **タイトル（D-5a）**：`Assets/Prefabs/UI/TitleView.prefab`（`TitleView`、生成 `TitleViewBuilder`）。絵は `Tools/Art/title_art.py` → `Assets/Art/Title/`。ゲーム名は `Assets/Scripts/Core/GameInfo.cs` だけで定義し、**Tools > Game Info > Sync** でproductName・README・クレジットへ反映。チュートリアルは未実装なので「準備中」。
 - **セーブ置き場**：productNameを変えるとUnityのデータフォルダ名が変わるため、セーブは固定の `GameInfo.SaveFolder`（PizzaDeliveryGame）に置く。**SaveFolderは変えない**。通常セーブ・最高記録は作業の前後でバイト一致。
 - **プレハブ化**：タイトル・開店準備（枠）・精算（枠）・閉店は `Assets/Prefabs/UI/`。生成は `ScreenPrefabs`（Tools > Screens）。作り直すとプレハブの手修正は消える。データで変わるカード・レシート行・スタッフ行は実行時に作る。
 - **asmdef**：`PizzaDelivery`（実行時）、`PizzaDelivery.Editor`、`PizzaDelivery.Tests`。execute_code・Tools/Reviewはそのまま動く。
-- **Test Runner**：Tools > Pizza Delivery > Run Tests（結果は `Library/TestResults/last.txt`）。編集モード5件＋Play検証7件（タイトル、M3〜M6、画面、見た目、M7、店内、プレハブ画面）。シミュレーションは含まない。各テストはPlay開始直後から保存を止める。
+- **Test Runner**：Tools > Pizza Delivery > Run Tests（結果は `Library/TestResults/last.txt`）。編集モード5件＋Play検証9件（タイトル、M3〜M6、画面、見た目、M7、店内、プレハブ画面、起動2件）。シミュレーションは含まない。各テストはTitleシーンでPlayを始め、保存を止めてからGameシーンを読み込む。
 - **整理**：古い資料は `Docs/Archive/`。古い `*SceneSetup` は削除（現在のシーンを壊すため）。TMPのサンプル削除。`.DS_Store`・`Assets/_Recovery`・`.codex/` は .gitignore。
 - **直した既存の不整合**：M6の配達時間の期待値（速度1.2倍）、Visualの街区名（District_）、validate_shop_ui.pyの保温棚の階層、UIThemeDriverの毎フレーム例外（CanvasRendererのないボタン）。
-- **シーンのdirtyの正体**：非表示の旧UIにある `ContentSizeFitter` 3つ（ResultText、OrdersContent、HistoryContent）が、ドメインの再読み込みごとにsizeDeltaを0と計算値で行き来する。保存しても害はない。
+- **シーンのdirtyの正体**：非表示の旧UIにあった `ContentSizeFitter`。旧UIの撤去でなくなった。
 
-### 残作業（未着手・次の候補）
+### 構造の作り直し（第2弾、2026-10-23 午後）
 
-1. **旧UIの撤去**：旧画面（HubScreen・BusinessScreen など、約2,800コンポーネント）は表示されていないが、`OrderListUI`・`DeliveryPlannerUI`・`CampaignManager` など約20のコンポーネントが77か所で参照し、`ScreenValidation` などは旧画面のボタンを押して確かめている。撤去には「処理（モデル）と表示の分離」と、検証を新しい画面の操作に書き換えることが必要。
-2. **店内（BusinessView）のプレハブ化**：厨房・指示盤・レーン。ゲームの中心で最も大きい（約1,500行）。
-3. **カードのテンプレート化**：配達員・内勤・求人・設備のカードをプレハブにする。
-4. 1行に詰め込んだコード（200文字超が約400行）と、名前の文字列で探す処理は、触る箇所から順に直す（一括整形はしない）。
-5. 旧からの保留（収支バランス、チュートリアルS2-T、大きな地図の負荷など）は下の節のとおり。
+コミット 0192ccc → a277d2d → bf9567b → （このあとの整形・名前検索の撤去）。
 
+- **シーンは2つ**：`Assets/Scenes/Title.unity`（タイトル）と `Game.unity`（旧SampleScene）。ビルドはTitle→Game。`GameScenes` が選んだモード（続きから／最初から）を渡す。Gameを直接再生すると、使えるセーブがあれば続きから。**タイトルへ戻る＝Titleシーンの読み込み**。
+- **旧UIを撤去**：旧画面・テーマの上書き処理・一覧用プレハブと16スクリプトを削除。`OrderListUI`→`OrderBook`、`DeliveryPersonSelector`→`CourierRoster`、`DeliveryPlannerUI`→`DeliveryPlanner` はデータと処理だけ。`TitleMenuUI`→`GameMenu`（営業中のEscメニュー）。
+- **プレハブ**：`Assets/Prefabs/UI/`（Title、Hub、Business、Settlement、GameOver）と `UI/Cards/`（配達員・求人・内勤・設備・仲間を探す・経営）。生成は Tools > Screens（`ScreenPrefabs`）、店内は `BusinessView.BuildLayout`（エディタで一度作り、動作は実行時に `Bind`）。作り直すと手修正は消える。
+- **フォルダ**：README.mdの「フォルダ」の表のとおり（Scripts・Editor・Docsを分野別に）。
+- **セーブの保護**：`CampaignSaveManager.SessionSavingLocked` はPlay中ずっと、シーンを読み直しても保存を止める。テストと `Tools/Review/session.py` はGameシーンが始まる前にこれを立てる。検証の後片付けはシーンを切り替えない。
+- **直したバグ**：シーン分割の後、Gameシーンが地図の準備前にゲームを始め、新しいゲームの街が空（blocks=0）で保存されていた。次の起動でそのセーブが拒否され、また新しいゲームに上書きされる。地図の準備後に始めるよう修正し、テスト（LaunchContinue/LaunchNewGame）を追加。
+- **ユーザーのセーブ**：14:22にユーザーが遊んだ2日目のセーブを `Library/ReviewBackups/20261023-142254-user` に保全。15:51と15:55に新しいゲームで上書きされ（15:55は上記のバグによるもの。15:51は、同じ頃に検証の後片付けがTitleシーンへ切り替えていたが、どの操作で新しいゲームが始まったかは特定できていない）、どちらも壊れた街の状態だったため、**2日目のセーブを戻した**。上書きされたものは `20261023-155132-overwritten` に保存。
+- **コードの書き方**：`Tools/Format/split_long_lines.py` で、1行に詰めた複数の文を1行1文に分けた（空白と改行だけを変え、コードの中身が同じであることをファイルごとに確認してから書き込む）。150字超は957→473行、200字超は405→163行（残りは1つの長い式）。実行時コードの名前の文字列での探索（`Find("...")`）は0件に（部品を参照で持つ `UiBadge`・`UiAvatar`・`UiCard` と、生成時に保持する変数へ）。
+- **Codexの文書**：16:31に `Docs/Design/構成の改善点.md`（Codex、文書のみ）が追加されている。Claudeの作業中に書かれたもので、未コミットのまま残している。内容は今回の方針と同じ。
+
+### 残り・保留
+
+- 長い1つの式（200字超163行）は機械的に折り返すと読みにくくなるため、触るときに直す。
+- 管理クラスの探索（`FindFirstObjectByType`）はUnityの一般的な書き方として残した。シーン参照に置き換えるなら次の候補。
+- 旧からの保留（収支バランス、チュートリアルS2-T、大きな地図の負荷など）は下の節のとおり。
 
 ## 最新：失敗・作り直し、放置ピザ、初期5街区
 

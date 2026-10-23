@@ -71,7 +71,14 @@ public sealed partial class CookingManager : MonoBehaviour
     [SerializeField] private bool useFixedSeed;
     [SerializeField] private int randomSeed=5113;
 
-    private sealed class StaffSlot {public KitchenStaff Staff;public PizzaJob Task;public bool Packing;public PizzaStage FromStage;public float Until,FreeSince;}
+    private sealed class StaffSlot
+    {
+        public KitchenStaff Staff;
+        public PizzaJob Task;
+        public bool Packing;
+        public PizzaStage FromStage;
+        public float Until,FreeSince;
+    }
     private readonly List<PizzaJob> jobs=new();
     private readonly List<StaffSlot> staff=new();
     private PizzaJob[] benches=Array.Empty<PizzaJob>();
@@ -172,7 +179,10 @@ public sealed partial class CookingManager : MonoBehaviour
     public string StageCaption(Order order)
     {
         if(order.IsReady)return "梱包済み";var job=JobFor(order);
-        if(job==null)return IsRedo(order)?"作り直し待ち":"順番待ち";if(job.NeedsDecision)return "失敗：出す / 作り直す";if(job.Undercooked)return "生焼け：窯に戻せます";if(job.QueuedForOven)return "窯待ち "+(OvenQueue.ToList().IndexOf(job)+1)+"番";
+        if(job==null)return IsRedo(order)?"作り直し待ち":"順番待ち";
+        if(job.NeedsDecision)return "失敗：出す / 作り直す";
+        if(job.Undercooked)return "生焼け：窯に戻せます";
+        if(job.QueuedForOven)return "窯待ち "+(OvenQueue.ToList().IndexOf(job)+1)+"番";
         return job.Stage switch
         {
             PizzaStage.Baking=>"焼いている",PizzaStage.Baked=>"梱包待ち",PizzaStage.Boxed=>"梱包中",
@@ -186,7 +196,8 @@ public sealed partial class CookingManager : MonoBehaviour
     {
         if(order==null || clock==null)return null;if(order.IsReady)return 0;
         float now=clock.ElapsedSeconds;
-        float ovenFree=float.PositiveInfinity;foreach(var o in ovens)ovenFree=Mathf.Min(ovenFree,o==null?0:Mathf.Max(0,o.OvenStartedAt+BakeDuration(o.Order)-now));
+        float ovenFree=float.PositiveInfinity;
+        foreach(var o in ovens)ovenFree=Mathf.Min(ovenFree,o==null?0:Mathf.Max(0,o.OvenStartedAt+BakeDuration(o.Order)-now));
         if(float.IsInfinity(ovenFree))ovenFree=0;
         var job=JobFor(order);
         if(job!=null)
@@ -249,7 +260,11 @@ public sealed partial class CookingManager : MonoBehaviour
     }
     private void Process(float t)
     {
-        foreach(var job in jobs.Where(j=>j.Stage!=PizzaStage.Packed && Expires(j.Order)<=t).ToArray()){expired.Add(job.Order);Release(job,Expires(job.Order));}
+        foreach(var job in jobs.Where(j=>j.Stage!=PizzaStage.Packed && Expires(j.Order)<=t).ToArray())
+        {
+            expired.Add(job.Order);
+            Release(job,Expires(job.Order));
+        }
         foreach(var job in jobs.Where(j=>j.Worker==PizzaWorker.Player && j.Stage==PizzaStage.Boxed && !j.NeedsDecision && !j.Undercooked && j.PackingStartedAt+packSeconds<=t).ToArray())Pack(job);
         foreach(var slot in staff.Where(s=>s.Task!=null && s.Until<=t).OrderBy(s=>s.Until).ToArray())
         {
@@ -259,7 +274,12 @@ public sealed partial class CookingManager : MonoBehaviour
             {
                 bool success(){return random.NextDouble()<StaffSuccessChance(slot.Staff);}
                 if(slot.FromStage<=PizzaStage.Dough){job.SauceCoverage=1;job.SaucePoint=success();}
-                if(slot.FromStage<=PizzaStage.Cheese){foreach(var ingredient in job.Order.RequiredToppings)if(job.AddedToppings.Count<job.Order.RequiredToppings.Length && !job.AddedToppings.Contains(ingredient))job.AddedToppings.Add(ingredient);job.AddedTopping=job.AddedToppings.FirstOrDefault();job.ToppingPoint=job.AddedToppings.OrderBy(v=>v).SequenceEqual(job.Order.RequiredToppings.OrderBy(v=>v)) && success();}
+                if(slot.FromStage<=PizzaStage.Cheese)
+                {
+                    foreach(var ingredient in job.Order.RequiredToppings)if(job.AddedToppings.Count<job.Order.RequiredToppings.Length && !job.AddedToppings.Contains(ingredient))job.AddedToppings.Add(ingredient);
+                    job.AddedTopping=job.AddedToppings.FirstOrDefault();
+                    job.ToppingPoint=job.AddedToppings.OrderBy(v=>v).SequenceEqual(job.Order.RequiredToppings.OrderBy(v=>v)) && success();
+                }
                 job.Stage=PizzaStage.Topping;
                 QueueOven(job,at);
             }
@@ -267,10 +287,15 @@ public sealed partial class CookingManager : MonoBehaviour
         }
         for(int i=0;i<ovens.Length;i++)
         {
-            var job=ovens[i];if(job==null || job.Worker!=PizzaWorker.Staff || Mathf.Max(job.LastTouchedAt,job.OvenStartedAt+BakeDuration(job.Order))>t)continue;
-            float at=Mathf.Max(job.LastTouchedAt,job.OvenStartedAt+BakeDuration(job.Order));job.BakePoint=random.NextDouble()<StaffSuccessChance(job.Staff);job.Burnt=false;FinishOven(job,at);
+            var job=ovens[i];
+            if(job==null || job.Worker!=PizzaWorker.Staff || Mathf.Max(job.LastTouchedAt,job.OvenStartedAt+BakeDuration(job.Order))>t)continue;
+            float at=Mathf.Max(job.LastTouchedAt,job.OvenStartedAt+BakeDuration(job.Order));
+            job.BakePoint=random.NextDouble()<StaffSuccessChance(job.Staff);
+            job.Burnt=false;
+            FinishOven(job,at);
             CompleteBake(job,at);
-            if(jobs.Contains(job) && !job.NeedsDecision && packSeconds<=0 && RackCount<rackCapacity)Pack(job); // no packing time: boxed as it leaves the oven
+            if(jobs.Contains(job) && !job.NeedsDecision && packSeconds<=0 && RackCount<rackCapacity)Pack(job);
+            // no packing time: boxed as it leaves the oven
 
         }
     }
@@ -278,7 +303,11 @@ public sealed partial class CookingManager : MonoBehaviour
     {
         if(clock.Phase!=DayPhase.Open)return;
         // Without packing time, staff pizzas waiting for rack space are boxed as soon as a slot frees; nobody has to stop work for it.
-        if(packSeconds<=0)foreach(var job in jobs.Where(j=>j.Worker==PizzaWorker.Staff && j.Stage==PizzaStage.Baked && !j.Undercooked && !j.NeedsDecision).OrderBy(j=>j.TakenOutAt).ToArray()){if(RackCount>=rackCapacity)break;Pack(job);}
+        if(packSeconds<=0)foreach(var job in jobs.Where(j=>j.Worker==PizzaWorker.Staff && j.Stage==PizzaStage.Baked && !j.Undercooked && !j.NeedsDecision).OrderBy(j=>j.TakenOutAt).ToArray())
+        {
+            if(RackCount>=rackCapacity)break;
+            Pack(job);
+        }
         foreach(var job in jobs.Where(j=>j.Worker==PizzaWorker.Player && j.Stage==PizzaStage.Baked && !j.Undercooked && !j.NeedsDecision).OrderBy(j=>j.TakenOutAt))
         {
             if(RackCount>=rackCapacity || PackingTable.Count()>=packingSlots)break;
@@ -297,7 +326,12 @@ public sealed partial class CookingManager : MonoBehaviour
             if(baked!=null && RackCount<rackCapacity)
             {
                 float start=Mathf.Min(t,Mathf.Max(slot.FreeSince,baked.TakenOutAt));
-                baked.Stage=PizzaStage.Boxed;slot.Task=baked;slot.Packing=true;slot.Until=start+StaffPackSeconds(slot.Staff);slot.Staff.IsWorking=true;continue;
+                baked.Stage=PizzaStage.Boxed;
+                slot.Task=baked;
+                slot.Packing=true;
+                slot.Until=start+StaffPackSeconds(slot.Staff);
+                slot.Staff.IsWorking=true;
+                continue;
             }
             int bench=FreeBench();if(bench<0)continue;
             var order=orders.Orders.Where(o=>o.Baking==BakingState.Waiting && o.SpawnedAt<=t && Expires(o)>t && !expired.Contains(o) && JobFor(o)==null).OrderByDescending(o=>redoPriority.Contains(o)).ThenBy(o=>o.SpawnedAt).FirstOrDefault();
@@ -306,7 +340,11 @@ public sealed partial class CookingManager : MonoBehaviour
             float begin=Mathf.Min(t,Mathf.Max(earliest,Mathf.Max(slot.FreeSince,benchFreeSince[bench])));
             var job=new PizzaJob(order,PizzaWorker.Staff){Staff=slot.Staff,Bench=bench,Stage=PizzaStage.Topping,StartedAt=begin};
             jobs.Add(job);benches[bench]=job;order.Baking=BakingState.Cooking;
-            slot.Task=job;slot.FromStage=PizzaStage.Ticket;slot.Packing=false;slot.Until=begin+StaffWorkSeconds(slot.Staff,job.Order);slot.Staff.IsWorking=true;
+            slot.Task=job;
+            slot.FromStage=PizzaStage.Ticket;
+            slot.Packing=false;
+            slot.Until=begin+StaffWorkSeconds(slot.Staff,job.Order);
+            slot.Staff.IsWorking=true;
         }
     }
     private int FreeOven(){for(int i=0;i<ovens.Length;i++)if(ovens[i]==null)return i;return -1;}
@@ -321,7 +359,13 @@ public sealed partial class CookingManager : MonoBehaviour
     {
         job.QueuedForOven=false;
         if(job.Bench>=0 && job.Bench<benches.Length && benches[job.Bench]==job){benches[job.Bench]=null;benchFreeSince[job.Bench]=at;}
-        job.Bench=-1;job.Oven=oven;ovens[oven]=job;job.OvenStartedAt=at-job.BakedSeconds;job.LastTouchedAt=at;job.Undercooked=false;job.Stage=PizzaStage.Baking;
+        job.Bench=-1;
+        job.Oven=oven;
+        ovens[oven]=job;
+        job.OvenStartedAt=at-job.BakedSeconds;
+        job.LastTouchedAt=at;
+        job.Undercooked=false;
+        job.Stage=PizzaStage.Baking;
     }
     private void FinishOven(PizzaJob job,float at)
     {
@@ -332,7 +376,12 @@ public sealed partial class CookingManager : MonoBehaviour
     private void Pack(PizzaJob job)
     {
         job.Stage=PizzaStage.Packed;job.Order.Stars=job.Stars;job.Order.Baking=BakingState.Ready;
-        if(job.Worker==PizzaWorker.Player)PackedByPlayer++;else{string name=job.Staff!=null?job.Staff.Name:"Staff";packedByStaff[name]=packedByStaff.TryGetValue(name,out int n)?n+1:1;}
+        if(job.Worker==PizzaWorker.Player)PackedByPlayer++;
+        else
+        {
+            string name=job.Staff!=null?job.Staff.Name:"Staff";
+            packedByStaff[name]=packedByStaff.TryGetValue(name,out int n)?n+1:1;
+        }
     }
     private void Release(PizzaJob job,float at)
     {
@@ -368,12 +417,21 @@ public sealed partial class CookingManager : MonoBehaviour
         if(!Ready())return false;var job=PlayerBench(bench);if(job==null || job.Stage!=from)return false;apply(job);Touch(job);return Done();
     }
     public bool AddDough(int bench)=>Step(bench,PizzaStage.Ticket,j=>j.Stage=PizzaStage.Dough);
-    public bool AddSauce(int bench,float coverage)=>Step(bench,PizzaStage.Dough,j=>{j.SauceCoverage=Mathf.Clamp01(coverage);j.SaucePoint=j.SauceCoverage>=sauceThreshold;j.Stage=PizzaStage.Sauce;});
+    public bool AddSauce(int bench,float coverage)=>Step(bench,PizzaStage.Dough,j=>
+    {
+        j.SauceCoverage=Mathf.Clamp01(coverage);
+        j.SaucePoint=j.SauceCoverage>=sauceThreshold;
+        j.Stage=PizzaStage.Sauce;
+    });
     public bool AddCheese(int bench)=>Step(bench,PizzaStage.Sauce,j=>j.Stage=PizzaStage.Cheese);
     public bool AddTopping(int bench,Topping topping)=>Step(bench,PizzaStage.Cheese,j=>
     {
         j.AddedToppings.Add(topping);j.AddedTopping=j.AddedToppings[0];
-        if(j.AddedToppings.Count>=j.Order.RequiredToppings.Length){j.ToppingPoint=j.AddedToppings.OrderBy(t=>t).SequenceEqual(j.Order.RequiredToppings.OrderBy(t=>t));j.Stage=PizzaStage.Topping;}
+        if(j.AddedToppings.Count>=j.Order.RequiredToppings.Length)
+        {
+            j.ToppingPoint=j.AddedToppings.OrderBy(t=>t).SequenceEqual(j.Order.RequiredToppings.OrderBy(t=>t));
+            j.Stage=PizzaStage.Topping;
+        }
     });
     public bool PutInOven(int bench,int oven)
     {
@@ -387,7 +445,12 @@ public sealed partial class CookingManager : MonoBehaviour
     {
         if(!Ready() || !CanTakeOut(oven))return false;
         var job=ovens[oven];float elapsed=OvenElapsed(oven);
-        job.BakePoint=elapsed>=BandStartFor(job.Order) && elapsed<=BandEndFor(job.Order);job.Burnt=elapsed>=BurnAtFor(job.Order);FinishOven(job,clock.ElapsedSeconds);job.Undercooked=elapsed<BandStartFor(job.Order);if(!job.Undercooked)CompleteBake(job,clock.ElapsedSeconds);return Done();
+        job.BakePoint=elapsed>=BandStartFor(job.Order) && elapsed<=BandEndFor(job.Order);
+        job.Burnt=elapsed>=BurnAtFor(job.Order);
+        FinishOven(job,clock.ElapsedSeconds);
+        job.Undercooked=elapsed<BandStartFor(job.Order);
+        if(!job.Undercooked)CompleteBake(job,clock.ElapsedSeconds);
+        return Done();
     }
     public bool Box(PizzaJob job)
     {

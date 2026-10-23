@@ -32,7 +32,11 @@ public sealed class HubView : MonoBehaviour
 
     private CampaignManager campaign;private GameClock clock;private BusinessEconomy economy;private CourierRoster roster;private KitchenCrew crew;
     private RecruitmentManager recruitment;private TrainingManager training;private FacilityManager facilities;private OrderSpawner spawner;
-    private ReputationManager reputation;private GameMenu menu;private CourierProgression progression;private ScreenRouter router;private MapManager map;
+    private ReputationManager reputation;
+    private GameMenu menu;
+    private CourierProgression progression;
+    private ScreenRouter router;
+    private MapManager map;
     private ManagementPanelView management;
     private string signature="";private float messageUntil;private string lastMessage="";
     private readonly List<(int day,decimal revenue,decimal profit,decimal cash)> records=new();
@@ -43,9 +47,17 @@ public sealed class HubView : MonoBehaviour
 
     private void Awake()
     {
-        campaign=Find<CampaignManager>();clock=Find<GameClock>();economy=Find<BusinessEconomy>();roster=Find<CourierRoster>();crew=Find<KitchenCrew>();
+        campaign=Find<CampaignManager>();
+        clock=Find<GameClock>();
+        economy=Find<BusinessEconomy>();
+        roster=Find<CourierRoster>();
+        crew=Find<KitchenCrew>();
         recruitment=Find<RecruitmentManager>();training=Find<TrainingManager>();facilities=Find<FacilityManager>();spawner=Find<OrderSpawner>();
-        reputation=Find<ReputationManager>();menu=Find<GameMenu>();progression=Find<CourierProgression>();router=Find<ScreenRouter>();map=Find<MapManager>();
+        reputation=Find<ReputationManager>();
+        menu=Find<GameMenu>();
+        progression=Find<CourierProgression>();
+        router=Find<ScreenRouter>();
+        map=Find<MapManager>();
     }
     private static TComp Find<TComp>() where TComp:UnityEngine.Object=>FindFirstObjectByType<TComp>();
     private void Start()
@@ -169,7 +181,11 @@ public sealed class HubView : MonoBehaviour
         var mask=viewport.gameObject.AddComponent<RectMask2D>();mask.padding=new Vector4(-8,-12,-8,-16);
         var row=UiKit.Box(viewport,"Row",0,0,10,624);
         var scroll=viewport.gameObject.AddComponent<ScrollRect>();
-        scroll.content=row;scroll.horizontal=true;scroll.vertical=false;scroll.movementType=ScrollRect.MovementType.Clamped;scroll.scrollSensitivity=40;
+        scroll.content=row;
+        scroll.horizontal=true;
+        scroll.vertical=false;
+        scroll.movementType=ScrollRect.MovementType.Clamped;
+        scroll.scrollSensitivity=40;
         return row;
     }
     private static T Place<T>(T prefab,Transform parent,string name,float x) where T:Component
@@ -222,14 +238,26 @@ public sealed class HubView : MonoBehaviour
         card.Show(staff.Name,KitchenRank(staff),staff.Speed,staff.Care,ShopStrings.KitchenInfo,UiKit.Yen(economy.DailyWage(staff)));
         string reason=applicant!=null?UiStrings.Japanese(recruitment.HireRejection(applicant)):"";
         card.ShowMode(applicant!=null,"採用 "+UiKit.Yen(recruitment.HiringCost(staff)),reason);
-        if(applicant!=null){card.Hire.Button.onClick.AddListener(()=>recruitment.Hire(applicant));card.Hire.Interactable=Preparing && reason.Length==0;}
+        if(applicant!=null)
+        {
+            card.Hire.Button.onClick.AddListener(()=>recruitment.Hire(applicant));
+            card.Hire.Interactable=Preparing && reason.Length==0;
+        }
         else{card.Fire.Button.onClick.AddListener(()=>recruitment.Fire(staff));card.Fire.Interactable=Preparing;}
     }
     private void BuildApplicants()
     {
         var row=Scroller();float x=0;
-        foreach(var applicant in recruitment.Applicants){ShowApplicant(Place(applicantCard,row,"Applicant_"+applicant.Person.Name,x),applicant);x+=CardW+Gap;}
-        foreach(var k in recruitment.KitchenApplicants){ShowKitchen(Place(kitchenCard,row,"KitchenApplicant_"+k.Staff.Name,x),k.Staff,k);x+=CardW+Gap;}
+        foreach(var applicant in recruitment.Applicants)
+        {
+            ShowApplicant(Place(applicantCard,row,"Applicant_"+applicant.Person.Name,x),applicant);
+            x+=CardW+Gap;
+        }
+        foreach(var k in recruitment.KitchenApplicants)
+        {
+            ShowKitchen(Place(kitchenCard,row,"KitchenApplicant_"+k.Staff.Name,x),k.Staff,k);
+            x+=CardW+Gap;
+        }
         if(x==0)UiKit.Label(row,"Empty","今日の求人はありません。明日また来ます。",0,260,800,40,24,T.inkSub,FontRole.Black);
         row.sizeDelta=new Vector2(Mathf.Max(x,10),624);
     }
@@ -275,7 +303,11 @@ public sealed class HubView : MonoBehaviour
             card.ShowTiers(facilities.AdvertisingTiers,
                 t=>$"{(t==1?"小":t==2?"中":"大")}  {UiKit.Yen(facilities.Price(type,t))}  x{facilities.AdvertisingDemand(t):0.00}",
                 t=>Preparing && facilities.Rejection(type,t).Length==0);
-            for(int tier=1;tier<=facilities.AdvertisingTiers;tier++){int t=tier;card.Tier(t).Button.onClick.AddListener(()=>facilities.Purchase(FacilityType.Advertising,t));}
+            for(int tier=1;tier<=facilities.AdvertisingTiers;tier++)
+            {
+                int t=tier;
+                card.Tier(t).Button.onClick.AddListener(()=>facilities.Purchase(FacilityType.Advertising,t));
+            }
             return;
         }
         bool max=facilities.IsMaximum(type);string reason=facilities.Rejection(type);

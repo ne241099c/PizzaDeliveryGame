@@ -71,7 +71,17 @@ public sealed class CampaignManager : MonoBehaviour
     {
         flow.ResetForNewGame();FindFirstObjectByType<MapManager>().NewCampaignCity();facilities?.NewGame();spawner.RefreshMinimumPromise();
         IsBankrupt=false;ConsecutiveNegativeDays=0;TotalRevenue=BestDailyRevenue=0;
-        recruitment.ResetRandom();spawner.ResetRandom();if(cooking!=null)cooking.ResetRandom();if(crew!=null)crew.ResetToInitial();roster.ResetToInitialRoster();economy.NewGame(); DayNumber=1; TotalDelivered=TotalScore=0; reputation.ResetForDay(); spawner.ResetPolicy(); PrepareDay();
+        recruitment.ResetRandom();
+        spawner.ResetRandom();
+        if(cooking!=null)cooking.ResetRandom();
+        if(crew!=null)crew.ResetToInitial();
+        roster.ResetToInitialRoster();
+        economy.NewGame();
+        DayNumber=1;
+        TotalDelivered=TotalScore=0;
+        reputation.ResetForDay();
+        spawner.ResetPolicy();
+        PrepareDay();
     }
     public void RestorePreparation(CampaignSaveData data)
     {
@@ -79,8 +89,13 @@ public sealed class CampaignManager : MonoBehaviour
         TotalRevenue=CampaignSaveManager.Decimal(data.totalRevenue);BestDailyRevenue=CampaignSaveManager.Decimal(data.bestDailyRevenue);
         ConsecutiveNegativeDays=data.negativeDays;IsBankrupt=false;clock.PrepareDay();
         facilities?.Restore(data.facilities);
-        orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));FindFirstObjectByType<MapManager>().RestoreCity(data.city);spawner.RefreshMinimumPromise();
-        orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));orders.ClearSelection();roster.RestoreRoster(data.people);if(crew!=null)crew.Restore(data.crew);
+        orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
+        FindFirstObjectByType<MapManager>().RestoreCity(data.city);
+        spawner.RefreshMinimumPromise();
+        orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
+        orders.ClearSelection();
+        roster.RestoreRoster(data.people);
+        if(crew!=null)crew.Restore(data.crew);
         reputation.Restore(data.reputation);dynamics.ResetForDay();spawner.ResetForDay();spawner.SetPromiseSeconds(data.promise);
         economy.RestorePreparation(CampaignSaveManager.Decimal(data.cash),CampaignSaveManager.Decimal(data.openingCash),CampaignSaveManager.Decimal(data.preparationCosts),DayNumber);
         economy.Ledger.FacilityPurchases=CampaignSaveManager.Decimal(data.facilityPurchaseCosts);
@@ -91,7 +106,10 @@ public sealed class CampaignManager : MonoBehaviour
     }
     private void PrepareDay()
     {
-        facilities?.PrepareDay();economy.PrepareDay(DayNumber); clock.PrepareDay(); orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
+        facilities?.PrepareDay();
+        economy.PrepareDay(DayNumber);
+        clock.PrepareDay();
+        orders.RemoveOrders(new System.Collections.Generic.List<Order>(orders.Orders));
         orders.ClearSelection(); roster.ResetDailyState(); crew?.ResetDailyState(); handover?.Clear(); dynamics.ResetForDay(); spawner.ResetForDay();
         FindFirstObjectByType<MapManager>().PrepareCity(DayNumber);
         training.PrepareDay();score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();progression.PrepareDay();

@@ -71,7 +71,12 @@ public sealed class RecruitmentManager : MonoBehaviour
     public string LastMessage { get; private set; }="";
     public event Action Changed;
     private void Awake() => ResetRandom();
-    public void ResetRandom() {int seed=SeedOverride ?? (useFixedSeed ? randomSeed : Environment.TickCount);random=new System.Random(seed);kitchenRandom=new System.Random(unchecked(seed*31+7));}
+    public void ResetRandom()
+    {
+        int seed=SeedOverride ?? (useFixedSeed ? randomSeed : Environment.TickCount);
+        random=new System.Random(seed);
+        kitchenRandom=new System.Random(unchecked(seed*31+7));
+    }
     private float Range(Vector2 range) => Mathf.Lerp(range.x,range.y,(float)random.NextDouble());
     private void Shuffle<T>(T[] values)
     {
@@ -101,7 +106,12 @@ public sealed class RecruitmentManager : MonoBehaviour
     }
     public void RestoreApplicants(IEnumerable<Applicant> restored)
     {applicants.Clear();applicants.AddRange(restored);LastMessage="Applicants restored.";Changed?.Invoke();}
-    public void RestoreKitchenApplicants(IEnumerable<KitchenApplicant> restored){kitchenApplicants.Clear();kitchenApplicants.AddRange(restored);Changed?.Invoke();}
+    public void RestoreKitchenApplicants(IEnumerable<KitchenApplicant> restored)
+    {
+        kitchenApplicants.Clear();
+        kitchenApplicants.AddRange(restored);
+        Changed?.Invoke();
+    }
     public void GenerateDay()
     {
         if(random==null)ResetRandom();applicants.Clear();
@@ -147,7 +157,8 @@ public sealed class RecruitmentManager : MonoBehaviour
     {
         if(kitchenRandom==null)ResetRandom();kitchenApplicants.Clear();
         if(kitchenRandom.NextDouble()>=kitchenApplicantChance)return;
-        var used=new HashSet<string>(roster.People.Select(p=>p.Name).Concat(applicants.Select(a=>a.Person.Name)));if(crew!=null)used.UnionWith(crew.People.Select(c=>c.Name));
+        var used=new HashSet<string>(roster.People.Select(p=>p.Name).Concat(applicants.Select(a=>a.Person.Name)));
+        if(crew!=null)used.UnionWith(crew.People.Select(c=>c.Name));
         var names=AvailableNames(kitchenNamePool,used,1,"Kitchen");
         float Ability()=>Mathf.Lerp(kitchenAbilityRange.x,kitchenAbilityRange.y,(float)kitchenRandom.NextDouble());
         kitchenApplicants.Add(new KitchenApplicant(new KitchenStaff(names[kitchenRandom.Next(names.Length)],Ability(),Ability())));
@@ -157,7 +168,12 @@ public sealed class RecruitmentManager : MonoBehaviour
         var bases=pool.Where(n=>!string.IsNullOrWhiteSpace(n)).Distinct().ToArray();if(bases.Length==0)bases=new[]{fallback};
         var names=bases.Where(n=>!used.Contains(n)).ToList();
         for(int suffix=2;names.Count<needed;suffix++)
-            foreach(var name in bases){string candidate=name+" "+suffix;if(!used.Contains(candidate))names.Add(candidate);if(names.Count>=needed)break;}
+            foreach(var name in bases)
+            {
+                string candidate=name+" "+suffix;
+                if(!used.Contains(candidate))names.Add(candidate);
+                if(names.Count>=needed)break;
+            }
         return names.ToArray();
     }
     public decimal HiringCost(KitchenStaff staff) => BusinessEconomy.Money(economy.DailyWage(staff)*(decimal)hiringWageDays);

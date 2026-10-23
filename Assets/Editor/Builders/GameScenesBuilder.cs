@@ -52,7 +52,15 @@ public static class GameScenesBuilder
         var canvas=Object.FindFirstObjectByType<Canvas>(FindObjectsInactive.Include);if(canvas==null)return "missing Canvas";
         var shop=Object.FindFirstObjectByType<ShopUiRoot>(FindObjectsInactive.Include);if(shop==null)return "missing ShopUI";
         int removedRoots=0,removedChildren=0,missing=0;
-        foreach(string name in LegacyRoots){var root=canvas.transform.Find(name);if(root!=null){Object.DestroyImmediate(root.gameObject);removedRoots++;}}
+        foreach(string name in LegacyRoots)
+        {
+            var root=canvas.transform.Find(name);
+            if(root!=null)
+            {
+                Object.DestroyImmediate(root.gameObject);
+                removedRoots++;
+            }
+        }
         // The modal panels keep their CanvasGroup; their first layout (hidden children) goes.
         foreach(string name in new[]{"PauseMenu","HelpOverlay","ReturnTitleConfirmation"})
         {
@@ -98,20 +106,31 @@ public static class GameScenesBuilder
     /// <summary>Camera, EventSystem, a 1920x1080 Canvas with the title prefab, an overlay layer for modals and TitleScene.</summary>
     public static string BuildTitleScene()
     {
-        var prefab=AssetDatabase.LoadAssetAtPath<GameObject>(TitleViewBuilder.PrefabPath);if(prefab==null)return "missing "+TitleViewBuilder.PrefabPath;
+        var prefab=AssetDatabase.LoadAssetAtPath<GameObject>(TitleViewBuilder.PrefabPath);
+        if(prefab==null)return "missing "+TitleViewBuilder.PrefabPath;
         var credits=AssetDatabase.LoadAssetAtPath<TextAsset>(GameInfoSync.CreditsAsset);if(credits==null)return "missing "+GameInfoSync.CreditsAsset;
         var scene=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single);
         var cameraObject=new GameObject("Main Camera",typeof(Camera));cameraObject.tag="MainCamera";
-        var camera=cameraObject.GetComponent<Camera>();camera.orthographic=true;camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=UiKit.T.line;camera.cullingMask=0;
+        var camera=cameraObject.GetComponent<Camera>();
+        camera.orthographic=true;
+        camera.clearFlags=CameraClearFlags.SolidColor;
+        camera.backgroundColor=UiKit.T.line;
+        camera.cullingMask=0;
         new GameObject("EventSystem",typeof(EventSystem),typeof(InputSystemUIInputModule));
-        var canvasObject=new GameObject("Canvas",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));canvasObject.layer=5;
+        var canvasObject=new GameObject("Canvas",typeof(RectTransform),typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));
+        canvasObject.layer=5;
         canvasObject.GetComponent<Canvas>().renderMode=RenderMode.ScreenSpaceOverlay;
-        var scaler=canvasObject.GetComponent<CanvasScaler>();scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new Vector2(1920,1080);scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.Expand;
+        var scaler=canvasObject.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution=new Vector2(1920,1080);
+        scaler.screenMatchMode=CanvasScaler.ScreenMatchMode.Expand;
         var view=(GameObject)PrefabUtility.InstantiatePrefab(prefab,canvasObject.transform);
         var rect=(RectTransform)view.transform;rect.anchorMin=Vector2.zero;rect.anchorMax=Vector2.one;rect.offsetMin=rect.offsetMax=Vector2.zero;
         var overlay=UiKit.Stretch(canvasObject.transform,"Overlay");
         var controller=canvasObject.AddComponent<TitleScene>();var so=new SerializedObject(controller);
-        so.FindProperty("view").objectReferenceValue=view.GetComponent<TitleView>();so.FindProperty("creditsText").objectReferenceValue=credits;so.FindProperty("overlay").objectReferenceValue=overlay;
+        so.FindProperty("view").objectReferenceValue=view.GetComponent<TitleView>();
+        so.FindProperty("creditsText").objectReferenceValue=credits;
+        so.FindProperty("overlay").objectReferenceValue=overlay;
         so.ApplyModifiedPropertiesWithoutUndo();
         EditorSceneManager.SaveScene(scene,TitlePath);
         return "saved "+TitlePath;

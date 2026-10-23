@@ -26,7 +26,10 @@ public sealed class SimulationDayRecord
     public string Csv => string.Join(",",new object[]{Seed,Day,Promise,Revenue,Materials,Fuel,Wages,FixedCosts,Profit,Cash,Reputation,Delivered,Late,Cancelled,Accidents,Bankrupt?1:0,Stock,Spawned,BusyRatio,Hired,RosterSize,PreparationCosts,Policy,Couriers,DailyGrowth,GrowthCount,Training,TrainingCosts,ExperienceGrowth,Potentials,RequestedPromise,QualityBonus,Repairs,OvenLevel,BikeLevel,ShopLevel,MaximumCookingQueue,OvenUtilization,EquipmentMaintenance,FacilityPurchases,MinimumPromise,FacilityPurchase,TwoStarOnTime,ThreeStarOnTime,KitchenStaff}
         .Select(Cell));
     private static string Cell(object value)
-    {string s=value is IFormattable f?f.ToString(null,CultureInfo.InvariantCulture):value.ToString();return s.IndexOfAny(new[]{',','"','\n'})>=0 ? "\""+s.Replace("\"","\"\"")+"\"" : s;}
+    {
+        string s=value is IFormattable f?f.ToString(null,CultureInfo.InvariantCulture):value.ToString();
+        return s.IndexOfAny(new[]{',','"','\n'})>=0 ? "\""+s.Replace("\"","\"\"")+"\"" : s;
+    }
 }
 
 public sealed class DaySimulationSession : IDisposable
@@ -83,23 +86,52 @@ public sealed class DaySimulationSession : IDisposable
         ?? throw new InvalidOperationException("Missing scene component: "+typeof(T).Name);
     public DaySimulationSession(DaySimulationSettings settings,bool? batchOverride=null,bool? hireOverride=null,bool? adjustOverride=null,string name="comparison",int? daysOverride=null,float[] promisesOverride=null,bool? trainOverride=null,float? initialCashOverride=null,bool? facilityOverride=null,int? citySeedOverride=null,int? cityBlocksOverride=null,int? kitchenStaffOverride=null,bool? hireKitchenOverride=null,bool? substituteOverride=null)
     {
-        initialKitchen=kitchenStaffOverride??(settings.InitialKitchenStaff>=0?(int?)settings.InitialKitchenStaff:null);hireKitchen=hireKitchenOverride??settings.HireKitchenStaff;substituteWhenEmpty=substituteOverride??settings.SubstituteWhenEmpty;
+        initialKitchen=kitchenStaffOverride??(settings.InitialKitchenStaff>=0?(int?)settings.InitialKitchenStaff:null);
+        hireKitchen=hireKitchenOverride??settings.HireKitchenStaff;
+        substituteWhenEmpty=substituteOverride??settings.SubstituteWhenEmpty;
         map=Find<MapManager>();originalCitySeed=map.SeedOverride;originalBlocks=map.BlocksOverride;originalSample=map.UseSampleForValidation;
         if(citySeedOverride.HasValue){map.UseSampleForValidation=false;map.SeedOverride=citySeedOverride;}
         if(cityBlocksOverride.HasValue)map.BlocksOverride=cityBlocksOverride;
         buyFacilities=facilityOverride??settings.BuyFacilities;facilities=Find<FacilityManager>();
         this.initialCashOverride=initialCashOverride;
-        this.settings=settings;batch=batchOverride??settings.BatchDispatch;hire=hireOverride??settings.HireApplicants;adjust=adjustOverride??settings.AdjustPromise;policyName=name;train=trainOverride??settings.TrainCouriers;
+        this.settings=settings;
+        batch=batchOverride??settings.BatchDispatch;
+        hire=hireOverride??settings.HireApplicants;
+        adjust=adjustOverride??settings.AdjustPromise;
+        policyName=name;
+        train=trainOverride??settings.TrainCouriers;
         if(!Application.isPlaying)throw new InvalidOperationException("Enter Play first.");
-        days=daysOverride??settings.DaysPerPolicy;promises=promisesOverride??settings.PromiseSeconds;seed=settings.RandomSeed;step=settings.ClockStepSeconds;maximumDaySeconds=settings.MaximumDaySeconds;
+        days=daysOverride??settings.DaysPerPolicy;
+        promises=promisesOverride??settings.PromiseSeconds;
+        seed=settings.RandomSeed;
+        step=settings.ClockStepSeconds;
+        maximumDaySeconds=settings.MaximumDaySeconds;
         if(days<1 || promises.Length==0 || promises.Any(v=>v<=0 || float.IsNaN(v) || float.IsInfinity(v))
             || step<=0 || float.IsNaN(step) || float.IsInfinity(step) || maximumDaySeconds<=0 || float.IsNaN(maximumDaySeconds) || float.IsInfinity(maximumDaySeconds))
             throw new ArgumentException("Set valid simulation days, promises and clock step in the Inspector.");
-        campaign=Find<CampaignManager>();clock=Find<GameClock>();spawner=Find<OrderSpawner>();dynamics=Find<DeliveryDynamics>();recruitment=Find<RecruitmentManager>();
-        economy=Find<BusinessEconomy>();flow=Find<DeliveryFlowController>();roster=Find<CourierRoster>();orders=Find<OrderBook>();stats=Find<DayStats>();reputation=Find<ReputationManager>();planner=Find<DeliveryPlanner>();progression=Find<CourierProgression>();training=Find<TrainingManager>();
-        cooking=Find<CookingManager>();originalSubstitute=cooking.EditorSubstitute;originalManualCooking=cooking.ManualControlEnabled;cooking.ManualControlEnabled=false;
+        campaign=Find<CampaignManager>();
+        clock=Find<GameClock>();
+        spawner=Find<OrderSpawner>();
+        dynamics=Find<DeliveryDynamics>();
+        recruitment=Find<RecruitmentManager>();
+        economy=Find<BusinessEconomy>();
+        flow=Find<DeliveryFlowController>();
+        roster=Find<CourierRoster>();
+        orders=Find<OrderBook>();
+        stats=Find<DayStats>();
+        reputation=Find<ReputationManager>();
+        planner=Find<DeliveryPlanner>();
+        progression=Find<CourierProgression>();
+        training=Find<TrainingManager>();
+        cooking=Find<CookingManager>();
+        originalSubstitute=cooking.EditorSubstitute;
+        originalManualCooking=cooking.ManualControlEnabled;
+        cooking.ManualControlEnabled=false;
         originalAutomaticTick=clock.AutomaticTick;originalSpawnerEnabled=spawner.enabled;
-        originalOrderSeed=spawner.SeedOverride;originalDynamicsSeed=dynamics.SeedOverride;originalRecruitmentSeed=recruitment.SeedOverride;originalCookingSeed=cooking.SeedOverride;
+        originalOrderSeed=spawner.SeedOverride;
+        originalDynamicsSeed=dynamics.SeedOverride;
+        originalRecruitmentSeed=recruitment.SeedOverride;
+        originalCookingSeed=cooking.SeedOverride;
         var canvas=Find<Canvas>();canvasGroup=canvas.GetComponent<CanvasGroup>();
         if(canvasGroup==null){canvasGroup=canvas.gameObject.AddComponent<CanvasGroup>();canvasGroup.hideFlags=HideFlags.DontSave;}
         originalInteractable=canvasGroup.interactable;originalRaycasts=canvasGroup.blocksRaycasts;
@@ -233,7 +265,10 @@ public sealed class DaySimulationSession : IDisposable
         savingScope?.Dispose();
         cooking.EditorSubstitute=originalSubstitute;cooking.ManualControlEnabled=originalManualCooking;
         clock.AutomaticTick=originalAutomaticTick;spawner.enabled=originalSpawnerEnabled;
-        spawner.SeedOverride=originalOrderSeed;dynamics.SeedOverride=originalDynamicsSeed;recruitment.SeedOverride=originalRecruitmentSeed;cooking.SeedOverride=originalCookingSeed;
+        spawner.SeedOverride=originalOrderSeed;
+        dynamics.SeedOverride=originalDynamicsSeed;
+        recruitment.SeedOverride=originalRecruitmentSeed;
+        cooking.SeedOverride=originalCookingSeed;
         canvasGroup.interactable=originalInteractable;canvasGroup.blocksRaycasts=originalRaycasts;
         // Keep the temporary DontSave group reusable: delayed Destroy would invalidate a second run started this frame.
     }

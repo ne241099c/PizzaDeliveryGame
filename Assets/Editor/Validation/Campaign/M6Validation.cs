@@ -16,16 +16,31 @@ public static partial class M6Validation
         var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var hub=UnityEngine.Object.FindFirstObjectByType<HubView>();
         var recruitment=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();
         // The hub's cards are rebuilt from the current roster, so each button acts on the person shown.
-        StickerButton Button(string card,string name){hub.RefreshNow();var root=hub.Content.GetComponentsInChildren<RectTransform>(true).First(r=>r.name==card);return root.GetComponentsInChildren<StickerButton>(true).First(b=>b.name==name);}
+        StickerButton Button(string card,string name)
+        {
+            hub.RefreshNow();
+            var root=hub.Content.GetComponentsInChildren<RectTransform>(true).First(r=>r.name==card);
+            return root.GetComponentsInChildren<StickerButton>(true).First(b=>b.name==name);
+        }
         campaign.StartBusiness();campaign.NewGame();hub.ShowTab(0);var person=roster.People[0];
         Button("Courier_"+person.Name,"Train").Button.onClick.Invoke();
         hub.GetComponentsInChildren<StickerButton>(true).First(b=>b.name=="Train0").Button.onClick.Invoke();
         Check(training.HasAssignment(person) && economy.Cash==130,"hub training dialog trains the person on the card");
-        Button("Courier_"+person.Name,"CancelTraining").Button.onClick.Invoke();Check(economy.Cash==300 && person.IsAvailable,"hub cancel button refunds");
-        Button("Courier_"+person.Name,"Fire").Button.onClick.Invoke();Check(roster.People.Count==1 && !roster.People.Contains(person),"hub fire button targets the person on the card");
-        campaign.NewGame();var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
+        Button("Courier_"+person.Name,"CancelTraining").Button.onClick.Invoke();
+        Check(economy.Cash==300 && person.IsAvailable,"hub cancel button refunds");
+        Button("Courier_"+person.Name,"Fire").Button.onClick.Invoke();
+        Check(roster.People.Count==1 && !roster.People.Contains(person),"hub fire button targets the person on the card");
+        campaign.NewGame();
+        var funding=new SerializedObject(economy);
+        funding.FindProperty("initialCash").floatValue=5000;
+        funding.ApplyModifiedPropertiesWithoutUndo();
+        economy.NewGame();
+        funding.FindProperty("initialCash").floatValue=300;
+        funding.ApplyModifiedPropertiesWithoutUndo();
         hub.ShowTab(1);var applicant=recruitment.Applicants[0].Person;Button("Applicant_"+applicant.Name,"Hire").Button.onClick.Invoke();
-        Check(roster.People.Count==3 && roster.People.Contains(applicant),"hub hire button hires the applicant on the card");hub.ShowTab(0);campaign.NewGame();
+        Check(roster.People.Count==3 && roster.People.Contains(applicant),"hub hire button hires the applicant on the card");
+        hub.ShowTab(0);
+        campaign.NewGame();
         Check(roster.People.Count==2 && clock.Phase==DayPhase.BeforeOpening,"button integration returns clean campaign");
     }
     private static void ValidateRecruitment()
@@ -51,44 +66,78 @@ public static partial class M6Validation
         var newcomer=profiles.First(a=>a.Type==RecruitArchetype.Newcomer).Person;
         Check(newcomer.Capacity==1 && generator.HiringCost(newcomer)>UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>().DailyWage(newcomer)*3,"newcomer has training room premium");
         Check(profiles.Where(a=>a.Type==RecruitArchetype.Newcomer).All(a=>a.Person.Capacity==1),"newcomers begin with capacity one");
-        var copy=newcomer.Clone();Check(copy.Archetype==newcomer.Archetype && Enumerable.Range(0,6).All(i=>copy.Potential((CourierAbility)i)==newcomer.Potential((CourierAbility)i)),"hired profile copy preserves type and ceilings");
+        var copy=newcomer.Clone();
+        Check(copy.Archetype==newcomer.Archetype && Enumerable.Range(0,6).All(i=>copy.Potential((CourierAbility)i)==newcomer.Potential((CourierAbility)i)),"hired profile copy preserves type and ceilings");
         UnityEngine.Object.FindFirstObjectByType<CampaignManager>().NewGame();
     }
     private static void ValidateTraining()
     {
-        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
-        var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();spawner.enabled=false;
-        var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var hiring=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();
-        var aoi=roster.People[0];Check(training.Cost(aoi,CourierAbility.Driving)==170 && training.Cost(aoi,CourierAbility.Capacity)==300,"training costs");
+        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();
+        var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
+        var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
+        var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();
+        spawner.enabled=false;
+        var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();
+        var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();
+        var hiring=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();
+        var aoi=roster.People[0];
+        Check(training.Cost(aoi,CourierAbility.Driving)==170 && training.Cost(aoi,CourierAbility.Capacity)==300,"training costs");
         Check(!training.Request(aoi,CourierAbility.Capacity) && training.LastMessage.Contains("potential"),"capped ability rejected");
-        var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=0;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
+        var funding=new SerializedObject(economy);
+        funding.FindProperty("initialCash").floatValue=0;
+        funding.ApplyModifiedPropertiesWithoutUndo();
+        economy.NewGame();
         Check(!training.Request(aoi,CourierAbility.Driving) && training.LastMessage.Contains("cash"),"insufficient training cash rejected");
-        funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
-        decimal cash=economy.Cash;Check(training.Request(aoi,CourierAbility.Driving) && economy.Cash==cash-170 && !aoi.IsAvailable,"training debits cash and blocks courier");
+        funding.FindProperty("initialCash").floatValue=5000;
+        funding.ApplyModifiedPropertiesWithoutUndo();
+        economy.NewGame();
+        funding.FindProperty("initialCash").floatValue=300;
+        funding.ApplyModifiedPropertiesWithoutUndo();
+        decimal cash=economy.Cash;
+        Check(training.Request(aoi,CourierAbility.Driving) && economy.Cash==cash-170 && !aoi.IsAvailable,"training debits cash and blocks courier");
         Check(!hiring.Fire(aoi) && hiring.LastMessage.Contains("training"),"training prevents firing");
         Check(!training.Request(aoi,CourierAbility.Service),"second training rejected");
         Check(training.Cancel(aoi) && economy.Cash==cash && aoi.IsAvailable,"cancel fully refunds and restores availability");
         Check(training.Request(aoi,CourierAbility.Driving),"cancel permits replacement request");campaign.StartBusiness();
         Check(!roster.SelectForDispatch(aoi) && roster.SelectForDispatch(roster.People[1]),"other couriers available during training");
-        clock.Advance(clock.BusinessDuration*.5f-.25f);Near(aoi.Driving,.6f,"ability unchanged before half day");Check(!aoi.IsAvailable,"training blocks first half");
-        clock.Advance(.25f);Near(aoi.Driving,.7f,"training grants gain at half day");Check(roster.SelectForDispatch(aoi),"trained courier selectable in second half");
+        clock.Advance(clock.BusinessDuration*.5f-.25f);
+        Near(aoi.Driving,.6f,"ability unchanged before half day");
+        Check(!aoi.IsAvailable,"training blocks first half");
+        clock.Advance(.25f);
+        Near(aoi.Driving,.7f,"training grants gain at half day");
+        Check(roster.SelectForDispatch(aoi),"trained courier selectable in second half");
         Check(!training.Cancel(aoi) && !training.Request(aoi,CourierAbility.Service),"business cannot cancel or reorder training");
-        clock.Advance(1000);Check(economy.Ledger.Wages==242.4m+economy.KitchenWages,"training day pays normal opening courier wage plus the apprentice");campaign.NewGame();
-        var config=new SerializedObject(training);config.FindProperty("trainingDurationRatio").floatValue=1;config.ApplyModifiedPropertiesWithoutUndo();
-        aoi=roster.People[0];Check(training.Request(aoi,CourierAbility.Driving),"full-day training request");campaign.StartBusiness();clock.Advance(clock.BusinessDuration-.25f);Check(!aoi.IsAvailable,"ratio one unavailable until closing");
-        clock.Advance(.25f);Near(aoi.Driving,.7f,"ratio one completes at closing");Check(clock.Phase==DayPhase.Ended,"full-day training permits settlement");
+        clock.Advance(1000);
+        Check(economy.Ledger.Wages==242.4m+economy.KitchenWages,"training day pays normal opening courier wage plus the apprentice");
+        campaign.NewGame();
+        var config=new SerializedObject(training);
+        config.FindProperty("trainingDurationRatio").floatValue=1;
+        config.ApplyModifiedPropertiesWithoutUndo();
+        aoi=roster.People[0];
+        Check(training.Request(aoi,CourierAbility.Driving),"full-day training request");
+        campaign.StartBusiness();
+        clock.Advance(clock.BusinessDuration-.25f);
+        Check(!aoi.IsAvailable,"ratio one unavailable until closing");
+        clock.Advance(.25f);
+        Near(aoi.Driving,.7f,"ratio one completes at closing");
+        Check(clock.Phase==DayPhase.Ended,"full-day training permits settlement");
         config.FindProperty("trainingDurationRatio").floatValue=.5f;config.ApplyModifiedPropertiesWithoutUndo();campaign.NewGame();
     }
     private static void ValidateExperience()
     {
         var rules=UnityEngine.Object.FindFirstObjectByType<CourierProgression>();
         var p=new DeliveryPerson("XP",.5f,.5f,2,.5f,.5f,.5f);p.SetPotential(CourierAbility.Driving,.55f);
-        rules.AwardExperience(p,CourierAbility.Driving,420);Near(p.Driving,.54f,"multiple XP thresholds");Near(p.Experience(CourierAbility.Driving),20,"XP remainder");
-        rules.AwardExperience(p,CourierAbility.Driving,200);Near(p.Driving,.55f,"growth clamps to potential");Near(p.Experience(CourierAbility.Driving),0,"XP cleared at potential");
+        rules.AwardExperience(p,CourierAbility.Driving,420);
+        Near(p.Driving,.54f,"multiple XP thresholds");
+        Near(p.Experience(CourierAbility.Driving),20,"XP remainder");
+        rules.AwardExperience(p,CourierAbility.Driving,200);
+        Near(p.Driving,.55f,"growth clamps to potential");
+        Near(p.Experience(CourierAbility.Driving),0,"XP cleared at potential");
         rules.AwardExperience(p,CourierAbility.Driving,1000);Near(p.Experience(CourierAbility.Driving),0,"capped ability cannot accumulate XP");
         rules.AwardExperience(p,CourierAbility.Capacity,10000);Check(p.Capacity==2,"capacity does not gain XP");
         var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var orders=new[]{M7Validation.ReadyOrder("Goal1","XP",0,100)};
-        var route=new ManualDeliveryRoute(map);route.TryReplace(new[]{"Store-N1","N1-N2-Backstreet","N2-Goal1","N2-Goal1","N1-N2-Backstreet","Store-N1"});
+        var route=new ManualDeliveryRoute(map);
+        route.TryReplace(new[]{"Store-N1","N1-N2-Backstreet","N2-Goal1","N2-Goal1","N1-N2-Backstreet","Store-N1"});
         var trip=new DeliveryTrip(map,route.BuildCompletion(orders,p),p,0,5);
         Near(rules.ExperienceEarned(trip,CourierAbility.Driving),trip.DistanceAt(trip.ReturnsAt)*.3f,"driving XP distance");
         Near(rules.ExperienceEarned(trip,CourierAbility.LocalKnowledge),30,"knowledge counts repeated backstreets");
@@ -99,27 +148,47 @@ public static partial class M6Validation
         var accident=new DeliveryTrip(map,route.BuildCompletion(orders,p),p,0,5,dynamics,()=>0);accident.AdvanceAccidents(10000);
         Near(rules.ExperienceEarned(accident,CourierAbility.Safety),0,"accident roads give no safety XP");
         Near(rules.ExperienceEarned(accident,CourierAbility.Endurance),accident.ReturnsAt*.35f,"accident stop included in endurance XP");
-        var lateOrders=new[]{M7Validation.ReadyOrder("Goal1","Late",0,0)};var late=new DeliveryTrip(map,route.BuildCompletion(lateOrders,p),p,0,5);Near(rules.ExperienceEarned(late,CourierAbility.Service),5,"late service XP");
+        var lateOrders=new[]{M7Validation.ReadyOrder("Goal1","Late",0,0)};
+        var late=new DeliveryTrip(map,route.BuildCompletion(lateOrders,p),p,0,5);
+        Near(rules.ExperienceEarned(late,CourierAbility.Service),5,"late service XP");
         rules.PrepareDay();
-        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
-        var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();spawner.enabled=false;
-        var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
+        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();
+        var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
+        var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
+        var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();
+        spawner.enabled=false;
+        var funding=new SerializedObject(economy);
+        funding.FindProperty("initialCash").floatValue=5000;
+        funding.ApplyModifiedPropertiesWithoutUndo();
+        economy.NewGame();
+        funding.FindProperty("initialCash").floatValue=300;
+        funding.ApplyModifiedPropertiesWithoutUndo();
         var person=UnityEngine.Object.FindFirstObjectByType<CourierRoster>().People[0];campaign.StartBusiness();
         rules.AwardExperience(person,CourierAbility.Driving,200);Near(person.Driving,.62f,"actual roster gains ability during business");
-        clock.Advance(clock.BusinessDuration+1);Check(economy.Ledger.Wages==242.4m+economy.KitchenWages && economy.KitchenWages==48,"current-day courier (242.4) and apprentice (48) wages are frozen at opening");
+        clock.Advance(clock.BusinessDuration+1);
+        Check(economy.Ledger.Wages==242.4m+economy.KitchenWages && economy.KitchenWages==48,"current-day courier (242.4) and apprentice (48) wages are frozen at opening");
         campaign.NextDay();Near(person.Driving,.62f,"growth carries to next day");
-        campaign.StartBusiness();clock.Advance(clock.BusinessDuration+1);Check(economy.Ledger.Wages==242.88m+economy.KitchenWages,"grown courier wage (242.88) applies to next settlement with the apprentice wage");
+        campaign.StartBusiness();
+        clock.Advance(clock.BusinessDuration+1);
+        Check(economy.Ledger.Wages==242.88m+economy.KitchenWages,"grown courier wage (242.88) applies to next settlement with the apprentice wage");
         campaign.NewGame();
     }
     private static void ValidatePotentials()
     {
         var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>().People;
         foreach(var p in roster)for(int i=0;i<5;i++)
-        {var a=(CourierAbility)i;Near(p.Potential(a),Mathf.Min(1,p.Ability(a)+.25f),"initial potential bonus");Near(p.Experience(a),0,"initial experience");}
+        {
+            var a=(CourierAbility)i;
+            Near(p.Potential(a),Mathf.Min(1,p.Ability(a)+.25f),"initial potential bonus");
+            Near(p.Experience(a),0,"initial experience");
+        }
         var fixture=new DeliveryPerson("Clamp",.5f,.5f,2,.5f,.5f,.5f);
         fixture.SetPotential(CourierAbility.Driving,.6f);fixture.Driving=1;Near(fixture.Driving,.6f,"ability setter clamps to potential");
         fixture.SetPotential(CourierAbility.Capacity,1);fixture.Capacity=2;Check(fixture.Capacity==1,"capacity upper bound");
-        fixture.SetExperience(CourierAbility.Service,123);var copy=fixture.Clone();Near(copy.Experience(CourierAbility.Service),123,"copy preserves experience");Near(copy.Potential(CourierAbility.Driving),.6f,"copy preserves potential");
+        fixture.SetExperience(CourierAbility.Service,123);
+        var copy=fixture.Clone();
+        Near(copy.Experience(CourierAbility.Service),123,"copy preserves experience");
+        Near(copy.Potential(CourierAbility.Driving),.6f,"copy preserves potential");
         var hub=UnityEngine.Object.FindFirstObjectByType<HubView>();hub.ShowTab(0);hub.RefreshNow();
         var card=hub.Content.GetComponentsInChildren<RectTransform>(true).First(r=>r.name.StartsWith("Courier_"));
         Check(Enumerable.Range(0,5).All(i=>card.Find("AbilityBar"+i)!=null && card.Find("AbilityBar"+i).GetComponent<UiBar>()!=null),"ability bars with a potential marker on courier cards");

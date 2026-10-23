@@ -15,7 +15,7 @@ public sealed partial class BusinessView
     private string dispatchOrdersSignature="";
     private readonly Dictionary<Order,float> cancelledNotices=new();
     private readonly HashSet<Order> observedOrders=new();
-    private readonly List<(Order order,RectTransform card,TextMeshProUGUI detail,TextMeshProUGUI countdown,RectTransform state)> dispatchOrderRows=new();
+    private readonly List<(Order order,RectTransform card,TextMeshProUGUI detail,TextMeshProUGUI countdown,RectTransform state,Image[] steps)> dispatchOrderRows=new();
     private ScoreManager deadlineScore;
     private const float RowHeight=100;
     public string OrderCountdown(Order order)
@@ -40,7 +40,12 @@ public sealed partial class BusinessView
         viewport.gameObject.AddComponent<RectMask2D>();
         var back=viewport.gameObject.AddComponent<Image>();back.color=Color.clear;
         dispatchOrderContent=UiKit.Box(viewport,"Content",0,0,328,492);
-        var scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.content=dispatchOrderContent;scroll.viewport=viewport;scroll.horizontal=false;scroll.vertical=true;scroll.movementType=ScrollRect.MovementType.Clamped;
+        var scroll=viewport.gameObject.AddComponent<ScrollRect>();
+        scroll.content=dispatchOrderContent;
+        scroll.viewport=viewport;
+        scroll.horizontal=false;
+        scroll.vertical=true;
+        scroll.movementType=ScrollRect.MovementType.Clamped;
         scroll.scrollSensitivity=T.largeSpace;
         UiKit.Label(panel,"Hint","伝票を、下の配達員のレーンへドラッグ",18,560,308,32,T.captionSize,T.inkSub,FontRole.Black);
     }
@@ -68,27 +73,32 @@ public sealed partial class BusinessView
                 var state=UiKit.Badge(card,"State","",0,8,T.disabled,T.line,26,T.captionSize);
                 var detail=UiKit.Label(card,"Detail","",12,36,296,24,T.captionSize,T.line,FontRole.Black);
                 var countdown=UiKit.Label(card,"Countdown","",12,60,296,24,T.captionSize,T.inkSub,FontRole.Bold);
-                for(int k=0;k<5;k++)UiKit.Fill(UiKit.Box(card,"Step"+k,12+k*59,82,55,5),T.disabled,2.5f);
+                var steps=new Image[5];
+                for(int k=0;k<5;k++)steps[k]=UiKit.Fill(UiKit.Box(card,"Step"+k,12+k*59,82,55,5),T.disabled,2.5f);
                 var hit=card.gameObject.AddComponent<Image>();hit.color=Color.clear;
                 var source=card.gameObject.AddComponent<DragSource>();
                 source.Payload=()=>o.Status==OrderStatus.Pending && o.IsReady?new DragPayload{Kind=handover.IsBagged(o)?DragKind.Bagged:DragKind.Box,Order=o,Sprite="box_closed",Size=new Vector2(96,96)}:null;
                 source.Clicked=()=>TapOrder(o);
-                dispatchOrderRows.Add((o,card,detail,countdown,state));
+                dispatchOrderRows.Add((o,card,detail,countdown,state,steps));
             }
             dispatchOrderContent.sizeDelta=new Vector2(328,Mathf.Max(492,shown.Count*RowHeight+8));
             if(shown.Count==0)UiKit.Label(dispatchOrderContent,"Empty","注文を待っています。\n調理中の注文もここに表示します。",16,16,296,100,T.bodySize,T.inkSub,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
         }
-        foreach(var (o,card,detail,countdown,state) in dispatchOrderRows)
+        foreach(var (o,card,detail,countdown,state,steps) in dispatchOrderRows)
         {
             var (text,fill,ink)=OrderState(o);UiKit.SetBadge(state,text,fill,ink);state.anchoredPosition=new Vector2(316-10-state.sizeDelta.x,-8);
             detail.text=o.PizzaName+" ["+o.Ingredients+"] ・ "+OrderProgress(o);
             string time=OrderCountdown(o);
-            if(o.Status==OrderStatus.Dispatched){var delivery=flow.ActiveTrips.SelectMany(t=>t.Deliveries).FirstOrDefault(d=>d.Order==o);if(delivery!=null)time=$"到着まで {Mathf.Max(0,Mathf.CeilToInt(delivery.ArrivesAt-clock.ElapsedSeconds))}秒 ・ "+time;}
+            if(o.Status==OrderStatus.Dispatched)
+            {
+                var delivery=flow.ActiveTrips.SelectMany(t=>t.Deliveries).FirstOrDefault(d=>d.Order==o);
+                if(delivery!=null)time=$"到着まで {Mathf.Max(0,Mathf.CeilToInt(delivery.ArrivesAt-clock.ElapsedSeconds))}秒 ・ "+time;
+            }
             countdown.text=time;countdown.color=o.Deadline<=clock.ElapsedSeconds && o.Status!=OrderStatus.Delivered?T.berry:T.inkSub;
             bool mine=handover.IsBagged(o) && handover.Holder(o)==roster.SelectedPerson;
             UiKit.FaceOf(card).color=o.Status==OrderStatus.Cancelled?T.berryLight:mine?T.cheeseLight:o.IsReady && o.Status==OrderStatus.Pending?T.paper:T.paperDeep;
             int stage=OrderStage(o);
-            for(int k=0;k<5;k++)card.Find("Step"+k).GetComponent<Image>().color=k<stage-1?T.basil:k==stage-1?(stage>=5?T.info:T.cheese):new Color(T.disabled.r,T.disabled.g,T.disabled.b,.5f);
+            for(int k=0;k<5;k++)steps[k].color=k<stage-1?T.basil:k==stage-1?(stage>=5?T.info:T.cheese):new Color(T.disabled.r,T.disabled.g,T.disabled.b,.5f);
         }
     }
     /// <summary>What happens to the order now, with the time until it is baked when the kitchen can estimate it.</summary>

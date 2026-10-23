@@ -50,7 +50,12 @@ public sealed class GameMenu : MonoBehaviour
     private bool InBusiness=>clock.Phase==DayPhase.Open || clock.Phase==DayPhase.Closed;
     private void PauseClock(){if(paused)return;paused=true;originalAutomaticTick=clock.AutomaticTick;clock.AutomaticTick=false;}
     private void ResumeClock(){if(!paused)return;paused=false;clock.AutomaticTick=originalAutomaticTick;}
-    private void HidePanels(){UIVisibility.Set(menu.gameObject,false);UIVisibility.Set(help.gameObject,false);UIVisibility.Set(confirmation.gameObject,false);}
+    private void HidePanels()
+    {
+        UIVisibility.Set(menu.gameObject,false);
+        UIVisibility.Set(help.gameObject,false);
+        UIVisibility.Set(confirmation.gameObject,false);
+    }
     public void ShowMenu()
     {
         PauseClock();UIVisibility.Set(menu.gameObject,true);
@@ -62,7 +67,9 @@ public sealed class GameMenu : MonoBehaviour
     private void RefreshHelp()
     {
         if(helpModal==null)return;
-        helpModal.Title.text=HelpPages.Title(helpPage);helpModal.Body.text=HelpPages.Body(helpPage);helpPageText.text=$"{helpPage+1} / {HelpPages.Pages.Length}";
+        helpModal.Title.text=HelpPages.Title(helpPage);
+        helpModal.Body.text=HelpPages.Body(helpPage);
+        helpPageText.text=$"{helpPage+1} / {HelpPages.Pages.Length}";
     }
     public void CloseHelp(){UIVisibility.Set(help.gameObject,false);if(!MenuOpen)ResumeClock();}
     /// <summary>During business the day's progress would be lost, so it asks first.</summary>

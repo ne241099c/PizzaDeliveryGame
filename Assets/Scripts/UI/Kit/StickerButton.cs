@@ -30,7 +30,12 @@ public sealed class StickerButton : MonoBehaviour, IPointerEnterHandler, IPointe
     private void SetText(string value)
     {
         bool play=value.EndsWith("▶");string text=play?value.TrimEnd('▶',' '):value;
-        if(play && trailing==null){trailing=UiKit.Icon(face,"Play","icon_play",0,0,label.fontSize*.8f,label.color);var r=trailing.rectTransform;r.anchorMin=r.anchorMax=r.pivot=new Vector2(.5f,.5f);}
+        if(play && trailing==null)
+        {
+            trailing=UiKit.Icon(face,"Play","icon_play",0,0,label.fontSize*.8f,label.color);
+            var r=trailing.rectTransform;
+            r.anchorMin=r.anchorMax=r.pivot=new Vector2(.5f,.5f);
+        }
         if(trailing!=null)trailing.gameObject.SetActive(play);
         label.text=text;laidOutText=null;
     }
@@ -45,7 +50,13 @@ public sealed class StickerButton : MonoBehaviour, IPointerEnterHandler, IPointe
         if(!lead && !trail){label.rectTransform.anchoredPosition=new Vector2(0,labelOffsetY);return;}
         label.horizontalAlignment=HorizontalAlignmentOptions.Center;
         label.rectTransform.offsetMin=new Vector2(8,0);label.rectTransform.offsetMax=new Vector2(-8,0);
-        float w=0;if(label.text.Length>0){label.ForceMeshUpdate();w=label.textBounds.size.x;if(w<=0 || float.IsNaN(w))w=label.GetPreferredValues(label.text).x;}
+        float w=0;
+        if(label.text.Length>0)
+        {
+            label.ForceMeshUpdate();
+            w=label.textBounds.size.x;
+            if(w<=0 || float.IsNaN(w))w=label.GetPreferredValues(label.text).x;
+        }
         float li=lead?icon.rectTransform.sizeDelta.x:0,ti=0;
         if(trail){ti=label.fontSize*.8f;trailing.rectTransform.sizeDelta=new Vector2(ti,ti);}
         float gap=label.fontSize*.3f,gl=lead && w>0?gap:0,gt=trail && w>0?gap:0,total=li+gl+w+gt+ti,left=-total/2f;

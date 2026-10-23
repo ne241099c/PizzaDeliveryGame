@@ -47,10 +47,25 @@ public sealed class DeliveryFeedback : MonoBehaviour
     }
     private IEnumerator Float(string caption,Vector2 position,Color color)
     {
-        var go=new GameObject("DeliveryFeedbackText");go.transform.SetParent(transform,false);var text=go.AddComponent<TextMeshPro>();text.font=UITheme.Active.font;text.fontSize=UITheme.Active.worldLabelSize;text.color=color;text.text=caption;text.alignment=TextAlignmentOptions.Center;text.rectTransform.sizeDelta=new Vector2(3,2);go.GetComponent<MeshRenderer>().sortingOrder=50;
+        var go=new GameObject("DeliveryFeedbackText");
+        go.transform.SetParent(transform,false);
+        var text=go.AddComponent<TextMeshPro>();
+        text.font=UITheme.Active.font;
+        text.fontSize=UITheme.Active.worldLabelSize;
+        text.color=color;
+        text.text=caption;
+        text.alignment=TextAlignmentOptions.Center;
+        text.rectTransform.sizeDelta=new Vector2(3,2);
+        go.GetComponent<MeshRenderer>().sortingOrder=50;
         for(float time=0;time<UITheme.Active.effectSeconds;time+=Time.unscaledDeltaTime)
         {
-            if(!Animate)break;float progress=time/UITheme.Active.effectSeconds;go.transform.position=(Vector3)position+Vector3.up*rise.Evaluate(progress)*UITheme.Active.effectRise;var tint=color;tint.a=1-progress;text.color=tint;yield return null;
+            if(!Animate)break;
+            float progress=time/UITheme.Active.effectSeconds;
+            go.transform.position=(Vector3)position+Vector3.up*rise.Evaluate(progress)*UITheme.Active.effectRise;
+            var tint=color;
+            tint.a=1-progress;
+            text.color=tint;
+            yield return null;
         }
         Destroy(go);
     }

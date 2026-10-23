@@ -18,7 +18,12 @@ public static class KitchenComparisonValidation
     public static string Regression()
     {
         if(!Application.isPlaying)throw new Exception("Play required");
-        var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();var cooking=Find<CookingManager>();var original=cooking.EditorSubstitute;var clock=Find<GameClock>();clock.AutomaticTick=false;
+        var save=Find<CampaignSaveManager>();
+        using var scope=save.SuppressSaving();
+        var cooking=Find<CookingManager>();
+        var original=cooking.EditorSubstitute;
+        var clock=Find<GameClock>();
+        clock.AutomaticTick=false;
         int count=0;void Check(bool ok,string text){if(!ok)throw new Exception(text);count++;}
         try
         {
@@ -26,7 +31,8 @@ public static class KitchenComparisonValidation
             {
                 trial.Step();Check(Find<KitchenCrew>().Count==0 && cooking.EditorSubstitute!=null,"substitute is outside the roster");
                 Check(!cooking.ManualControlEnabled && cooking.IsStaffBusy(cooking.EditorSubstitute),"real automatic cooking drives substitute");
-                var economy=Find<BusinessEconomy>();Check(economy.TeamWages==Find<CourierRoster>().People.Sum(p=>economy.DailyWage(p)),"substitute has no wages");
+                var economy=Find<BusinessEconomy>();
+                Check(economy.TeamWages==Find<CourierRoster>().People.Sum(p=>economy.DailyWage(p)),"substitute has no wages");
                 clock.Advance(cooking.CookSeconds+.1f);Check(Find<OrderBook>().Orders.Any(o=>o.IsReady),"substitute completes and packs real pizza");
             }
             Check(cooking.EditorSubstitute==original,"substitute restored after simulation");return $"PASS: {count} kitchen autoplay policy checks.";
@@ -36,14 +42,25 @@ public static class KitchenComparisonValidation
     public static string Begin()
     {
         if(!Application.isPlaying || protection!=null)throw new Exception("Play required; comparison already active");
-        save=Find<CampaignSaveManager>();path=save.SavePath;recordsPath=save.RecordsPath;before=Bytes(path);records=Bytes(recordsPath);protection=save.SuppressSaving();Find<GameClock>().AutomaticTick=false;
+        save=Find<CampaignSaveManager>();
+        path=save.SavePath;
+        recordsPath=save.RecordsPath;
+        before=Bytes(path);
+        records=Bytes(recordsPath);
+        protection=save.SuppressSaving();
+        Find<GameClock>().AutomaticTick=false;
         policy=0;csv=SimulationDayRecord.Header+"\n";Start();EditorApplication.update+=Tick;return Status;
     }
     private static void Start()
     {
         string name=new[]{"J","K","L"}[policy];
         session=new DaySimulationSession(Find<DaySimulationSettings>(),batchOverride:true,hireOverride:false,adjustOverride:false,name:name,daysOverride:30,promisesOverride:new[]{60f},trainOverride:false,facilityOverride:policy>0,citySeedOverride:1401,cityBlocksOverride:3,kitchenStaffOverride:policy==2?2:1,hireKitchenOverride:false);
-        session.DayCompleted+=r=>{if(r.KitchenStaff!=(policy==2?2:1))throw new Exception("comparison staff count changed");csv+=r.Csv+"\n";};Status="Running "+name;
+        session.DayCompleted+=r=>
+        {
+            if(r.KitchenStaff!=(policy==2?2:1))throw new Exception("comparison staff count changed");
+            csv+=r.Csv+"\n";
+        };
+        Status="Running "+name;
     }
     private static void Tick()
     {
@@ -53,14 +70,25 @@ public static class KitchenComparisonValidation
             var watch=Stopwatch.StartNew();do{session.Step();}while(!session.Finished && watch.ElapsedMilliseconds<8);
             if(!session.Finished)return;session.Dispose();session=null;policy++;
             if(policy<3){Start();return;}
-            Directory.CreateDirectory("Docs/Simulations/MapGeneration");File.WriteAllText("Docs/Simulations/MapGeneration/Kitchen_JKL.csv",csv);Status="PASS: J/K/L recorded with 30-day limit; bankruptcy ends a run.";Cleanup();
+            Directory.CreateDirectory("Docs/Simulations/MapGeneration");
+            File.WriteAllText("Docs/Simulations/MapGeneration/Kitchen_JKL.csv",csv);
+            Status="PASS: J/K/L recorded with 30-day limit; bankruptcy ends a run.";
+            Cleanup();
         }
         catch(Exception e){Status="FAIL: "+e.Message;UnityEngine.Debug.LogError(Status);Cleanup();}
     }
     private static void Cleanup()
     {
         EditorApplication.update-=Tick;
-        try{session?.Dispose();session=null;save.StartNewGame();Find<GameClock>().AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;if(!Same(before,Bytes(path)) || !Same(records,Bytes(recordsPath)))Status="FAIL: normal save changed";}
+        try
+        {
+            session?.Dispose();
+            session=null;
+            save.StartNewGame();
+            Find<GameClock>().AutomaticTick=false;
+            CampaignSaveManager.SessionSavingLocked=true;
+            if(!Same(before,Bytes(path)) || !Same(records,Bytes(recordsPath)))Status="FAIL: normal save changed";
+        }
         finally{protection?.Dispose();protection=null;}
     }
 }

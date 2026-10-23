@@ -8,7 +8,14 @@ using UnityEngine;
 
 public static class M6SimulationValidation
 {
-    private sealed class Case { public string Name;public bool Batch,Hire,Adjust,Train;public int Days=10;public float Promise=60;public float? InitialCash; }
+    private sealed class Case
+    {
+        public string Name;
+        public bool Batch,Hire,Adjust,Train;
+        public int Days=10;
+        public float Promise=60;
+        public float? InitialCash;
+    }
     private static List<Case> cases;
     private static readonly List<SimulationDayRecord> records=new();
     private static DaySimulationSession session;
@@ -26,7 +33,9 @@ public static class M6SimulationValidation
     {
         if(session!=null || !Application.isPlaying)throw new InvalidOperationException("Enter Play and finish any running simulation first.");
         settings=UnityEngine.Object.FindFirstObjectByType<DaySimulationSettings>();cases=new();
-        var saving=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();savePath=saving?.SavePath;saveBefore=savePath!=null && File.Exists(savePath)?File.ReadAllBytes(savePath):null;
+        var saving=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();
+        savePath=saving?.SavePath;
+        saveBefore=savePath!=null && File.Exists(savePath)?File.ReadAllBytes(savePath):null;
         fullComparison=full;
         if(full)
         {
@@ -78,20 +87,29 @@ public static class M6SimulationValidation
                 Check(r.BusyRatio>=0 && r.BusyRatio<=1.0001f,"busy ratio clips overtime");
                 Check(!string.IsNullOrEmpty(r.Couriers) && !string.IsNullOrEmpty(r.ExperienceGrowth) && !string.IsNullOrEmpty(r.Potentials),"daily abilities experience and ceilings");
                 Check(c.Train?r.TrainingCosts>=0:r.TrainingCosts==0,"training policy and costs");
-                var kitchen=UnityEngine.Object.FindFirstObjectByType<CookingManager>();Check(r.QualityBonus==r.TwoStarOnTime*kitchen.TwoStarBonus+r.ThreeStarOnTime*kitchen.ThreeStarBonus,"quality bonus equals on-time two/three-star pizzas");
+                var kitchen=UnityEngine.Object.FindFirstObjectByType<CookingManager>();
+                Check(r.QualityBonus==r.TwoStarOnTime*kitchen.TwoStarBonus+r.ThreeStarOnTime*kitchen.ThreeStarBonus,"quality bonus equals on-time two/three-star pizzas");
                 hired+=r.Hired;Check(r.RosterSize==2+hired,"roster growth");
             }
             Check(economy.InitialCash==300,"E2 does not change configured starting cash");
             records.AddRange(session.Records);session.Dispose();session=null;
             index++;pass=0;
             if(index<cases.Count){StartCase();return;}
-            byte[] after=savePath!=null && File.Exists(savePath)?File.ReadAllBytes(savePath):null;Check(saveBefore==null?after==null:after!=null && saveBefore.SequenceEqual(after),"simulations preserve normal player save");
+            byte[] after=savePath!=null && File.Exists(savePath)?File.ReadAllBytes(savePath):null;
+            Check(saveBefore==null?after==null:after!=null && saveBefore.SequenceEqual(after),"simulations preserve normal player save");
             var dir=Path.Combine(Directory.GetParent(Application.dataPath).FullName,settings.ResultsDirectory);Directory.CreateDirectory(dir);
             File.WriteAllText(Path.Combine(dir,fullComparison?"comparisons.csv":"policies.csv"),SimulationDayRecord.Header+"\n"+string.Join("\n",records.Select(r=>r.Csv))+"\n");
             if(fullComparison)foreach(var group in records.GroupBy(r=>r.Policy))File.WriteAllText(Path.Combine(dir,group.Key+".csv"),SimulationDayRecord.Header+"\n"+string.Join("\n",group.Select(r=>r.Csv))+"\n");
             Summary=string.Join("\n",records.GroupBy(r=>r.Policy).Select(g=>$"{g.Key}: days {g.Count()}, cash {g.Last().Cash:F2}, reputation {g.Last().Reputation:F1}, busy {g.Average(r=>r.BusyRatio):F3}, hired {g.Sum(r=>r.Hired)}, training {g.Count(r=>r.TrainingCosts>0)}, bankrupt {g.Last().Bankrupt}"));
             Status=$"PASS: {checks} M6 simulation checks";UnityEngine.Debug.Log(Status+"\n"+Summary);EditorApplication.update-=Tick;
         }
-        catch(Exception e){Status="FAIL: "+e.Message;session?.Dispose();session=null;EditorApplication.update-=Tick;UnityEngine.Debug.LogException(e);}
+        catch(Exception e)
+        {
+            Status="FAIL: "+e.Message;
+            session?.Dispose();
+            session=null;
+            EditorApplication.update-=Tick;
+            UnityEngine.Debug.LogException(e);
+        }
     }
 }

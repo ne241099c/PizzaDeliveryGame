@@ -41,7 +41,12 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
         new(){kind=DistrictKind.Park,trees=true,title="公園通り",demand=.6f,shortcut=false,pizzaWeights=new(5,1,1)},
         new(){kind=DistrictKind.Riverside,river=true,title="川沿い",demand=.9f,pizzaWeights=new(3,2,4)},
         new(){kind=DistrictKind.Apartments,buildings=true,title="団地",demand=1.5f,pizzaWeights=new(2,5,1)}};
-    public int Stage(int day){int stage=0;for(int i=0;i<stageDays.Length;i++)if(day>=stageDays[i])stage=i;return Mathf.Min(stage,stageBlocks.Length-1);}
+    public int Stage(int day)
+    {
+        int stage=0;
+        for(int i=0;i<stageDays.Length;i++)if(day>=stageDays[i])stage=i;
+        return Mathf.Min(stage,stageBlocks.Length-1);
+    }
     public int Blocks(int day)=>stageBlocks[Stage(day)];
 }
 public sealed class CityBlock
@@ -74,7 +79,9 @@ public static class CityGenerator
             var template=i==0?s.templates.FirstOrDefault(t=>t.kind==DistrictKind.Park)??s.templates[0]:i==1?s.templates.FirstOrDefault(t=>t.kind==DistrictKind.Riverside)??s.templates[0]:s.templates[rng.Next(s.templates.Length)];
             int col=i%s.columns,row=i/s.columns;float size=s.blockSize,x=7+col*(size+s.blockGap),y=-row*(size+s.blockGap);
             string a=$"B{i}_A",b=$"B{i}_B",c=$"B{i}_C",d=$"B{i}_D",h1=$"B{i}_H1",h2=$"B{i}_H2";
-            var area=new Rect(x,y-size,size,size);var block=new CityBlock{index=i,template=template,area=area,addresses=new[]{h1,h2}};city.blocks.Add(block);
+            var area=new Rect(x,y-size,size,size);
+            var block=new CityBlock{index=i,template=template,area=area,addresses=new[]{h1,h2}};
+            city.blocks.Add(block);
             if(template.roadPorts.Length!=4 || template.addressPositions.Length!=2)throw new ArgumentException("Template needs four ports and two address candidates.");
             Vector2 At(Vector2 local)=>new Vector2(x,y)+local*size;
             m.Nodes.AddRange(new[]{new MapNode(a,At(template.roadPorts[0]),NodeType.Intersection,false),new MapNode(b,At(template.roadPorts[1]),NodeType.Intersection,false),new MapNode(c,At(template.roadPorts[2]),NodeType.Intersection,false),new MapNode(d,At(template.roadPorts[3]),NodeType.Intersection,false),new MapNode(h1,At(template.addressPositions[0]),NodeType.DeliveryAddress,false),new MapNode(h2,At(template.addressPositions[1]),NodeType.DeliveryAddress,false)});
@@ -86,7 +93,11 @@ public static class CityGenerator
             // A one-way local service road never replaces the bidirectional perimeter.
             if(i>=3 && rng.Next(2)==0)Edge("OneWay",d,h2,length*.7f,RoadType.Backstreet,1,false);
             if(col>0){Edge("JoinTop",$"B{i-1}_B",a,s.blockGap*s.roadDistanceScale);Edge("JoinBottom",$"B{i-1}_C",d,s.blockGap*s.roadDistanceScale);}
-            else if(row>0){Edge("JoinLeft",$"B{i-s.columns}_D",a,s.blockGap*s.roadDistanceScale);Edge("JoinRight",$"B{i-s.columns}_C",b,s.blockGap*s.roadDistanceScale);}
+            else if(row>0)
+            {
+                Edge("JoinLeft",$"B{i-s.columns}_D",a,s.blockGap*s.roadDistanceScale);
+                Edge("JoinRight",$"B{i-s.columns}_C",b,s.blockGap*s.roadDistanceScale);
+            }
             else{Edge("Entry","N2",a,8);Edge("Loop","Store",d,18);}
             if(template.kind==DistrictKind.Riverside){city.bridges.Add($"B{i}_AB");city.bridges.Add($"B{i}_CD");}
         }
@@ -97,12 +108,23 @@ public static class CityGenerator
         for(int attempt=0;attempt<s.retryCount;attempt++)
         {
             GeneratedCity city=null;
-            try{city=Build(seed,blocks,s,attempt);city.attempt=attempt;city.metrics=CityValidator.Measure(city,s);if(city.metrics.failures.Count==0)return city;Debug.LogWarning($"City rejected seed {seed} attempt {attempt}: "+string.Join("/",city.metrics.failures));}
+            try
+            {
+                city=Build(seed,blocks,s,attempt);
+                city.attempt=attempt;
+                city.metrics=CityValidator.Measure(city,s);
+                if(city.metrics.failures.Count==0)return city;
+                Debug.LogWarning($"City rejected seed {seed} attempt {attempt}: "+string.Join("/",city.metrics.failures));
+            }
             catch(Exception ex){Debug.LogWarning("City generation rejected: "+ex.Message);}
             if(city!=null)UnityEngine.Object.Destroy(city.map);
         }
         // Two explicitly selected, fixed layouts built from the authored safe loop template.
-        var safe=SafeCity(seed,blocks,s);safe.fallback=true;safe.attempt=s.retryCount;Debug.LogWarning($"City fallback: seed {seed}, blocks {blocks}");return safe;
+        var safe=SafeCity(seed,blocks,s);
+        safe.fallback=true;
+        safe.attempt=s.retryCount;
+        Debug.LogWarning($"City fallback: seed {seed}, blocks {blocks}");
+        return safe;
     }
     public static GeneratedCity SafeCity(int seed,int blocks,CityGenerationSettings settings)
     {

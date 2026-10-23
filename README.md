@@ -25,7 +25,7 @@
 | `Assets/Art` | 自作の絵（`Tools/Art` のスクリプトで生成） |
 | `Assets/Resources` | 実行時に名前で読む絵（`ShopArt`）とテーマ（`UITheme`） |
 | `Assets/Settings` | 描画・入力の設定 |
-| `Tools` | `Art`（絵の書き出し）、`Review`（Unityを外から操作する確認・撮影） |
+| `Tools` | `Art`（絵の書き出し）、`Review`（Unityを外から操作する確認・撮影）、`Format`（長い行を1行1文に分ける整形。中身が変わらないことを確認してから書き込む） |
 | `Docs` | `Design`（設計書・計画）、`Results`（実装と確認の記録）、`Simulations`（自動営業の出力）、`Handoff`（共同作業の引き継ぎ）、`UI_Mock`・`UI_Screens`（画像）、`Archive`（過去の資料） |
 
 ## 資料

@@ -78,7 +78,21 @@ public sealed class FacilityManager : MonoBehaviour
     {
         LastMessage=Rejection(type,advertisementTier);if(LastMessage.Length>0){Changed?.Invoke();return false;}
         decimal fee=Price(type,advertisementTier);economy.SpendPreparation(fee);economy.Ledger.FacilityPurchases+=fee;
-        switch(type){case FacilityType.Oven:OvenUpgrades++;break;case FacilityType.Bike:BikeUpgrades++;break;case FacilityType.Expansion:ShopUpgrades++;break;case FacilityType.Workbench:WorkbenchUpgrades++;break;case FacilityType.Menu:MenuUpgrades++;break;default:Advertisement=advertisementTier;break;}
+        switch(type)
+        {
+            case FacilityType.Oven:OvenUpgrades++;
+            break;
+            case FacilityType.Bike:BikeUpgrades++;
+            break;
+            case FacilityType.Expansion:ShopUpgrades++;
+            break;
+            case FacilityType.Workbench:WorkbenchUpgrades++;
+            break;
+            case FacilityType.Menu:MenuUpgrades++;
+            break;
+            default:Advertisement=advertisementTier;
+            break;
+        }
         LastMessage="Purchased: "+type;Changed?.Invoke();return true;
     }
     public void NewGame(){OvenUpgrades=BikeUpgrades=ShopUpgrades=WorkbenchUpgrades=MenuUpgrades=Advertisement=0;LastMessage="";}
@@ -86,5 +100,15 @@ public sealed class FacilityManager : MonoBehaviour
     public FacilitySaveData Capture()=>new FacilitySaveData{oven=OvenUpgrades,bike=BikeUpgrades,expansion=ShopUpgrades,workbench=WorkbenchUpgrades,menu=MenuUpgrades};
     public bool Valid(FacilitySaveData data)=>data!=null && data.oven>=0 && data.oven<=ovenPrices.Length && data.bike>=0 && data.bike<=bikePrices.Length && data.expansion>=0 && data.expansion<=expansionPrices.Length && data.workbench>=0 && data.workbench<=workbenchPrices.Length && data.menu>=0 && data.menu<=menuPrices.Length;
     public int MaximumPeopleFor(FacilitySaveData data)=>int.MaxValue;
-    public void Restore(FacilitySaveData data){if(!Valid(data))throw new ArgumentException("Invalid facility levels.");OvenUpgrades=data.oven;BikeUpgrades=data.bike;ShopUpgrades=data.expansion;WorkbenchUpgrades=data.workbench;MenuUpgrades=data.menu;Advertisement=0;Changed?.Invoke();}
+    public void Restore(FacilitySaveData data)
+    {
+        if(!Valid(data))throw new ArgumentException("Invalid facility levels.");
+        OvenUpgrades=data.oven;
+        BikeUpgrades=data.bike;
+        ShopUpgrades=data.expansion;
+        WorkbenchUpgrades=data.workbench;
+        MenuUpgrades=data.menu;
+        Advertisement=0;
+        Changed?.Invoke();
+    }
 }

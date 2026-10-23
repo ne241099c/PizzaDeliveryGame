@@ -30,7 +30,10 @@ public static class TitleViewBuilder
         {
             var importer=AssetImporter.GetAtPath(path) as TextureImporter;if(importer==null)continue;
             importer.textureType=TextureImporterType.Sprite;importer.spriteImportMode=SpriteImportMode.Single;importer.spritePixelsPerUnit=100;
-            importer.mipmapEnabled=false;importer.alphaIsTransparency=true;importer.wrapMode=TextureWrapMode.Clamp;importer.filterMode=FilterMode.Bilinear;
+            importer.mipmapEnabled=false;
+            importer.alphaIsTransparency=true;
+            importer.wrapMode=TextureWrapMode.Clamp;
+            importer.filterMode=FilterMode.Bilinear;
             // Full-screen gradients band when compressed.
             importer.textureCompression=TextureImporterCompression.Uncompressed;importer.maxTextureSize=2048;
             importer.spriteBorder=Path.GetFileNameWithoutExtension(path)=="ui_round"?new Vector4(64,64,64,64):Vector4.zero;
@@ -59,15 +62,30 @@ public static class TitleViewBuilder
     private enum Pin {TopLeft,BottomLeft,BottomRight,Top,Bottom,Fill}
     private static RectTransform Node(Transform parent,string name,float x,float y,float w,float h,Pin pin)
     {
-        var go=new GameObject(name,typeof(RectTransform));go.layer=5;var r=(RectTransform)go.transform;r.SetParent(parent,false);Place(r,x,y,w,h,pin);return r;
+        var go=new GameObject(name,typeof(RectTransform));
+        go.layer=5;
+        var r=(RectTransform)go.transform;
+        r.SetParent(parent,false);
+        Place(r,x,y,w,h,pin);
+        return r;
     }
     private static void Place(RectTransform r,float x,float y,float w,float h,Pin pin)
     {
         switch(pin)
         {
             case Pin.Fill:r.anchorMin=Vector2.zero;r.anchorMax=Vector2.one;r.pivot=new Vector2(.5f,.5f);r.offsetMin=r.offsetMax=Vector2.zero;return;
-            case Pin.Top:r.anchorMin=new Vector2(0,1);r.anchorMax=new Vector2(1,1);r.pivot=new Vector2(.5f,1);r.offsetMin=new Vector2(x,-y-h);r.offsetMax=new Vector2(x+w-1920,-y);return;
-            case Pin.Bottom:r.anchorMin=new Vector2(0,0);r.anchorMax=new Vector2(1,0);r.pivot=new Vector2(.5f,0);r.offsetMin=new Vector2(x,1080-y-h);r.offsetMax=new Vector2(x+w-1920,1080-y);return;
+            case Pin.Top:r.anchorMin=new Vector2(0,1);
+            r.anchorMax=new Vector2(1,1);
+            r.pivot=new Vector2(.5f,1);
+            r.offsetMin=new Vector2(x,-y-h);
+            r.offsetMax=new Vector2(x+w-1920,-y);
+            return;
+            case Pin.Bottom:r.anchorMin=new Vector2(0,0);
+            r.anchorMax=new Vector2(1,0);
+            r.pivot=new Vector2(.5f,0);
+            r.offsetMin=new Vector2(x,1080-y-h);
+            r.offsetMax=new Vector2(x+w-1920,1080-y);
+            return;
             case Pin.BottomLeft:r.anchorMin=r.anchorMax=r.pivot=new Vector2(0,0);r.anchoredPosition=new Vector2(x,1080-y-h);break;
             case Pin.BottomRight:r.anchorMin=r.anchorMax=r.pivot=new Vector2(1,0);r.anchoredPosition=new Vector2(x+w-1920,1080-y-h);break;
             default:r.anchorMin=r.anchorMax=r.pivot=new Vector2(0,1);r.anchoredPosition=new Vector2(x,-y);break;
@@ -83,7 +101,11 @@ public static class TitleViewBuilder
     {
         var t=Node(parent,name,x,y,w,h,Pin.TopLeft).gameObject.AddComponent<TextMeshProUGUI>();
         t.font=font;if(mat!=null)t.fontSharedMaterial=mat;t.fontSize=size;t.color=color;t.alignment=align;t.text=text;t.raycastTarget=false;
-        t.textWrappingMode=TextWrappingModes.NoWrap;t.overflowMode=TextOverflowModes.Overflow;t.enableAutoSizing=true;t.fontSizeMax=size;t.fontSizeMin=Mathf.Max(T.captionSize,size*.5f);
+        t.textWrappingMode=TextWrappingModes.NoWrap;
+        t.overflowMode=TextOverflowModes.Overflow;
+        t.enableAutoSizing=true;
+        t.fontSizeMax=size;
+        t.fontSizeMin=Mathf.Max(T.captionSize,size*.5f);
         return t;
     }
     /// <summary>Display text at exactly its size (no shrinking), for the logo and the sign.</summary>
@@ -106,7 +128,10 @@ public static class TitleViewBuilder
         var kanaMat=TextMaterial("KanaText",black,.22f,T.line,.38f);
         var signMat=TextMaterial("SignText",display,0,T.line,.05f);
 
-        var root=new GameObject("TitleView",typeof(RectTransform));root.layer=5;var rootRect=(RectTransform)root.transform;Place(rootRect,0,0,0,0,Pin.Fill);
+        var root=new GameObject("TitleView",typeof(RectTransform));
+        root.layer=5;
+        var rootRect=(RectTransform)root.transform;
+        Place(rootRect,0,0,0,0,Pin.Fill);
         try
         {
             var view=root.AddComponent<TitleView>();var so=new SerializedObject(view);
@@ -171,8 +196,18 @@ public static class TitleViewBuilder
             var statusPill=Pill(menu,"Status",0,20,540,64,T.cheeseLight,Pin.TopLeft);
             var status=Text(statusPill,"Text","",20,0,500,64,18,T.line,bold);status.textWrappingMode=TextWrappingModes.Normal;
 
-            void Ref(string field,Object value){var p=so.FindProperty(field);if(p==null)throw new System.Exception("TitleView has no field "+field);p.objectReferenceValue=value;}
-            void Refs(string field,Object[] values){var p=so.FindProperty(field);p.arraySize=values.Length;for(int i=0;i<values.Length;i++)p.GetArrayElementAtIndex(i).objectReferenceValue=values[i];}
+            void Ref(string field,Object value)
+            {
+                var p=so.FindProperty(field);
+                if(p==null)throw new System.Exception("TitleView has no field "+field);
+                p.objectReferenceValue=value;
+            }
+            void Refs(string field,Object[] values)
+            {
+                var p=so.FindProperty(field);
+                p.arraySize=values.Length;
+                for(int i=0;i<values.Length;i++)p.GetArrayElementAtIndex(i).objectReferenceValue=values[i];
+            }
             Ref("continueButton",cont);Ref("newGameButton",newGame);Ref("tutorialButton",tutorial);Ref("helpButton",help);Ref("quitButton",quit);
             Ref("creditsButton",creditsButton);Ref("continueSummary",summary);Ref("tutorialNote",note);Ref("firstTimeBadge",badge);
             Refs("logoLines",lines);Refs("logoShadows",shadows);Ref("kana",kana);Ref("footer",footer);Ref("status",status);Ref("records",records);

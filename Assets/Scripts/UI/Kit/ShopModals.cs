@@ -30,6 +30,8 @@ public static class ShopModals
     }
     public static StickerButton Button(Modal modal,string name,string label,StickerKind kind,float x,float y,float w,float h,Action onClick)
     {
-        var b=UiKit.Button(modal.Card,name,label,kind,x,y,w,h,kind==StickerKind.Primary?28:24,()=>onClick(),FontRole.Display);modal.Buttons.Add(b);return b;
+        var b=UiKit.Button(modal.Card,name,label,kind,x,y,w,h,kind==StickerKind.Primary?28:24,()=>onClick(),FontRole.Display);
+        modal.Buttons.Add(b);
+        return b;
     }
 }

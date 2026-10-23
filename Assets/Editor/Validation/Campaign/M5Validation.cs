@@ -32,7 +32,10 @@ public static class M5Validation
         spawner.enabled=false;
         check(economy.Cash==300 && economy.DailyRevenue==0,"initial cash 300");
         // Finance integration needs a solvent scenario; defaults are checked before temporary test funding.
-        var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=3000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
+        var funding=new SerializedObject(economy);
+        funding.FindProperty("initialCash").floatValue=3000;
+        funding.ApplyModifiedPropertiesWithoutUndo();
+        economy.NewGame();
         funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
         foreach(bool late in new[]{false,true})
         {
@@ -149,7 +152,8 @@ public static class M5Validation
         check(roster.People.Contains(candidate.Person) && candidate.Person.CurrentStamina==1,"hired courier carried with full stamina");
         // The team limit counts couriers and kitchen staff together: three couriers plus the starting apprentice fill four.
         check(recruitment.TeamCount==4 && roster.People.Count==3,"three couriers and the kitchen apprentice fill the team of four");
-        recruitment.GenerateDay();check(recruitment.Hire(recruitment.Applicants[0]) && recruitment.TeamCount==5,"fifth employee can be hired without expansion");
+        recruitment.GenerateDay();
+        check(recruitment.Hire(recruitment.Applicants[0]) && recruitment.TeamCount==5,"fifth employee can be hired without expansion");
         decimal beforeFire=economy.Cash,severance=recruitment.SeveranceCost(roster.People[0]);
         check(recruitment.Fire(roster.People[0]) && economy.Cash==beforeFire-severance,"firing charges one daily wage and removes courier");
         while(roster.People.Count>1)recruitment.Fire(roster.People[0]);
@@ -157,17 +161,25 @@ public static class M5Validation
         campaign.NewGame();
         check(roster.People.Count==2 && economy.Cash==300 && economy.Ledger.PreparationCosts==0,"new game clears hired roster and preparation expenses");
         spawner.enabled=false;campaign.StartBusiness();clock.Advance(clock.BusinessDuration-1);
-        var lastOrder=M7Validation.ReadyOrder("Goal1","Closing trip",clock.ElapsedSeconds,100);orders.AddOrder(lastOrder);orders.SelectOnly(lastOrder);roster.SelectForDispatch(roster.People[0]);
+        var lastOrder=M7Validation.ReadyOrder("Goal1","Closing trip",clock.ElapsedSeconds,100);
+        orders.AddOrder(lastOrder);
+        orders.SelectOnly(lastOrder);
+        roster.SelectForDispatch(roster.People[0]);
         UnityEngine.Object.FindFirstObjectByType<DeliveryPlanner>().DispatchWithSuggestion();
         check(flow.ActiveTrips.Count==1,"late departure uses actual suggested route dispatch");
         clock.Advance(1);
         check(clock.Phase==DayPhase.Closed && flow.ActiveTrips.Count==1,"closing waits for courier before settlement");
-        clock.Advance(10000);check(clock.Phase==DayPhase.Ended && flow.ActiveTrips.Count==0 && economy.Ledger.Settled,"last return triggers settlement");
+        clock.Advance(10000);
+        check(clock.Phase==DayPhase.Ended && flow.ActiveTrips.Count==0 && economy.Ledger.Settled,"last return triggers settlement");
         campaign.NewGame();campaign.StartBusiness();
-        var resetOrder=M7Validation.ReadyOrder("Goal1","Reset in flight",0,100);orders.AddOrder(resetOrder);orders.SelectOnly(resetOrder);roster.SelectForDispatch(roster.People[0]);
+        var resetOrder=M7Validation.ReadyOrder("Goal1","Reset in flight",0,100);
+        orders.AddOrder(resetOrder);
+        orders.SelectOnly(resetOrder);
+        roster.SelectForDispatch(roster.People[0]);
         UnityEngine.Object.FindFirstObjectByType<DeliveryPlanner>().DispatchWithSuggestion();
         check(flow.ActiveTrips.Count==1,"trip exists before new game reset");
-        campaign.NewGame();check(flow.ActiveTrips.Count==0 && orders.OrderCount==0 && clock.Phase==DayPhase.BeforeOpening,"new game clears active trips without scene reload");
+        campaign.NewGame();
+        check(flow.ActiveTrips.Count==0 && orders.OrderCount==0 && clock.Phase==DayPhase.BeforeOpening,"new game clears active trips without scene reload");
         return legacy+$" / PASS: {checks} M5 checks.";
     }
 }

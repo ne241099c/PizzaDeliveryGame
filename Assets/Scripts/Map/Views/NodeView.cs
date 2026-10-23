@@ -18,14 +18,31 @@ public class NodeView : MonoBehaviour
 
         var theme=UITheme.Active;
         caption=node.IsStore?"ピザ屋":node.NodeType==NodeType.DeliveryAddress?"配達先 "+node.Id.Replace("Goal",""):node.Id;
-        spriteRenderer.sortingOrder=5;spriteRenderer.sprite=MapVisuals.Shape(node.IsStore || node.NodeType==NodeType.Intersection);spriteRenderer.color=node.IsStore?theme.accent:node.NodeType==NodeType.DeliveryAddress?theme.block:theme.muted;
+        spriteRenderer.sortingOrder=5;
+        spriteRenderer.sprite=MapVisuals.Shape(node.IsStore || node.NodeType==NodeType.Intersection);
+        spriteRenderer.color=node.IsStore?theme.accent:node.NodeType==NodeType.DeliveryAddress?theme.block:theme.muted;
         transform.localScale=Vector3.one*(node.NodeType==NodeType.Intersection && !node.IsStore?theme.nodeSize*.5f:theme.nodeSize);
         if(node.IsStore || node.NodeType==NodeType.DeliveryAddress)
         {
-            var icon=new GameObject(node.IsStore?"PizzaSlice":"HouseRoof");icon.transform.SetParent(transform,false);var line=icon.AddComponent<LineRenderer>();line.sharedMaterial=spriteRenderer.sharedMaterial;line.useWorldSpace=false;line.positionCount=3;line.SetPosition(0,new Vector3(-.45f,.15f,0));line.SetPosition(1,new Vector3(0,.65f,0));line.SetPosition(2,new Vector3(.45f,.15f,0));line.startWidth=line.endWidth=.12f;line.startColor=line.endColor=node.IsStore?theme.money:theme.ink;line.sortingOrder=6;
+            var icon=new GameObject(node.IsStore?"PizzaSlice":"HouseRoof");
+            icon.transform.SetParent(transform,false);
+            var line=icon.AddComponent<LineRenderer>();
+            line.sharedMaterial=spriteRenderer.sharedMaterial;
+            line.useWorldSpace=false;
+            line.positionCount=3;
+            line.SetPosition(0,new Vector3(-.45f,.15f,0));
+            line.SetPosition(1,new Vector3(0,.65f,0));
+            line.SetPosition(2,new Vector3(.45f,.15f,0));
+            line.startWidth=line.endWidth=.12f;
+            line.startColor=line.endColor=node.IsStore?theme.money:theme.ink;
+            line.sortingOrder=6;
         }
         // Shops and delivery addresses are drawn as pins and labels by the dispatch board; intersections stay small dots.
-        if(node.IsStore || node.NodeType==NodeType.DeliveryAddress){spriteRenderer.enabled=false;foreach(var line in GetComponentsInChildren<LineRenderer>())line.enabled=false;}
+        if(node.IsStore || node.NodeType==NodeType.DeliveryAddress)
+        {
+            spriteRenderer.enabled=false;
+            foreach(var line in GetComponentsInChildren<LineRenderer>())line.enabled=false;
+        }
         else{spriteRenderer.color=theme.backRoadEdge;transform.localScale=Vector3.one*theme.nodeSize*.45f;}
         baseColor = spriteRenderer.color;
         baseScale = transform.localScale;

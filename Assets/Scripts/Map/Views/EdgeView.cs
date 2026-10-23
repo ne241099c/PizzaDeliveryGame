@@ -39,10 +39,29 @@ public class EdgeView : MonoBehaviour
         edgeCollider.points = new Vector2[] { Vector2.zero, localEnd };
         edgeCollider.enabled = true;
         edgeCollider.edgeRadius = 0.12f;
-        var borderObject=new GameObject("RoadBorder");borderObject.transform.SetParent(transform,false);border=borderObject.AddComponent<LineRenderer>();border.sharedMaterial=lineRenderer.sharedMaterial;border.useWorldSpace=false;border.positionCount=2;border.SetPosition(0,Vector3.zero);border.SetPosition(1,localEnd);border.sortingOrder=-1;
+        var borderObject=new GameObject("RoadBorder");
+        borderObject.transform.SetParent(transform,false);
+        border=borderObject.AddComponent<LineRenderer>();
+        border.sharedMaterial=lineRenderer.sharedMaterial;
+        border.useWorldSpace=false;
+        border.positionCount=2;
+        border.SetPosition(0,Vector3.zero);
+        border.SetPosition(1,localEnd);
+        border.sortingOrder=-1;
         if(!edge.Bidirectional)
         {
-            var go=new GameObject("OneWayArrow");go.transform.SetParent(transform,false);go.transform.localPosition=localEnd*.5f;go.transform.rotation=Quaternion.Euler(0,0,Mathf.Atan2(localEnd.y,localEnd.x)*Mathf.Rad2Deg);var text=go.AddComponent<TMPro.TextMeshPro>();text.font=UITheme.Active.font;text.text=">";text.fontSize=UITheme.Active.routeArrowSize;text.color=UITheme.Active.ink;text.alignment=TMPro.TextAlignmentOptions.Center;text.rectTransform.sizeDelta=Vector2.one;go.GetComponent<MeshRenderer>().sortingOrder=8;
+            var go=new GameObject("OneWayArrow");
+            go.transform.SetParent(transform,false);
+            go.transform.localPosition=localEnd*.5f;
+            go.transform.rotation=Quaternion.Euler(0,0,Mathf.Atan2(localEnd.y,localEnd.x)*Mathf.Rad2Deg);
+            var text=go.AddComponent<TMPro.TextMeshPro>();
+            text.font=UITheme.Active.font;
+            text.text=">";
+            text.fontSize=UITheme.Active.routeArrowSize;
+            text.color=UITheme.Active.ink;
+            text.alignment=TMPro.TextAlignmentOptions.Center;
+            text.rectTransform.sizeDelta=Vector2.one;
+            go.GetComponent<MeshRenderer>().sortingOrder=8;
         }
         SetRouteStyle(false, false, false);
     }
@@ -67,6 +86,11 @@ public class EdgeView : MonoBehaviour
         Color fill=route && !directionalView?theme.tomato:main?theme.mainRoadFill:theme.backRoadFill;
         Color edge=route?theme.line:available && !directionalView?theme.tomato:main?theme.mainRoadEdge:theme.backRoadEdge;
         lineRenderer.numCapVertices=6;lineRenderer.startWidth=lineRenderer.endWidth=width;lineRenderer.startColor=lineRenderer.endColor=fill;
-        if(border!=null){border.numCapVertices=6;border.startWidth=border.endWidth=width+Mathf.Min(theme.mapRoadEdge,theme.mapRoadBorderPixels*styledPixelScale)*(available && !route?1.6f:1);border.startColor=border.endColor=edge;}
+        if(border!=null)
+        {
+            border.numCapVertices=6;
+            border.startWidth=border.endWidth=width+Mathf.Min(theme.mapRoadEdge,theme.mapRoadBorderPixels*styledPixelScale)*(available && !route?1.6f:1);
+            border.startColor=border.endColor=edge;
+        }
     }
 }

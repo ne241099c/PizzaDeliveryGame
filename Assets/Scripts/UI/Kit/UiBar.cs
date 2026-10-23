@@ -17,13 +17,23 @@ public sealed class UiBar : MonoBehaviour
         if(withMarker)
         {
             // ▼ just above the bar at the ceiling (potential)
-            marker=UiKit.Box(root,"Marker",0,0,14,11);var m=marker.gameObject.AddComponent<Image>();m.sprite=UiKit.Triangle;m.color=T.line;m.raycastTarget=false;
+            marker=UiKit.Box(root,"Marker",0,0,14,11);
+            var m=marker.gameObject.AddComponent<Image>();
+            m.sprite=UiKit.Triangle;
+            m.color=T.line;
+            m.raycastTarget=false;
             marker.pivot=new Vector2(.5f,0);
         }
     }
     public void Set(float value,float ceiling=-1,Color? color=null)
     {
-        Value=Mathf.Clamp01(value);if(fillRect!=null){fillRect.anchorMax=new Vector2(Value,1);fillRect.offsetMax=Vector2.zero;fillRect.offsetMin=Vector2.zero;}
+        Value=Mathf.Clamp01(value);
+        if(fillRect!=null)
+        {
+            fillRect.anchorMax=new Vector2(Value,1);
+            fillRect.offsetMax=Vector2.zero;
+            fillRect.offsetMin=Vector2.zero;
+        }
         if(color.HasValue && fill!=null)fill.color=color.Value;
         if(marker!=null)
         {

@@ -47,7 +47,11 @@ public sealed class TitleScene : MonoBehaviour
     }
     private CanvasGroup Panel(string name)
     {
-        var panel=UiKit.Stretch(overlay,name);panel.gameObject.AddComponent<Image>();var group=UiKit.Group(panel);UIVisibility.Set(panel.gameObject,false);return group;
+        var panel=UiKit.Stretch(overlay,name);
+        panel.gameObject.AddComponent<Image>();
+        var group=UiKit.Group(panel);
+        UIVisibility.Set(panel.gameObject,false);
+        return group;
     }
     private void BuildModals()
     {
@@ -71,7 +75,12 @@ public sealed class TitleScene : MonoBehaviour
     public void ShowHelp(){helpPage=0;RefreshHelp();UIVisibility.Set(help.gameObject,true);}
     public void CloseHelp()=>UIVisibility.Set(help.gameObject,false);
     private void TurnHelp(int step){helpPage=(helpPage+HelpPages.Pages.Length+step)%HelpPages.Pages.Length;RefreshHelp();}
-    private void RefreshHelp(){helpModal.Title.text=HelpPages.Title(helpPage);helpModal.Body.text=HelpPages.Body(helpPage);helpPageText.text=$"{helpPage+1} / {HelpPages.Pages.Length}";}
+    private void RefreshHelp()
+    {
+        helpModal.Title.text=HelpPages.Title(helpPage);
+        helpModal.Body.text=HelpPages.Body(helpPage);
+        helpPageText.text=$"{helpPage+1} / {HelpPages.Pages.Length}";
+    }
     public void ShowCredits()=>UIVisibility.Set(credits.gameObject,true);
     public void CloseCredits()=>UIVisibility.Set(credits.gameObject,false);
     private static void Quit()

@@ -25,7 +25,8 @@ public sealed class MapVisuals : MonoBehaviour
         {
             if(pair.label==null)continue;float pixels=pair.area.width/px;
             pair.label.enabled=pixels>=UITheme.Active.cityLabelMinimumBlockPixels && Visible(camera,new Bounds(pair.area.center,pair.area.size));
-            pair.label.fontSize=UITheme.Active.captionSize*10*px;pair.label.rectTransform.sizeDelta=new Vector2(pair.area.width*.7f,UITheme.Active.captionSize*2*px);
+            pair.label.fontSize=UITheme.Active.captionSize*10*px;
+            pair.label.rectTransform.sizeDelta=new Vector2(pair.area.width*.7f,UITheme.Active.captionSize*2*px);
         }
         foreach(var sprite in detailSprites)if(sprite!=null)sprite.enabled=Visible(camera,sprite.bounds) && (map.City==null || map.CitySettings.blockSize/px>=UITheme.Active.cityDetailMinimumBlockPixels);
     }
@@ -39,8 +40,17 @@ public sealed class MapVisuals : MonoBehaviour
     {
         if(round && circle!=null)return circle;if(!round && square!=null)return square;
         var texture=new Texture2D(32,32,TextureFormat.RGBA32,false){hideFlags=HideFlags.DontSave};
-        for(int y=0;y<32;y++)for(int x=0;x<32;x++){float dx=x-15.5f,dy=y-15.5f;texture.SetPixel(x,y,new Color(1,1,1,!round || dx*dx+dy*dy<=240?1:0));}texture.Apply();
-        var sprite=Sprite.Create(texture,new Rect(0,0,32,32),Vector2.one*.5f,32);sprite.hideFlags=HideFlags.DontSave;if(round)circle=sprite;else square=sprite;return sprite;
+        for(int y=0;y<32;y++)for(int x=0;x<32;x++)
+        {
+            float dx=x-15.5f,dy=y-15.5f;
+            texture.SetPixel(x,y,new Color(1,1,1,!round || dx*dx+dy*dy<=240?1:0));
+        }
+        texture.Apply();
+        var sprite=Sprite.Create(texture,new Rect(0,0,32,32),Vector2.one*.5f,32);
+        sprite.hideFlags=HideFlags.DontSave;
+        if(round)circle=sprite;
+        else square=sprite;
+        return sprite;
     }
     private void OnEnable(){map.MapReady+=Create;map.OnRouteChanged+=Route;}
     private void OnDisable(){map.MapReady-=Create;map.OnRouteChanged-=Route;}
@@ -56,53 +66,135 @@ public sealed class MapVisuals : MonoBehaviour
         var previous=shownSeed==map.City.seed?shownBlocks:0;shownSeed=map.City.seed;shownBlocks=map.City.blocks.Count;
         foreach(var block in map.City.blocks)
         {
-            var area=block.area;var labelObject=new GameObject("DistrictName_"+block.index);labelObject.transform.SetParent(decorationRoot,false);labelObject.transform.position=new Vector3(area.x+area.width*.28f,area.center.y,0);
-            var label=labelObject.AddComponent<TextMeshPro>();label.font=theme.font;label.text=block.template.title+" "+(block.index+1);label.color=theme.inkSub;label.alignment=TextAlignmentOptions.Center;label.fontStyle=FontStyles.Bold;label.GetComponent<MeshRenderer>().sortingOrder=-10;districtLabels.Add((label,area));
-            var roadNameObject=new GameObject("RoadName_"+block.index);roadNameObject.transform.SetParent(decorationRoot,false);roadNameObject.transform.position=new Vector3(area.center.x,area.yMax+.5f,0);
-            var roadName=roadNameObject.AddComponent<TextMeshPro>();roadName.font=theme.font;roadName.text=block.template.title+" "+(block.index+1)+"号通り";roadName.color=theme.inkSub;roadName.alignment=TextAlignmentOptions.Center;roadName.GetComponent<MeshRenderer>().sortingOrder=-10;districtLabels.Add((roadName,area));
+            var area=block.area;
+            var labelObject=new GameObject("DistrictName_"+block.index);
+            labelObject.transform.SetParent(decorationRoot,false);
+            labelObject.transform.position=new Vector3(area.x+area.width*.28f,area.center.y,0);
+            var label=labelObject.AddComponent<TextMeshPro>();
+            label.font=theme.font;
+            label.text=block.template.title+" "+(block.index+1);
+            label.color=theme.inkSub;
+            label.alignment=TextAlignmentOptions.Center;
+            label.fontStyle=FontStyles.Bold;
+            label.GetComponent<MeshRenderer>().sortingOrder=-10;
+            districtLabels.Add((label,area));
+            var roadNameObject=new GameObject("RoadName_"+block.index);
+            roadNameObject.transform.SetParent(decorationRoot,false);
+            roadNameObject.transform.position=new Vector3(area.center.x,area.yMax+.5f,0);
+            var roadName=roadNameObject.AddComponent<TextMeshPro>();
+            roadName.font=theme.font;
+            roadName.text=block.template.title+" "+(block.index+1)+"号通り";
+            roadName.color=theme.inkSub;
+            roadName.alignment=TextAlignmentOptions.Center;
+            roadName.GetComponent<MeshRenderer>().sortingOrder=-10;
+            districtLabels.Add((roadName,area));
             if(block.template.river)
             {
                 float x=area.x+area.width*.3f;
-                var river=new GameObject("DistrictRiver").AddComponent<LineRenderer>();river.transform.SetParent(decorationRoot,false);river.positionCount=2;river.SetPosition(0,new Vector3(x,area.yMin-.3f,0));river.SetPosition(1,new Vector3(x,area.yMax+.3f,0));var road=FindFirstObjectByType<EdgeView>();if(road!=null)river.sharedMaterial=road.GetComponent<LineRenderer>().sharedMaterial;river.startWidth=river.endWidth=.6f;river.startColor=river.endColor=theme.mapWater;river.sortingOrder=-18;
+                var river=new GameObject("DistrictRiver").AddComponent<LineRenderer>();
+                river.transform.SetParent(decorationRoot,false);
+                river.positionCount=2;
+                river.SetPosition(0,new Vector3(x,area.yMin-.3f,0));
+                river.SetPosition(1,new Vector3(x,area.yMax+.3f,0));
+                var road=FindFirstObjectByType<EdgeView>();
+                if(road!=null)river.sharedMaterial=road.GetComponent<LineRenderer>().sharedMaterial;
+                river.startWidth=river.endWidth=.6f;
+                river.startColor=river.endColor=theme.mapWater;
+                river.sortingOrder=-18;
                 foreach(float y in new[]{area.yMin,area.yMax})Block(new Rect(x-.4f,y-.25f,.8f,.5f),theme.paper,"Bridge");
             }
             if(block.template.buildings)
                 for(int i=0;i<3;i++)Block(new Rect(area.x+.65f,area.y+.6f+i*.8f,.7f,.4f),theme.paperDeep,"DistrictBuilding");
             if(previous>0 && block.index>=previous)
             {
-                var root=decorationRoot.Find("District_"+block.index);if(root!=null){var renderer=root.GetComponent<SpriteRenderer>();if(renderer!=null)StartCoroutine(RevealDistrict(renderer,theme.cityExpansionFadeSeconds));}
+                if(districts.TryGetValue(block.index,out var renderer) && renderer!=null)StartCoroutine(RevealDistrict(renderer,theme.cityExpansionFadeSeconds));
             }
         }
     }
     private System.Collections.IEnumerator RevealDistrict(SpriteRenderer sprite,float seconds)
     {
         Color color=sprite.color;
-        for(float t=0;t<seconds;t+=Time.unscaledDeltaTime){if(sprite==null)yield break;var c=color;c.a=Mathf.Clamp01(t/seconds);sprite.color=c;yield return null;}if(sprite!=null)sprite.color=color;
+        for(float t=0;t<seconds;t+=Time.unscaledDeltaTime)
+        {
+            if(sprite==null)yield break;
+            var c=color;
+            c.a=Mathf.Clamp01(t/seconds);
+            sprite.color=c;
+            yield return null;
+        }
+        if(sprite!=null)sprite.color=color;
     }
 
     private static Sprite rounded;
     private void Create()
     {
-        if(decorationRoot!=null){decorationRoot.gameObject.SetActive(false);Destroy(decorationRoot.gameObject);}decorationRoot=new GameObject("CityDecoration").transform;decorationRoot.SetParent(transform,false);arrows.Clear();congestion.Clear();districtLabels.Clear();detailSprites.Clear();var theme=UITheme.Active;Camera.main.backgroundColor=theme.mapGround;
+        if(decorationRoot!=null)
+        {
+            decorationRoot.gameObject.SetActive(false);
+            Destroy(decorationRoot.gameObject);
+        }
+        decorationRoot=new GameObject("CityDecoration").transform;
+        decorationRoot.SetParent(transform,false);
+        arrows.Clear();
+        congestion.Clear();
+        districtLabels.Clear();
+        districts.Clear();
+        detailSprites.Clear();
+        var theme=UITheme.Active;
+        Camera.main.backgroundColor=theme.mapGround;
         if(map.City!=null)
         {
-            foreach(var block in map.City.blocks){var a=block.area;var inset=new Rect(a.x+.5f,a.y+.5f,a.width-1,a.height-1);bool green=block.template.trees;Block(inset,green?theme.mapPark:theme.mapBlock,"District_"+block.index);if(green)for(int i=0;i<3;i++)Tree(inset.center+new Vector2((i-1)*.6f,.3f),theme.mapTree);}
+            foreach(var block in map.City.blocks)
+            {
+                var a=block.area;
+                var inset=new Rect(a.x+.5f,a.y+.5f,a.width-1,a.height-1);
+                bool green=block.template.trees;
+                districts[block.index]=Block(inset,green?theme.mapPark:theme.mapBlock,"District_"+block.index);
+                if(green)for(int i=0;i<3;i++)Tree(inset.center+new Vector2((i-1)*.6f,.3f),theme.mapTree);
+            }
         }
-        else{foreach(var area in cityBlocks)Block(area,theme.mapBlock,"CityBlock");foreach(var area in outerBlocks)Block(area,theme.mapBlock,"CityBlock");}
-        foreach(var area in parks){Block(area,theme.mapPark,"Park");for(int i=0;i<3;i++)Tree(new Vector2(area.xMin+area.width*(.25f+.25f*i),area.center.y+(i%2==0?.12f:-.12f)),theme.mapTree);}
+        else
+        {
+            foreach(var area in cityBlocks)Block(area,theme.mapBlock,"CityBlock");
+            foreach(var area in outerBlocks)Block(area,theme.mapBlock,"CityBlock");
+        }
+        foreach(var area in parks)
+        {
+            Block(area,theme.mapPark,"Park");
+            for(int i=0;i<3;i++)Tree(new Vector2(area.xMin+area.width*(.25f+.25f*i),area.center.y+(i%2==0?.12f:-.12f)),theme.mapTree);
+        }
         if(map.City==null)River(theme);else GeneratedDetails(theme);
         Congestion(theme);Route(map.CurrentRouteState);
     }
     private static Sprite Rounded()
     {
-        if(rounded!=null)return rounded;var tex=new Texture2D(64,64,TextureFormat.RGBA32,false){hideFlags=HideFlags.DontSave,wrapMode=TextureWrapMode.Clamp};
-        for(int y=0;y<64;y++)for(int x=0;x<64;x++){float cx=Mathf.Clamp(x+.5f,16,48),cy=Mathf.Clamp(y+.5f,16,48),d=Mathf.Sqrt((x+.5f-cx)*(x+.5f-cx)+(y+.5f-cy)*(y+.5f-cy))-16;tex.SetPixel(x,y,new Color(1,1,1,Mathf.Clamp01(.5f-d)));}
-        tex.Apply();rounded=Sprite.Create(tex,new Rect(0,0,64,64),Vector2.one*.5f,100,0,SpriteMeshType.FullRect,new Vector4(16,16,16,16));rounded.hideFlags=HideFlags.DontSave;return rounded;
+        if(rounded!=null)return rounded;
+        var tex=new Texture2D(64,64,TextureFormat.RGBA32,false){hideFlags=HideFlags.DontSave,wrapMode=TextureWrapMode.Clamp};
+        for(int y=0;y<64;y++)for(int x=0;x<64;x++)
+        {
+            float cx=Mathf.Clamp(x+.5f,16,48),cy=Mathf.Clamp(y+.5f,16,48),d=Mathf.Sqrt((x+.5f-cx)*(x+.5f-cx)+(y+.5f-cy)*(y+.5f-cy))-16;
+            tex.SetPixel(x,y,new Color(1,1,1,Mathf.Clamp01(.5f-d)));
+        }
+        tex.Apply();
+        rounded=Sprite.Create(tex,new Rect(0,0,64,64),Vector2.one*.5f,100,0,SpriteMeshType.FullRect,new Vector4(16,16,16,16));
+        rounded.hideFlags=HideFlags.DontSave;
+        return rounded;
     }
-    private void Block(Rect area,Color color,string name)
+    /// <summary>Each district's ground block, by block index (the newest ones fade in).</summary>
+    private readonly System.Collections.Generic.Dictionary<int,SpriteRenderer> districts=new();
+    private SpriteRenderer Block(Rect area,Color color,string name)
     {
-        var go=new GameObject(name);go.transform.SetParent(decorationRoot,false);go.transform.position=area.center;go.transform.localScale=Vector3.one*.5f;
-        var sprite=go.AddComponent<SpriteRenderer>();sprite.sprite=Rounded();sprite.drawMode=SpriteDrawMode.Sliced;sprite.size=area.size*2;sprite.color=color;sprite.sortingOrder=-20;
+        var go=new GameObject(name);
+        go.transform.SetParent(decorationRoot,false);
+        go.transform.position=area.center;
+        go.transform.localScale=Vector3.one*.5f;
+        var sprite=go.AddComponent<SpriteRenderer>();
+        sprite.sprite=Rounded();
+        sprite.drawMode=SpriteDrawMode.Sliced;
+        sprite.size=area.size*2;
+        sprite.color=color;
+        sprite.sortingOrder=-20;
+        return sprite;
     }
     private void Tree(Vector2 at,Color color)
     {
@@ -112,7 +204,10 @@ public sealed class MapVisuals : MonoBehaviour
     private void River(UITheme theme)
     {
         var go=new GameObject("River");go.transform.SetParent(decorationRoot,false);var line=go.AddComponent<LineRenderer>();
-        var road=FindFirstObjectByType<EdgeView>();line.sharedMaterial=road!=null?road.GetComponent<LineRenderer>().sharedMaterial:null;line.useWorldSpace=false;line.positionCount=40;
+        var road=FindFirstObjectByType<EdgeView>();
+        line.sharedMaterial=road!=null?road.GetComponent<LineRenderer>().sharedMaterial:null;
+        line.useWorldSpace=false;
+        line.positionCount=40;
         for(int i=0;i<40;i++){float x=-12+i*.6f;line.SetPosition(i,new Vector3(x,riverY+Mathf.Sin(i*.45f)*.35f,0));}
         line.startWidth=line.endWidth=1.6f;line.startColor=line.endColor=theme.mapWater;line.sortingOrder=-21;line.numCapVertices=4;
     }
@@ -127,8 +222,15 @@ public sealed class MapVisuals : MonoBehaviour
             int count=Mathf.Max(2,Mathf.RoundToInt((b-a).magnitude*jam*2.4f));
             for(int i=0;i<count;i++)
             {
-                var go=new GameObject("Congestion");go.transform.SetParent(decorationRoot,false);go.transform.position=Vector2.Lerp(a,b,(i+.5f)/count);go.transform.localScale=Vector3.one*.16f;
-                var dot=go.AddComponent<SpriteRenderer>();dot.sprite=Shape(true);dot.color=theme.congestion;dot.sortingOrder=6;congestion.Add((edge,dot));
+                var go=new GameObject("Congestion");
+                go.transform.SetParent(decorationRoot,false);
+                go.transform.position=Vector2.Lerp(a,b,(i+.5f)/count);
+                go.transform.localScale=Vector3.one*.16f;
+                var dot=go.AddComponent<SpriteRenderer>();
+                dot.sprite=Shape(true);
+                dot.color=theme.congestion;
+                dot.sortingOrder=6;
+                congestion.Add((edge,dot));
             }
         }
     }
@@ -138,10 +240,31 @@ public sealed class MapVisuals : MonoBehaviour
         foreach(string id in state.ActiveEdgeIds)
         {
             var edge=map.GetEdge(id);if(!edge.TryTraverse(current,out string next))break;
-            while(arrows.Count<=count){var go=new GameObject("RouteArrow");go.transform.SetParent(decorationRoot,false);var text=go.AddComponent<TextMeshPro>();text.font=UITheme.Active.font;text.alignment=TextAlignmentOptions.Center;text.rectTransform.sizeDelta=new Vector2(.5f,.5f);go.GetComponent<MeshRenderer>().sortingOrder=12;arrows.Add(text);}
+            while(arrows.Count<=count)
+            {
+                var go=new GameObject("RouteArrow");
+                go.transform.SetParent(decorationRoot,false);
+                var text=go.AddComponent<TextMeshPro>();
+                text.font=UITheme.Active.font;
+                text.alignment=TextAlignmentOptions.Center;
+                text.rectTransform.sizeDelta=new Vector2(.5f,.5f);
+                go.GetComponent<MeshRenderer>().sortingOrder=12;
+                arrows.Add(text);
+            }
             var arrow=arrows[count];Vector2 a=positions[current],b=positions[next];var position=Vector2.Lerp(a,b,count%2==0?.4f:.6f);
-            if(edge.RoadType==RoadType.Backstreet){var direction=(positions[edge.NodeBId]-positions[edge.NodeAId]).normalized;position+=new Vector2(-direction.y,direction.x)*.35f;}
-            arrow.transform.position=position;arrow.transform.rotation=Quaternion.Euler(0,0,Mathf.Atan2(b.y-a.y,b.x-a.x)*Mathf.Rad2Deg);arrow.text=">";arrow.fontSize=UITheme.Active.routeArrowSize;arrow.color=UITheme.Active.background;arrow.fontStyle=FontStyles.Bold;count++;current=next;
+            if(edge.RoadType==RoadType.Backstreet)
+            {
+                var direction=(positions[edge.NodeBId]-positions[edge.NodeAId]).normalized;
+                position+=new Vector2(-direction.y,direction.x)*.35f;
+            }
+            arrow.transform.position=position;
+            arrow.transform.rotation=Quaternion.Euler(0,0,Mathf.Atan2(b.y-a.y,b.x-a.x)*Mathf.Rad2Deg);
+            arrow.text=">";
+            arrow.fontSize=UITheme.Active.routeArrowSize;
+            arrow.color=UITheme.Active.background;
+            arrow.fontStyle=FontStyles.Bold;
+            count++;
+            current=next;
         }
         for(int i=0;i<arrows.Count;i++)arrows[i].text=i<count?">":"";
     }

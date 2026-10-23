@@ -28,8 +28,16 @@ public static class UiKit
             if(T!=null && T.triangleSprite!=null)return T.triangleSprite;
             if(triangle!=null)return triangle;
             var tex=new Texture2D(32,32,TextureFormat.RGBA32,false){hideFlags=HideFlags.DontSave,wrapMode=TextureWrapMode.Clamp};
-            for(int y=0;y<32;y++)for(int x=0;x<32;x++){float half=(y+.5f)/32f*16f;float d=Mathf.Abs(x+.5f-16)-half;tex.SetPixel(x,y,new Color(1,1,1,Mathf.Clamp01(.5f-d)));}
-            tex.Apply();triangle=Sprite.Create(tex,new Rect(0,0,32,32),new Vector2(.5f,.5f),100);triangle.hideFlags=HideFlags.DontSave;return triangle;
+            for(int y=0;y<32;y++)for(int x=0;x<32;x++)
+            {
+                float half=(y+.5f)/32f*16f;
+                float d=Mathf.Abs(x+.5f-16)-half;
+                tex.SetPixel(x,y,new Color(1,1,1,Mathf.Clamp01(.5f-d)));
+            }
+            tex.Apply();
+            triangle=Sprite.Create(tex,new Rect(0,0,32,32),new Vector2(.5f,.5f),100);
+            triangle.hideFlags=HideFlags.DontSave;
+            return triangle;
         }
     }
     private static Sprite Shape(int size,int radius,bool full)
@@ -55,15 +63,35 @@ public static class UiKit
     // ---- layout helpers (top-left origin, y down, in 1920x1080 canvas units) ----
     public static RectTransform Box(Transform parent,string name,float x,float y,float w,float h)
     {
-        var go=new GameObject(name,typeof(RectTransform));go.layer=5;var r=(RectTransform)go.transform;r.SetParent(parent,false);Place(r,x,y,w,h);return r;
+        var go=new GameObject(name,typeof(RectTransform));
+        go.layer=5;
+        var r=(RectTransform)go.transform;
+        r.SetParent(parent,false);
+        Place(r,x,y,w,h);
+        return r;
     }
-    public static void Place(RectTransform r,float x,float y,float w,float h){r.anchorMin=r.anchorMax=r.pivot=new Vector2(0,1);r.anchoredPosition=new Vector2(x,-y);r.sizeDelta=new Vector2(w,h);}
+    public static void Place(RectTransform r,float x,float y,float w,float h)
+    {
+        r.anchorMin=r.anchorMax=r.pivot=new Vector2(0,1);
+        r.anchoredPosition=new Vector2(x,-y);
+        r.sizeDelta=new Vector2(w,h);
+    }
     public static RectTransform Stretch(Transform parent,string name,float left=0,float top=0,float right=0,float bottom=0)
     {
         var go=new GameObject(name,typeof(RectTransform));go.layer=5;var r=(RectTransform)go.transform;r.SetParent(parent,false);
-        r.anchorMin=Vector2.zero;r.anchorMax=Vector2.one;r.pivot=new Vector2(.5f,.5f);r.offsetMin=new Vector2(left,bottom);r.offsetMax=new Vector2(-right,-top);return r;
+        r.anchorMin=Vector2.zero;
+        r.anchorMax=Vector2.one;
+        r.pivot=new Vector2(.5f,.5f);
+        r.offsetMin=new Vector2(left,bottom);
+        r.offsetMax=new Vector2(-right,-top);
+        return r;
     }
-    public static CanvasGroup Group(RectTransform r){var g=r.GetComponent<CanvasGroup>();if(g==null)g=r.gameObject.AddComponent<CanvasGroup>();return g;}
+    public static CanvasGroup Group(RectTransform r)
+    {
+        var g=r.GetComponent<CanvasGroup>();
+        if(g==null)g=r.gameObject.AddComponent<CanvasGroup>();
+        return g;
+    }
     public static void Show(Component c,bool visible){if(c!=null)UIVisibility.Set(c.gameObject,visible);}
 
     public static Image Fill(RectTransform r,Color color,float radius,bool raycast=false)
@@ -83,10 +111,14 @@ public static class UiKit
     {
         if(radius<0)radius=T.cardRadius;if(shadow<0)shadow=T.stickerShadow;if(edge<0)edge=T.edge;
         if(shadow>0){var s=Stretch(root,"Shadow",0,shadow,0,-shadow);Fill(s,shadowColor??new Color(T.line.r,T.line.g,T.line.b,.22f),radius);}
-        if(edge>0){var e=Stretch(root,"Edge");Fill(e,edgeColor??T.line,radius);}
-        var f=Stretch(root,"Face",edge,edge,edge,edge);Fill(f,face,Mathf.Max(1,radius-edge));
+        Image outline=null;if(edge>0){var e=Stretch(root,"Edge");outline=Fill(e,edgeColor??T.line,radius);}
+        var f=Stretch(root,"Face",edge,edge,edge,edge);var image=Fill(f,face,Mathf.Max(1,radius-edge));
+        var card=root.GetComponent<UiCard>();if(card==null)card=root.gameObject.AddComponent<UiCard>();card.Init(image,outline);
     }
-    public static Image FaceOf(RectTransform card)=>card.Find("Face")?.GetComponent<Image>();
+    public static Image FaceOf(RectTransform card)
+    {
+        var parts=card!=null?card.GetComponent<UiCard>():null;return parts!=null?parts.Face:null;
+    }
     public static void Dashed(RectTransform root,Color color,float dash=14,float gap=10,float thickness=3,float inset=0)
     {
         var size=root.rect.size;if(size.x<=0)size=root.sizeDelta;
@@ -113,9 +145,24 @@ public static class UiKit
 
     // ---- images ----
     public static Image Icon(Transform parent,string name,string sprite,float x,float y,float size,Color tint)
-    {var r=Box(parent,name,x,y,size,size);var i=r.gameObject.AddComponent<Image>();i.sprite=Art(sprite);i.color=tint;i.raycastTarget=false;i.preserveAspect=true;return i;}
+    {
+        var r=Box(parent,name,x,y,size,size);
+        var i=r.gameObject.AddComponent<Image>();
+        i.sprite=Art(sprite);
+        i.color=tint;
+        i.raycastTarget=false;
+        i.preserveAspect=true;
+        return i;
+    }
     public static Image Picture(Transform parent,string name,string sprite,float x,float y,float w,float h,bool raycast=false)
-    {var r=Box(parent,name,x,y,w,h);var i=r.gameObject.AddComponent<Image>();i.sprite=Art(sprite);i.raycastTarget=raycast;i.preserveAspect=true;return i;}
+    {
+        var r=Box(parent,name,x,y,w,h);
+        var i=r.gameObject.AddComponent<Image>();
+        i.sprite=Art(sprite);
+        i.raycastTarget=raycast;
+        i.preserveAspect=true;
+        return i;
+    }
 
     // ---- composite parts ----
     public static StickerButton Button(Transform parent,string name,string label,StickerKind kind,float x,float y,float w,float h,float fontSize,UnityAction onClick,FontRole role=FontRole.Black,string icon=null)
@@ -128,26 +175,47 @@ public static class UiKit
     public static RectTransform Badge(Transform parent,string name,string text,float x,float y,Color fill,Color textColor,float height=28,float size=16,float minWidth=0)
     {
         var root=Box(parent,name,x,y,10,height);var bg=Stretch(root,"Edge");Fill(bg,T.line,height/2f);
-        var face=Stretch(bg,"Face",2,2,2,2);Fill(face,fill,height/2f-2);
-        var label=Label(root,"Text",text,0,0,10,height,Mathf.Max(size,T.captionSize),textColor,FontRole.Black,TextAlignmentOptions.Center);label.verticalAlignment=VerticalAlignmentOptions.Geometry;
-        float width=Mathf.Max(minWidth,label.GetPreferredValues(text).x+height*.8f);root.sizeDelta=new Vector2(width,height);label.rectTransform.sizeDelta=new Vector2(width,height);
+        var face=Stretch(bg,"Face",2,2,2,2);var faceImage=Fill(face,fill,height/2f-2);
+        var label=Label(root,"Text",text,0,0,10,height,Mathf.Max(size,T.captionSize),textColor,FontRole.Black,TextAlignmentOptions.Center);
+        root.gameObject.AddComponent<UiBadge>().Init(label,faceImage);
+        label.verticalAlignment=VerticalAlignmentOptions.Geometry;
+        float width=Mathf.Max(minWidth,label.GetPreferredValues(text).x+height*.8f);
+        root.sizeDelta=new Vector2(width,height);
+        label.rectTransform.sizeDelta=new Vector2(width,height);
         return root;
     }
     public static void SetBadge(RectTransform badge,string text,Color fill,Color textColor,float minWidth=0)
     {
-        if(badge==null)return;var label=badge.Find("Text").GetComponent<TextMeshProUGUI>();label.text=text;label.color=textColor;
-        badge.Find("Edge/Face").GetComponent<Image>().color=fill;float h=badge.sizeDelta.y;float width=Mathf.Max(minWidth,label.GetPreferredValues(text).x+h*.8f);
+        if(badge==null)return;
+        var parts=badge.GetComponent<UiBadge>();var label=parts.Label;label.text=text;label.color=textColor;
+        parts.Face.color=fill;
+        float h=badge.sizeDelta.y;
+        float width=Mathf.Max(minWidth,label.GetPreferredValues(text).x+h*.8f);
         badge.sizeDelta=new Vector2(width,h);label.rectTransform.sizeDelta=new Vector2(width,h);
     }
     public static RectTransform Avatar(Transform parent,string name,float x,float y,float size,Color color,string initial)
     {
-        var root=Box(parent,name,x,y,size,size);var edge=Stretch(root,"Edge");var e=edge.gameObject.AddComponent<Image>();e.sprite=Circle;e.color=T.line;e.raycastTarget=false;
-        float border=Mathf.Max(2,size*.045f);var face=Stretch(root,"Face",border,border,border,border);var f=face.gameObject.AddComponent<Image>();f.sprite=Circle;f.color=color;f.raycastTarget=false;
-        var initialText=Label(root,"Initial",initial,0,0,size,size,size*.52f,Color.white,FontRole.Display,TextAlignmentOptions.Center);initialText.verticalAlignment=VerticalAlignmentOptions.Geometry;
+        var root=Box(parent,name,x,y,size,size);
+        var edge=Stretch(root,"Edge");
+        var e=edge.gameObject.AddComponent<Image>();
+        e.sprite=Circle;
+        e.color=T.line;
+        e.raycastTarget=false;
+        float border=Mathf.Max(2,size*.045f);
+        var face=Stretch(root,"Face",border,border,border,border);
+        var f=face.gameObject.AddComponent<Image>();
+        f.sprite=Circle;
+        f.color=color;
+        f.raycastTarget=false;
+        var initialText=Label(root,"Initial",initial,0,0,size,size,size*.52f,Color.white,FontRole.Display,TextAlignmentOptions.Center);
+        initialText.verticalAlignment=VerticalAlignmentOptions.Geometry;
+        root.gameObject.AddComponent<UiAvatar>().Init(f,initialText);
         return root;
     }
     public static void SetAvatar(RectTransform avatar,Color color,string initial)
-    {if(avatar==null)return;avatar.Find("Face").GetComponent<Image>().color=color;avatar.Find("Initial").GetComponent<TextMeshProUGUI>().text=initial;}
+    {
+        if(avatar!=null)avatar.GetComponent<UiAvatar>().Set(color,initial);
+    }
     /// <summary>Sticker-style slider: dark-edged track, coloured fill and a round tomato handle you can drag.</summary>
     public static Slider Slider(Transform parent,string name,float x,float y,float w,float h,Color fill,UnityAction<float> onChange)
     {
@@ -156,8 +224,17 @@ public static class UiKit
         var area=Stretch(root,"FillArea",3,3,3,3);var fillRect=Stretch(area,"Fill");Fill(fillRect,fill,h*.5f-3);
         var slide=Stretch(root,"HandleArea",h*.5f,0,h*.5f,0);float size=h*1.5f;
         // Slider stretches the handle over the track height, so the extra size makes a round knob.
-        var handle=Box(slide,"Handle",0,0,size,size);handle.anchorMin=new Vector2(0,0);handle.anchorMax=new Vector2(0,1);handle.pivot=new Vector2(.5f,.5f);handle.anchoredPosition=Vector2.zero;handle.sizeDelta=new Vector2(size,size-h);
-        var drop=Stretch(handle,"Shadow",0,4,0,-4);var d=drop.gameObject.AddComponent<Image>();d.sprite=Circle;d.color=new Color(T.line.r,T.line.g,T.line.b,.3f);d.raycastTarget=false;
+        var handle=Box(slide,"Handle",0,0,size,size);
+        handle.anchorMin=new Vector2(0,0);
+        handle.anchorMax=new Vector2(0,1);
+        handle.pivot=new Vector2(.5f,.5f);
+        handle.anchoredPosition=Vector2.zero;
+        handle.sizeDelta=new Vector2(size,size-h);
+        var drop=Stretch(handle,"Shadow",0,4,0,-4);
+        var d=drop.gameObject.AddComponent<Image>();
+        d.sprite=Circle;
+        d.color=new Color(T.line.r,T.line.g,T.line.b,.3f);
+        d.raycastTarget=false;
         var edge=Stretch(handle,"Edge");var e=edge.gameObject.AddComponent<Image>();e.sprite=Circle;e.color=T.line;
         var knob=Stretch(handle,"Knob",3,3,3,3);var k=knob.gameObject.AddComponent<Image>();k.sprite=Circle;k.color=T.tomato;k.raycastTarget=false;
         slider.fillRect=fillRect;slider.handleRect=handle;slider.targetGraphic=e;slider.direction=UnityEngine.UI.Slider.Direction.LeftToRight;
@@ -166,13 +243,20 @@ public static class UiKit
         return slider;
     }
     /// <summary>Calls onChange only for the player's drag: range/value updates from SyncPromise do not call back.</summary>
-    public static void BindSlider(Slider slider,UnityAction<float> onChange){if(slider!=null && onChange!=null)slider.onValueChanged.AddListener(v=>{if(!syncing)onChange(v);});}
+    public static void BindSlider(Slider slider,UnityAction<float> onChange)
+    {
+        if(slider!=null && onChange!=null)slider.onValueChanged.AddListener(v=>
+        {
+            if(!syncing)onChange(v);
+        });
+    }
     /// <summary>Keeps a promise slider in step with the spawner (range = physical minimum .. maximum).</summary>
     private static bool syncing;
     public static void SyncPromise(Slider slider,OrderSpawner spawner,GameClock clock)
     {
         if(slider==null || spawner==null)return;syncing=true;try{
-        slider.minValue=Mathf.Ceil(spawner.MinimumPromiseSeconds);slider.maxValue=Mathf.Max(slider.minValue+1,Mathf.Floor(spawner.MaximumPromiseSeconds));
+        slider.minValue=Mathf.Ceil(spawner.MinimumPromiseSeconds);
+        slider.maxValue=Mathf.Max(slider.minValue+1,Mathf.Floor(spawner.MaximumPromiseSeconds));
         slider.SetValueWithoutNotify(spawner.PromiseSeconds);
         slider.interactable=clock==null || clock.Phase==DayPhase.Open || clock.Phase==DayPhase.BeforeOpening;}finally{syncing=false;}
     }

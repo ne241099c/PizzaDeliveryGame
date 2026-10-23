@@ -20,7 +20,10 @@ public sealed class KitchenCardView : MonoBehaviour
     /// <summary>An applicant shows the hiring cost and 雇う; a team member shows 訓練(準備中) and 解雇.</summary>
     public void ShowMode(bool applicant,string cost,string rejection)
     {
-        hire.gameObject.SetActive(applicant);hireCost.gameObject.SetActive(applicant);trainLater.gameObject.SetActive(!applicant);fire.gameObject.SetActive(!applicant);
+        hire.gameObject.SetActive(applicant);
+        hireCost.gameObject.SetActive(applicant);
+        trainLater.gameObject.SetActive(!applicant);
+        fire.gameObject.SetActive(!applicant);
         hireCost.text=cost;reason.text=applicant?rejection:"";reason.gameObject.SetActive(applicant && rejection.Length>0);
         trainLater.Interactable=false;
     }

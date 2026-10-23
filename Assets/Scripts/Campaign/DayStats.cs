@@ -25,7 +25,13 @@ public sealed class DayStats : MonoBehaviour
         if(onTime && stars==3)ThreeStarOnTime++;
     }
 
-    public void ResetForDay() { SpawnedCount=ClosingCancelledCount=AccidentCount=DeliveredCount=LateCount=CancelledCount=TotalScore=0;BusySeconds=0;TwoStarOnTime=ThreeStarOnTime=0;System.Array.Clear(StarCounts,0,StarCounts.Length); }
+    public void ResetForDay()
+    {
+        SpawnedCount=ClosingCancelledCount=AccidentCount=DeliveredCount=LateCount=CancelledCount=TotalScore=0;
+        BusySeconds=0;
+        TwoStarOnTime=ThreeStarOnTime=0;
+        System.Array.Clear(StarCounts,0,StarCounts.Length);
+    }
 
     public void RecordDelivery(int points, float lateSeconds)
     {

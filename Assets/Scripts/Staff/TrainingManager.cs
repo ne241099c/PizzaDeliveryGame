@@ -74,7 +74,10 @@ public sealed class TrainingManager : MonoBehaviour
         {
             var person=roster.People.FirstOrDefault(p=>p.Id==assignment.PersonId);if(person==null)continue;
             progression.ApplyTraining(person,assignment.Ability,assignment.Ability==CourierAbility.Capacity?capacityGain:abilityGain);
-            assignment.Completed=true;changed=true;person.Status=DeliveryStatus.Idle;LastMessage=$"Training completed: {person.Name} / {assignment.Ability}.";
+            assignment.Completed=true;
+            changed=true;
+            person.Status=DeliveryStatus.Idle;
+            LastMessage=$"Training completed: {person.Name} / {assignment.Ability}.";
         }
         if(changed)Changed?.Invoke();
     }
