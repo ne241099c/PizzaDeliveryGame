@@ -66,7 +66,7 @@ public static class CityCampaignValidation
             Check(save.TryParse(JsonUtility.ToJson(data),out var customDensity,out _),"custom new-town density saves");
             campaign.RestorePreparation(customDensity);
             Check(map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==map.CitySettings.Blocks(data.day)*3+2 && map.CaptureCity().housesPerBlock==3,"Continue uses saved density rather than current Inspector default");
-            foreach(int version in new[]{1,2,3,4,5,6,7})
+            foreach(int version in new[]{1,2,3,4,5,6,7,8})
             {
                 map.UpgradeRestoredCityLayout=true;
                 data.city.version=version;

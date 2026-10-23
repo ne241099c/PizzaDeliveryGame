@@ -69,6 +69,7 @@ public sealed class PlayModeValidationTests
     [UnityTest] public IEnumerator SavePreservation()=>Run(M6Validation.RunSaveOnly);
     [UnityTest] public IEnumerator KitchenRecovery()=>Run(KitchenRecoveryValidation.Run);
     [UnityTest] public IEnumerator KitchenQueue()=>Run(KitchenQueueValidation.Run);
+    [UnityTest] public IEnumerator KitchenTraining()=>Run(KitchenTrainingValidation.Run);
     [UnityTest] public IEnumerator PizzaMenu()=>Run(PizzaMenuValidation.Run);
     [UnityTest] public IEnumerator CityGeneration()=>Run(CityGenerationValidation.RunBasic);
     [UnityTest] public IEnumerator CityNetwork()=>Run(CityGenerationValidation.RunNetwork);

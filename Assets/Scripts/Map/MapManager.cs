@@ -131,7 +131,21 @@ public class MapManager : MonoBehaviour
                 }else e.TrafficFactor=before;
             }
         }
+        if(next.version>=9)Congest(next,day);
         next.day=day;City=next;CityState.day=day;CityState.blocks=blocks;LoadMap(next.map);if(old!=null)Destroy(old.map);
+    }
+    /// <summary>v9: every day a share of the main streets is jammed (chosen from the seed and the day), so the plain
+    /// shortest route is not always the fastest. Roads whose closure would cut the town, and roads at the shop, are never jammed.</summary>
+    private void Congest(GeneratedCity city,int day)
+    {
+        var cut=CityValidator.CutRoads(city.map);
+        // Roads leaving the shop stay clear: a jam there would slow every trip alike.
+        string store=city.map.Nodes.First(n=>n.IsStore).Id;
+        var streets=city.map.Edges.Where(e=>e.RoadType==RoadType.Main && e.TrafficFactor>=1 && !cut.Contains(e.Id) && !city.construction.Contains(e.Id) && e.NodeAId!=store && e.NodeBId!=store).ToList();
+        int count=Mathf.RoundToInt(streets.Count*citySettings.dailyCongestionShare);
+        uint Hash(string text){uint h=2166136261;foreach(char c in text)h=unchecked((h^c)*16777619);return h;}
+        foreach(var e in streets.OrderBy(e=>Hash(CityState.seed+"/"+day+"/"+e.Id)).Take(count))
+            e.TrafficFactor=Mathf.Lerp(citySettings.congestionTrafficMin,citySettings.congestionTrafficMax,Hash(e.Id+"/"+day)%1000/999f);
     }
     public void LoadMap(MapDefinition definition)
     {

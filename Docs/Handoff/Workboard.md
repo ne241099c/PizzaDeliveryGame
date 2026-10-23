@@ -1,3 +1,5 @@
+> **完了（2026-10-24）：Claude Codeが道路網v9（家が近い・密につながる・2通りの行き方）、日替わりの渋滞、配達指示のスローモーション廃止、内勤の訓練を実装。** Test Runner 27件通過、セーブ前後一致。詳細：[記録](../Results/City_Network_v9.md)。Unity操作担当：Claude Code、Unityは編集モード。
+
 > **完了（2026-10-24）：Claude Codeが道路網v8（家は道の途中・交差点増）、道の最低の太さ、道のクリックで経路変更、押している間の早送り、配達指示の説明削除を実装。** Test Runner 26件通過、セーブ前後一致。詳細：[記録](../Results/City_Network_v8.md)。Unity操作担当：Claude Code、Unityは編集モード。
 
 > **完了（2026-10-24）：Codexが利用制限で停止、Claude Codeが引き継いで道路網v7・配達画面・家の増加を仕上げ。** 家は地区あたり7軒（最大100軒）、配達先の家を色分け、検証の高速化、古い検証の期待値更新。Test Runner 25件通過、セーブ前後一致。詳細：[記録](../Results/City_Network_v7.md)。Unity操作担当：Claude Code（交代時はここを更新）、Unityは編集モード。

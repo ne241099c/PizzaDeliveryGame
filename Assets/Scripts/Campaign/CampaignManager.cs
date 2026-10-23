@@ -99,7 +99,7 @@ public sealed class CampaignManager : MonoBehaviour
         reputation.Restore(data.reputation);dynamics.ResetForDay();spawner.ResetForDay();spawner.SetPromiseSeconds(data.promise);
         economy.RestorePreparation(CampaignSaveManager.Decimal(data.cash),CampaignSaveManager.Decimal(data.openingCash),CampaignSaveManager.Decimal(data.preparationCosts),DayNumber);
         economy.Ledger.FacilityPurchases=CampaignSaveManager.Decimal(data.facilityPurchaseCosts);
-        score.ResetForDay();stats.ResetForDay();training.RestoreAssignments(data.training);
+        score.ResetForDay();stats.ResetForDay();training.RestoreAssignments(data.training);training.RestoreKitchenAssignments(data.kitchenTraining);
         recruitment.RestoreApplicants(data.applicants.ConvertAll(a=>new Applicant(a.person,a.baselines,a.strengths,a.weaknesses)));
         recruitment.RestoreKitchenApplicants(data.kitchenApplicants.ConvertAll(k=>new KitchenApplicant(k)));handover?.Clear();
         progression.PrepareDay();planner.PrepareDay();PreparationEntered?.Invoke();

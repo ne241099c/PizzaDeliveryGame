@@ -16,7 +16,7 @@ public static class CityGenerationValidation
         {
             int initial=settings.Blocks(1),maximum=settings.Blocks(21);
             var city=CityGenerator.Generate(seed,initial,settings);var copy=CityGenerator.Generate(seed,initial,settings);var larger=CityGenerator.Generate(seed,maximum,settings);
-            var legacy=CityGenerator.Build(seed,5,settings,version:6);
+            var legacy=CityGenerator.Build(seed,5,settings,version:6);var spread=CityGenerator.Build(seed,initial,settings,version:8);
             try
             {
                 Check(city.version==CityGenerator.CurrentVersion && initial>5,"larger new street network is active");
@@ -38,8 +38,15 @@ public static class CityGenerationValidation
                 var nodes=city.map.Nodes.ToDictionary(n=>n.Id,n=>n.Position);
                 int directions=city.map.Edges.Select(e=>{var d=nodes[e.NodeBId]-nodes[e.NodeAId];return Mathf.FloorToInt((Mathf.Atan2(d.y,d.x)+Mathf.PI)*18/Mathf.PI)%18;}).Distinct().Count();
                 Check(directions>=10,"roads are not limited to grid directions");
-                float Area(GeneratedCity c)=> (c.map.Nodes.Max(n=>n.Position.x)-c.map.Nodes.Min(n=>n.Position.x))*(c.map.Nodes.Max(n=>n.Position.y)-c.map.Nodes.Min(n=>n.Position.y));
-                Check(Area(city)>Area(legacy)*1.2f,"map covers more area than v6");
+                // v9 (2026-10-24): homes closer together than in v8, and nearly every home has a second way in.
+                float Gap(GeneratedCity c)
+                {
+                    var h=c.map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress).Select(n=>n.Position).ToArray();
+                    return h.Average(p=>h.Where(q=>q!=p).Min(q=>Vector2.Distance(p,q)));
+                }
+                Check(Gap(city)<Gap(spread)*.9f,"homes stand closer together than in v8");
+                var routes=CityValidator.Measure(city,settings);
+                Check(routes.multiRouteHomes>=routes.destinations*settings.minimumMultiRouteShare,"most homes can be reached two ways ("+routes.multiRouteHomes+"/"+routes.destinations+")");
                 string topology=string.Join("|",city.map.Edges.Select(e=>e.NodeAId+"/"+e.NodeBId));
                 if(previousTopology!=null)Check(previousTopology!=topology,"seed changes actual connections");previousTopology=topology;
                 float Cross(Vector2 a,Vector2 b)=>a.x*b.y-a.y*b.x;
@@ -52,7 +59,7 @@ public static class CityGenerationValidation
                 }
                 Check(!crossing,"crossing roads meet at real junctions");
             }
-            finally{UnityEngine.Object.Destroy(city.map);UnityEngine.Object.Destroy(copy.map);UnityEngine.Object.Destroy(larger.map);UnityEngine.Object.Destroy(legacy.map);}
+            finally{UnityEngine.Object.Destroy(city.map);UnityEngine.Object.Destroy(copy.map);UnityEngine.Object.Destroy(larger.map);UnityEngine.Object.Destroy(legacy.map);UnityEngine.Object.Destroy(spread.map);}
         }
         return $"PASS: {count} street network checks.";
     }

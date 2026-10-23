@@ -5,7 +5,7 @@ using UnityEngine;
 
 [Serializable] public sealed class CityMetrics
 {
-    public int nodes,edges,destinations,shortcutDestinations,nearPairs,bridges,oneWay,near,middle,far;
+    public int nodes,edges,destinations,shortcutDestinations,nearPairs,bridges,oneWay,near,middle,far,multiRouteHomes;
     public float totalDistance,deadEndFraction,minimumSaving,maximumSaving,minimumSpacing;
     public readonly List<string> failures=new();
     public string Summary=>$"道{edges}本 / 配達先{destinations} / 近道候補{shortcutDestinations} / 近接ペア{nearPairs}";
@@ -83,6 +83,54 @@ public static class CityValidator
         Fail(m.bridges>=2 && city.bridges.All(id=>map.Edges.Any(e=>e.Id==id)),"river bridges");
         for(int a=0;a<map.Nodes.Count;a++)for(int b=a+1;b<map.Nodes.Count;b++)m.minimumSpacing=Mathf.Min(m.minimumSpacing,Vector2.Distance(map.Nodes[a].Position,map.Nodes[b].Position));
         Fail(m.minimumSpacing>=s.minimumNodeSpacing,"display spacing");
+        // Homes still reachable when any single road is closed: they share a loop-connected part with the store.
+        var cut=CutRoads(map);var reached=new HashSet<string>{store};var queue=new Queue<string>(reached);
+        while(queue.Count>0)
+        {
+            string from=queue.Dequeue();
+            foreach(var e in map.Edges)
+            {
+                if(cut.Contains(e.Id) || e.NodeAId!=from && e.NodeBId!=from)continue;
+                string next=e.NodeAId==from?e.NodeBId:e.NodeAId;if(reached.Add(next))queue.Enqueue(next);
+            }
+        }
+        m.multiRouteHomes=goals.Count(g=>reached.Contains(g.Id));
+        if(city.version>=9)Fail(m.multiRouteHomes>=goals.Length*s.minimumMultiRouteShare,"multiple routes");
         return m;
+    }
+    /// <summary>Roads whose closure would split the town in two (graph bridges, direction ignored).</summary>
+    public static HashSet<string> CutRoads(MapDefinition map)
+    {
+        var next=new Dictionary<string,List<(string to,string edge)>>();
+        foreach(var e in map.Edges)
+        {
+            if(!next.ContainsKey(e.NodeAId))next[e.NodeAId]=new();
+            if(!next.ContainsKey(e.NodeBId))next[e.NodeBId]=new();
+            next[e.NodeAId].Add((e.NodeBId,e.Id));next[e.NodeBId].Add((e.NodeAId,e.Id));
+        }
+        var found=new Dictionary<string,int>();var low=new Dictionary<string,int>();var cut=new HashSet<string>();int time=0;
+        foreach(string start in next.Keys)
+        {
+            if(found.ContainsKey(start))continue;
+            found[start]=low[start]=time++;
+            var stack=new Stack<(string node,string via,int index)>();stack.Push((start,null,0));
+            while(stack.Count>0)
+            {
+                var (node,via,index)=stack.Pop();var list=next[node];
+                if(index<list.Count)
+                {
+                    stack.Push((node,via,index+1));
+                    var (to,edge)=list[index];if(edge==via)continue;
+                    if(!found.ContainsKey(to)){found[to]=low[to]=time++;stack.Push((to,edge,0));}
+                    else low[node]=Math.Min(low[node],found[to]);
+                    continue;
+                }
+                // Finished: the frame below is the parent's.
+                if(via==null || stack.Count==0)continue;
+                string parent=stack.Peek().node;low[parent]=Math.Min(low[parent],low[node]);
+                if(low[node]>found[parent])cut.Add(via);
+            }
+        }
+        return cut;
     }
 }

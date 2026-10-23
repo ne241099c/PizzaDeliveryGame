@@ -15,6 +15,8 @@ public sealed class KitchenStaff
     public float Care {get=>care;set=>care=Mathf.Clamp01(value);}
     /// <summary>Set by the kitchen while a staff member is assembling or packing.</summary>
     public bool IsWorking {get;internal set;}
+    /// <summary>Away for training during the first half of today's business (not saved: rebuilt from the assignment).</summary>
+    public bool InTraining {get;internal set;}
     public KitchenStaff(string name,float speed,float care){Name=name;Speed=speed;Care=care;}
     public KitchenStaff Clone(){_=Id;return JsonUtility.FromJson<KitchenStaff>(JsonUtility.ToJson(this));}
 }

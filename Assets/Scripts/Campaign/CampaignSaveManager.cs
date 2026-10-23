@@ -20,6 +20,8 @@ using UnityEngine;
     public List<DeliveryPerson> people;
     public List<ApplicantSaveData> applicants;
     public List<TrainingAssignment> training;
+    /// <summary>Kitchen staff training booked in preparation (absent in older saves: none).</summary>
+    public List<KitchenTrainingAssignment> kitchenTraining;
     public List<KitchenStaff> crew;
     public List<KitchenStaff> kitchenApplicants;
 }
@@ -139,6 +141,7 @@ public sealed class CampaignSaveManager : MonoBehaviour
             people=roster.People.Select(p=>p.Clone()).ToList(),
             applicants=recruitment.Applicants.Select(a=>new ApplicantSaveData{person=a.Person.Clone(),baselines=a.Baselines.ToArray(),strengths=a.Strengths.ToArray(),weaknesses=a.Weaknesses.ToArray()}).ToList(),
             training=training.Assignments.Select(a=>new TrainingAssignment{PersonId=a.PersonId,Ability=a.Ability,Fee=a.Fee,Completed=a.Completed}).ToList(),
+            kitchenTraining=training.KitchenAssignments.Select(a=>new KitchenTrainingAssignment{StaffId=a.StaffId,Skill=a.Skill,Fee=a.Fee,Completed=a.Completed}).ToList(),
             crew=crew!=null?crew.People.Select(c=>c.Clone()).ToList():new List<KitchenStaff>(),kitchenApplicants=recruitment.KitchenApplicants.Select(k=>k.Staff.Clone()).ToList()};
     }
     public string SnapshotJson()=>JsonUtility.ToJson(Capture(),true);
@@ -179,7 +182,9 @@ public sealed class CampaignSaveManager : MonoBehaviour
             if(candidate.people.Any(p=>p.Status!=DeliveryStatus.Idle && p.Status!=DeliveryStatus.Training))throw new FormatException("Only preparation courier states are supported.");
             if(candidate.applicants.Any(a=>a.baselines==null || a.baselines.Length!=5 || a.strengths==null || a.weaknesses==null || a.strengths.Length!=2 || a.weaknesses.Length!=2 || a.strengths.Concat(a.weaknesses).Distinct().Count()!=4 || a.strengths.Concat(a.weaknesses).Any(i=>i<0 || i>4)))throw new FormatException("Invalid applicant traits.");
             if(candidate.training.Select(a=>a.PersonId).Distinct().Count()!=candidate.training.Count || candidate.training.Any(a=>!Enum.IsDefined(typeof(CourierAbility),a.Ability) || a.Completed || Decimal(a.Fee)<0 || !candidate.people.Any(p=>p.Id==a.PersonId && p.Status==DeliveryStatus.Training)))throw new FormatException("Invalid training instructions.");
-            if(candidate.training.Sum(a=>Decimal(a.Fee))+Decimal(candidate.facilityPurchaseCosts)>Decimal(candidate.preparationCosts))throw new FormatException("Training fees exceed preparation costs.");
+            candidate.kitchenTraining??=new List<KitchenTrainingAssignment>();
+            if(candidate.kitchenTraining.Select(a=>a.StaffId).Distinct().Count()!=candidate.kitchenTraining.Count || candidate.kitchenTraining.Any(a=>!Enum.IsDefined(typeof(KitchenSkill),a.Skill) || a.Completed || Decimal(a.Fee)<0 || candidate.crew==null || !candidate.crew.Any(c=>c.Id==a.StaffId)))throw new FormatException("Invalid kitchen training instructions.");
+            if(candidate.training.Sum(a=>Decimal(a.Fee))+candidate.kitchenTraining.Sum(a=>Decimal(a.Fee))+Decimal(candidate.facilityPurchaseCosts)>Decimal(candidate.preparationCosts))throw new FormatException("Training fees exceed preparation costs.");
             if(candidate.people.Any(p=>p.Status==DeliveryStatus.Training && !candidate.training.Any(a=>a.PersonId==p.Id)))throw new FormatException("Training instruction missing.");
             return true;
         }

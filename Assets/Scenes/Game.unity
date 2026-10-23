@@ -2343,6 +2343,16 @@ MonoBehaviour:
     networkLoopChance: 0.95
     networkShortcutChance: 0.65
     networkMaximumOneWayRoads: 0
+    networkJunctionsPerDistrict: 6
+    networkExtraLinks: 2
+    densePointSpacing: 1.5
+    denseGrowthSpacing: 1.15
+    denseMaximumConnection: 6
+    denseExtraLinks: 3
+    minimumMultiRouteShare: 0.9
+    dailyCongestionShare: 0.3
+    congestionTrafficMin: 0.3
+    congestionTrafficMax: 0.6
     roadDistanceScale: 1.5
     shortcutDistance: 9
     minimumShortcutSaving: 0.03
@@ -4048,7 +4058,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameClock
   businessDuration: 180
   travelTimeMultiplier: 5
-  planningTimeRate: 0.1
+  planningTimeRate: 1
+  fastForwardRate: 4
   autoStart: 0
   automaticTick: 1
   closedPlaybackSpeed: 8
@@ -4382,6 +4393,7 @@ MonoBehaviour:
   roster: {fileID: 884947491}
   economy: {fileID: 1737208722}
   progression: {fileID: 1737208727}
+  crew: {fileID: 864088359}
   baseCost: 80
   abilityCostFactor: 150
   capacityCost: 300

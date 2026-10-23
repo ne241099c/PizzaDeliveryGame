@@ -319,7 +319,8 @@ public sealed partial class CookingManager : MonoBehaviour
             var waiting=OvenQueue.FirstOrDefault();
             if(waiting!=null)StartOven(waiting,i,Mathf.Min(t,Mathf.Max(waiting.AssembledAt,ovenFreeSince[i])));
         }
-        foreach(var slot in staff.Where(s=>s.Task==null))
+        // Staff away for training join once it ends (half way through business).
+        foreach(var slot in staff.Where(s=>s.Task==null && !s.Staff.InTraining))
         {
             if(Assist(slot,t))continue;
             var baked=jobs.Where(j=>j.Worker==PizzaWorker.Staff && j.Stage==PizzaStage.Baked && !j.Undercooked && !j.NeedsDecision).OrderBy(j=>j.TakenOutAt).FirstOrDefault();

@@ -10,6 +10,7 @@ public sealed class KitchenCardView : MonoBehaviour
     [SerializeField] private StickerButton hire,trainLater,fire;
     public StickerButton Hire=>hire;
     public StickerButton Fire=>fire;
+    public StickerButton Train=>trainLater;
     public void Show(string name,string rank,float speedValue,float careValue,string infoText,string wageText)
     {
         var T=UiKit.T;
@@ -17,7 +18,7 @@ public sealed class KitchenCardView : MonoBehaviour
         speed.Show(ShopStrings.Speed,speedValue,-1);care.Show(ShopStrings.Care,careValue,-1);
         info.text=infoText;wage.text=wageText;
     }
-    /// <summary>An applicant shows the hiring cost and 雇う; a team member shows 訓練(準備中) and 解雇.</summary>
+    /// <summary>An applicant shows the hiring cost and 雇う; a team member shows 訓練 (or 訓練をやめる) and 解雇.</summary>
     public void ShowMode(bool applicant,string cost,string rejection)
     {
         hire.gameObject.SetActive(applicant);
@@ -25,6 +26,11 @@ public sealed class KitchenCardView : MonoBehaviour
         trainLater.gameObject.SetActive(!applicant);
         fire.gameObject.SetActive(!applicant);
         hireCost.text=cost;reason.text=applicant?rejection:"";reason.gameObject.SetActive(applicant && rejection.Length>0);
-        trainLater.Interactable=false;
+    }
+    /// <summary>Booked training replaces the info line and turns 訓練 into 訓練をやめる.</summary>
+    public void ShowTraining(string booked)
+    {
+        trainLater.Text=booked==null?ShopStrings.Train:ShopStrings.CancelTraining;
+        if(booked!=null)info.text=booked;
     }
 }

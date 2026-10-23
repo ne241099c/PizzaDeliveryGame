@@ -249,7 +249,7 @@ public static class ScreenPrefabs
             Set(so,"hireCost",UiKit.Label(card,"HireCost","",22,416,316,30,18,T.inkSub,FontRole.Black));
             Set(so,"reason",UiKit.Label(card,"Reason","",22,CardH-140,316,36,15,T.berry,FontRole.Bold,TextAlignmentOptions.MidlineLeft,true));
             Set(so,"hire",UiKit.Button(card,"Hire",ShopStrings.Hire,StickerKind.Primary,20,CardH-96,316,70,26,null));
-            Set(so,"trainLater",UiKit.Button(card,"TrainLater","訓練(準備中)",StickerKind.Secondary,20,CardH-96,180,70,20,null));
+            Set(so,"trainLater",UiKit.Button(card,"TrainLater","訓練",StickerKind.Secondary,20,CardH-96,180,70,20,null));
             Set(so,"fire",UiKit.Button(card,"Fire",ShopStrings.Fire,StickerKind.Danger,212,CardH-96,124,70,24,null));
             so.ApplyModifiedPropertiesWithoutUndo();log.Add(SaveCard(go,"KitchenCard"));
         }
@@ -375,7 +375,7 @@ public static class ScreenPrefabs
         var training=trainingCard.gameObject.AddComponent<TrainingDialogView>();
         var ts=new SerializedObject(training);
         Set(ts,"title",UiKit.Label(trainingCard,"Title","",36,28,700,52,36,T.line,FontRole.Display));
-        UiKit.Label(trainingCard,"Note","営業の前半は休みになり、その間は配達できません。",36,88,720,32,20,T.inkSub,FontRole.Black);
+        Set(ts,"note",UiKit.Label(trainingCard,"Note",ShopStrings.CourierTrainingNote,36,88,720,32,20,T.inkSub,FontRole.Black));
         SetArray(ts,"abilities",Enumerable.Range(0,6).Select(i=>(Object)UiKit.Button(trainingCard,"Train"+i,"",StickerKind.Secondary,36+(i%2)*372,140+(i/2)*104,356,84,22,null)).ToArray());
         Set(ts,"close",UiKit.Button(trainingCard,"Close","やめる",StickerKind.Secondary,560,520,204,72,24,null));
         ts.ApplyModifiedPropertiesWithoutUndo();

@@ -14353,6 +14353,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: PizzaDelivery::TrainingDialogView
   title: {fileID: 6384467147583509786}
+  note: {fileID: 4323341430276149920}
   abilities:
   - {fileID: 6984810484535297474}
   - {fileID: 1077620704848399723}

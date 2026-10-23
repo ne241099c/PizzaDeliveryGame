@@ -9,7 +9,7 @@ public sealed class GameClock : MonoBehaviour
 {
     [SerializeField, Min(1f)] private float businessDuration = 180f;
     [SerializeField, Min(0.01f)] private float travelTimeMultiplier = 5f;
-    [SerializeField, Range(0.01f, 1f), Tooltip("配達指示画面を開いている間の進行倍率。調理・配達・期限を同じ倍率で進めます。") ] private float planningTimeRate = .1f;
+    [SerializeField, Range(0.01f, 1f), Tooltip("配達指示画面を開いている間の進行倍率。1で通常どおり（2026-10-24から既定）。調理・配達・期限を同じ倍率で進めます。") ] private float planningTimeRate = 1f;
     [SerializeField, Min(1f), Tooltip("配達指示画面の早送りボタンを押している間の進行倍率（実時間に対して）。") ] private float fastForwardRate = 4f;
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool automaticTick = true;

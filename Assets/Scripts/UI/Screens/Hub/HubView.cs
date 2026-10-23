@@ -124,7 +124,7 @@ public sealed class HubView : MonoBehaviour
         forecastWages.text=UiKit.Yen(economy.TeamWages);
         forecastFixed.text=UiKit.Yen(economy.BaseFixedCost(campaign.DayNumber));
         forecastMaintenance.text=UiKit.Yen(facilities.Maintenance);
-        forecastTraining.text=UiKit.Yen(training.Assignments.Where(a=>!a.Completed).Sum(a=>a.Paid));
+        forecastTraining.text=UiKit.Yen(training.Assignments.Where(a=>!a.Completed).Sum(a=>a.Paid)+training.KitchenAssignments.Where(a=>!a.Completed).Sum(a=>a.Paid));
         promiseText.text=$"{spawner.PromiseSeconds:F0}<size=24>秒</size>";
         UiKit.SyncPromise(promiseSlider,spawner,clock);
         if(management==null)return;
@@ -143,6 +143,7 @@ public sealed class HubView : MonoBehaviour
         parts.AddRange(recruitment.Applicants.Select(a=>UiKit.Ref(a)));
         parts.AddRange(recruitment.KitchenApplicants.Select(a=>UiKit.Ref(a)));
         parts.AddRange(training.Assignments.Select(a=>a.PersonId+a.Ability));
+        parts.AddRange(training.KitchenAssignments.Select(a=>a.StaffId+a.Skill));
         var f=facilities.Capture();
         parts.Add(f.oven+"/"+f.bike+"/"+f.expansion+"/"+f.workbench+"/"+f.menu+"/"+facilities.Advertisement);
         parts.Add(records.Count.ToString());
@@ -246,7 +247,14 @@ public sealed class HubView : MonoBehaviour
             card.Hire.Button.onClick.AddListener(()=>recruitment.Hire(applicant));
             card.Hire.Interactable=Preparing && reason.Length==0;
         }
-        else{card.Fire.Button.onClick.AddListener(()=>recruitment.Fire(staff));card.Fire.Interactable=Preparing;}
+        else
+        {
+            var booked=training.AssignmentOf(staff);
+            card.ShowTraining(booked==null?null:$"{ShopStrings.KitchenSkill(booked.Skill)} +{training.AbilityGain:0.0} を訓練・営業の前半は休み（{UiKit.Yen(booked.Paid)}）");
+            card.Train.Button.onClick.AddListener(()=>{if(training.AssignmentOf(staff)!=null)training.Cancel(staff);else OpenTraining(staff);});
+            card.Train.Interactable=Preparing;
+            card.Fire.Button.onClick.AddListener(()=>recruitment.Fire(staff));card.Fire.Interactable=Preparing && booked==null;
+        }
     }
     private void BuildApplicants()
     {
@@ -332,9 +340,10 @@ public sealed class HubView : MonoBehaviour
     // ---- training dialog ----
     public void OpenTraining(DeliveryPerson person)
     {
-        trainingDialog.Show(person.Name);
+        trainingDialog.Show(person.Name,ShopStrings.CourierTrainingNote);
         for(int i=0;i<6;i++)
         {
+            trainingDialog.Ability(i).gameObject.SetActive(true);
             var a=(CourierAbility)i;bool cap=a==CourierAbility.Capacity;float now=person.Ability(a),max=person.Potential(a);
             string after=cap?$"{now:F0} → {Mathf.Min(max,now+1):F0}":$"{UiKit.Ability(now)} → {UiKit.Ability(Mathf.Min(max,now+.1f))}";
             var button=trainingDialog.Ability(i);
@@ -342,6 +351,21 @@ public sealed class HubView : MonoBehaviour
             button.Interactable=training.Rejection(person,a).Length==0;
             button.Button.onClick.RemoveAllListeners();
             button.Button.onClick.AddListener(()=>{if(training.Request(person,a))CloseTraining();});
+        }
+        UiKit.Show(dialog,true);dialog.SetAsLastSibling();
+    }
+    /// <summary>The same dialog for a kitchen staff member: speed or care, the other rows hidden.</summary>
+    public void OpenTraining(KitchenStaff staff)
+    {
+        trainingDialog.Show(staff.Name,ShopStrings.KitchenTrainingNote);
+        for(int i=0;i<6;i++)
+        {
+            var button=trainingDialog.Ability(i);button.Button.onClick.RemoveAllListeners();
+            button.gameObject.SetActive(i<2);if(i>=2)continue;
+            var skill=(KitchenSkill)i;float now=TrainingManager.Skill(staff,skill);
+            button.Text=$"{ShopStrings.KitchenSkill(skill)}  {UiKit.Ability(now)} → {UiKit.Ability(Mathf.Min(1,now+training.AbilityGain))}  {UiKit.Yen(training.Cost(staff,skill))}";
+            button.Interactable=training.Rejection(staff,skill).Length==0;
+            button.Button.onClick.AddListener(()=>{if(training.Request(staff,skill))CloseTraining();});
         }
         UiKit.Show(dialog,true);dialog.SetAsLastSibling();
     }
