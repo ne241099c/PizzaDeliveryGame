@@ -10,7 +10,7 @@ public sealed class TrainingDialogView : MonoBehaviour
     [SerializeField] private StickerButton close;
     public StickerButton Close=>close;
     public StickerButton Ability(int index)=>abilities[index];
-    /// <summary>Title for the person, and what training costs them (couriers miss deliveries, kitchen staff the line).</summary>
+    /// <summary>Title for the person and the instant purchase / no downtime policy.</summary>
     public void Show(string name,string what)
     {
         title.text=$"{name} の訓練";

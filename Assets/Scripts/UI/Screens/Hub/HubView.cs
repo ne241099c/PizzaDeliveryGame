@@ -124,7 +124,7 @@ public sealed class HubView : MonoBehaviour
         forecastWages.text=UiKit.Yen(economy.TeamWages);
         forecastFixed.text=UiKit.Yen(economy.BaseFixedCost(campaign.DayNumber));
         forecastMaintenance.text=UiKit.Yen(facilities.Maintenance);
-        forecastTraining.text=UiKit.Yen(training.Assignments.Where(a=>!a.Completed).Sum(a=>a.Paid)+training.KitchenAssignments.Where(a=>!a.Completed).Sum(a=>a.Paid));
+        forecastTraining.text=UiKit.Yen(training.Assignments.Sum(a=>a.Paid)+training.KitchenAssignments.Sum(a=>a.Paid));
         promiseText.text=$"{spawner.PromiseSeconds:F0}<size=24>秒</size>";
         UiKit.SyncPromise(promiseSlider,spawner,clock);
         if(management==null)return;
@@ -208,32 +208,21 @@ public sealed class HubView : MonoBehaviour
     }
     private void ShowCourier(CourierCardView card,DeliveryPerson person)
     {
-        var assignment=training.Assignments.FirstOrDefault(a=>a.PersonId==person.Id && !a.Completed);
-        var status=assignment!=null?("訓練予約",T.cheese,T.line):person.Status==DeliveryStatus.Idle?("待機",T.basil,Color.white):(ShopStrings.Status(person.Status),T.info,Color.white);
+        var status=person.Status==DeliveryStatus.Idle?("待機",T.basil,Color.white):(ShopStrings.Status(person.Status),T.info,Color.white);
         card.ShowHeader(person.Name,T.CourierColor(person.Name),(ShopStrings.Courier,T.paper,T.line),status);
         for(int i=0;i<5;i++){var a=(CourierAbility)i;card.ShowAbility(i,ShopStrings.Ability(a),person.Ability(a),person.Potential(a));}
         card.ShowCapacity(person.Capacity,(int)person.Potential(CourierAbility.Capacity));
-        if(assignment!=null)
-        {
-            bool capacity=assignment.Ability==CourierAbility.Capacity;
-            card.ShowTraining($"{ShopStrings.Ability(assignment.Ability)} +{(capacity?"1":"0.1")} を訓練",$"営業の前半は休み。費用 {UiKit.Yen(assignment.Paid)}");
-        }
-        else
-        {
-            card.ShowTraining(null,null);
-            bool canGrow=progression!=null && progression.CanGrow(person);
-            var best=progression!=null?progression.ClosestGrowth(person):CourierAbility.Driving;
-            float fraction=progression!=null?progression.ExperienceFraction(person,best):0;
-            card.ShowExperience(canGrow?ShopStrings.GrowthExperience(best):ShopStrings.GrowthMaximum,
-                canGrow?fraction:1,canGrow?ShopStrings.GrowthNext(fraction,progression.GrowthPerLevel):"");
-        }
+        card.ShowTraining(null,null);
+        bool canGrow=progression!=null && progression.CanGrow(person);
+        var best=progression!=null?progression.ClosestGrowth(person):CourierAbility.Driving;
+        float fraction=progression!=null?progression.ExperienceFraction(person,best):0;
+        card.ShowExperience(canGrow?ShopStrings.GrowthExperience(best):ShopStrings.GrowthMaximum,
+            canGrow?fraction:1,canGrow?ShopStrings.GrowthNext(fraction,progression.GrowthPerLevel):"");
         card.ShowWage(UiKit.Yen(economy.DailyWage(person)));
         card.Train.Button.onClick.AddListener(()=>OpenTraining(person));
-        card.CancelTraining.Button.onClick.AddListener(()=>training.Cancel(person));
         card.Fire.Button.onClick.AddListener(()=>recruitment.Fire(person));
         card.Train.Interactable=Preparing && person.IsAvailable;
-        card.CancelTraining.Interactable=Preparing;
-        card.Fire.Interactable=Preparing && assignment==null && roster.People.Count>1;
+        card.Fire.Interactable=Preparing && roster.People.Count>1;
     }
     private static string KitchenRank(KitchenStaff s)=>s.Speed+s.Care<1f?"見習い":s.Speed+s.Care<1.4f?"一人前":"ベテラン";
     /// <summary>A kitchen staff member; with an applicant, the card offers 雇う instead of 解雇.</summary>
@@ -249,11 +238,10 @@ public sealed class HubView : MonoBehaviour
         }
         else
         {
-            var booked=training.AssignmentOf(staff);
-            card.ShowTraining(booked==null?null:$"{ShopStrings.KitchenSkill(booked.Skill)} +{training.AbilityGain:0.0} を訓練・営業の前半は休み（{UiKit.Yen(booked.Paid)}）");
-            card.Train.Button.onClick.AddListener(()=>{if(training.AssignmentOf(staff)!=null)training.Cancel(staff);else OpenTraining(staff);});
+            card.ShowTraining(null);
+            card.Train.Button.onClick.AddListener(()=>OpenTraining(staff));
             card.Train.Interactable=Preparing;
-            card.Fire.Button.onClick.AddListener(()=>recruitment.Fire(staff));card.Fire.Interactable=Preparing && booked==null;
+            card.Fire.Button.onClick.AddListener(()=>recruitment.Fire(staff));card.Fire.Interactable=Preparing;
         }
     }
     private void BuildApplicants()
@@ -345,9 +333,9 @@ public sealed class HubView : MonoBehaviour
         {
             trainingDialog.Ability(i).gameObject.SetActive(true);
             var a=(CourierAbility)i;bool cap=a==CourierAbility.Capacity;float now=person.Ability(a),max=person.Potential(a);
-            string after=cap?$"{now:F0} → {Mathf.Min(max,now+1):F0}":$"{UiKit.Ability(now)} → {UiKit.Ability(Mathf.Min(max,now+.1f))}";
+            string after=cap?$"{now:F0} → {Mathf.Min(max,now+training.CapacityGain):F0}":$"{UiKit.Ability(now)} → {UiKit.Ability(Mathf.Min(max,now+training.AbilityGain))}";
             var button=trainingDialog.Ability(i);
-            button.Text=$"{ShopStrings.Ability(a)}  {after}  {UiKit.Yen(training.Cost(person,a))}";
+            button.Text=$"{ShopStrings.Ability(a)}  {after}  {UiKit.Yen(training.Cost(person,a))}（即時）";
             button.Interactable=training.Rejection(person,a).Length==0;
             button.Button.onClick.RemoveAllListeners();
             button.Button.onClick.AddListener(()=>{if(training.Request(person,a))CloseTraining();});
@@ -363,7 +351,7 @@ public sealed class HubView : MonoBehaviour
             var button=trainingDialog.Ability(i);button.Button.onClick.RemoveAllListeners();
             button.gameObject.SetActive(i<2);if(i>=2)continue;
             var skill=(KitchenSkill)i;float now=TrainingManager.Skill(staff,skill);
-            button.Text=$"{ShopStrings.KitchenSkill(skill)}  {UiKit.Ability(now)} → {UiKit.Ability(Mathf.Min(1,now+training.AbilityGain))}  {UiKit.Yen(training.Cost(staff,skill))}";
+            button.Text=$"{ShopStrings.KitchenSkill(skill)}  {UiKit.Ability(now)} → {UiKit.Ability(Mathf.Min(1,now+training.AbilityGain))}  {UiKit.Yen(training.Cost(staff,skill))}（即時）";
             button.Interactable=training.Rejection(staff,skill).Length==0;
             button.Button.onClick.AddListener(()=>{if(training.Request(staff,skill))CloseTraining();});
         }

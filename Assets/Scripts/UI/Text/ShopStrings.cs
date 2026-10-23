@@ -45,7 +45,9 @@ public static class ShopStrings
     public const string KitchenTab="厨房",HandoverTab="受け渡し",DispatchTab="配達指示";
     public const string Step1="伝票を配達員のレーンへ",Step2="ルートを直して出発";
     public const string Depart="出発",ResetRoute="自動に戻す",Store="お店";
-    public const string CourierTrainingNote="営業の前半は休みになり、その間は配達できません。",KitchenTrainingNote="営業の前半は休みになり、その間は厨房に入りません。";
+    public static string InstantTrainingResult(string name,string ability)=>$"{name} の{ability}がすぐに上がりました。営業を休みません。";
+    public const string InstantTrainingNoRefund="購入した訓練はすでに反映されています。取り消し・返金はできません。";
+    public const string CourierTrainingNote="購入後すぐに能力アップ。営業を休みません。上限と資金の範囲で何度でも購入できます。返金はできません。",KitchenTrainingNote="購入後すぐに能力アップ。営業を休みません。上限と資金の範囲で何度でも購入できます。返金はできません。";
     public static string KitchenSkill(KitchenSkill skill)=>skill==global::KitchenSkill.Speed?Speed:Care;
     public const string FastForward="押している間 早送り",RoadTipVia="クリック：この道を通る",RoadTipUndo="クリック：この道をやめる";
     public const string SwapDeliveryOrder="順番を入替",ChooseRoad="道を選ぶ",OvenQueueTitle="窯待ち →";

@@ -14,7 +14,7 @@ public sealed class TrainingAssignment
     public decimal Paid=>decimal.Parse(Fee,CultureInfo.InvariantCulture);
 }
 public enum KitchenSkill { Speed, Care }
-/// <summary>Kitchen staff training: one ability, booked in preparation, done at the same time as courier training.</summary>
+/// <summary>A paid kitchen upgrade. Completed histories never apply a gain twice.</summary>
 [Serializable]
 public sealed class KitchenTrainingAssignment
 {
@@ -34,7 +34,6 @@ public sealed class TrainingManager : MonoBehaviour
     [SerializeField,Min(0)] private float baseCost=80;
     [SerializeField,Min(0)] private float abilityCostFactor=150;
     [SerializeField,Min(0)] private float capacityCost=300;
-    [SerializeField,Range(0,1)] private float trainingDurationRatio=.5f;
     [SerializeField,Range(0,1)] private float abilityGain=.1f;
     [SerializeField,Min(1)] private int capacityGain=1;
     private readonly List<TrainingAssignment> assignments=new();
@@ -48,16 +47,15 @@ public sealed class TrainingManager : MonoBehaviour
     }
     public string LastMessage {get;private set;}="";
     public event Action Changed;
-    public float EndsAt=>clock.BusinessDuration*trainingDurationRatio;
-    private void OnEnable()=>clock.Advanced+=Tick;
-    private void OnDisable()=>clock.Advanced-=Tick;
-    public bool HasAssignment(DeliveryPerson p)=>assignments.Any(a=>a.PersonId==p.Id);
+    // Retained for callers of the previous timed-training API: purchases finish immediately.
+    public float EndsAt=>clock.ElapsedSeconds;
+    public int CapacityGain=>capacityGain;
+    public bool HasAssignment(DeliveryPerson p)=>assignments.Any(a=>a.PersonId==p.Id && !a.Completed);
     public decimal Cost(DeliveryPerson p,CourierAbility ability)=>BusinessEconomy.Money((decimal)(ability==CourierAbility.Capacity?capacityCost:baseCost+abilityCostFactor*p.Ability(ability)));
     public string Rejection(DeliveryPerson p,CourierAbility ability)
     {
         if(clock.Phase!=DayPhase.BeforeOpening)return "Training can be ordered only during preparation.";
         if(p==null || !roster.People.Contains(p))return "Choose a courier from your team.";
-        if(HasAssignment(p))return "Only one training per courier per day.";
         if(!p.IsAvailable)return "Courier is not available.";
         if(p.Ability(ability)>=p.Potential(ability))return "This ability has reached its potential.";
         if(economy.Cash<Cost(p,ability))return $"Not enough cash for training: {Cost(p,ability):F2}.";
@@ -67,28 +65,22 @@ public sealed class TrainingManager : MonoBehaviour
     {
         string reason=Rejection(p,ability);if(reason.Length>0)return Reject(reason);
         progression.TrackRoster();decimal fee=Cost(p,ability);economy.SpendPreparation(fee);
-        assignments.Add(new TrainingAssignment{PersonId=p.Id,Ability=ability,Fee=fee.ToString(CultureInfo.InvariantCulture)});
-        p.Status=DeliveryStatus.Training;LastMessage=$"Training: {p.Name} / {ability}; completes at {EndsAt:F0}s.";Changed?.Invoke();return true;
+        var assignment=new TrainingAssignment{PersonId=p.Id,Ability=ability,Fee=fee.ToString(CultureInfo.InvariantCulture)};
+        assignments.Add(assignment);Complete(assignment);
+        LastMessage=ShopStrings.InstantTrainingResult(p.Name,ShopStrings.Ability(ability));Changed?.Invoke();return true;
     }
-    public bool Cancel(DeliveryPerson p)
-    {
-        var assignment=assignments.FirstOrDefault(a=>a.PersonId==p.Id);
-        if(clock.Phase!=DayPhase.BeforeOpening || assignment==null || assignment.Completed)return Reject("Cancel training before business starts.");
-        economy.RefundPreparation(assignment.Paid);assignments.Remove(assignment);p.Status=DeliveryStatus.Idle;
-        LastMessage="Training cancelled; full refund.";Changed?.Invoke();return true;
-    }
+    public bool Cancel(DeliveryPerson p)=>Reject(ShopStrings.InstantTrainingNoRefund);
     private bool Reject(string reason){LastMessage=reason;Changed?.Invoke();return false;}
 
     // ---- kitchen staff ----
     public static float Skill(KitchenStaff staff,KitchenSkill skill)=>skill==KitchenSkill.Speed?staff.Speed:staff.Care;
-    public bool HasAssignment(KitchenStaff staff)=>kitchenAssignments.Any(a=>a.StaffId==staff.Id);
+    public bool HasAssignment(KitchenStaff staff)=>kitchenAssignments.Any(a=>a.StaffId==staff.Id && !a.Completed);
     public KitchenTrainingAssignment AssignmentOf(KitchenStaff staff)=>kitchenAssignments.FirstOrDefault(a=>a.StaffId==staff.Id && !a.Completed);
     public decimal Cost(KitchenStaff staff,KitchenSkill skill)=>BusinessEconomy.Money((decimal)(baseCost+abilityCostFactor*Skill(staff,skill)));
     public string Rejection(KitchenStaff staff,KitchenSkill skill)
     {
         if(clock.Phase!=DayPhase.BeforeOpening)return "訓練は開店準備のあいだだけ申し込めます。";
         if(staff==null || Crew==null || !Crew.People.Contains(staff))return "厨房のスタッフを選んでください。";
-        if(HasAssignment(staff))return "訓練は1人1日1回です。";
         if(Skill(staff,skill)>=1)return "この能力はもう最高です。";
         if(economy.Cash<Cost(staff,skill))return $"訓練の費用が足りません（{UiKit.Yen(Cost(staff,skill))}）。";
         return "";
@@ -97,61 +89,54 @@ public sealed class TrainingManager : MonoBehaviour
     {
         string reason=Rejection(staff,skill);if(reason.Length>0)return Reject(reason);
         decimal fee=Cost(staff,skill);economy.SpendPreparation(fee);
-        kitchenAssignments.Add(new KitchenTrainingAssignment{StaffId=staff.Id,Skill=skill,Fee=fee.ToString(CultureInfo.InvariantCulture)});
-        staff.InTraining=true;LastMessage=$"{staff.Name} の訓練を申し込みました。営業の前半は厨房に入りません。";Changed?.Invoke();return true;
+        var assignment=new KitchenTrainingAssignment{StaffId=staff.Id,Skill=skill,Fee=fee.ToString(CultureInfo.InvariantCulture)};
+        kitchenAssignments.Add(assignment);Complete(assignment);
+        LastMessage=ShopStrings.InstantTrainingResult(staff.Name,ShopStrings.KitchenSkill(skill));Changed?.Invoke();return true;
     }
-    public bool Cancel(KitchenStaff staff)
-    {
-        var assignment=kitchenAssignments.FirstOrDefault(a=>a.StaffId==staff.Id);
-        if(clock.Phase!=DayPhase.BeforeOpening || assignment==null || assignment.Completed)return Reject("訓練は開店前ならやめられます。");
-        economy.RefundPreparation(assignment.Paid);kitchenAssignments.Remove(assignment);staff.InTraining=false;
-        LastMessage="訓練をやめました。費用は全額戻ります。";Changed?.Invoke();return true;
-    }
+    public bool Cancel(KitchenStaff staff)=>Reject(ShopStrings.InstantTrainingNoRefund);
     public void RestoreKitchenAssignments(IEnumerable<KitchenTrainingAssignment> restored)
     {
         kitchenAssignments.Clear();if(restored!=null)kitchenAssignments.AddRange(restored);
-        if(Crew!=null)foreach(var staff in Crew.People)staff.InTraining=kitchenAssignments.Any(a=>a.StaffId==staff.Id && !a.Completed);
+        foreach(var assignment in kitchenAssignments)Complete(assignment);
+        if(Crew!=null)foreach(var staff in Crew.People)staff.InTraining=false;
         Changed?.Invoke();
     }
     public void RestoreAssignments(IEnumerable<TrainingAssignment> restored)
     {
-        assignments.Clear();assignments.AddRange(restored);
-        foreach(var assignment in assignments.Where(a=>!a.Completed))roster.People.First(p=>p.Id==assignment.PersonId).Status=DeliveryStatus.Training;
+        assignments.Clear();if(restored!=null)assignments.AddRange(restored);
+        foreach(var assignment in assignments)Complete(assignment);
+        foreach(var person in roster.People)if(person.Status==DeliveryStatus.Training)person.Status=DeliveryStatus.Idle;
         Changed?.Invoke();
     }
     public void PrepareDay()
     {
         assignments.Clear();kitchenAssignments.Clear();LastMessage="";
+        foreach(var person in roster.People)if(person.Status==DeliveryStatus.Training)person.Status=DeliveryStatus.Idle;
         if(Crew!=null)foreach(var staff in Crew.People)staff.InTraining=false;
         Changed?.Invoke();
     }
-    private void Tick(float before,float now)
+    // Old paid reservations are fulfilled once on load, without charging again.
+    private void Complete(TrainingAssignment assignment)
     {
-        if(now<EndsAt)return;
-        bool changed=false;
-        foreach(var assignment in assignments.Where(a=>!a.Completed))
+        if(assignment.Completed)return;
+        var person=roster.People.FirstOrDefault(p=>p.Id==assignment.PersonId);
+        if(person!=null)
         {
-            var person=roster.People.FirstOrDefault(p=>p.Id==assignment.PersonId);if(person==null)continue;
             progression.ApplyTraining(person,assignment.Ability,assignment.Ability==CourierAbility.Capacity?capacityGain:abilityGain);
-            assignment.Completed=true;
-            changed=true;
-            person.Status=DeliveryStatus.Idle;
-            LastMessage=$"Training completed: {person.Name} / {assignment.Ability}.";
+            if(person.Status==DeliveryStatus.Training)person.Status=DeliveryStatus.Idle;
         }
-        foreach(var assignment in kitchenAssignments.Where(a=>!a.Completed))
+        assignment.Completed=true;
+    }
+    private void Complete(KitchenTrainingAssignment assignment)
+    {
+        if(assignment.Completed)return;
+        var staff=Crew!=null?Crew.People.FirstOrDefault(s=>s.Id==assignment.StaffId):null;
+        if(staff!=null)
         {
-            var staff=Crew!=null?Crew.People.FirstOrDefault(s=>s.Id==assignment.StaffId):null;
-            assignment.Completed=true;changed=true;
-            if(staff==null)continue;
             if(assignment.Skill==KitchenSkill.Speed)staff.Speed+=abilityGain;else staff.Care+=abilityGain;
             staff.InTraining=false;
-            LastMessage=$"{staff.Name} の訓練が終わりました。";
         }
-        if(changed)Changed?.Invoke();
+        assignment.Completed=true;
     }
-    public string Caption(DeliveryPerson p)
-    {
-        var a=assignments.FirstOrDefault(a=>a.PersonId==p.Id && !a.Completed);
-        return a==null?"Training":$"Training: {a.Ability} ({Mathf.Max(0,EndsAt-clock.ElapsedSeconds):F0}s left)";
-    }
+    public string Caption(DeliveryPerson p)=>ShopStrings.Train;
 }

@@ -25,9 +25,8 @@ public static partial class M6Validation
         campaign.StartBusiness();campaign.NewGame();hub.ShowTab(0);var person=roster.People[0];
         Button("Courier_"+person.Name,"Train").Button.onClick.Invoke();
         hub.GetComponentsInChildren<StickerButton>(true).First(b=>b.name=="Train0").Button.onClick.Invoke();
-        Check(training.HasAssignment(person) && economy.Cash==130,"hub training dialog trains the person on the card");
-        Button("Courier_"+person.Name,"CancelTraining").Button.onClick.Invoke();
-        Check(economy.Cash==300 && person.IsAvailable,"hub cancel button refunds");
+        Check(training.Assignments.Count==1 && training.Assignments[0].Completed && economy.Cash==130 && person.IsAvailable,"hub training immediately upgrades the person on the card");
+        Check(!Button("Courier_"+person.Name,"CancelTraining").gameObject.activeSelf,"hub no longer offers training cancellation");
         Button("Courier_"+person.Name,"Fire").Button.onClick.Invoke();
         Check(roster.People.Count==1 && !roster.People.Contains(person),"hub fire button targets the person on the card");
         campaign.NewGame();
@@ -70,59 +69,84 @@ public static partial class M6Validation
         Check(copy.Archetype==newcomer.Archetype && Enumerable.Range(0,6).All(i=>copy.Potential((CourierAbility)i)==newcomer.Potential((CourierAbility)i)),"hired profile copy preserves type and ceilings");
         UnityEngine.Object.FindFirstObjectByType<CampaignManager>().NewGame();
     }
+    /// <summary>Focused instant training regression, without simulations or unrelated M3-M6 validation.</summary>
+    public static string RunTrainingOnly()
+    {
+        if(!Application.isPlaying)throw new InvalidOperationException("Play required");
+        using var protection=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>().SuppressSaving();
+        using var mapScope=new SampleMapValidationScope();
+        int before=Checks;
+        ValidateTraining();ValidatePreparationButtons();
+        return $"PASS: {Checks-before} instant courier training checks.";
+    }
     private static void ValidateTraining()
     {
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();
         var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
         var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();
-        spawner.enabled=false;
         var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();
         var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();
-        var hiring=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();
-        var aoi=roster.People[0];
-        Check(training.Cost(aoi,CourierAbility.Driving)==170 && training.Cost(aoi,CourierAbility.Capacity)==300,"training costs");
-        Check(!training.Request(aoi,CourierAbility.Capacity) && training.LastMessage.Contains("potential"),"capped ability rejected");
-        var funding=new SerializedObject(economy);
-        funding.FindProperty("initialCash").floatValue=0;
-        funding.ApplyModifiedPropertiesWithoutUndo();
-        economy.NewGame();
-        Check(!training.Request(aoi,CourierAbility.Driving) && training.LastMessage.Contains("cash"),"insufficient training cash rejected");
-        funding.FindProperty("initialCash").floatValue=5000;
-        funding.ApplyModifiedPropertiesWithoutUndo();
-        economy.NewGame();
-        funding.FindProperty("initialCash").floatValue=300;
-        funding.ApplyModifiedPropertiesWithoutUndo();
-        decimal cash=economy.Cash;
-        Check(training.Request(aoi,CourierAbility.Driving) && economy.Cash==cash-170 && !aoi.IsAvailable,"training debits cash and blocks courier");
-        Check(!hiring.Fire(aoi) && hiring.LastMessage.Contains("training"),"training prevents firing");
-        Check(!training.Request(aoi,CourierAbility.Service),"second training rejected");
-        Check(training.Cancel(aoi) && economy.Cash==cash && aoi.IsAvailable,"cancel fully refunds and restores availability");
-        Check(training.Request(aoi,CourierAbility.Driving),"cancel permits replacement request");campaign.StartBusiness();
-        Check(!roster.SelectForDispatch(aoi) && roster.SelectForDispatch(roster.People[1]),"other couriers available during training");
-        clock.Advance(clock.BusinessDuration*.5f-.25f);
-        Near(aoi.Driving,.6f,"ability unchanged before half day");
-        Check(!aoi.IsAvailable,"training blocks first half");
-        clock.Advance(.25f);
-        Near(aoi.Driving,.7f,"training grants gain at half day");
-        Check(roster.SelectForDispatch(aoi),"trained courier selectable in second half");
-        Check(!training.Cancel(aoi) && !training.Request(aoi,CourierAbility.Service),"business cannot cancel or reorder training");
-        clock.Advance(1000);
-        Check(economy.Ledger.Wages==260.4m+economy.KitchenWages,"training day pays normal opening courier wage plus the apprentice");
-        campaign.NewGame();
-        var config=new SerializedObject(training);
-        config.FindProperty("trainingDurationRatio").floatValue=1;
-        config.ApplyModifiedPropertiesWithoutUndo();
-        aoi=roster.People[0];
-        Check(training.Request(aoi,CourierAbility.Driving),"full-day training request");
-        campaign.StartBusiness();
-        clock.Advance(clock.BusinessDuration-.25f);
-        Check(!aoi.IsAvailable,"ratio one unavailable until closing");
-        clock.Advance(.25f);
-        Near(aoi.Driving,.7f,"ratio one completes at closing");
-        Check(clock.Phase==DayPhase.Ended,"full-day training permits settlement");
-        config.FindProperty("trainingDurationRatio").floatValue=.5f;config.ApplyModifiedPropertiesWithoutUndo();campaign.NewGame();
+        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();
+        var funding=new SerializedObject(economy);float original=funding.FindProperty("initialCash").floatValue;
+        try
+        {
+            campaign.NewGame();spawner.enabled=false;clock.AutomaticTick=false;
+            var aoi=roster.People[0];
+            Check(training.Cost(aoi,CourierAbility.Driving)==170 && training.Cost(aoi,CourierAbility.Capacity)==300,"existing training prices retained");
+            Check(!training.Request(aoi,CourierAbility.Capacity),"capped ability rejected");
+            funding.FindProperty("initialCash").floatValue=0;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
+            Check(!training.Request(aoi,CourierAbility.Driving) && aoi.Driving==.6f,"insufficient cash cannot upgrade");
+            funding.FindProperty("initialCash").floatValue=50000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
+            decimal cash=economy.Cash;
+            Check(training.Request(aoi,CourierAbility.Driving) && economy.Cash==cash-170 && aoi.IsAvailable,"purchase charges once without absence");
+            Near(aoi.Driving,.7f,"driving grows immediately");
+            Check(training.Cost(aoi,CourierAbility.Driving)>170,"next price rises with ability");
+            Check(training.Request(aoi,CourierAbility.Driving),"same ability can be bought twice in the same day");
+            Near(aoi.Driving,.8f,"second purchase immediately reaches potential");
+            Check(!training.Request(aoi,CourierAbility.Driving),"potential remains the hard ceiling");
+            for(int i=1;i<5;i++)
+            {
+                var ability=(CourierAbility)i;float before=aoi.Ability(ability);
+                Check(training.Request(aoi,ability),"instant training for "+ability);
+                Near(aoi.Ability(ability),Mathf.Min(aoi.Potential(ability),before+training.AbilityGain),"selected ability gain "+ability);
+            }
+            var learner=roster.People[1];learner.SetPotential(CourierAbility.Capacity,DeliveryPerson.MaximumCapacity);
+            int capacity=learner.Capacity;
+            Check(training.Request(learner,CourierAbility.Capacity) && learner.Capacity==Mathf.Min(DeliveryPerson.MaximumCapacity,capacity+training.CapacityGain),"capacity upgrades immediately");
+            cash=economy.Cash;
+            Check(!training.Cancel(aoi) && economy.Cash==cash && aoi.IsAvailable,"completed purchases cannot be refunded");
+            Check(save.TryParse(save.SnapshotJson(),out var data,out var reason),"multiple completed histories save: "+reason);
+            float driving=aoi.Driving;campaign.RestorePreparation(data);aoi=roster.People[0];
+            Near(aoi.Driving,driving,"completed history does not apply twice after loading");
+            Check(aoi.IsAvailable && !training.HasAssignment(aoi),"loaded upgraded courier remains available");
+            Check(UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>().Fire(aoi),"completed history does not prevent firing");
+            Check(save.TryParse(save.SnapshotJson(),out _,out reason),"dismissed employee history still saves: "+reason);
+            campaign.NewGame();economy.NewGame();aoi=roster.People[0];
+            var legacy=save.Capture();decimal fee=training.Cost(aoi,CourierAbility.LocalKnowledge);
+            legacy.training.Add(new TrainingAssignment{PersonId=aoi.Id,Ability=CourierAbility.LocalKnowledge,Fee=fee.ToString(System.Globalization.CultureInfo.InvariantCulture)});
+            legacy.people[0].Status=DeliveryStatus.Training;
+            legacy.cash=(economy.Cash-fee).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            legacy.preparationCosts=fee.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            Check(save.TryParse(JsonUtility.ToJson(legacy),out data,out reason),"old pending courier reservation validates: "+reason);
+            float knowledge=data.people[0].LocalKnowledge;cash=CampaignSaveManager.Decimal(data.cash);
+            campaign.RestorePreparation(data);aoi=roster.People[0];
+            Near(aoi.LocalKnowledge,knowledge+training.AbilityGain,"old paid reservation fulfilled on load");
+            Check(economy.Cash==cash && aoi.IsAvailable && training.Assignments[0].Completed,"legacy conversion charges nothing and releases courier");
+            Check(save.TryParse(save.SnapshotJson(),out data,out reason),"converted legacy reservation can be saved: "+reason);
+            campaign.RestorePreparation(data);aoi=roster.People[0];
+            Near(aoi.LocalKnowledge,knowledge+training.AbilityGain,"converted reservation never grows twice");
+            campaign.StartBusiness();
+            Check(roster.SelectForDispatch(aoi),"trained courier can depart at opening");
+            Check(!training.Request(aoi,CourierAbility.Service),"purchase entry remains in preparation");
+        }
+        finally
+        {
+            funding.FindProperty("initialCash").floatValue=original;funding.ApplyModifiedPropertiesWithoutUndo();
+            campaign.NewGame();clock.AutomaticTick=false;
+        }
     }
+
     private static void ValidateExperience()
     {
         var rules=UnityEngine.Object.FindFirstObjectByType<CourierProgression>();
