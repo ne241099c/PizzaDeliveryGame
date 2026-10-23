@@ -93,6 +93,13 @@ public sealed class BusinessEconomy : MonoBehaviour
         if(amount<0)throw new System.ArgumentOutOfRangeException(nameof(amount));
         Cash-=amount;Ledger.PreparationCosts+=amount;
     }
+    /// <summary>Loan/mission transfers deliberately stay outside operating profit.</summary>
+    public void ApplyGoalCash(decimal amount)=>Cash+=amount;
+    public void RestoreSettledLedger(string[] a,int wasted)
+    {
+        decimal N(int i)=>CampaignSaveManager.Decimal(a[i]);
+        Ledger=new DayLedger(N(0)){PreparationCosts=N(1),FacilityPurchases=N(2),EquipmentMaintenance=N(3),QualityBonus=N(4),Revenue=N(5),Materials=N(6),Distance=N(7),Fuel=N(8),Wages=N(9),FixedCosts=N(10),Repairs=N(11),Waste=N(12),WastedPizzas=wasted,Settled=true};
+    }
     public void SettleDay()
     {
         if(Ledger.Settled)return;

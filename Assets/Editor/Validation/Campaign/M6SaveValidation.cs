@@ -73,7 +73,7 @@ public static partial class M6Validation
             save.StartNewGame();
             Check(save.LastMessage=="" && save.TryParse(File.ReadAllText(temp),out _,out _),"only explicit new game replaces the rejected save and clears notice");
             save.StartNewGame();campaign.StartBusiness();clock.Advance(clock.BusinessDuration+1000);
-            Check(campaign.IsBankrupt && !File.Exists(temp),"bankruptcy deletes save");
+            Check(campaign.IsBankrupt && save.TryParse(File.ReadAllText(temp),out var bankrupt,out _) && bankrupt.rewards.ended && CampaignSaveManager.Decimal(bankrupt.cash)<0,"bankruptcy preserves an ended result checkpoint");
             save.StartNewGame();Check(campaign.DayNumber==1 && economy.Cash==300 && roster.People.Count==2,"start new resets campaign");
         }
         finally

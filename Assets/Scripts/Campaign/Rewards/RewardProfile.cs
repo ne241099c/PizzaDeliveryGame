@@ -161,7 +161,7 @@ public static class RewardProfile
         profile.bestCash=first?observation.cash.ToString(Invariant):Maximum(profile.bestCash,observation.cash);
         profile.bestNetAssets=first?(observation.cash-observation.loan).ToString(Invariant):Maximum(profile.bestNetAssets,observation.cash-observation.loan);
         profile.bestScore=first?observation.score.ToString(Invariant):Maximum(profile.bestScore,observation.score);
-        profile.noFailureDays=observation.failedPizzas==0?(followsPreviousDay?AddCounter(profile.noFailureDays,1):1):0;
+        profile.noFailureDays=observation.failedPizzas==0 && (observation.delivered>0 || observation.madePizzas!=null && observation.madePizzas.Length>0)?(followsPreviousDay?AddCounter(profile.noFailureDays,1):1):0;
         profile.backstreetUses=AddCounter(profile.backstreetUses,observation.backstreets);
         Add(profile.pizzas,observation.madePizzas);Add(profile.threeStarPizzas,observation.threeStarPizzas);
         Add(profile.districts,observation.districts);Add(profile.shortcuts,observation.shortcuts);

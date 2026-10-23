@@ -8,6 +8,10 @@ using System.Linq;
 public sealed class RewardDayMetrics
 {
     public int day, delivered, late, cancelled, threeStar, failedPizzas, wasted, staffMade, maxBatch, backstreets;
+    public int oneStar,twoStar,accidents,spawned,closingCancelled,score,twoStarOnTime,threeStarOnTime,playerMade;
+    public float busySeconds;
+    public string[] staffNames=Array.Empty<string>();
+    public int[] staffCounts=Array.Empty<int>();
     public float routeSavings;
     public string revenue = "0";
     public string[] madePizzas = Array.Empty<string>();

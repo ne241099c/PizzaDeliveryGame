@@ -3819,6 +3819,7 @@ GameObject:
   - component: {fileID: 1660095294}
   - component: {fileID: 1660095293}
   - component: {fileID: 1660095292}
+  - component: {fileID: 1660095298}
   m_Layer: 0
   m_Name: CoreSystems
   m_TagString: Untagged
@@ -4063,6 +4064,18 @@ MonoBehaviour:
   autoStart: 0
   automaticTick: 1
   closedPlaybackSpeed: 8
+--- !u!114 &1660095298
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660095290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4a563bfb5574792a50f8a43e2959f63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PizzaDelivery::RewardsView
 --- !u!1 &1662362904
 GameObject:
   m_ObjectHideFlags: 0
@@ -4113,6 +4126,7 @@ GameObject:
   - component: {fileID: 1737208728}
   - component: {fileID: 1737208729}
   - component: {fileID: 1737208721}
+  - component: {fileID: 1737208732}
   m_Layer: 0
   m_Name: CampaignSystems
   m_TagString: Untagged
@@ -4397,7 +4411,6 @@ MonoBehaviour:
   baseCost: 80
   abilityCostFactor: 150
   capacityCost: 300
-  trainingDurationRatio: 0.5
   abilityGain: 0.1
   capacityGain: 1
 --- !u!114 &1737208729
@@ -4449,6 +4462,193 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db80a873e1e9469791d29ea943f72203, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DayStats
+--- !u!114 &1737208732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16371174eb0c34ae897f6ff633d40fea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PizzaDelivery::RewardProgression
+  normalDays: 20
+  revenueWeight: 0.1
+  reputationWeight: 10
+  threeStarWeight: 1000
+  onTimeWeight: 1000
+  rankThresholds:
+  - 15000
+  - 10000
+  - 6000
+  - 2000
+  initialLoan: 4000
+  dailyInterest: 0.005
+  payoffBonus: 100
+  recentDays: 5
+  grades:
+  - name: "\u5C4B\u53F0"
+    reputation: 0
+    revenue: 0
+    netAssets: 0
+    onTimeRate: 0
+    threeStarRate: 0
+    districts: 8
+    menuKinds: 1
+    equipmentLevel: 2
+  - name: "\u8857\u306E\u4EBA\u6C17\u5E97"
+    reputation: 40
+    revenue: 4000
+    netAssets: 0
+    onTimeRate: 0.8
+    threeStarRate: 0
+    districts: 10
+    menuKinds: 2
+    equipmentLevel: 4
+  - name: "\u884C\u5217\u306E\u3067\u304D\u308B\u5E97"
+    reputation: 70
+    revenue: 12000
+    netAssets: 0
+    onTimeRate: 0
+    threeStarRate: 0.3
+    districts: 12
+    menuKinds: 3
+    equipmentLevel: 7
+  - name: "\u540D\u5E97"
+    reputation: 90
+    revenue: 0
+    netAssets: 4000
+    onTimeRate: 0
+    threeStarRate: 0
+    districts: 14
+    menuKinds: 3
+    equipmentLevel: 10
+  offerOptimalRouteChallenge: 0
+  missionDefinitions:
+  - id: three-stars
+    kind: 0
+    title: "\u26053\u3092{0}\u679A\u4F5C\u308B"
+    baseTarget: 2
+    targetPerGrade: 1
+    cashReward: 60
+    cashRewardPerGrade: 10
+    points: 2
+    pointsPerGrade: 0
+  - id: no-failures
+    kind: 1
+    title: "\u5931\u6557\u306A\u3057\u3067\u55B6\u696D\u3059\u308B"
+    baseTarget: 0
+    targetPerGrade: 0
+    cashReward: 50
+    cashRewardPerGrade: 10
+    points: 2
+    pointsPerGrade: 0
+  - id: no-late
+    kind: 2
+    title: "\u9045\u308C\u30FB\u30AD\u30E3\u30F3\u30BB\u30EB\u306A\u3057\u3067\u914D\u9054\u3059\u308B"
+    baseTarget: 0
+    targetPerGrade: 0
+    cashReward: 60
+    cashRewardPerGrade: 10
+    points: 2
+    pointsPerGrade: 0
+  - id: batch-three
+    kind: 3
+    title: "1\u4FBF\u3067{0}\u4EF6\u307E\u3068\u3081\u3066\u914D\u9054\u3059\u308B"
+    baseTarget: 3
+    targetPerGrade: 0
+    cashReward: 70
+    cashRewardPerGrade: 10
+    points: 3
+    pointsPerGrade: 0
+  - id: backstreets
+    kind: 4
+    title: "\u88CF\u9053\u3092{0}\u56DE\u901A\u308B"
+    baseTarget: 2
+    targetPerGrade: 2
+    cashReward: 40
+    cashRewardPerGrade: 10
+    points: 2
+    pointsPerGrade: 0
+  - id: route-savings
+    kind: 5
+    title: "\u304A\u3059\u3059\u3081\u7D4C\u8DEF\u3088\u308A{0}\u79D2\u901F\u304F\u914D\u9054\u3059\u308B"
+    baseTarget: 2
+    targetPerGrade: 1
+    cashReward: 50
+    cashRewardPerGrade: 10
+    points: 2
+    pointsPerGrade: 0
+  - id: revenue
+    kind: 6
+    title: "\u58F2\u4E0A{0}\u5186\u3092\u9054\u6210\u3059\u308B"
+    baseTarget: 500
+    targetPerGrade: 250
+    cashReward: 50
+    cashRewardPerGrade: 10
+    points: 2
+    pointsPerGrade: 0
+  - id: no-waste
+    kind: 7
+    title: "\u5EC3\u68C4\u306A\u3057\u3067\u55B6\u696D\u3059\u308B"
+    baseTarget: 0
+    targetPerGrade: 0
+    cashReward: 30
+    cashRewardPerGrade: 10
+    points: 1
+    pointsPerGrade: 0
+  - id: staff-production
+    kind: 8
+    title: "\u5185\u52E4\u306B{0}\u679A\u4F5C\u3063\u3066\u3082\u3089\u3046"
+    baseTarget: 3
+    targetPerGrade: 2
+    cashReward: 40
+    cashRewardPerGrade: 10
+    points: 2
+    pointsPerGrade: 0
+  goalNetAssets: 5000
+  goalReputation: 90
+  goalDays: 30
+  goalNoLateDays: 3
+  achievementDefinitions:
+  - id: noLateDay
+    title: "\u9045\u308C\u30BC\u30ED\u306E\u65E5"
+    metric: 0
+    comparison: 0
+    threshold: 1
+    points: 0
+  - id: batch3
+    title: "\u307E\u3068\u3081\u540D\u4EBA"
+    metric: 1
+    comparison: 0
+    threshold: 3
+    points: 0
+  - id: backstreets
+    title: "\u88CF\u9053\u306E\u9054\u4EBA"
+    metric: 2
+    comparison: 0
+    threshold: 10
+    points: 0
+  - id: paidLoan
+    title: "\u5B8C\u6E08"
+    metric: 3
+    comparison: 0
+    threshold: 1
+    points: 0
+  - id: noBurn10days
+    title: "\u7126\u3052\u306A\u305710\u65E5"
+    metric: 4
+    comparison: 0
+    threshold: 10
+    points: 0
+  - id: customGoal
+    title: "\u81EA\u5206\u306E\u76EE\u6A19\u3092\u9054\u6210"
+    metric: 5
+    comparison: 0
+    threshold: 1
+    points: 0
 --- !u!1 &1740072650
 GameObject:
   m_ObjectHideFlags: 0

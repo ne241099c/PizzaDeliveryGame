@@ -92,6 +92,7 @@ public sealed class GameClock : MonoBehaviour
         Advanced?.Invoke(before, ElapsedSeconds);
     }
 
+    public void RestoreEnded(){Phase=DayPhase.Ended;ElapsedSeconds=businessDuration;IsPlanning=FastForward=false;}
     public void FinishDay()
     {
         if (Phase != DayPhase.Closed) return;

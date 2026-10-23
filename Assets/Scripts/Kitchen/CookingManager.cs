@@ -374,9 +374,12 @@ public sealed partial class CookingManager : MonoBehaviour
         if(job.Oven>=0 && job.Oven<ovens.Length && ovens[job.Oven]==job){ovens[job.Oven]=null;ovenFreeSince[job.Oven]=at;}
         job.BakedSeconds=Mathf.Max(0,at-job.OvenStartedAt);job.Oven=-1;job.Stage=PizzaStage.Baked;job.TakenOutAt=at;job.LastTouchedAt=at;
     }
+    public void RestoreProduction(RewardDayMetrics m){PackedByPlayer=m.playerMade;packedByStaff.Clear();if(m.staffNames!=null && m.staffCounts!=null)for(int i=0;i<Math.Min(m.staffNames.Length,m.staffCounts.Length);i++)packedByStaff[m.staffNames[i]]=m.staffCounts[i];}
+    public event Action<PizzaJob> PizzaPacked;
     private void Pack(PizzaJob job)
     {
         job.Stage=PizzaStage.Packed;job.Order.Stars=job.Stars;job.Order.Baking=BakingState.Ready;
+        PizzaPacked?.Invoke(job);
         if(job.Worker==PizzaWorker.Player)PackedByPlayer++;
         else
         {

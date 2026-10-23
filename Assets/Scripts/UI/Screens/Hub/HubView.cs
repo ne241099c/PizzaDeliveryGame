@@ -283,7 +283,7 @@ public sealed class HubView : MonoBehaviour
         FacilityType.Oven=>ShopStrings.FacilityLevel(facilities.Ovens,facilities.MaximumLevel(type)),
         FacilityType.Workbench=>ShopStrings.FacilityLevel(facilities.Workbenches,facilities.MaximumLevel(type)),
         FacilityType.Bike=>ShopStrings.FacilityLevel(facilities.BikeLevel,facilities.MaximumLevel(type)),
-        FacilityType.Menu=>$"いま {facilities.MenuUpgrades+1}種類",
+        FacilityType.Menu=>$"いま {facilities.UnlockedMenuCount}種類",
         FacilityType.Expansion=>$"上限 {facilities.MaximumPeople}人",
         _=>facilities.Advertisement>0?$"今日 x{facilities.AdvertisingDemand(facilities.Advertisement):0.00}":"今日はなし"
     };
@@ -299,6 +299,11 @@ public sealed class HubView : MonoBehaviour
     private void ShowFacility(FacilityCardView card,FacilityType type,string picture)
     {
         card.Show(UiKit.Art(picture),ShopStrings.Facility(type),FacilityLevel(type),facilities.IsMaximum(type) && type!=FacilityType.Advertising?(type==FacilityType.Menu?ShopStrings.MenuCompleted:ShopStrings.FacilityCompleted):FacilityEffect(type));
+        if(type==FacilityType.Menu && campaign.Rewards.UnlockedMenuKinds>facilities.MenuUpgrades+1)
+        {
+            card.Show(UiKit.Art(picture),ShopStrings.Facility(type),FacilityLevel(type),"店の昇格でピザが解放されています。\n次の種類も昇格で解放できます。");
+            card.ShowPurchase("昇格で解放済み","","",false);return;
+        }
         if(type==FacilityType.Advertising)
         {
             card.ShowTiers(facilities.AdvertisingTiers,

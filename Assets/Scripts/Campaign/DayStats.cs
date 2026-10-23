@@ -25,6 +25,7 @@ public sealed class DayStats : MonoBehaviour
         if(onTime && stars==3)ThreeStarOnTime++;
     }
 
+    public void RestoreRewardMetrics(RewardDayMetrics m){DeliveredCount=m.delivered;LateCount=m.late;CancelledCount=m.cancelled;StarCounts[1]=m.oneStar;StarCounts[2]=m.twoStar;StarCounts[3]=m.threeStar;AccidentCount=m.accidents;SpawnedCount=m.spawned;ClosingCancelledCount=m.closingCancelled;TotalScore=m.score;TwoStarOnTime=m.twoStarOnTime;ThreeStarOnTime=m.threeStarOnTime;BusySeconds=m.busySeconds;}
     public void ResetForDay()
     {
         SpawnedCount=ClosingCancelledCount=AccidentCount=DeliveredCount=LateCount=CancelledCount=TotalScore=0;

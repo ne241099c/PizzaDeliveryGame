@@ -32,7 +32,8 @@ public sealed class FacilityManager : MonoBehaviour
     public int ShopUpgrades {get;private set;}
     public int WorkbenchUpgrades {get;private set;}
     public int MenuUpgrades {get;private set;}
-    public bool IsUnlocked(PizzaKind kind)=>(int)kind<=MenuUpgrades;
+    public int UnlockedMenuCount=>Mathf.Max(MenuUpgrades+1,FindFirstObjectByType<CampaignManager>()?.Rewards.UnlockedMenuKinds??1);
+    public bool IsUnlocked(PizzaKind kind)=>(int)kind<=MenuUpgrades || (int)kind<(FindFirstObjectByType<CampaignManager>()?.Rewards.UnlockedMenuKinds??1);
     public int Workbenches=>initialWorkbenches+WorkbenchUpgrades;
     public int Advertisement {get;private set;}
     public int Ovens=>initialOvens+OvenUpgrades;
@@ -85,6 +86,9 @@ public sealed class FacilityManager : MonoBehaviour
     public string Rejection(FacilityType type,int advertisementTier=1)
     {
         if(clock.Phase!=DayPhase.BeforeOpening)return "Buy during preparation only.";
+        var goals=FindFirstObjectByType<CampaignManager>();
+        if(goals!=null && (type==FacilityType.Oven || type==FacilityType.Bike || type==FacilityType.Workbench) && (type==FacilityType.Oven?Ovens:type==FacilityType.Bike?BikeLevel:Workbenches)>=goals.Rewards.UnlockedEquipmentLevel)return "店グレードを上げると次の設備が解放されます。";
+        if(type==FacilityType.Menu && goals!=null && goals.Rewards.UnlockedMenuKinds>MenuUpgrades+1)return "店の昇格ですでに解放されています。";
         if(IsMaximum(type))return type==FacilityType.Advertising?"Advertising already booked today.":"Already at maximum.";
         if(advertisementTier<1 || advertisementTier>advertisingPrices.Length)return "Invalid advertising tier.";
         if(economy.Cash<Price(type,advertisementTier))return "Not enough cash.";

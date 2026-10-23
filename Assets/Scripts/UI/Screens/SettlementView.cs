@@ -63,6 +63,7 @@ public sealed class SettlementView : MonoBehaviour
     {
         if(revealed<4){RevealAll();return;}
         if(campaign.IsBankrupt){router.Show(ScreenId.GameOver);return;}
+        if(campaign.Rewards.HasPendingResult){FindFirstObjectByType<RewardsView>().ShowResult();return;}
         campaign.NextDay();
     }
     public void RevealAll()
@@ -222,7 +223,7 @@ public sealed class SettlementView : MonoBehaviour
             float k=Mathf.Clamp01((t-r.page*1.1f)/.9f);if(revealed>=4 && t>100)k=1;decimal shown=r.target*(decimal)(1-(1-k)*(1-k));
             r.value.text=r.format=="signed"?UiKit.Signed(shown):(shown<0?"−":"")+"¥"+System.Math.Abs(System.Math.Round(shown,0)).ToString("#,0");
         }
-        nextButton.Text=revealed<4?"次へ ▶":campaign.IsBankrupt?"結果を見る ▶":"次の日へ ▶";skipButton.gameObject.SetActive(revealed<4);
+        nextButton.Text=revealed<4?"次へ ▶":campaign.IsBankrupt?"結果を見る ▶":campaign.Rewards.HasPendingResult?"最終結果へ ▶":"次の日へ ▶";skipButton.gameObject.SetActive(revealed<4);
         nextButton.Interactable=clock.Phase==DayPhase.Ended;
     }
 }

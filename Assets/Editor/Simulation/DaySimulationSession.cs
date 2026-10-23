@@ -177,7 +177,7 @@ public sealed class DaySimulationSession : IDisposable
             {
                 foreach(var type in new[]{FacilityType.Oven,FacilityType.Workbench,FacilityType.Bike,FacilityType.Menu,FacilityType.Advertising})
                 {
-                    if(facilities.IsMaximum(type) || economy.Cash<facilities.Price(type)+settings.FacilityReserve)continue;
+                    if(facilities.IsMaximum(type) || facilities.Rejection(type).Length>0 || economy.Cash<facilities.Price(type)+settings.FacilityReserve)continue;
                     if(!facilities.Purchase(type))throw new InvalidOperationException(facilities.LastMessage);
                     facilityPurchase=type.ToString();break;
                 }

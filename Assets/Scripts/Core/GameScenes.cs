@@ -15,12 +15,13 @@ public static class GameScenes
 {
     public const string Title="Title";
     public const string Game="Game";
+    public static GameMode NewGameMode {get;set;}=GameMode.Normal;
     private static LaunchMode pending=LaunchMode.Direct;
 
     /// <summary>A rejected full save load is shown on the title, without replacing that save.</summary>
     public static string TitleProblem {get;private set;}="";
     [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void Reset(){pending=LaunchMode.Direct;TitleProblem="";}
+    private static void Reset(){NewGameMode=GameMode.Normal;pending=LaunchMode.Direct;TitleProblem="";}
     public static void LoadGame(LaunchMode mode){TitleProblem="";pending=mode;SceneManager.LoadScene(Game);}
     public static void LoadTitle()=>LoadTitle("");
     public static void LoadTitle(string problem){TitleProblem=problem;pending=LaunchMode.Direct;SceneManager.LoadScene(Title);}

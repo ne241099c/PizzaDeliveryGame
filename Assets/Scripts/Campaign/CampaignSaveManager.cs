@@ -11,6 +11,7 @@ using UnityEngine;
 }
 [Serializable] public sealed class CampaignSaveData
 {
+    public RewardSaveData rewards;
     public FacilitySaveData facilities;
     public CitySaveState city;
     public string facilityPurchaseCosts;
@@ -134,9 +135,9 @@ public sealed class CampaignSaveManager : MonoBehaviour
     }
     public CampaignSaveData Capture()
     {
-        if(clock.Phase!=DayPhase.BeforeOpening)throw new InvalidOperationException("Only preparation can be saved.");
-        return new CampaignSaveData{city=FindFirstObjectByType<MapManager>().CaptureCity(),facilities=facilities.Capture(),facilityPurchaseCosts=economy.Ledger.FacilityPurchases.ToString(CultureInfo.InvariantCulture),version=formatVersion,day=campaign.DayNumber,totalDelivered=campaign.TotalDelivered,totalScore=campaign.TotalScore,negativeDays=campaign.ConsecutiveNegativeDays,
-            cash=economy.Cash.ToString(CultureInfo.InvariantCulture),openingCash=economy.OpeningCash.ToString(CultureInfo.InvariantCulture),preparationCosts=economy.Ledger.PreparationCosts.ToString(CultureInfo.InvariantCulture),
+        if(clock.Phase!=DayPhase.BeforeOpening && clock.Phase!=DayPhase.Ended)throw new InvalidOperationException("Only preparation or settlement can be saved.");
+        return new CampaignSaveData{rewards=campaign.Rewards.State,city=FindFirstObjectByType<MapManager>().CaptureCity(),facilities=facilities.Capture(),facilityPurchaseCosts=economy.Ledger.FacilityPurchases.ToString(CultureInfo.InvariantCulture),version=formatVersion,day=campaign.DayNumber,totalDelivered=campaign.TotalDelivered,totalScore=campaign.TotalScore,negativeDays=campaign.ConsecutiveNegativeDays,
+            cash=economy.Cash.ToString(CultureInfo.InvariantCulture),openingCash=(clock.Phase==DayPhase.Ended?economy.Cash+economy.Ledger.PreparationCosts:economy.OpeningCash).ToString(CultureInfo.InvariantCulture),preparationCosts=economy.Ledger.PreparationCosts.ToString(CultureInfo.InvariantCulture),
             totalRevenue=campaign.TotalRevenue.ToString(CultureInfo.InvariantCulture),bestDailyRevenue=campaign.BestDailyRevenue.ToString(CultureInfo.InvariantCulture),reputation=reputation.Value,promise=spawner.PromiseSeconds,
             people=roster.People.Select(p=>p.Clone()).ToList(),
             applicants=recruitment.Applicants.Select(a=>new ApplicantSaveData{person=a.Person.Clone(),baselines=a.Baselines.ToArray(),strengths=a.Strengths.ToArray(),weaknesses=a.Weaknesses.ToArray()}).ToList(),
@@ -151,6 +152,8 @@ public sealed class CampaignSaveManager : MonoBehaviour
         try
         {
             data=JsonUtility.FromJson<CampaignSaveData>(json);var candidate=data;
+            // Unity can allocate an empty nested object for a missing serialized field.
+            if(candidate!=null && (!json.Contains("\"rewards\"") || System.Text.RegularExpressions.Regex.IsMatch(json,"\"rewards\"\\s*:\\s*null")))candidate.rewards=null;
             // Version 1 had no equipment. Normalize in memory without overwriting the original file.
             if(candidate!=null && candidate.version==1)
             {
@@ -165,7 +168,8 @@ public sealed class CampaignSaveManager : MonoBehaviour
                 if(candidate.people!=null && candidate.facilities!=null)candidate.crew.Add(new KitchenStaff("Mio",.4f,.4f));
             }
             if(candidate==null || candidate.version!=formatVersion)throw new FormatException("Unsupported save version.");
-            if(!FindFirstObjectByType<MapManager>().ValidCity(candidate.city,candidate.day))throw new FormatException("Invalid city state.");
+            if(!RewardProgression.Valid(candidate.rewards))throw new FormatException("Invalid reward progression.");
+            if(!FindFirstObjectByType<MapManager>().ValidCity(candidate.city,candidate.day,candidate.rewards!=null))throw new FormatException("Invalid city state.");
             if(!facilities.Valid(candidate.facilities))throw new FormatException("Invalid facility levels.");
             if(candidate.day<1 || candidate.negativeDays<0 || candidate.totalDelivered<0 || candidate.people==null || candidate.people.Count<1 || candidate.applicants==null || candidate.training==null || candidate.crew==null || candidate.kitchenApplicants==null)throw new FormatException("Missing campaign candidate.");
             var kitchen=candidate.crew.Concat(candidate.kitchenApplicants).ToArray();
@@ -199,7 +203,7 @@ public sealed class CampaignSaveManager : MonoBehaviour
     }
     public void SavePreparation()
     {
-        if(!Saving || !ready || restoring || clock.Phase!=DayPhase.BeforeOpening)return;
+        if(!Saving || !ready || restoring || (clock.Phase!=DayPhase.BeforeOpening && clock.Phase!=DayPhase.Ended))return;
         try
         {
             string path=SavePath,temp=path+".tmp";Directory.CreateDirectory(Path.GetDirectoryName(path));

@@ -99,8 +99,10 @@ public sealed partial class CookingManager
         if(!Ready() || !CanDiscard(job))return false;
         DiscardInternal(job,clock.ElapsedSeconds,false);return Done();
     }
+    public event System.Action<PizzaJob> PizzaDiscarded;
     private void DiscardInternal(PizzaJob job,float at,bool automatic)
     {
+        PizzaDiscarded?.Invoke(job);
         var order=job.Order;int oldBench=job.Bench;
         if(handover!=null && handover.IsBagged(order))handover.Unbag(order);
         Release(job,at);order.Baking=BakingState.Waiting;order.Stars=0;

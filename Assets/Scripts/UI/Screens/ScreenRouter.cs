@@ -31,8 +31,8 @@ public sealed class ScreenRouter : MonoBehaviour
         clock.OnDayStarted -= OnBusiness;
         clock.OnDayEnded -= OnSettlement;
     }
-    private void Start() => Show(Current, true); // the campaign has already entered preparation (or restored a save)
-    private void OnPreparation() => Show(ScreenId.Hub);
+    private void Start(){if(GetComponent<RewardsView>()==null)gameObject.AddComponent<RewardsView>();Show(clock.Phase==DayPhase.Ended?ScreenId.Settlement:Current,true);} // the campaign has already entered preparation (or restored a save)
+    private void OnPreparation() => Show(clock.Phase==DayPhase.Ended?ScreenId.Settlement:ScreenId.Hub);
     private void OnBusiness() => Show(ScreenId.Business);
     private void OnSettlement() => Show(ScreenId.Settlement);
     public CanvasGroup Root(ScreenId id) => screens[(int)id];

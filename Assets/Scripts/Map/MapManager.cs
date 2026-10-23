@@ -60,7 +60,7 @@ public class MapManager : MonoBehaviour
         CityState=generateCampaignCity && !UseSampleForValidation?new CitySaveState{generated=true,housesPerBlock=citySettings.HousesFor(CityGenerator.CurrentVersion,0),seed=SeedOverride??Guid.NewGuid().GetHashCode(),day=1}:null;
     }
     public CitySaveState CaptureCity()=>CityState==null?null:new CitySaveState{generated=true,version=CityState.version,seed=CityState.seed,blocks=CityState.blocks,day=CityState.day,housesPerBlock=CityState.housesPerBlock};
-    public bool ValidCity(CitySaveState state,int day)=>state==null || !state.generated || (state.version>=1 && state.version<=CityGenerator.CurrentVersion) && (state.version<4 || state.housesPerBlock==citySettings.HousesFor(state.version,state.housesPerBlock)) && state.day==day && state.blocks==citySettings.BlocksForVersion(day,state.version);
+    public bool ValidCity(CitySaveState state,int day,bool rewards=false)=>state==null || !state.generated || (state.version>=1 && state.version<=CityGenerator.CurrentVersion) && (state.version<4 || state.housesPerBlock==citySettings.HousesFor(state.version,state.housesPerBlock)) && state.day==day && (state.blocks==citySettings.BlocksForVersion(day,state.version) || rewards && state.version>=7 && state.blocks>=citySettings.stageBlocks[0] && state.blocks<=citySettings.stageBlocks.Last());
     public void RestoreCity(CitySaveState state)
     {
         CityState=state==null || !state.generated?null:new CitySaveState{generated=true,version=state.version,seed=state.seed,blocks=state.blocks,day=state.day,housesPerBlock=state.housesPerBlock};
@@ -112,7 +112,8 @@ public class MapManager : MonoBehaviour
         {
             if(City!=null){var previousCity=City;City=null;LoadMap(null);Destroy(previousCity.map);}return;
         }
-        int blocks=BlocksOverride??citySettings.BlocksForVersion(day,CityState.version);
+        var campaign=FindFirstObjectByType<CampaignManager>();
+        int blocks=BlocksOverride??(CityState.version>=7 && campaign!=null?Mathf.Max(citySettings.BlocksForVersion(day,CityState.version),campaign.Rewards.UnlockedDistricts):citySettings.BlocksForVersion(day,CityState.version));
         if(City!=null && CityState.blocks==blocks && City.seed==CityState.seed && City.day==day && City.blocks.Count==blocks && City.version==CityState.version && City.housesPerBlock==(CityState.version<4?2:CityState.housesPerBlock))return;
         var old=City;var next=CityGenerator.Generate(CityState.seed,blocks,citySettings,CityState.version,CityState.housesPerBlock);
         if(day>=citySettings.constructionStartDay)

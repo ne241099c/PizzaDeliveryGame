@@ -130,6 +130,7 @@ public sealed class TitleScene : MonoBehaviour
         float height=Mathf.Max(648,profileText.GetPreferredValues(profileText.text,1296,0).y+32);
         profileContent.sizeDelta=new Vector2(1300,height);
         profileText.rectTransform.sizeDelta=new Vector2(1296,height);
+        profileText.ForceMeshUpdate();
         profile.transform.SetAsLastSibling();
         UiKit.Show(profile,true);
     }
