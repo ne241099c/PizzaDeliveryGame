@@ -45,6 +45,7 @@ public static class ShopStrings
     public const string KitchenTab="厨房",HandoverTab="受け渡し",DispatchTab="配達指示";
     public const string Step1="伝票を配達員のレーンへ",Step2="ルートを直して出発";
     public const string Depart="出発",ResetRoute="自動に戻す",Store="お店";
+    public const string FastForward="押している間 早送り",RoadTipVia="クリック：この道を通る",RoadTipUndo="クリック：この道をやめる";
     public const string SwapDeliveryOrder="順番を入替",ChooseRoad="道を選ぶ",OvenQueueTitle="窯待ち →";
     public const string FreeDiscard="ゴミ箱（廃棄の減点なし）";
     public const string RoadEditHint="：通りたい道をクリック。同じボタンで区間切替、右クリックで終了。";

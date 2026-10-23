@@ -77,7 +77,7 @@ public sealed partial class BusinessView : MonoBehaviour
     private void OnDisable()
     {
         EndRouteEdit();
-        if(clock!=null)clock.IsPlanning=false;
+        if(clock!=null){clock.IsPlanning=false;clock.FastForward=false;}
         if(clock==null)return;clock.OnDayStarted-=DayStarted;orders.OrdersChanged-=AssignNumbers;flow.Returned-=Returned;flow.Message-=FlowMessage;
         if(router!=null)router.Changed-=ScreenChanged;
         if(roster!=null)roster.SelectionChanged-=RequestLaneFocus;
@@ -96,7 +96,7 @@ public sealed partial class BusinessView : MonoBehaviour
     }
     private void AssignNumbers(){foreach(var o in orders.Orders){observedOrders.Add(o);if(!numbers.ContainsKey(o))numbers[o]=nextNumber++;}}
     public int Number(Order o){if(!numbers.TryGetValue(o,out int n)){AssignNumbers();numbers.TryGetValue(o,out n);}return n;}
-    private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){EndRouteEdit();clock.IsPlanning=false;hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}SyncPlanningRate();}
+    private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){EndRouteEdit();clock.IsPlanning=false;clock.FastForward=false;hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}SyncPlanningRate();}
 
     /// <summary>Editor only (ScreenPrefabs): creates the fixed layout under this object, reading sizes from the open scene's
     /// managers (rack capacity, waste cost). Actions are not attached here: Bind does that at runtime.</summary>

@@ -19,7 +19,7 @@ public static class CityGenerationValidation
             var legacy=CityGenerator.Build(seed,5,settings,version:6);
             try
             {
-                Check(city.version==7 && initial>5,"larger new street network is active");
+                Check(city.version==CityGenerator.CurrentVersion && initial>5,"larger new street network is active");
                 Check(Fingerprint(city)==Fingerprint(copy),"seed reproduces positions and roads");
                 Check(city.map.Nodes.All(n=>larger.map.Nodes.Any(other=>other.Id==n.Id && other.Position==n.Position)),"existing nodes do not move on growth");
                 Check(city.map.Edges.All(e=>larger.map.Edges.Any(o=>o.Id==e.Id && o.NodeAId==e.NodeAId && o.NodeBId==e.NodeBId && o.Distance==e.Distance && o.TrafficFactor==e.TrafficFactor && o.RoadType==e.RoadType && o.Bidirectional==e.Bidirectional)),"growth preserves existing roads");
@@ -29,7 +29,10 @@ public static class CityGenerationValidation
                     Check(c.map.Edges.All(e=>e.Bidirectional),"default streets are two-way");
                 }
                 var homes=city.map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress).ToArray();
-                Check(homes.Length==initial*4+2 && homes.Length>22,"more delivery locations");
+                Check(homes.Length==initial*settings.networkHousesPerDistrict+2 && homes.Length>22,"more delivery locations");
+                int Degree(string id)=>city.map.Edges.Count(e=>e.NodeAId==id || e.NodeBId==id);
+                Check(homes.Count(h=>Degree(h.Id)>=2)>=homes.Length*.9f,"houses stand along streets, not at dead ends");
+                Check(city.map.Nodes.Count(n=>n.NodeType==NodeType.Intersection && Degree(n.Id)>=3)>=initial*4,"many real crossings");
                 int sectors=homes.Select(n=>Mathf.FloorToInt((Mathf.Atan2(n.Position.y,n.Position.x)+Mathf.PI)*8/(Mathf.PI*2))%8).Distinct().Count();
                 Check(sectors>=6,"destinations occupy many directions around the store");
                 var nodes=city.map.Nodes.ToDictionary(n=>n.Id,n=>n.Position);

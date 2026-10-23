@@ -34,8 +34,8 @@ public static class ShopValidation
                 var controls=new SerializedObject(business);
                 var tabs=controls.FindProperty("zoneTabs");
                 Check(tabs!=null && tabs.arraySize==3 && Enumerable.Range(0,3).All(i=>tabs.GetArrayElementAtIndex(i).objectReferenceValue!=null),"zone controls survive Unity serialization");
-                var steps=controls.FindProperty("steps");
-                Check(steps!=null && steps.arraySize==2 && Enumerable.Range(0,2).All(i=>steps.GetArrayElementAtIndex(i).objectReferenceValue!=null),"dispatch steps survive Unity serialization");
+                // The step guide was removed on request (2026-10-24); the fast-forward button took its place.
+                Check(new[]{"fastForwardButton","fastForwardHold","roadTip","roadTipText"}.All(name=>controls.FindProperty(name)?.objectReferenceValue!=null),"fast-forward and road tip survive Unity serialization");
                 var previous=business.Zone;
                 foreach(ShopZone zone in Enum.GetValues(typeof(ShopZone)))
                 {

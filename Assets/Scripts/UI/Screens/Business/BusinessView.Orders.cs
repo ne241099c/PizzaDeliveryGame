@@ -47,7 +47,6 @@ public sealed partial class BusinessView
         scroll.vertical=true;
         scroll.movementType=ScrollRect.MovementType.Clamped;
         scroll.scrollSensitivity=T.largeSpace;
-        UiKit.Label(panel,"Hint",UiStrings.ReserveShortHint,18,496,308,32,T.captionSize,T.inkSub,FontRole.Black);
     }
     private void BindDispatchOrders(){ordersZone.Accepts=p=>p!=null && p.Kind==DragKind.Bagged;ordersZone.Dropped=p=>handover.Unbag(p.Order);}
     private void RefreshDispatchOrders()

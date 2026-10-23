@@ -78,6 +78,8 @@ public class EdgeView : MonoBehaviour
         var theme=UITheme.Active;bool main=road.RoadType==RoadType.Main;bool route=used || last;
         float width=Mathf.Min(main?theme.mapMainRoad:theme.mapBackRoad,theme.mapRoadMaxPixels*styledPixelScale);
         if(residentialRoad)width*=theme.mapResidentialWidthScale;
+        // Zoomed out, keep roads wide enough to see and to click.
+        width=Mathf.Max(width,theme.mapRoadMinPixels*(main && !residentialRoad?1:.65f)*styledPixelScale);
         Color fill=route && !directionalView?theme.tomato:residentialRoad?theme.mapResidentialFill:main?theme.mainRoadFill:theme.backRoadFill;
         Color edge=route?theme.line:available && !directionalView?theme.tomato:main?theme.mainRoadEdge:theme.backRoadEdge;
         lineRenderer.numCapVertices=6;lineRenderer.numCornerVertices=6;lineRenderer.startWidth=lineRenderer.endWidth=width;lineRenderer.startColor=lineRenderer.endColor=fill;

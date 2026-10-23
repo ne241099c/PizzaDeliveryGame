@@ -36,6 +36,7 @@ public sealed class UITheme : ScriptableObject
     [SerializeField] public TMP_FontAsset displayFont,boldFont,blackFont;
     [SerializeField] public Color mapGround=Hex("#EFEBE2"),mapBlock=Hex("#E7E1D3"),mapPark=Hex("#C9E3B4"),mapTree=Hex("#9FC98A"),mapWater=Hex("#B9DDF0"),mainRoadEdge=Hex("#D9A93A"),mainRoadFill=Hex("#FDE08A"),backRoadEdge=Hex("#B9AE98"),backRoadFill=Hex("#FFFDF6"),congestion=Hex("#E04B2D");
     [SerializeField, Min(1)] public float mapRoadMaxPixels=24f,mapRoadBorderPixels=3f,mapRouteArrowPixels=22f;
+    [SerializeField, Min(1), Tooltip("縮小しても道がこの太さ（ピクセル）より細くならないようにします。裏道・生活道路はこの0.65倍。")] public float mapRoadMinPixels=8f;
     [SerializeField] public float mapMainRoad=.26f,mapBackRoad=.14f,mapRoute=.22f,mapRoadEdge=.05f,mapPinScale=.012f;
     [Header("Dispatch planning / expanded kitchen")]
     [SerializeField] public Vector2 dispatchNoticePosition=new(840,122),dispatchNoticeSize=new(1048,64);

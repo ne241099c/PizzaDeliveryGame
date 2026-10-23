@@ -12,11 +12,10 @@ using UnityEngine.UI;
 public sealed partial class BusinessView
 {
     [Header("Dispatch")]
-    [SerializeField] private RectTransform stepsBar,bubble,minimapFrame,laneRow;
-    [SerializeField] private StickerButton zoomIn,zoomOut,fitButton;
-    [SerializeField] private RectTransform[] steps=new RectTransform[2];
-    [SerializeField] private Image[] stepCircles=new Image[2];
-    [SerializeField] private GameObject[] stepNumbers=new GameObject[2],stepChecks=new GameObject[2];
+    [SerializeField] private RectTransform bubble,minimapFrame,laneRow,roadTip;
+    [SerializeField] private StickerButton zoomIn,zoomOut,fitButton,fastForwardButton;
+    [SerializeField] private HoldButton fastForwardHold;
+    [SerializeField] private TextMeshProUGUI roadTipText;
     /// <summary>The four sides of the minimap's view frame: top, bottom, left, right.</summary>
     [SerializeField] private RectTransform[] minimapEdges=new RectTransform[4];
     [SerializeField] private TextMeshProUGUI bubbleText;
@@ -48,19 +47,7 @@ public sealed partial class BusinessView
 
     private void BuildDispatch()
     {
-        // steps bar (to the right of the 厨房/配達指示 toggle)
-        stepsBar=UiKit.Box(dispatch,"Steps",32,122,760,76);
-        string[] names={ShopStrings.Step1,ShopStrings.Step2};float[] widths={360,320};float x=0;
-        if(steps==null || steps.Length!=2)steps=new RectTransform[2]; // older scenes saved four steps
-        for(int i=0;i<2;i++)
-        {
-            var pill=UiKit.Card(stepsBar,"Step"+i,x,4,widths[i],68,T.paper,34,4,3);steps[i]=pill;
-            var circle=UiKit.Box(pill,"Circle",10,10,48,48);var c=circle.gameObject.AddComponent<Image>();c.sprite=UiKit.Circle;c.raycastTarget=false;stepCircles[i]=c;
-            stepNumbers[i]=UiKit.Label(circle,"Number",(i+1).ToString(),0,0,48,48,24,Color.white,FontRole.Display,TextAlignmentOptions.Center).gameObject;
-            stepChecks[i]=UiKit.Icon(circle,"Check","icon_check",9,9,30,Color.white).gameObject;
-            UiKit.Label(pill,"Text",names[i],68,0,widths[i]-78,68,T.bodySize,T.line,FontRole.Display);x+=widths[i];
-            if(i==0){UiKit.Icon(stepsBar,"Arrow","icon_play",x+10,26,24,T.inkSub);x+=44;}
-        }
+        BuildDispatchExtras();
         BuildDispatchOrders();
         // guide bubble
         bubble=UiKit.Card(dispatch,"Bubble",840,196,944,48,T.paper,14,3,2);
@@ -93,6 +80,17 @@ public sealed partial class BusinessView
         string legend=$"<color=#{ColorUtility.ToHtmlStringRGB(T.tomato)}>行き・配達先へ ━</color>  /  <color=#{ColorUtility.ToHtmlStringRGB(T.info)}>帰り・お店へ ━</color>  動く丸が進行方向 ／ レーンは横スクロール";
         UiKit.Label(dispatch,"RouteLegend",legend,430,724,1120,32,T.captionSize,T.line,FontRole.Black);
         UiKit.Show(dispatch,false);
+    }
+    /// <summary>The hold-to-fast-forward button (where the step guide used to be) and the tip that follows the pointer
+    /// over a road. Also used by the editor tool that adds them to an existing BusinessView prefab.</summary>
+    public void BuildDispatchExtras()
+    {
+        fastForwardButton=UiKit.Button(dispatch,"FastForward",ShopStrings.FastForward,StickerKind.Secondary,32,130,300,64,T.bodySize,null,FontRole.Black,"icon_play");
+        fastForwardHold=fastForwardButton.gameObject.AddComponent<HoldButton>();
+        roadTip=UiKit.Card(dispatch,"RoadTip",0,0,320,40,T.paper,12,3,2);
+        roadTipText=UiKit.Label(roadTip,"Text","",12,0,296,40,T.captionSize,T.line,FontRole.Black);
+        foreach(var graphic in roadTip.GetComponentsInChildren<Graphic>(true))graphic.raycastTarget=false;
+        UiKit.Show(roadTip,false);
     }
     private void BindDispatch()
     {
@@ -420,7 +418,7 @@ public sealed partial class BusinessView
             string state=ready?UiStrings.DepartureReady:here?(bag.Count>0?$"{bag.Count} / {p.Capacity}箱":"待機中"):p.Status==DeliveryStatus.Training?"訓練中":$"{ShopStrings.Status(p.Status)}・あと{Mathf.Max(0,(p.CurrentTrip?.ReturnsAt??0)-clock.ElapsedSeconds):F0}秒";
             UiKit.SetBadge(lane.StateBadge,state,ready?T.departureReady:here?(bag.Count>=p.Capacity?T.cheese:T.basil):T.disabled,ready || here && bag.Count<p.Capacity?Color.white:T.line);
             var note=lane.Note;note.color=T.inkSub;string noteText="";bool showTime=false,showDiff=false,showReset=false;
-            if(!here)noteText="帰ってきたら、ここに入れられます";
+            if(!here)noteText="";
             else if(holding)
             {
                 string reason=LaneRejection(held,p);
@@ -437,7 +435,7 @@ public sealed partial class BusinessView
                     }
                 }
             }
-            else if(bag.Count==0)noteText="伝票をここへドラッグ";
+            else if(bag.Count==0)noteText="";
             else
             {
                 var mine=RouteEdges(p,bag,false);var auto=RouteEdges(p,bag,true);float time=Seconds(mine,p),autoTime=Seconds(auto,p);
@@ -474,26 +472,21 @@ public sealed partial class BusinessView
         }
     }
 
-    private int Step()=>roster.People.Any(p=>p.IsAvailable && handover.BagOf(p).Count>0)?1:0;
     private void RefreshDispatch()
     {
+        bool fast=Zone==ShopZone.Dispatch && clock.Phase==DayPhase.Open && fastForwardHold!=null && fastForwardHold.Held;
+        clock.FastForward=fast;
+        if(fastForwardButton!=null)fastForwardButton.Kind=fast?StickerKind.Selected:StickerKind.Secondary;
         if(editingPerson!=null && (!editingPerson.IsAvailable || roster.SelectedPerson!=editingPerson || handover.BagOf(editingPerson).Count==0)){EndRouteEdit();}
         SyncPlanningRate();
         RefreshDepartureReadiness();
         UpdatePins();
-        if(Zone!=ShopZone.Dispatch)return;
+        if(Zone!=ShopZone.Dispatch){if(hoverLine!=null)hoverLine.enabled=false;if(roadTip!=null)UiKit.Show(roadTip,false);return;}
         RefreshDispatchOrders();
         string sig=string.Join(",",roster.People.Select(p=>UiKit.Ref(p)+p.Status+p.Capacity+string.Join("/",handover.BagOf(p).Select(o=>o.Id+":"+o.IsReady))))+"|"+UiKit.Ref(roster.SelectedPerson);
         if(sig!=laneSignature){laneSignature=sig;RebuildLanes();}
         FocusSelectedLane();SyncRoute();RefreshLanes();
         Navigate();UpdateMinimap();UpdateRouteMarks();
-        int step=Step();
-        for(int i=0;i<2;i++)
-        {
-            bool done=i<step,current=i==step;UiKit.FaceOf(steps[i]).color=current?T.cheese:T.paper;
-            stepCircles[i].color=done?T.basil:current?T.tomato:T.disabled;
-            stepNumbers[i].SetActive(!done);stepChecks[i].SetActive(done);
-        }
         UiKit.Show(bubble,false); // Instructions stay in the lane, never over the map.
         trafficButton.Kind=ShowCongestion?StickerKind.Selected:StickerKind.Secondary;
     }
@@ -861,6 +854,7 @@ public sealed partial class BusinessView
     {
         var mouse=Mouse.current;var cam=Camera.main;if(mouse==null || cam==null || menu.MenuOpen || menu.HelpOpen)return;
         Vector2 pos=mouse.position.ReadValue();bool over=OverUi(pos);
+        UpdateRoadHover(pos,over);
         if(mouse.rightButton.wasPressedThisFrame){EndRouteEdit();}
         float scroll=mouse.scroll.ReadValue().y;if(scroll!=0 && !over)Zoom(Mathf.Pow(.85f,Mathf.Clamp(scroll/120f,-1,1)),pos,true);
         if(mouse.leftButton.wasPressedThisFrame){if(over || Held!=null)InputTrace=$"press {pos} ignored (over UI {over})";else PointerDown(pos);}
@@ -925,7 +919,71 @@ public sealed partial class BusinessView
             if(road!=null && SetWaypointRoad(editingPerson,editingLeg,road.Id))Toast(map.RoadCaption(road.Id)+" を通ります。",T.basil,null,"icon_map");
             return;
         }
-        var order=PinOrderAt(screen);if(order!=null)TapOrder(order);
+        var order=PinOrderAt(screen);if(order!=null){TapOrder(order);return;}
+        var person=RoutablePerson;var tapped=person!=null?RoadAt(screen):null;
+        if(tapped!=null)TapRoad(person,tapped);
+    }
+    /// <summary>The selected courier when they are in the shop with tickets, so their route can be changed.</summary>
+    private DeliveryPerson RoutablePerson
+    {
+        get{var p=roster.SelectedPerson;return p!=null && p.IsAvailable && handover.BagOf(p).Count>0?p:null;}
+    }
+    /// <summary>A road the route already goes through on purpose (tapping it again drops it), or null.</summary>
+    private (string,string)? ChosenLeg(DeliveryPerson person,MapEdge road)
+    {
+        foreach(var pair in Waypoints(person))if(pair.Value=="E:"+road.Id)return pair.Key;
+        return null;
+    }
+    /// <summary>Route the courier along a tapped road, on the leg where that costs the least extra distance.
+    /// Tapping a road chosen before returns that leg to the shortest way.</summary>
+    public bool TapRoad(DeliveryPerson person,MapEdge road)
+    {
+        if(person==null || road==null || !person.IsAvailable)return false;
+        var chosen=ChosenLeg(person,road);
+        if(chosen.HasValue)
+        {
+            Waypoints(person).Remove(chosen.Value);SyncRoute();Toast(map.RoadCaption(road.Id)+" をやめました。",T.inkSub,null,"icon_map");return true;
+        }
+        var legs=Legs(person,handover.BagOf(person),false);int best=-1;float extra=float.PositiveInfinity;
+        float Length(List<string> edges)=>edges.Sum(id=>map.GetEdge(id).Distance);
+        for(int i=0;i<legs.Count;i++)
+        {
+            var via=Via(legs[i].from,legs[i].to,"E:"+road.Id);var direct=Path(legs[i].from,legs[i].to);
+            if(via==null || direct==null)continue;
+            float cost=Length(via)-Length(direct);if(cost<extra){extra=cost;best=i;}
+        }
+        if(best<0){Toast("その道は通れません。",T.berry,null,"icon_map");return false;}
+        if(!SetWaypointRoad(person,best,road.Id))return false;
+        Toast(map.RoadCaption(road.Id)+" を通ります。",T.basil,null,"icon_map");return true;
+    }
+    private LineRenderer hoverLine;
+    /// <summary>While a courier with tickets is selected, the road under the pointer lights up with what a click does.</summary>
+    private void UpdateRoadHover(Vector2 pos,bool overUi)
+    {
+        var person=RoutablePerson;
+        var road=person!=null && !overUi && !pressing && Held==null && !IsEditingRoute?RoadAt(pos,36):null;
+        if(roadTip!=null)UiKit.Show(roadTip,road!=null);
+        if(road==null){if(hoverLine!=null)hoverLine.enabled=false;return;}
+        if(hoverLine==null)
+        {
+            hoverLine=new GameObject("RoadHover").AddComponent<LineRenderer>();
+            hoverLine.sharedMaterial=new Material(Shader.Find("Sprites/Default"));
+            hoverLine.useWorldSpace=true;hoverLine.numCapVertices=6;hoverLine.sortingOrder=30;
+        }
+        var points=RoadGeometry.Points(map,road);
+        hoverLine.enabled=true;hoverLine.positionCount=points.Length;
+        for(int i=0;i<points.Length;i++)hoverLine.SetPosition(i,new Vector3(points[i].x,points[i].y,-.5f));
+        hoverLine.startWidth=hoverLine.endWidth=T.mapRoadMinPixels*1.6f*Px;
+        var color=T.cheese;color.a=.85f;hoverLine.startColor=hoverLine.endColor=color;
+        if(roadTip==null)return;
+        roadTipText.text=(ChosenLeg(person,road)!=null?ShopStrings.RoadTipUndo:ShopStrings.RoadTipVia)+"（"+map.RoadCaption(road.Id)+"）";
+        var canvas=dispatch.GetComponentInParent<Canvas>();
+        var cam=canvas!=null && canvas.renderMode!=RenderMode.ScreenSpaceOverlay?canvas.worldCamera:null;
+        if(!RectTransformUtility.ScreenPointToLocalPointInRectangle(dispatch,pos,cam,out var local))return;
+        float width=Mathf.Min(560,roadTipText.GetPreferredValues(roadTipText.text).x+24);
+        var rect=dispatch.rect;
+        float x=Mathf.Min(local.x-rect.xMin+20,rect.width-width-8),y=rect.yMax-local.y+20;
+        UiKit.Place(roadTip,x,y,width,40);UiKit.Place(roadTipText.rectTransform,12,0,width-24,40);
     }
     public void TapOrder(Order order)
     {

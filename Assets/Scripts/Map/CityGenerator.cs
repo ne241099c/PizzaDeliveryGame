@@ -45,6 +45,8 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     [Range(0,1), Tooltip("接続可能な近隣道を見つけた時、迂回路を作る割合。")] public float networkLoopChance=.95f;
     [Range(0,1), Tooltip("迂回路のうち土地勘の必要な生活道路にする割合。")] public float networkShortcutChance=.65f;
     [Range(0,3), Tooltip("v7の一方通行の最大本数。0ならすべて双方向。")] public int networkMaximumOneWayRoads=0;
+    [Min(2), Tooltip("v8の地区ごとの交差点の数（さらに0〜2個増えます）。家は交差点を結ぶ道の途中に建ちます。")] public int networkJunctionsPerDistrict=6;
+    [Range(0,3), Tooltip("v8で新しい交差点から追加でつなぐ道の最大本数。多いほど交差点と回り道が増え、行き止まりが減ります。")] public int networkExtraLinks=2;
     [Min(.1f)] public float roadDistanceScale=1.5f;
     [Min(.1f)] public float shortcutDistance=9;
     [Min(0)] public float minimumShortcutSaving=.03f;
@@ -85,11 +87,12 @@ public sealed class GeneratedCity
 /// <summary>Deterministic template placement. Prefixes and each block's RNG are independent of later expansion.</summary>
 public static class CityGenerator
 {
-    public const int CurrentVersion=7;
+    public const int CurrentVersion=8;
     private static readonly Dictionary<string,int> validatedNetworkVariants=new();
     public static GeneratedCity Build(int seed,int blockCount,CityGenerationSettings s,int variant=0,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
         if(blockCount<1 || s.templates==null || s.templates.Length<1)throw new ArgumentException("City needs blocks and templates.");
+        if(version>=8)return BuildConnectedStreets(seed,blockCount,s,variant,version,savedHousesPerBlock);
         if(version>=7)return BuildStreetNetwork(seed,blockCount,s,variant,version,savedHousesPerBlock);
         if(version>=6)return BuildOrganic(seed,blockCount,s,variant,version,savedHousesPerBlock);
         int houseCount=version<4?2:Mathf.Clamp(savedHousesPerBlock>0?savedHousesPerBlock:s.housesPerBlock,2,4);
@@ -184,6 +187,164 @@ public static class CityGenerator
     // A street is a connection between independently sampled points, rather than
     // the perimeter of a repeated block. Append-only growth preserves every old
     // node and edge when the next district is unlocked.
+    // v8: houses stand along streets (the street is split where a house is) instead of at the end of their own
+    // spur, and every new junction tries to close several loops, so towns have many crossings and few dead ends.
+    // Only roads built for the current district are split: earlier districts keep their nodes and roads on growth.
+    private static GeneratedCity BuildConnectedStreets(int seed,int blockCount,CityGenerationSettings s,int variant,int version,int savedHousesPerBlock)
+    {
+        int houses=s.HousesFor(version,savedHousesPerBlock);
+        var city=new GeneratedCity{seed=seed,version=version,housesPerBlock=houses,map=ScriptableObject.CreateInstance<MapDefinition>()};
+        var map=city.map;map.hideFlags=HideFlags.DontSave;
+        var positions=new Dictionary<string,Vector2>();
+        var degree=new Dictionary<string,int>();
+        var homes=new HashSet<string>();
+        var random=new System.Random(unchecked(seed*486187739+variant*7919+15485863));
+        int sequence=0,shortcutCount=0,oneWayCount=0;
+        float Next()=>(float)random.NextDouble();
+        float pointSpacing=Mathf.Max(s.minimumNodeSpacing,s.networkPointSpacing);
+        float houseSpacing=Mathf.Max(s.minimumNodeSpacing,pointSpacing*.5f);
+        void Node(string id,Vector2 p,NodeType type=NodeType.Intersection)
+        {
+            positions.Add(id,p);degree.Add(id,0);if(type==NodeType.DeliveryAddress)homes.Add(id);
+            map.Nodes.Add(new MapNode(id,p,type,id=="Store"));
+        }
+        MapEdge Road(string from,string to,RoadType type=RoadType.Main,bool both=true,bool local=false)
+        {
+            string id=$"S{sequence++}_{(local?"Local":"Street")}_{from}_{to}";
+            var edge=new MapEdge(id,from,to,Vector2.Distance(positions[from],positions[to])*s.roadDistanceScale,type,1,both);
+            map.Edges.Add(edge);degree[from]++;degree[to]++;
+            return edge;
+        }
+        // A house is passed through (two roads at most); a junction takes up to four.
+        bool Joinable(string id)=>degree[id]<(homes.Contains(id)?2:4);
+        bool Adjacent(string a,string b)=>map.Edges.Any(e=>e.NodeAId==a && e.NodeBId==b || e.NodeAId==b && e.NodeBId==a);
+        float Cross(Vector2 a,Vector2 b)=>a.x*b.y-a.y*b.x;
+        float ToSegment(Vector2 p,Vector2 a,Vector2 b)
+        {
+            Vector2 delta=b-a;
+            float t=delta.sqrMagnitude>0?Mathf.Clamp01(Vector2.Dot(p-a,delta)/delta.sqrMagnitude):0;
+            return Vector2.Distance(p,a+delta*t);
+        }
+        bool Crosses(Vector2 a,Vector2 b,Vector2 c,Vector2 d)
+        {
+            float abC=Cross(b-a,c-a),abD=Cross(b-a,d-a);
+            float cdA=Cross(d-c,a-c),cdB=Cross(d-c,b-c);
+            return abC*abD<-.00001f && cdA*cdB<-.00001f;
+        }
+        bool Visible(Vector2 p,string target,string source=null)
+        {
+            Vector2 q=positions[target];
+            foreach(var node in positions)
+                if(node.Key!=source && node.Key!=target && ToSegment(node.Value,p,q)<s.networkRoadClearance)return false;
+            foreach(var edge in map.Edges)
+            {
+                bool shares=edge.NodeAId==target || edge.NodeBId==target || source!=null && (edge.NodeAId==source || edge.NodeBId==source);
+                if(!shares && Crosses(p,q,positions[edge.NodeAId],positions[edge.NodeBId]))return false;
+                if(shares)
+                {
+                    string at=edge.NodeAId==target || edge.NodeBId==target?target:source;
+                    string other=edge.NodeAId==at?edge.NodeBId:edge.NodeAId;
+                    Vector2 direction=at==target?p-q:q-p;
+                    if(Vector2.Angle(direction,positions[other]-positions[at])<27)return false;
+                }
+            }
+            return true;
+        }
+        float MainDistance(string from,string to)
+        {
+            var main=map.Edges.Where(e=>e.RoadType==RoadType.Main).ToArray();
+            var route=RoadPathfinder.FindShortestPath(main,from,to,e=>e.Distance);
+            return route==null?float.PositiveInfinity:route.Sum(id=>main.First(e=>e.Id==id).Distance);
+        }
+        Vector2 Direction(float a)=>new Vector2(Mathf.Cos(a),Mathf.Sin(a));
+        // A free spot near the town that sees a joinable node; null when none is found.
+        string Place(out Vector2 point)
+        {
+            point=Vector2.zero;
+            float radius=s.networkInitialRadius+Mathf.Sqrt(positions.Count)*s.networkGrowthSpacing;
+            for(int attempt=0;attempt<800;attempt++)
+            {
+                var p=Direction(Next()*Mathf.PI*2)*Mathf.Sqrt(Next())*radius;
+                if(positions.Values.Any(q=>Vector2.Distance(q,p)<pointSpacing))continue;
+                if(map.Edges.Any(e=>ToSegment(p,positions[e.NodeAId],positions[e.NodeBId])<s.networkRoadClearance))continue;
+                string nearest=positions.Keys.Where(k=>Joinable(k) && Vector2.Distance(p,positions[k])<s.networkMaximumConnection)
+                    .OrderBy(k=>Vector2.SqrMagnitude(p-positions[k])).FirstOrDefault(k=>Visible(p,k));
+                if(nearest!=null){point=p;return nearest;}
+            }
+            return null;
+        }
+        Node("Store",Vector2.zero);
+        float angle=Next()*Mathf.PI*2;
+        Node("Goal1",Direction(angle)*(2.5f+Next()),NodeType.DeliveryAddress);
+        Node("Goal2",Direction(angle+2.3f+Next()*.9f)*(3.2f+Next()),NodeType.DeliveryAddress);
+        Road("Store","Goal1");Road("Store","Goal2");
+        for(int district=0;district<blockCount;district++)
+        {
+            random=new System.Random(unchecked(seed*486187739+district*104729+variant*7919+15485863));
+            var template=district==0?s.templates.FirstOrDefault(t=>t.kind==DistrictKind.Park)??s.templates[0]:
+                district==1?s.templates.FirstOrDefault(t=>t.kind==DistrictKind.Riverside)??s.templates[0]:s.templates[random.Next(s.templates.Length)];
+            var districtEdges=new List<MapEdge>();var districtPositions=new List<Vector2>();
+            int junctions=s.networkJunctionsPerDistrict+random.Next(3);
+            for(int n=0;n<junctions;n++)
+            {
+                string id=$"B{district}_J{n}";
+                string nearest=Place(out var point);
+                if(nearest==null)throw new InvalidOperationException("Street point could not join the existing network.");
+                Node(id,point);districtPositions.Add(point);districtEdges.Add(Road(nearest,id));
+                var candidates=positions.Keys.Where(k=>k!=id && k!=nearest && Vector2.Distance(point,positions[k])<s.networkMaximumConnection && !Adjacent(nearest,k))
+                    .OrderBy(k=>Vector2.SqrMagnitude(point-positions[k])).ToArray();
+                int links=0;
+                foreach(string other in candidates)
+                {
+                    if(links>=s.networkExtraLinks || degree[id]>=4)break;
+                    if(!Joinable(other) || Adjacent(id,other) || !Visible(point,other,id))continue;
+                    if(Next()>s.networkLoopChance){links++;continue;}
+                    float direct=Vector2.Distance(point,positions[other])*s.roadDistanceScale;
+                    float detour=MainDistance(id,other);
+                    bool shortcut=detour>direct*1.1f && detour<direct*5f && (shortcutCount==0 || Next()<s.networkShortcutChance);
+                    bool oneWay=shortcut && oneWayCount<s.networkMaximumOneWayRoads;
+                    districtEdges.Add(Road(id,other,shortcut?RoadType.Backstreet:RoadType.Main,!oneWay,true));
+                    if(shortcut){shortcutCount++;if(oneWay)oneWayCount++;}
+                    links++;
+                }
+            }
+            var addresses=new string[houses];
+            for(int h=0;h<houses;h++)
+            {
+                string id=$"B{district}_H{h+1}";addresses[h]=id;
+                // On one of this district's longer streets, away from every other node.
+                MapEdge host=null;Vector2 at=Vector2.zero;
+                foreach(var e in districtEdges.OrderByDescending(e=>Vector2.Distance(positions[e.NodeAId],positions[e.NodeBId])*(.75f+Next()*.5f)).ToList())
+                {
+                    Vector2 a=positions[e.NodeAId],b=positions[e.NodeBId];
+                    if(Vector2.Distance(a,b)<houseSpacing*2)continue;
+                    var p=Vector2.Lerp(a,b,.3f+Next()*.4f);
+                    if(positions.Values.Any(q=>Vector2.Distance(q,p)<houseSpacing))continue;
+                    host=e;at=p;break;
+                }
+                if(host!=null)
+                {
+                    map.Edges.Remove(host);districtEdges.Remove(host);degree[host.NodeAId]--;degree[host.NodeBId]--;
+                    Node(id,at,NodeType.DeliveryAddress);
+                    bool local=host.Id.Contains("_Local");
+                    districtEdges.Add(Road(host.NodeAId,id,host.RoadType,host.Bidirectional,local));
+                    districtEdges.Add(Road(id,host.NodeBId,host.RoadType,host.Bidirectional,local));
+                }
+                else
+                {
+                    // Rare: no street has room, so the house gets a short lane of its own.
+                    string nearest=Place(out at);
+                    if(nearest==null)throw new InvalidOperationException("House could not join the existing network.");
+                    Node(id,at,NodeType.DeliveryAddress);districtEdges.Add(Road(nearest,id));
+                }
+                districtPositions.Add(at);
+            }
+            city.blocks.Add(new CityBlock{index=district,template=template,addresses=addresses,
+                area=Rect.MinMaxRect(districtPositions.Min(p=>p.x),districtPositions.Min(p=>p.y),districtPositions.Max(p=>p.x),districtPositions.Max(p=>p.y))});
+        }
+        city.bridges.AddRange(map.Edges.Where(e=>e.RoadType==RoadType.Main && e.NodeAId!="Store" && e.NodeBId!="Store").Take(2).Select(e=>e.Id));
+        return city;
+    }
     private static GeneratedCity BuildStreetNetwork(int seed,int blockCount,CityGenerationSettings s,int variant,int version,int savedHousesPerBlock)
     {
         int houses=s.HousesFor(version,savedHousesPerBlock);
@@ -494,7 +655,7 @@ public static class CityGenerator
     }
     public static GeneratedCity SafeCity(int seed,int blocks,CityGenerationSettings settings,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
-        var safe=Build(seed%2==0?1401:1402,blocks,new CityGenerationSettings{networkHousesPerDistrict=settings.networkHousesPerDistrict,networkInitialRadius=settings.networkInitialRadius,networkGrowthSpacing=settings.networkGrowthSpacing,networkPointSpacing=settings.networkPointSpacing,networkRoadClearance=settings.networkRoadClearance,networkMaximumConnection=settings.networkMaximumConnection,networkLoopChance=settings.networkLoopChance,networkShortcutChance=settings.networkShortcutChance,networkMaximumOneWayRoads=settings.networkMaximumOneWayRoads,columns=settings.columns,organicMinimumBlockSize=settings.organicMinimumBlockSize,organicMaximumBlockSize=settings.organicMaximumBlockSize,organicJunctionJitter=settings.organicJunctionJitter,organicShortcutDistanceFactor=settings.organicShortcutDistanceFactor,radialFirstBlockDistance=settings.radialFirstBlockDistance,blockSize=settings.blockSize,blockGap=settings.blockGap,roadDistanceScale=settings.roadDistanceScale,shortcutDistance=settings.shortcutDistance,housesPerBlock=settings.housesPerBlock},version:version,savedHousesPerBlock:savedHousesPerBlock);
+        var safe=Build(seed%2==0?1401:1402,blocks,new CityGenerationSettings{networkHousesPerDistrict=settings.networkHousesPerDistrict,networkJunctionsPerDistrict=settings.networkJunctionsPerDistrict,networkExtraLinks=settings.networkExtraLinks,networkInitialRadius=settings.networkInitialRadius,networkGrowthSpacing=settings.networkGrowthSpacing,networkPointSpacing=settings.networkPointSpacing,networkRoadClearance=settings.networkRoadClearance,networkMaximumConnection=settings.networkMaximumConnection,networkLoopChance=settings.networkLoopChance,networkShortcutChance=settings.networkShortcutChance,networkMaximumOneWayRoads=settings.networkMaximumOneWayRoads,columns=settings.columns,organicMinimumBlockSize=settings.organicMinimumBlockSize,organicMaximumBlockSize=settings.organicMaximumBlockSize,organicJunctionJitter=settings.organicJunctionJitter,organicShortcutDistanceFactor=settings.organicShortcutDistanceFactor,radialFirstBlockDistance=settings.radialFirstBlockDistance,blockSize=settings.blockSize,blockGap=settings.blockGap,roadDistanceScale=settings.roadDistanceScale,shortcutDistance=settings.shortcutDistance,housesPerBlock=settings.housesPerBlock},version:version,savedHousesPerBlock:savedHousesPerBlock);
         safe.seed=seed;safe.metrics=CityValidator.Measure(safe,settings);return safe;
     }
 }

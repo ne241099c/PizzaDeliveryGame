@@ -71,6 +71,7 @@ public sealed class PlayModeValidationTests
     [UnityTest] public IEnumerator KitchenQueue()=>Run(KitchenQueueValidation.Run);
     [UnityTest] public IEnumerator PizzaMenu()=>Run(PizzaMenuValidation.Run);
     [UnityTest] public IEnumerator CityGeneration()=>Run(CityGenerationValidation.RunBasic);
+    [UnityTest] public IEnumerator CityNetwork()=>Run(CityGenerationValidation.RunNetwork);
     [UnityTest] public IEnumerator CityCampaign()=>Run(CityCampaignValidation.Run);
     [UnityTest] public IEnumerator CityOrders()=>Run(CityOrderValidation.Run);
     [UnityTest] public IEnumerator PrefabScreens()=>Run(ScreenPrefabValidation.Run);

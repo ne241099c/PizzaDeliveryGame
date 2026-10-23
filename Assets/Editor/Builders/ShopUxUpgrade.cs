@@ -13,6 +13,27 @@ using UnityEngine.UI;
 public static class ShopUxUpgrade
 {
     private static RectTransform Part(SerializedObject owner,string field)=>(RectTransform)owner.FindProperty(field).objectReferenceValue;
+    /// <summary>Replaces the dispatch step guide with the hold-to-fast-forward button, adds the road tip, and removes the
+    /// order list's drag hint. Only those parts of BusinessView.prefab change; a copy is kept in Library/PrefabBackups.</summary>
+    public static string ApplyDispatchControls()
+    {
+        if(Application.isPlaying)throw new InvalidOperationException("Exit Play first.");
+        const string path="Assets/Prefabs/UI/BusinessView.prefab";
+        string backup="Library/PrefabBackups/DispatchControls-"+DateTime.Now.ToString("yyyyMMdd-HHmmss");
+        Directory.CreateDirectory(backup);File.Copy(path,backup+"/BusinessView.prefab",true);
+        var root=PrefabUtility.LoadPrefabContents(path);var removed=new List<string>();
+        try
+        {
+            var view=root.GetComponent<BusinessView>();var so=new SerializedObject(view);
+            var dispatch=Part(so,"dispatch");
+            var steps=dispatch.Find("Steps");if(steps!=null){Object.DestroyImmediate(steps.gameObject);removed.Add("Steps");}
+            var hint=Part(so,"dispatchOrderContent").parent.parent.Find("Hint");if(hint!=null){Object.DestroyImmediate(hint.gameObject);removed.Add("Orders/Hint");}
+            if(so.FindProperty("fastForwardButton").objectReferenceValue==null)view.BuildDispatchExtras();
+            PrefabUtility.SaveAsPrefabAsset(root,path);
+        }
+        finally{PrefabUtility.UnloadPrefabContents(root);}
+        return "Removed "+string.Join(", ",removed)+"; fast-forward and road tip present. Original prefab: "+backup;
+    }
     public static string ApplyPlanningUpgrade()
     {
         if(Application.isPlaying)throw new InvalidOperationException("Exit Play first.");

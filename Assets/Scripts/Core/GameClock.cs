@@ -10,6 +10,7 @@ public sealed class GameClock : MonoBehaviour
     [SerializeField, Min(1f)] private float businessDuration = 180f;
     [SerializeField, Min(0.01f)] private float travelTimeMultiplier = 5f;
     [SerializeField, Range(0.01f, 1f), Tooltip("配達指示画面を開いている間の進行倍率。調理・配達・期限を同じ倍率で進めます。") ] private float planningTimeRate = .1f;
+    [SerializeField, Min(1f), Tooltip("配達指示画面の早送りボタンを押している間の進行倍率（実時間に対して）。") ] private float fastForwardRate = 4f;
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool automaticTick = true;
 
@@ -22,10 +23,15 @@ public sealed class GameClock : MonoBehaviour
     public float TravelTimeMultiplier => travelTimeMultiplier;
     public bool IsPlanning { get; set; }
     public float PlanningTimeRate=>Mathf.Clamp(planningTimeRate,.01f,1f);
+    /// <summary>Held by the dispatch board's fast-forward button; wins over the slow planning rate while open.</summary>
+    public bool FastForward { get; set; }
+    public float FastForwardRate=>Mathf.Max(1f,fastForwardRate);
+    /// <summary>How fast business time runs against real time right now.</summary>
+    public float OpenRate=>FastForward?FastForwardRate:IsPlanning?PlanningTimeRate:1f;
     public bool AutomaticTick { get => automaticTick; set => automaticTick = value; }
     public void PrepareDay()
     {
-        Phase = DayPhase.BeforeOpening; ElapsedSeconds = 0; IsPlanning = false;
+        Phase = DayPhase.BeforeOpening; ElapsedSeconds = 0; IsPlanning = false; FastForward = false;
     }
     public event Action OnDayStarted;
     public event Action OnClosed;
@@ -50,7 +56,7 @@ public sealed class GameClock : MonoBehaviour
         if(realSeconds<0 || float.IsNaN(realSeconds) || float.IsInfinity(realSeconds))throw new ArgumentOutOfRangeException(nameof(realSeconds));
         if(Phase==DayPhase.Open)
         {
-            float openWall=Mathf.Min(realSeconds,RemainingSeconds/(IsPlanning?PlanningTimeRate:1f));
+            float openWall=Mathf.Min(realSeconds,RemainingSeconds/OpenRate);
             Advance(openWall);realSeconds=Mathf.Max(0,realSeconds-openWall);
         }
         if(Phase==DayPhase.Closed && realSeconds>0)Advance(realSeconds*ClosedPlaybackSpeed);
@@ -61,7 +67,7 @@ public sealed class GameClock : MonoBehaviour
     {
         if (realSeconds < 0 || float.IsNaN(realSeconds) || float.IsInfinity(realSeconds))
             throw new ArgumentOutOfRangeException(nameof(realSeconds));
-        float remaining = realSeconds * (Phase==DayPhase.Open && IsPlanning ? PlanningTimeRate : 1f);
+        float remaining = realSeconds * (Phase==DayPhase.Open ? OpenRate : 1f);
         if (Phase == DayPhase.Open)
         {
             float step = Mathf.Min(remaining, RemainingSeconds);
@@ -71,6 +77,7 @@ public sealed class GameClock : MonoBehaviour
             {
                 Phase = DayPhase.Closed;
                 IsPlanning = false;
+                FastForward = false;
                 OnClosed?.Invoke();
             }
         }
