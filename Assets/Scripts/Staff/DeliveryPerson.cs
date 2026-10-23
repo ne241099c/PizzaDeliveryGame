@@ -9,18 +9,20 @@ public enum CourierAbility { Driving, LocalKnowledge, Service, Endurance, Safety
 [Serializable]
 public class DeliveryPerson : ISerializationCallbackReceiver
 {
+    // Structural limit shared by selection, route suggestions and the Inspector.
+    public const int MaximumCapacity = 3;
     public string Name;
     public RecruitArchetype Archetype=RecruitArchetype.Standard;
     [SerializeField] private string id;
     [FormerlySerializedAs("Driving"),SerializeField,Range(0,1)] private float driving=.5f;
     [FormerlySerializedAs("SkillLevel"),FormerlySerializedAs("LocalKnowledge"),SerializeField,Range(0,1)] private float localKnowledge;
-    [FormerlySerializedAs("Capacity"),SerializeField,Range(1,2)] private int capacity=2;
+    [FormerlySerializedAs("Capacity"),SerializeField,Range(1,MaximumCapacity)] private int capacity=2;
     [FormerlySerializedAs("Service"),SerializeField,Range(0,1)] private float service=.5f;
     [FormerlySerializedAs("Endurance"),SerializeField,Range(0,1)] private float endurance=.5f;
     [FormerlySerializedAs("Safety"),SerializeField,Range(0,1)] private float safety=.5f;
     [SerializeField] private float[] potentials={1,1,1,1,1};
     [SerializeField] private float[] experience=new float[5];
-    [SerializeField,Range(1,2)] private int capacityPotential=2;
+    [SerializeField,Range(1,MaximumCapacity)] private int capacityPotential=MaximumCapacity;
     [SerializeField] private DeliveryStatus status;
     public bool HasPersistentId=>!string.IsNullOrWhiteSpace(id);
     public string Id => string.IsNullOrEmpty(id) ? id=Guid.NewGuid().ToString("N") : id;
@@ -62,14 +64,14 @@ public class DeliveryPerson : ISerializationCallbackReceiver
     public void SetPotential(CourierAbility ability,float value)
     {
         EnsureData();
-        if(ability==CourierAbility.Capacity)capacityPotential=Mathf.Clamp(Mathf.FloorToInt(value),1,2);
+        if(ability==CourierAbility.Capacity)capacityPotential=Mathf.Clamp(Mathf.FloorToInt(value),1,MaximumCapacity);
         else potentials[(int)ability]=Mathf.Clamp01(value);
         SetAbility(ability,Ability(ability));if(ability!=CourierAbility.Capacity && Ability(ability)>=Potential(ability))experience[(int)ability]=0;
     }
     public void SetExperience(CourierAbility ability,float value)
     {EnsureData();if(ability!=CourierAbility.Capacity)experience[(int)ability]=Ability(ability)>=Potential(ability)?0:Mathf.Max(0,value);}
     public void InitializePotentials(float bonus)
-    {for(int i=0;i<5;i++)SetPotential((CourierAbility)i,Ability((CourierAbility)i)+bonus);SetPotential(CourierAbility.Capacity,2);}
+    {for(int i=0;i<5;i++)SetPotential((CourierAbility)i,Ability((CourierAbility)i)+bonus);SetPotential(CourierAbility.Capacity,MaximumCapacity);}
     public DeliveryPerson Clone() { _=Id;return JsonUtility.FromJson<DeliveryPerson>(JsonUtility.ToJson(this)); }
     private void EnsureData()
     {
@@ -80,7 +82,7 @@ public class DeliveryPerson : ISerializationCallbackReceiver
     public void OnAfterDeserialize()
     {
         EnsureData();
-        capacityPotential=Mathf.Clamp(capacityPotential,1,2);
+        capacityPotential=Mathf.Clamp(capacityPotential,1,MaximumCapacity);
         for(int i=0;i<6;i++)SetPotential((CourierAbility)i,Potential((CourierAbility)i));
     }
     public DeliveryPerson(string name,float driving,float knowledge,int capacity,float service,float endurance,float safety):this(name,knowledge)

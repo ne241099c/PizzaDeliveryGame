@@ -9,7 +9,7 @@ public class CourierRoster : MonoBehaviour
     [SerializeField] private GameClock clock;
     [SerializeField] private List<DeliveryPerson> deliveryPeople=new()
     {
-        new DeliveryPerson("Aoi",0.6f,0.6f,2,0.8f,0.7f,0.8f),
+        new DeliveryPerson("Aoi",0.6f,0.6f,3,0.8f,0.7f,0.8f),
         new DeliveryPerson("Ren",0.5f,0.3f,2,0.5f,0.9f,0.4f)
     };
     [SerializeField,Range(0,1)] private float initialPotentialBonus=.25f;
@@ -36,7 +36,13 @@ public class CourierRoster : MonoBehaviour
         if(SelectedPerson==person)ClearSelection();
         return true;
     }
-    public void RestoreRoster(IEnumerable<DeliveryPerson> people){deliveryPeople=new List<DeliveryPerson>(people);ResetDailyState();}
+    public void RestoreRoster(IEnumerable<DeliveryPerson> people)
+    {
+        deliveryPeople=new List<DeliveryPerson>(people);
+        // Existing one/two-box couriers keep their ability; training can now unlock a third box.
+        foreach(var person in deliveryPeople)person.SetPotential(CourierAbility.Capacity,DeliveryPerson.MaximumCapacity);
+        ResetDailyState();
+    }
     public void ResetToInitialRoster(){deliveryPeople=startingRoster.ConvertAll(Copy);ResetDailyState();}
     public void ResetDailyState()
     {

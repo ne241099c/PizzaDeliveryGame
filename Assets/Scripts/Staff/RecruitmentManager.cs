@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>A kitchen staff candidate (内勤). Separate from courier applicants so courier generation is unchanged.</summary>
 public sealed class KitchenApplicant
@@ -46,7 +47,8 @@ public sealed class RecruitmentManager : MonoBehaviour
     [SerializeField] private Vector2 newcomerPotential=new(.3f,.5f);
     [SerializeField] private Vector2 experiencedPotential=new(.05f,.15f);
     [SerializeField] private Vector2 standardPotential=new(.15f,.3f);
-    [SerializeField,Range(0,1)] private float newcomerCapacityPotentialTwo=.7f;
+    [FormerlySerializedAs("newcomerCapacityPotentialTwo"),SerializeField,Range(0,1)] private float newcomerCapacityPotentialThree=.7f;
+    [SerializeField,Range(1,DeliveryPerson.MaximumCapacity)] private int capacityGrowthLimit=DeliveryPerson.MaximumCapacity;
     [SerializeField,Range(0,1)] private float experiencedCapacityTwo=.6f;
     [SerializeField,Min(0)] private float potentialHiringFactor=400;
     [SerializeField] private Vector2 baselineRange = new(.3f,.7f);
@@ -101,7 +103,7 @@ public sealed class RecruitmentManager : MonoBehaviour
         int capacity=type==RecruitArchetype.Newcomer?smallCapacity:random.NextDouble()<(type==RecruitArchetype.Experienced?experiencedCapacityTwo:twoOrderProbability)?largeCapacity:smallCapacity;
         var person=new DeliveryPerson(name,skills[0],skills[1],capacity,skills[2],skills[3],skills[4]){Archetype=type};
         for(int i=0;i<5;i++)person.SetPotential((CourierAbility)i,skills[i]+Range(potential));
-        person.SetPotential(CourierAbility.Capacity,type==RecruitArchetype.Newcomer?(random.NextDouble()<newcomerCapacityPotentialTwo?largeCapacity:smallCapacity):largeCapacity);
+        person.SetPotential(CourierAbility.Capacity,type==RecruitArchetype.Newcomer?(random.NextDouble()<newcomerCapacityPotentialThree?capacityGrowthLimit:smallCapacity):capacityGrowthLimit);
         return new Applicant(person,baseline,strong,weak);
     }
     public void RestoreApplicants(IEnumerable<Applicant> restored)

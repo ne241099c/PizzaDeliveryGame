@@ -53,7 +53,7 @@ public static partial class M3Validation
         finally {spawner.SetPromiseSeconds(previousPromise);}
         var minato=new DeliveryPerson("Minato",.8f,.9f,1,.4f,.6f,.7f);
         check(minato.Capacity==1 && !minato.CanCarry(2),"M4-4 Minato cannot carry two");
-        check(roster[0].Capacity==2 && roster[0].CanCarry(2),"M4-4 Aoi can carry two");
+        check(roster[0].Capacity==3 && roster[0].CanCarry(3),"Aoi begins with three-box capacity");
         check(roster[0].CanCarry(1),"M4-4 Minato single delivery");
         check(!roster[1].CanCarry(0),"M4-4 empty dispatch rejected");
         var batchOrders=new[]{M7Validation.ReadyOrder("Goal1","A",0,60),M7Validation.ReadyOrder("Goal2","B",0,60)};
@@ -156,7 +156,7 @@ public static partial class M3Validation
         finally {UnityEngine.Object.DestroyImmediate(rosterFixture);}
         var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlanner>();
         check(planner.ResultSummary.Contains("Reputation:"),"M4-8 result includes reputation");
-        check(planner.ResultSummary.Contains("Aoi / Load 2"),"M4-8 result includes capacity");
+        check(planner.ResultSummary.Contains("Aoi / Load 3"),"M4-8 result includes capacity");
         check(planner.ResultSummary.Contains("Stamina"),"M4-8 result includes remaining stamina");
         near(UnityEngine.Object.FindFirstObjectByType<ReputationManager>().Value,50,"M4-8 fresh day reputation reset");
         check(roster.All(p=>p.CurrentStamina==1 && p.IsAvailable && p.CurrentTrip==null),"M4-8 fresh day stamina and availability reset");

@@ -51,8 +51,7 @@ public sealed class DaySimulationSettings : MonoBehaviour
     public CourierAbility? PreferredTrainingAbility(DeliveryPerson person)
     {
         foreach (var ability in trainingPriority)
-            if ((ability != CourierAbility.Capacity || person.Capacity == 1)
-                && person.Ability(ability) < person.Potential(ability)) return ability;
+            if (person.Ability(ability) < person.Potential(ability)) return ability;
         return null;
     }
     public bool BatchDispatch => batchDispatch;

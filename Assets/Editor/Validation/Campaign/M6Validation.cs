@@ -205,7 +205,9 @@ public static partial class M6Validation
         trainee.SetPotential(CourierAbility.Driving,trainee.Driving);
         Check(settings.PreferredTrainingAbility(trainee)==CourierAbility.Capacity,"capacity one after capped driving");
         trainee.Capacity=2;
-        Check(settings.PreferredTrainingAbility(trainee)==CourierAbility.Safety,"skip capacity two");
+        Check(settings.PreferredTrainingAbility(trainee)==CourierAbility.Capacity,"capacity two can train a third box");
+        trainee.Capacity=3;
+        Check(settings.PreferredTrainingAbility(trainee)==CourierAbility.Safety,"skip capped capacity three");
         trainee.SetPotential(CourierAbility.Safety,trainee.Safety);
         Check(settings.PreferredTrainingAbility(trainee)==CourierAbility.Service,"service follows safety");
         trainee.SetPotential(CourierAbility.Service,trainee.Service);

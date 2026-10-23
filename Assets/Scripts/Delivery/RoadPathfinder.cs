@@ -67,10 +67,9 @@ public static class RoadPathfinder
 
     public static RouteSuggestion Suggest(MapManager map, IReadOnlyList<Order> orders, DeliveryPerson person)
     {
-        if (!map.IsReady || person == null || !person.IsAvailable || orders.Count == 0 || orders.Count > 2
+        if (!map.IsReady || person == null || !person.IsAvailable || orders.Count == 0 || orders.Count > DeliveryPerson.MaximumCapacity
             || orders.Any(o => o == null || !map.HasNode(o.DestinationNodeId))) return null;
-        var sequences = new List<string[]> { orders.Select(o => o.DestinationNodeId).ToArray() };
-        if (orders.Count == 2) sequences.Add(sequences[0].Reverse().ToArray());
+        var sequences = DestinationSequences(orders.Select(o => o.DestinationNodeId).ToArray());
         RouteSuggestion best = null;
         foreach (string[] sequence in sequences)
         {
@@ -90,6 +89,15 @@ public static class RoadPathfinder
             if (best == null || total < best.TotalTime) best = new RouteSuggestion(path, total);
         }
         return best;
+    }
+
+    // At most 3! = 6 sequences. Every order position is considered, including a distinct middle stop.
+    private static IEnumerable<string[]> DestinationSequences(string[] destinations)
+    {
+        if(destinations.Length==0){yield return Array.Empty<string>();yield break;}
+        for(int i=0;i<destinations.Length;i++)
+            foreach(var rest in DestinationSequences(destinations.Where((_,index)=>index!=i).ToArray()))
+                yield return new[]{destinations[i]}.Concat(rest).ToArray();
     }
 
     /// <summary>Sum of independent store-to-customer round trips, with the same courier and road costs.</summary>

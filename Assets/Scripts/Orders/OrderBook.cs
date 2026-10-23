@@ -44,18 +44,20 @@ public class OrderBook : MonoBehaviour
         SelectionChanged?.Invoke();
     }
     /// <summary>Ready (boxed) and still inside the late-acceptance window.</summary>
-    public bool CanSelect(Order order)
+    public bool CanSelect(Order order)=>CanReserve(order) && order.IsReady;
+    /// <summary>Pending, unexpired tickets may be assigned before their pizza has finished cooking.</summary>
+    public bool CanReserve(Order order)
     {
         if(score==null)score=FindFirstObjectByType<ScoreManager>();
-        return Contains(order) && order.IsReady && clock.ElapsedSeconds<score.CancellationAt(order);
+        return Contains(order) && clock.ElapsedSeconds<score.CancellationAt(order);
     }
     public bool SelectOnly(Order order)=>SelectForDispatch(new[]{order});
-    /// <summary>One or two different ready orders, while the shop is open.</summary>
+    /// <summary>Up to three different tickets, including cooking reservations, while the shop is open.</summary>
     public bool SelectForDispatch(IEnumerable<Order> selection)
     {
         var chosen=selection?.ToArray();
-        if(clock.Phase!=DayPhase.Open || chosen==null || chosen.Length<1 || chosen.Length>2)return false;
-        if(chosen.Distinct().Count()!=chosen.Length || chosen.Any(o=>!CanSelect(o)))return false;
+        if(clock.Phase!=DayPhase.Open || chosen==null || chosen.Length<1 || chosen.Length>DeliveryPerson.MaximumCapacity)return false;
+        if(chosen.Distinct().Count()!=chosen.Length || chosen.Any(o=>!CanReserve(o)))return false;
         selectedOrders.Clear();
         selectedOrders.AddRange(chosen);
         SelectionChanged?.Invoke();
