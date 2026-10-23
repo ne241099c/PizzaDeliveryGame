@@ -42,6 +42,8 @@ public sealed class ShopHand : MonoBehaviour
     private readonly List<DropZone> zones=new();
     private readonly List<RaycastResult> hits=new();
     public DragPayload Held {get;private set;}
+    private int cancelledFrame=-1;
+    public bool CancelledThisFrame=>cancelledFrame==Time.frameCount;
     public event Action<DragPayload> Released;
     public void Init(RectTransform dragLayer)
     {
@@ -50,6 +52,8 @@ public sealed class ShopHand : MonoBehaviour
         var shadow=UiKit.Stretch(ghost,"Shadow",8,14,-8,-14);ghostShadow=shadow.gameObject.AddComponent<Image>();ghostShadow.color=new Color(0,0,0,.22f);ghostShadow.raycastTarget=false;ghostShadow.preserveAspect=true;
         ghostImage=UiKit.Stretch(ghost,"Item").gameObject.AddComponent<Image>();ghostImage.raycastTarget=false;ghostImage.preserveAspect=true;
         ghost.gameObject.SetActive(false);
+        // BuildKitchen/BuildDispatch create fixed zones before the hand exists. Later station zones register themselves.
+        foreach(var zone in layer.parent.GetComponentsInChildren<DropZone>(true))Register(zone);
     }
     private void OnDestroy(){if(Instance==this)Instance=null;}
     public void Register(DropZone zone){if(!zones.Contains(zone))zones.Add(zone);}
@@ -60,8 +64,9 @@ public sealed class ShopHand : MonoBehaviour
     /// <summary>Screen-position versions, used for things picked up from the world map (pins).</summary>
     public void BeginAt(DragPayload payload,Vector2 screen,Camera eventCamera=null)
     {
+        if(payload.Job!=null)UnityEngine.Object.FindFirstObjectByType<CookingManager>()?.Touch(payload.Job);
         Held=payload;ghost.gameObject.SetActive(true);ghost.SetAsLastSibling();ghost.sizeDelta=payload.Size;
-        var sprite=UiKit.Art(payload.Sprite);ghostImage.sprite=sprite;ghostShadow.sprite=sprite;ghostImage.color=Color.white;MoveAt(screen,eventCamera);
+        var sprite=UiKit.Art(payload.Sprite);ghostImage.sprite=sprite;ghostShadow.sprite=sprite;ghostImage.color=payload.Job!=null && payload.Job.Burnt?UiKit.T.line:Color.white;MoveAt(screen,eventCamera);
     }
     public void MoveAt(Vector2 screen,Camera eventCamera=null)
     {
@@ -78,7 +83,7 @@ public sealed class ShopHand : MonoBehaviour
         if(over!=null && over.Accepts!=null && over.Accepts(payload))over.Dropped?.Invoke(payload);
         Released?.Invoke(payload);
     }
-    public void Cancel(){Held=null;if(ghost!=null)ghost.gameObject.SetActive(false);foreach(var zone in zones)if(zone!=null)zone.SetGlow(false,false);}
+    public void Cancel(){if(Held!=null)cancelledFrame=Time.frameCount;Held=null;if(ghost!=null)ghost.gameObject.SetActive(false);foreach(var zone in zones)if(zone!=null)zone.SetGlow(false,false);}
     private DropZone ZoneAt(Vector2 screen)
     {
         if(EventSystem.current==null)return null;hits.Clear();
@@ -88,6 +93,8 @@ public sealed class ShopHand : MonoBehaviour
     }
     private void Update()
     {
+        if(Held?.Job!=null)UnityEngine.Object.FindFirstObjectByType<CookingManager>()?.Touch(Held.Job);
+        if(Held!=null && Keyboard.current!=null && Keyboard.current.escapeKey.wasPressedThisFrame)Cancel();
         if(Held!=null && Mouse.current!=null && Mouse.current.rightButton.wasPressedThisFrame)Cancel();
     }
 }

@@ -156,7 +156,9 @@ public sealed partial class BusinessView : MonoBehaviour
         card.Find("Deadline").GetComponent<UiBar>().Set(fraction,-1,T.DeadlineColor(fraction));
         string text;Color fill,ink=Color.white;
         var job=cooking.JobFor(order);
-        if(left<=0){text="遅れ・減点で受付中";fill=T.berry;}
+        if(cooking.IsRedo(order)){text=ShopStrings.Redo;fill=T.cheese;ink=T.line;}
+        else if(job!=null && job.NeedsDecision){text=ShopStrings.FailureWaiting;fill=T.berry;}
+        else if(left<=0){text="遅れ・減点で受付中";fill=T.berry;}
         else if(urgent){text="もうすぐ目安";fill=T.berry;}
         else if(order.IsReady){text=handover.IsBagged(order)?(handover.Holder(order)?.Name+" のバッグ"):"梱包済み";fill=T.basil;}
         else if(job==null){text="順番待ち";fill=T.disabled;ink=T.line;}

@@ -58,6 +58,7 @@ public sealed class TitleMenuUI : MonoBehaviour
     private void Update()
     {
         if(Keyboard.current==null || !Keyboard.current.escapeKey.wasPressedThisFrame)return;
+        if(ShopHand.Instance!=null && (ShopHand.Instance.Held!=null || ShopHand.Instance.CancelledThisFrame)){ShopHand.Instance.Cancel();return;}
         if(HelpOpen)CloseHelp();else if(ConfirmationOpen){UIVisibility.Set(confirmation.gameObject,false);UIVisibility.Set(menu.gameObject,true);}else if(MenuOpen)Resume();else ShowMenu();
     }
     private void ScreenChanged(ScreenId id)

@@ -76,7 +76,7 @@ public sealed class SettlementView : MonoBehaviour
         if(campaign.IsBankrupt){title.text=$"{campaign.DayNumber}日目 閉店です…";UiKit.SetBadge(titleBadge,"所持金がマイナス",T.berry,Color.white);}else UiKit.SetBadge(titleBadge,ShopStrings.Ended,T.paper,T.line);
         var save=FindFirstObjectByType<CampaignSaveManager>();
         if(!campaign.IsBankrupt && save!=null && save.NewRecords.Count>0)UiKit.SetBadge(titleBadge,"新記録！ "+string.Join("・",save.NewRecords),T.cheese,T.line);
-        receipt=UiKit.Card(root,"Receipt",120,204,800,660,T.paper,16,8,3);
+        receipt=UiKit.Card(root,"Receipt",120,204,800,706,T.paper,16,8,3);
         int tips=trips.Sum(t=>t.Deliveries.Where(d=>d.Resolved).Sum(d=>score.TipForArrival(d.Order,d.ArrivesAt,t.ServiceAtDispatch)));
         decimal quality=l.QualityBonus,basePoints=l.Revenue-tips-quality;
         float y=26;
@@ -91,6 +91,7 @@ public sealed class SettlementView : MonoBehaviour
         Row(receipt,ref y,1,"固定費","",-(l.FixedCosts-l.EquipmentMaintenance));
         Row(receipt,ref y,1,"設備の維持費","",-l.EquipmentMaintenance);
         Row(receipt,ref y,1,"事故の修理費",stats.AccidentCount>0?$"{stats.AccidentCount}回":"",-l.Repairs);
+        if(l.WastedPizzas>0)Row(receipt,ref y,1,"廃棄",$"{l.WastedPizzas}枚",-l.Waste);
         var line=UiKit.Box(receipt,"Total",36,y+4,728,3);UiKit.Fill(line,T.line,0);rows.Add((line,2,0,null,null));
         var profitLabel=UiKit.Label(receipt,"ProfitName","今日の損益",44,y+40,300,60,30,T.line,FontRole.Black);
         var profit=UiKit.Label(receipt,"Profit","",300,y+16,420,96,T.titleSize,l.Profit>=0?T.basil:T.berry,FontRole.Display,TextAlignmentOptions.MidlineRight);
@@ -99,7 +100,7 @@ public sealed class SettlementView : MonoBehaviour
         var cash=UiKit.Label(receipt,"Cash",$"所持金  <color={UiKit.Html(T.inkSub)}>{UiKit.Yen(economy.OpeningCash)}</color>  →  {UiKit.Yen(economy.Cash)}",44,y+136,720,60,32,T.line,FontRole.Display);
         rows.Add((cash.rectTransform,2,0,null,null));
         // zigzag bottom
-        for(int i=0;i<26;i++){var z=UiKit.Box(receipt,"Zig"+i,10+i*30,650,22,22);z.localRotation=Quaternion.Euler(0,0,45);UiKit.Fill(z,T.paper,0);}
+        for(int i=0;i<26;i++){var z=UiKit.Box(receipt,"Zig"+i,10+i*30,696,22,22);z.localRotation=Quaternion.Euler(0,0,45);UiKit.Fill(z,T.paper,0);}
         right=UiKit.Box(root,"Right",980,204,820,640);
         BuildGrowth();BuildQuality();BuildAccidents();
         var previousCityNotice=root.Find("CityTomorrow");if(previousCityNotice!=null)Destroy(previousCityNotice.gameObject);

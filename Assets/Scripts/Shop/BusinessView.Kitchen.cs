@@ -25,13 +25,16 @@ public sealed class PizzaVisual
         var stage=job.Stage;bool staffAssembling=job.Worker==PizzaWorker.Staff && stage==PizzaStage.Topping && staffFraction<1;
         int visible=staffAssembling?(staffFraction<.25f?1:staffFraction<.55f?2:4):stage switch{PizzaStage.Ticket=>0,PizzaStage.Dough=>1,PizzaStage.Sauce=>2,PizzaStage.Cheese=>3,_=>4};
         dough.enabled=visible>=1;
-        bool hand=job.Worker==PizzaWorker.Player;
+        bool hand=job.Worker==PizzaWorker.Player && stage<=PizzaStage.Topping;
         sauce.enabled=visible>=2 && !hand;Blobs.gameObject.SetActive(hand && visible>=1);
         cheese.enabled=visible>=3;
         topping.enabled=job.AddedToppings.Count>0 || visible>=4 && job.AddedTopping.HasValue || staffAssembling && visible>=4;
         var t=job.AddedTopping??job.Order.RequiredTopping;topping.sprite=UiKit.Art(t==Topping.Pepperoni?"pizza_pepperoni":t==Topping.Shrimp?"pizza_shrimp":"pizza_basil");
         secondTopping.enabled=visible>=4 && job.AddedToppings.Contains(Topping.Squid);
         bool baked=stage>=PizzaStage.Baked;var warm=new Color(.93f,.80f,.62f);dough.color=baked?warm:Color.white;
+        var cookedTint=job.Burnt?Color.Lerp(Color.white,UiKit.T.line,.8f):Color.white;
+        sauce.color=cheese.color=topping.color=secondTopping.color=cookedTint;
+        if(job.Burnt)dough.color=Color.Lerp(warm,UiKit.T.line,.8f);
         burnt.enabled=job.Burnt;
     }
     public void ClearBlobs(){for(int i=Blobs.childCount-1;i>=0;i--)Object.Destroy(Blobs.GetChild(i).gameObject);}
@@ -50,7 +53,7 @@ public sealed partial class BusinessView
     }
     private readonly List<BenchView> benches=new();
     private readonly List<OvenView> ovens=new();
-    private RectTransform kitchenZone,benchArea,ovenArea,shelf;private TextMeshProUGUI shelfTitle;
+    private RectTransform kitchenZone,benchArea,ovenArea,shelf,shelfContent;private TextMeshProUGUI shelfTitle;
     private string shelfSignature="";
     private static readonly (string sprite,string label,DragKind kind,Topping topping)[] Trays=
     {
@@ -78,6 +81,11 @@ public sealed partial class BusinessView
         shelf=UiKit.Card(kitchenZone,"WarmingShelf",1100,330,820,190,T.plaster,0,8,0);
         for(int i=0;i<2;i++)UiKit.Fill(UiKit.Box(shelf,"Rail"+i,20,60+i*70,780,6),T.steel,3);
         shelfTitle=UiKit.Label(shelf,"Title","保温棚(焼き上がり 0枚)",20,156,780,30,18,T.inkSub,FontRole.Black,TextAlignmentOptions.Center);
+        var viewport=UiKit.Box(shelf,"Viewport",12,4,796,150);viewport.gameObject.AddComponent<RectMask2D>();
+        var shelfHit=viewport.gameObject.AddComponent<Image>();shelfHit.color=Color.clear;
+        shelfContent=UiKit.Box(viewport,"Content",0,0,796,150);
+        var shelfScroll=viewport.gameObject.AddComponent<ScrollRect>();shelfScroll.viewport=viewport;shelfScroll.content=shelfContent;shelfScroll.horizontal=true;shelfScroll.vertical=false;shelfScroll.movementType=ScrollRect.MovementType.Clamped;
+        BuildTrash();
         benchArea=UiKit.Box(kitchenZone,"Benches",40,560,1070,420);ovenArea=UiKit.Box(kitchenZone,"Ovens",1140,560,760,420);
         // Handing boxes to couriers happens only on the dispatch board (2026-10-23 request).
     }
@@ -98,7 +106,7 @@ public sealed partial class BusinessView
         float size=Mathf.Min(250,w-40);v.Pizza=PizzaVisual.Make(v.Root,"Pizza",(w-size)/2,(330-size)/2+10,size);
         var hit=v.Pizza.Root.gameObject.AddComponent<Image>();hit.color=new Color(0,0,0,0);
         var source=v.Pizza.Root.gameObject.AddComponent<DragSource>();int b=index;
-        source.Payload=()=>{var j=cooking.BenchJob(b);return j!=null && j.Worker==PizzaWorker.Player && j.Stage==PizzaStage.Topping?new DragPayload{Kind=DragKind.Pizza,Job=j,Sprite="pizza_base",Size=new Vector2(180,180)}:null;};
+        source.Payload=()=>{var j=cooking.BenchJob(b);return j!=null && j.Worker==PizzaWorker.Player && j.Stage>=PizzaStage.Dough?new DragPayload{Kind=DragKind.Pizza,Job=j,Sprite="pizza_base",Size=new Vector2(180,180)}:null;};
         source.Clicked=()=>ClickBenchPizza(b);
         v.Empty=UiKit.Box(v.Root,"Empty",w/2-120,110,240,110);UiKit.Dashed(v.Empty,T.steelShadow,12,8,3);
         UiKit.Label(v.Empty,"Text","伝票をここへ",0,0,240,110,22,T.steelShadow,FontRole.Black,TextAlignmentOptions.Center);
@@ -129,8 +137,8 @@ public sealed partial class BusinessView
         v.GaugeBar=UiKit.Bar(v.Gauge,"Bar",12,30,w-24,18,T.cheese);
         v.Band=UiKit.Box(v.GaugeBar.transform,"Band",0,0,10,18);UiKit.Fill(v.Band,T.basil,4);
         var zone=v.Root.gameObject.AddComponent<DropZone>();zone.Glow=g;int o=index;
-        zone.Accepts=p=>p.Kind==DragKind.Pizza && p.Job!=null && p.Job.Stage==PizzaStage.Topping && p.Job.Worker==PizzaWorker.Player;
-        zone.Dropped=p=>{if(!cooking.PutInOven(p.Job.Bench,o))Toast("窯に入れられませんでした。",T.berry);};
+        zone.Accepts=p=>p.Kind==DragKind.Pizza && p.Job!=null && (p.Job.Stage==PizzaStage.Topping || p.Job.Undercooked) && p.Job.Worker==PizzaWorker.Player;
+        zone.Dropped=p=>{if(!(p.Job.Undercooked?cooking.ResumeBaking(p.Job,o):cooking.PutInOven(p.Job.Bench,o)))Toast("窯に入れられませんでした。",T.berry);};
         var click=v.Root.gameObject.AddComponent<DragSource>();click.Clicked=()=>ClickOven(o);
         ShopHand.Instance?.Register(zone);return v;
     }
@@ -164,7 +172,7 @@ public sealed partial class BusinessView
     private static bool Inside(int x,int y){float dx=x-7.5f,dy=y-7.5f;return dx*dx+dy*dy<=7.6f*7.6f;}
     private void Trace(BenchView v,DragPayload p,Vector2 screen)
     {
-        if(p.Kind!=DragKind.Ladle)return;var blobs=v.Pizza.Blobs;
+        if(p.Kind!=DragKind.Ladle)return;cooking.Touch(cooking.BenchJob(v.Index));var blobs=v.Pizza.Blobs;
         if(!RectTransformUtility.ScreenPointToLocalPointInRectangle(blobs,screen,null,out var local))return;
         var rect=blobs.rect;float u=(local.x-rect.xMin)/rect.width,w=(local.y-rect.yMin)/rect.height;if(u<0||u>1||w<0||w>1)return;
         int cx=Mathf.FloorToInt(u*16),cy=Mathf.FloorToInt(w*16);bool added=false;
@@ -259,7 +267,7 @@ public sealed partial class BusinessView
         }
         // The shelf stocks packed boxes (and any baked pizza waiting for a free box slot).
         var boxes=handover.RackOrders.ToList();var unboxed=cooking.Shelf.Concat(cooking.Jobs.Where(j=>j.Stage==PizzaStage.Boxed)).ToList();
-        string sig=string.Join(",",boxes.Select(o=>o.Id))+"|"+string.Join(",",unboxed.Select(j=>j.Order.Id+j.Stage));
+        string sig=string.Join(",",boxes.Select(o=>o.Id))+"|"+string.Join(",",unboxed.Select(j=>j.Order.Id+j.Stage+j.NeedsDecision+j.Undercooked));
         if(sig!=shelfSignature){shelfSignature=sig;RebuildShelf(boxes,unboxed);}
         shelfTitle.text=boxes.Count==0?"梱包済みのピザがここに並びます":$"梱包済み {boxes.Count} / {cooking.RackCapacity} ・ 配達指示でレーンに入れます（クリックで移動）";
         foreach(var item in shelfItems)
@@ -273,24 +281,48 @@ public sealed partial class BusinessView
     private readonly List<RectTransform> shelfItems=new();
     private void RebuildShelf(List<Order> boxes,List<PizzaJob> waiting)
     {
-        foreach(var item in shelfItems)Destroy(item.gameObject);shelfItems.Clear();
-        int shown=0;
-        foreach(var order in boxes.Take(cooking.RackCapacity))
+        foreach(var item in shelfItems)Destroy(item.gameObject);shelfItems.Clear();float x=0;
+        foreach(var order in boxes)
         {
-            var slot=UiKit.Box(shelf,"Box_"+Number(order),20+shown*130,6,118,144);shelfItems.Add(slot);shown++;
+            var slot=UiKit.Box(shelfContent,"Box_"+Number(order),x,0,118,144);shelfItems.Add(slot);x+=130;
             var img=slot.gameObject.AddComponent<Image>();img.sprite=UiKit.Art("box_closed");img.preserveAspect=true;img.raycastTarget=true;
-            var number=UiKit.Label(slot,"Number","#"+Number(order),0,44,118,34,24,T.line,FontRole.Display,TextAlignmentOptions.Center);number.verticalAlignment=VerticalAlignmentOptions.Geometry;
+            UiKit.Label(slot,"Number","#"+Number(order),0,44,118,34,24,T.line,FontRole.Display,TextAlignmentOptions.Center);
             UiKit.Label(slot,"Stars",new string('★',Mathf.Max(1,order.Stars)),0,84,118,24,18,T.cheese,FontRole.Black,TextAlignmentOptions.Center);
-            UiKit.Bar(slot,"Deadline",10,120,98,14,T.basil);
+            UiKit.Bar(slot,"Deadline",10,12,98,12,T.basil);
             var source=slot.gameObject.AddComponent<DragSource>();
+            source.Payload=()=>new DragPayload{Kind=DragKind.Box,Order=order,Job=cooking.JobFor(order),Sprite="box_closed",Size=new Vector2(110,110)};
             source.Clicked=()=>ShowZone(ShopZone.Dispatch);
         }
         foreach(var job in waiting)
         {
-            if(shown>=6)break;var slot=UiKit.Box(shelf,"Waiting_"+Number(job.Order),20+shown*130,6,118,144);shelfItems.Add(slot);shown++;
-            var pizza=PizzaVisual.Make(slot,"Pizza",4,4,110);pizza.Show(job);
-            UiKit.Badge(slot,"Wait","空き待ち",8,116,T.cheese,T.line,28,16);
+            bool review=job.NeedsDecision || job.Undercooked;float width=review?380:118;
+            var slot=UiKit.Box(shelfContent,"Waiting_"+Number(job.Order),x,0,width,144);shelfItems.Add(slot);x+=width+12;
+            var pizza=PizzaVisual.Make(slot,"Pizza",4,12,110);pizza.Show(job);
+            var hit=pizza.Root.gameObject.AddComponent<Image>();hit.color=Color.clear;
+            var source=pizza.Root.gameObject.AddComponent<DragSource>();
+            source.Payload=()=>new DragPayload{Kind=DragKind.Pizza,Job=job,Order=job.Order,Sprite="pizza_base",Size=new Vector2(140,140)};
+            if(review)
+            {
+                var bubble=UiKit.Card(slot,"Failure",118,4,258,136,T.paper,12,3,2,job.Burnt?T.berry:T.cheese);
+                UiKit.Label(bubble,"Reason","#"+Number(job.Order)+" "+cooking.FailureReason(job),10,4,238,52,T.captionSize,T.line,FontRole.Black,TextAlignmentOptions.TopLeft,true);
+                UiKit.Button(bubble,"Serve",job.Undercooked?"窯に戻す":ShopStrings.ServeAsIs,StickerKind.Secondary,10,58,238,30,T.captionSize,()=>{if(job.Undercooked)cooking.ResumeBaking(job,0);else cooking.ServeAsIs(job);});
+                UiKit.Button(bubble,"Redo",ShopStrings.DiscardRedo,StickerKind.Primary,10,98,238,30,T.captionSize,()=>cooking.Discard(job));
+            }
+            else UiKit.Badge(slot,"Wait","空き待ち",8,116,T.cheese,T.line,28,16);
         }
+        shelfContent.sizeDelta=new Vector2(Mathf.Max(796,x),150);
+    }
+    private void BuildTrash()
+    {
+        var trash=UiKit.Card(kitchenZone,"Trash",40,940,400,104,T.paperDeep,12,4,3);
+        var glow=UiKit.Stretch(trash,"Glow",-5,-5,-5,-5);var g=UiKit.Fill(glow,T.cheese,16);g.enabled=false;glow.SetAsFirstSibling();
+        UiKit.Label(trash,"Title",ShopStrings.Trash+"  −"+UiKit.Yen(cooking.WasteCost),16,6,368,38,T.subheadingSize,T.line,FontRole.Black);
+        UiKit.Label(trash,"Hint",ShopStrings.TrashHint,16,46,368,42,T.captionSize,T.inkSub,FontRole.Bold);
+        var hit=trash.gameObject.AddComponent<Image>();hit.color=Color.clear;
+        var zone=trash.gameObject.AddComponent<DropZone>();zone.Glow=g;
+        PizzaJob Job(DragPayload p)=>p.Job??(p.Order!=null?cooking.JobFor(p.Order):null);
+        zone.Accepts=p=>p!=null && (p.Kind==DragKind.Pizza || p.Kind==DragKind.Box || p.Kind==DragKind.Bagged) && cooking.CanDiscard(Job(p));
+        zone.Dropped=p=>cooking.Discard(Job(p));ShopHand.Instance?.Register(zone);
     }
 
     // ---- couriers waiting at the counter (drop packed boxes on them) ----

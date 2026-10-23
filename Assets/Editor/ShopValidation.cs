@@ -17,7 +17,7 @@ public static class ShopValidation
         var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var list=Find<OrderListUI>();var cook=Find<CookingManager>();var spawner=Find<OrderSpawner>();
         var economy=Find<BusinessEconomy>();var roster=Find<DeliveryPersonSelector>();var handover=Find<HandoverManager>();var planner=Find<DeliveryPlannerUI>();
         var crew=Find<KitchenCrew>();var recruitment=Find<RecruitmentManager>();var facilities=Find<FacilityManager>();var flow=Find<DeliveryFlowController>();
-        bool tick=clock.AutomaticTick,spawning=spawner.enabled;clock.AutomaticTick=false;
+        int? cookingSeed=cook.SeedOverride;bool tick=clock.AutomaticTick,spawning=spawner.enabled;clock.AutomaticTick=false;
         try
         {
             // Generated control references must participate in Unity serialization (script reload).
@@ -97,14 +97,14 @@ public static class ShopValidation
             clock.Advance(1000);campaign.NewGame();
 
             // ---- 2026-10-23: orders waiting at opening, packing takes no time ----
-            spawner.enabled=true;campaign.StartBusiness();clock.Advance(.01f);
+            cook.SeedOverride=1;cook.ResetRandom();spawner.enabled=true;campaign.StartBusiness();clock.Advance(.01f);
             Check(list.OrderCount==3 && list.Orders.All(o=>o.SpawnedAt<.02f),"three orders are already waiting when the shop opens");
             Check(cook.PackSeconds==0 && Mathf.Abs(cook.CookSeconds-18)<.001f && Mathf.Abs(spawner.MinimumPromiseSeconds-(spawner.ShortestRoundTripSeconds("Goal2")*1.1f+cook.CookSeconds))<.001f,"packing takes no time and the promise minimum follows the 18s standard");
             clock.Advance(cook.StaffWorkSeconds(crew.People[0])+cook.BakeSeconds+.01f);
             Check(list.Orders.Count(o=>o.IsReady)==1 && handover.RackOrders.Count()==1,"the first pizza is packed and stocked on the shelf as it leaves the oven");
             spawner.enabled=false;clock.Advance(1000);campaign.NewGame();
         }
-        finally{clock.AutomaticTick=tick;spawner.enabled=spawning;}
+        finally{cook.SeedOverride=cookingSeed;cook.ResetRandom();clock.AutomaticTick=tick;spawner.enabled=spawning;}
         return $"PASS: {count} shop checks.";
     }
     private static void ValidateGrace(Action<bool,string> check)

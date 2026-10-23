@@ -118,6 +118,8 @@ public sealed partial class BusinessView
         if(handover.IsBagged(o)){var holder=handover.Holder(o);return (holder.Name,T.CourierColor(holder.Name),Color.white);}
         if(o.IsReady)return ("焼けた",T.basil,Color.white);
         var job=cooking.JobFor(o);
+        if(job!=null && job.NeedsDecision)return (ShopStrings.FailureWaiting,T.berry,Color.white);
+        if(job==null && cooking.IsRedo(o))return (ShopStrings.Redo,T.cheese,T.line);
         if(job==null)return ("調理待ち",T.disabled,T.line);
         if(job.QueuedForOven)return (cooking.StageCaption(o),T.cheese,T.line);
         if(job.Stage>=PizzaStage.Baking)return ("焼いている",T.cheese,T.line);

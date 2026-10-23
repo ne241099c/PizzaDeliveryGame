@@ -1,0 +1,26 @@
+{
+  "scope": "関連検証のみ。全検証・長時間シミュレーションは実行していない。",
+  "results": {
+    "recovery": "PASS: 37 kitchen recovery checks.",
+    "oven_queue": "PASS: 11 kitchen queue and delivery speed checks.",
+    "menu": "PASS: 25 pizza menu checks.",
+    "M7_quality": "PASS: 85 M7 checks.",
+    "shop": "PASS: 51 shop checks.",
+    "city_campaign": "PASS: 23 city campaign and save checks.",
+    "city_generation": "PASS: 13 city generation checks."
+  },
+  "total_checks": 250,
+  "ui_checks": 5,
+  "map_final": "23 + 13 passed after version-three migration; explicitly requires 5 districts and 12 addresses; existing real campaign remains readable",
+  "normal_save_status": "Review begin/end bytes matched, but entire-session baseline differs. File updated 11:28:14 during a gap in agent actions; user does not remember operating Unity. Cause unconfirmed; not restored. Current save backed up in Library/ReviewBackups/20261023-123909.",
+  "records_status": "Unchanged from entire-session baseline",
+  "session_before_hashes": {
+    "campaign.json": "4b5f15d6842d92634b2b03d6a5692e6a5ebe88518b05a5727dbc0f900b4f9989",
+    "records.json": "26a99d7fe565296b951a857da524a9ab4140f35e64dab13b9485633fc47cd7e1"
+  },
+  "current_hashes": {
+    "campaign.json": "4861db0e0e0948e1678d4a50f519fe901889b1a72e8abd2949c7de26c7a0f657",
+    "records.json": "26a99d7fe565296b951a857da524a9ab4140f35e64dab13b9485633fc47cd7e1"
+  },
+  "protected_backup": "Library/ReviewBackups/20261023-123909; current campaign and records match"
+}

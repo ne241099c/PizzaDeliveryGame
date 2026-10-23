@@ -52,7 +52,7 @@ public sealed class CampaignManager : MonoBehaviour
         if(IsBankrupt){saveGame?.DeleteSave();facilities?.NewGame();}
     }
     public string FinancialSummary => $"Day {DayNumber} / {(IsBankrupt ? "BANKRUPT - GAME OVER" : "SETTLEMENT")}\n"
-        +$"Revenue: {economy.Ledger.Revenue:F2}\nQuality bonus (included): {economy.Ledger.QualityBonus:F2}\nMaterials: -{economy.Ledger.Materials:F2}\nFuel: -{economy.Ledger.Fuel:F2}\nWages: -{economy.Ledger.Wages:F2}\nRepairs: -{economy.Ledger.Repairs:F2}\nFixed: -{economy.Ledger.FixedCosts:F2}\nEquipment maintenance (included): {economy.Ledger.EquipmentMaintenance:F2}\nFacility purchases (preparation): {economy.Ledger.FacilityPurchases:F2}\nProfit: {economy.Ledger.Profit:+0.00;-0.00;0.00}\n"
+        +$"Revenue: {economy.Ledger.Revenue:F2}\nQuality bonus (included): {economy.Ledger.QualityBonus:F2}\nMaterials: -{economy.Ledger.Materials:F2}\nWaste ({economy.Ledger.WastedPizzas}): -{economy.Ledger.Waste:F2}\nFuel: -{economy.Ledger.Fuel:F2}\nWages: -{economy.Ledger.Wages:F2}\nRepairs: -{economy.Ledger.Repairs:F2}\nFixed: -{economy.Ledger.FixedCosts:F2}\nEquipment maintenance (included): {economy.Ledger.EquipmentMaintenance:F2}\nFacility purchases (preparation): {economy.Ledger.FacilityPurchases:F2}\nProfit: {economy.Ledger.Profit:+0.00;-0.00;0.00}\n"
         +$"Preparation hiring/severance: -{economy.Ledger.PreparationCosts:F2}\nCash: {economy.OpeningCash:F2} -> {economy.Cash:F2}\n"
         +$"Total revenue: {TotalRevenue:F2} / Best day: {BestDailyRevenue:F2}\n"+progression.DailySummary+"\n";
     public void StartBusiness()
