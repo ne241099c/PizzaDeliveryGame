@@ -127,7 +127,7 @@ public static partial class M6Validation
             campaign.NewGame();economy.NewGame();aoi=roster.People[0];
             var legacy=save.Capture();decimal fee=training.Cost(aoi,CourierAbility.LocalKnowledge);
             legacy.training.Add(new TrainingAssignment{PersonId=aoi.Id,Ability=CourierAbility.LocalKnowledge,Fee=fee.ToString(System.Globalization.CultureInfo.InvariantCulture)});
-            legacy.people[0].Status=DeliveryStatus.Training;
+            typeof(DeliveryPerson).GetField("status",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).SetValue(legacy.people[0],DeliveryStatus.Training);
             legacy.cash=(economy.Cash-fee).ToString(System.Globalization.CultureInfo.InvariantCulture);
             legacy.preparationCosts=fee.ToString(System.Globalization.CultureInfo.InvariantCulture);
             Check(save.TryParse(JsonUtility.ToJson(legacy),out data,out reason),"old pending courier reservation validates: "+reason);

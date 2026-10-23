@@ -110,7 +110,20 @@ public sealed partial class BusinessView
     {
         if(roster.SelectedPerson==null || !roster.SelectedPerson.IsAvailable)
         {var withBag=roster.People.FirstOrDefault(p=>p.IsAvailable && handover.BagOf(p).Count>0);if(withBag!=null)handover.Select(withBag);}
-        FitMap();
+        string layout=DispatchLayout();var cam=Camera.main;
+        if(cam!=null && hasDispatchViewport && dispatchViewportLayout==layout)
+        {cam.orthographicSize=dispatchViewportZoom;cam.transform.position=dispatchViewportPosition;}
+        else FitMap();
+    }
+    private bool hasDispatchViewport;
+    private string dispatchViewportLayout;
+    private float dispatchViewportZoom;
+    private Vector3 dispatchViewportPosition;
+    private string DispatchLayout()=>map==null || !map.IsReady?null:string.Join("|",map.Nodes.Select(n=>n.Id+":"+n.Position.x.ToString("R",System.Globalization.CultureInfo.InvariantCulture)+","+n.Position.y.ToString("R",System.Globalization.CultureInfo.InvariantCulture)));
+    private void RememberDispatchViewport()
+    {
+        var cam=Camera.main;if(cam==null || !hasDispatchViewport || dispatchViewportLayout!=DispatchLayout())return;
+        dispatchViewportZoom=cam.orthographicSize;dispatchViewportPosition=cam.transform.position;
     }
     /// <summary>Fit the whole map into the area left free by the order list, the controls and the lanes.</summary>
     private float fittedMapZoom=40f;
@@ -122,6 +135,7 @@ public sealed partial class BusinessView
         float size=Mathf.Max((maxY-minY)/(2*(ft-fb)),(maxX-minX)/(2*aspect*(fr-fl)));cam.orthographicSize=size;fittedMapZoom=size;
         var centre=new Vector2((minX+maxX)/2,(minY+maxY)/2);var offset=new Vector2(((fl+fr)/2-.5f)*2*size*aspect,((fb+ft)/2-.5f)*2*size);
         cam.transform.position=new Vector3(centre.x-offset.x,centre.y-offset.y,cam.transform.position.z);
+        hasDispatchViewport=true;dispatchViewportLayout=DispatchLayout();RememberDispatchViewport();
     }
 
     // ---- routes: the lane's visit order, plus selected waypoint roads ----

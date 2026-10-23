@@ -10,6 +10,35 @@ using Object=UnityEngine.Object;
 /// <summary>Focused operations for scroll input, bag controls, route picking, queue display and state pins.</summary>
 public static class ShopUxValidation
 {
+    public static string RunViewport()
+    {
+        if(!Application.isPlaying)throw new InvalidOperationException("Play required.");
+        CampaignSaveManager.SessionSavingLocked=true;var save=Find<CampaignSaveManager>();using var guard=save.SuppressSaving();
+        var clock=Find<GameClock>();var map=Find<MapManager>();var business=Find<BusinessView>();var campaign=Find<CampaignManager>();
+        var originalSeed=map.SeedOverride;int count=0;
+        void Check(bool ok,string label){if(!ok)throw new Exception("Dispatch viewport: "+label);count++;}
+        bool Same(Vector3 a,Vector3 b)=>Vector3.Distance(a,b)<.0001f;
+        try
+        {
+            clock.AutomaticTick=false;Find<OrderSpawner>().enabled=false;campaign.NewGame();var data=save.Capture();campaign.StartBusiness();
+            business.ShowZone(ShopZone.Dispatch,true);var cam=Camera.main;float fitted=cam.orthographicSize;
+            cam.orthographicSize=fitted*.55f;cam.transform.position+=new Vector3(1.25f,-.75f,0);float zoom=cam.orthographicSize;Vector3 position=cam.transform.position;
+            business.ShowZone(ShopZone.Kitchen,true);business.ShowZone(ShopZone.Dispatch,true);
+            Check(Mathf.Abs(cam.orthographicSize-zoom)<.0001f,"kitchen round trip keeps zoom");Check(Same(cam.transform.position,position),"kitchen round trip keeps pan");
+            business.ShowZone(ShopZone.Dispatch,true);Check(Mathf.Abs(cam.orthographicSize-zoom)<.0001f && Same(cam.transform.position,position),"opening same board does not reset viewport");
+            Find<ScreenRouter>().Show(ScreenId.Hub,true);Find<ScreenRouter>().Show(ScreenId.Business,true);business.ShowZone(ShopZone.Dispatch,true);
+            Check(Mathf.Abs(cam.orthographicSize-zoom)<.0001f && Same(cam.transform.position,position),"business screen round trip keeps viewport");
+            business.FitMap();Check(Mathf.Abs(cam.orthographicSize-fitted)<.0001f,"fit button still resets to whole map");
+            cam.orthographicSize=fitted*.7f;zoom=cam.orthographicSize;position=cam.transform.position;business.ShowZone(ShopZone.Kitchen,true);
+            campaign.RestorePreparation(data);business.ShowZone(ShopZone.Dispatch,true);
+            Check(Mathf.Abs(cam.orthographicSize-zoom)<.0001f && Same(cam.transform.position,position),"recreated same layout keeps viewport");
+            business.ShowZone(ShopZone.Kitchen,true);map.SeedOverride=map.City!=null && map.City.seed==1401?1402:1401;
+            campaign.NewGame();campaign.StartBusiness();business.ShowZone(ShopZone.Dispatch,true);float firstZoom=cam.orthographicSize;Vector3 firstPosition=cam.transform.position;
+            business.FitMap();Check(Mathf.Abs(cam.orthographicSize-firstZoom)<.0001f && Same(cam.transform.position,firstPosition),"new layout is framed instead of restoring another town viewport");
+            return $"PASS: {count} dispatch viewport checks.";
+        }
+        finally{map.SeedOverride=originalSeed;business.ShowZone(ShopZone.Kitchen,true);clock.AutomaticTick=false;}
+    }
     public static string RunReservations()
     {
         if(!Application.isPlaying)throw new InvalidOperationException("Play required.");

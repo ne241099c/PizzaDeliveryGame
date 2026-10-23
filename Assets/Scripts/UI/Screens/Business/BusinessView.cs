@@ -96,7 +96,7 @@ public sealed partial class BusinessView : MonoBehaviour
     }
     private void AssignNumbers(){foreach(var o in orders.Orders){observedOrders.Add(o);if(!numbers.ContainsKey(o))numbers[o]=nextNumber++;}}
     public int Number(Order o){if(!numbers.TryGetValue(o,out int n)){AssignNumbers();numbers.TryGetValue(o,out n);}return n;}
-    private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){EndRouteEdit();clock.IsPlanning=false;clock.FastForward=false;hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}SyncPlanningRate();}
+    private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){if(Zone==ShopZone.Dispatch)RememberDispatchViewport();EndRouteEdit();clock.IsPlanning=false;clock.FastForward=false;hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}SyncPlanningRate();}
 
     /// <summary>Editor only (ScreenPrefabs): creates the fixed layout under this object, reading sizes from the open scene's
     /// managers (rack capacity, waste cost). Actions are not attached here: Bind does that at runtime.</summary>
@@ -256,6 +256,7 @@ public sealed partial class BusinessView : MonoBehaviour
     // ---- zones ----
     public void ShowZone(ShopZone zone,bool immediate=false)
     {
+        if(Zone==ShopZone.Dispatch)RememberDispatchViewport();
         if(zone==ShopZone.Handover)zone=ShopZone.Dispatch;
         if(zone!=ShopZone.Dispatch)EndRouteEdit();
         Zone=zone;SyncPlanningRate();for(int i=0;i<zoneTabs.Length;i++)if(zoneTabs[i]!=null)zoneTabs[i].Kind=i==(int)zone?StickerKind.Primary:StickerKind.Secondary;
