@@ -49,8 +49,17 @@ public static class CityCampaignValidation
             Check(map.City.blocks.Count==3 && map.CaptureCity().version==2,"Continue retains interim version two town without rewriting file");
             data.city.version=3;data.city.blocks=map.CitySettings.BlocksForVersion(1,3);
             Check(save.TryParse(JsonUtility.ToJson(data),out var versionThreeTown,out _),"version three town remains usable");
-            campaign.RestorePreparation(versionThreeTown);
-            Check(map.City.blocks.Count==5 && map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==12,"version three retains original house count");
+            var originalTown=CityGenerator.Generate(data.city.seed,data.city.blocks,map.CitySettings,version:3);
+            try
+            {
+                campaign.RestorePreparation(versionThreeTown);
+                int expectedHomes=map.ExpandExistingCityHomes?map.CitySettings.housesPerBlock:2;
+                Check(map.City.blocks.Count==5 && map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==5*expectedHomes+2,"version three gains homes when migration is enabled");
+                Check(map.CaptureCity().version==(map.ExpandExistingCityHomes && expectedHomes>2?CityGenerator.CurrentVersion:3),"expanded city records new density version");
+                Check(originalTown.map.Nodes.All(node=>map.Nodes.Any(other=>node.Id==other.Id && node.Position==other.Position && node.NodeType==other.NodeType)),"expansion preserves every original house and junction");
+                Check(originalTown.map.Edges.All(road=>map.Edges.Any(other=>road.Id==other.Id && road.NodeAId==other.NodeAId && road.NodeBId==other.NodeBId && road.Distance==other.Distance && road.TrafficFactor==other.TrafficFactor && road.Bidirectional==other.Bidirectional && road.RoadType==other.RoadType)),"expansion preserves every original road and traversal cost");
+            }
+            finally{UnityEngine.Object.Destroy(originalTown.map);}
             data.city.version=CityGenerator.CurrentVersion;data.city.housesPerBlock=3;
             Check(save.TryParse(JsonUtility.ToJson(data),out var customDensity,out _),"custom new-town density saves");
             campaign.RestorePreparation(customDensity);

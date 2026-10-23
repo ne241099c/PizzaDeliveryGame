@@ -28,6 +28,8 @@ public class MapManager : MonoBehaviour
     [SerializeField] private MapDefinition mapDefinition;
 
     [SerializeField] private bool generateCampaignCity=true;
+    [SerializeField, Tooltip("旧バージョン3の街は、既存の家と道を保ったまま家を追加します。 ")] private bool expandExistingCityHomes=true;
+    public bool ExpandExistingCityHomes=>expandExistingCityHomes;
     [SerializeField] private CityGenerationSettings citySettings=new();
     public CityGenerationSettings CitySettings=>citySettings;
     public GeneratedCity City {get;private set;}
@@ -55,7 +57,38 @@ public class MapManager : MonoBehaviour
     public void RestoreCity(CitySaveState state)
     {
         CityState=state==null || !state.generated?null:new CitySaveState{generated=true,version=state.version,seed=state.seed,blocks=state.blocks,day=state.day,housesPerBlock=state.housesPerBlock};
+        ExpandRestoredCityHomes();
         PrepareCity(state?.day??1);
+    }
+    private void ExpandRestoredCityHomes()
+    {
+        // Versions 1 and 2 use a different expansion schedule and stay untouched.
+        // A v4 town already records its chosen density, so do not retune it on load.
+        if(!expandExistingCityHomes || CityState==null || CityState.version!=3 || citySettings.housesPerBlock<=2)return;
+        GeneratedCity previous=null,expanded=null;
+        try
+        {
+            previous=CityGenerator.Generate(CityState.seed,CityState.blocks,citySettings,version:3);
+            expanded=CityGenerator.Generate(CityState.seed,CityState.blocks,citySettings,CityGenerator.CurrentVersion,citySettings.housesPerBlock);
+            bool sameNodes=previous.map.Nodes.All(node=>expanded.map.Nodes.Any(other=>
+                node.Id==other.Id && node.Position==other.Position && node.NodeType==other.NodeType && node.IsStore==other.IsStore));
+            bool sameRoads=previous.map.Edges.All(road=>expanded.map.Edges.Any(other=>
+                road.Id==other.Id && road.NodeAId==other.NodeAId && road.NodeBId==other.NodeBId &&
+                road.Distance==other.Distance && road.RoadType==other.RoadType &&
+                road.TrafficFactor==other.TrafficFactor && road.Bidirectional==other.Bidirectional));
+            if(!sameNodes || !sameRoads || expanded.metrics.failures.Count!=0)
+            {
+                Debug.LogWarning("Existing town density was kept because adding houses would alter its roads or fail map validation.");
+                return;
+            }
+            CityState.version=CityGenerator.CurrentVersion;
+            CityState.housesPerBlock=Mathf.Clamp(citySettings.housesPerBlock,2,4);
+        }
+        finally
+        {
+            if(previous!=null)Destroy(previous.map);
+            if(expanded!=null)Destroy(expanded.map);
+        }
     }
     public void PrepareCity(int day)
     {
