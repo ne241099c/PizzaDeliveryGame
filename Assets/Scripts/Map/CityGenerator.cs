@@ -13,6 +13,7 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     public bool shortcut=true,trees,buildings,river;
     public Vector2[] roadPorts={new(0,0),new(1,0),new(1,-1),new(0,-1)};
     public Vector2[] addressPositions={new(.6f,-.3f),new(.6f,-.7f)};
+    public Vector2[] additionalAddressPositions={new(.25f,-.3f),new(.25f,-.7f)};
     public string title="住宅街";
 }
 [Serializable] public sealed class CityGenerationSettings
@@ -97,13 +98,15 @@ public static class CityGenerator
             // positions, road costs and random draws unchanged for older saves.
             if(houseCount>2)
             {
+                if(template.additionalAddressPositions==null || template.additionalAddressPositions.Length<houseCount-2)
+                    throw new ArgumentException("Template needs additional address candidates for the configured density.");
                 string h3=addresses[2];
-                m.Nodes.Add(new MapNode(h3,At(new Vector2(.25f,-.3f)),NodeType.DeliveryAddress,false));
+                m.Nodes.Add(new MapNode(h3,At(template.additionalAddressPositions[0]),NodeType.DeliveryAddress,false));
                 Edge("House3",a,h3,length*.4f);
                 if(houseCount>3)
                 {
                     string h4=addresses[3];
-                    m.Nodes.Add(new MapNode(h4,At(new Vector2(.25f,-.7f)),NodeType.DeliveryAddress,false));
+                    m.Nodes.Add(new MapNode(h4,At(template.additionalAddressPositions[1]),NodeType.DeliveryAddress,false));
                     Edge("PairWest",h3,h4,length*.4f);
                     Edge("House4",h4,d,length*.4f);
                 }
