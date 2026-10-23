@@ -34,6 +34,37 @@ public static class CityGenerationValidation
         {
             UnityEngine.Object.Destroy(edited.map);
         }
+        var dense=CityGenerator.Build(1401,5,settings);
+        var legacy=CityGenerator.Build(1401,5,settings,version:3);
+        var tuned=CityGenerator.Build(1401,5,settings,savedHousesPerBlock:3);
+        try
+        {
+            Check(dense.map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==22,"new town has four homes per block plus two original homes");
+            Check(legacy.map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==12,"version three keeps two homes per block");
+            Check(tuned.map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==17,"saved Inspector house count is respected");
+            Check(legacy.map.Nodes.All(n=>dense.map.Nodes.Any(d=>d.Id==n.Id && d.Position==n.Position)),"density increase preserves legacy addresses and junctions");
+            foreach(var city in new[]{dense,legacy,tuned})
+            {
+                foreach(string address in city.blocks.SelectMany(block=>block.addresses))
+                {
+                    Check(RoadPathfinder.FindShortestPath(city.map.Edges,"Store",address,e=>e.Distance)!=null &&
+                          RoadPathfinder.FindShortestPath(city.map.Edges,address,"Store",e=>e.Distance)!=null,"each generated home can receive deliveries and return: "+address);
+                }
+            }
+            var road=new MapEdge("test","a","b",10,RoadType.Backstreet,1);
+            var points=RoadGeometry.Points(road,Vector2.zero,new Vector2(4,0),.85f);
+            Check(points.Length==4 && points[0]==Vector2.zero && points[3]==new Vector2(4,0),"backstreet remains attached at both junctions");
+            Check(points[1].y>.5f && points[2].y>.5f,"backstreet middle is visibly separate from main road");
+            Check(RoadGeometry.PointAt(points,0)==points[0] && RoadGeometry.PointAt(points,1)==points[3],"travel on display geometry starts and ends at the junctions");
+            Check(Vector2.Distance(RoadGeometry.PointAt(points,.5f),new Vector2(2,.85f))<.001f,"trip display follows the distinct backstreet");
+            Check(road.Distance==10,"display geometry does not change delivery distance");
+        }
+        finally
+        {
+            UnityEngine.Object.Destroy(dense.map);
+            UnityEngine.Object.Destroy(legacy.map);
+            UnityEngine.Object.Destroy(tuned.map);
+        }
         return $"PASS: {checks} city generation checks.";
     }
 }

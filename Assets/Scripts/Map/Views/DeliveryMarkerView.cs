@@ -8,6 +8,7 @@ public sealed class DeliveryMarkerView : MonoBehaviour
     [SerializeField] private Transform markersParent;
     [SerializeField] private float markerOffset = 0.2f;
     [SerializeField] private float markerFontSize = 5.5f;
+    [SerializeField, Min(16), Tooltip("ズームアウトしても配達員をこのピクセル幅以上で表示します。 ")] private float minimumMarkerPixels=44;
     private readonly System.Collections.Generic.Dictionary<DeliveryTrip, TextMeshPro> markers = new();
     private readonly System.Collections.Generic.Dictionary<DeliveryTrip, Transform> headings = new();
     private void OnEnable() { flow.Dispatched += Add; flow.Returned += Remove; flow.TripsCleared += Clear; }
@@ -60,8 +61,12 @@ public sealed class DeliveryMarkerView : MonoBehaviour
     }
     private void Update()
     {
+        var camera=Camera.main;
+        float pixelWorld=camera!=null?camera.orthographicSize*2/Mathf.Max(1,camera.pixelHeight):0;
+        float size=Mathf.Max(1,minimumMarkerPixels*pixelWorld/Mathf.Max(.01f,UITheme.Active.worldIconScale));
         foreach (var pair in markers)
         {
+            pair.Value.transform.localScale=Vector3.one*size;
             pair.Value.transform.position = (Vector3)pair.Key.PositionAt(clock.ElapsedSeconds) + Vector3.up * markerOffset;
             pair.Value.text=UiStrings.Japanese(MarkerCaption(pair.Key,clock.ElapsedSeconds));
             if(pair.Key.IsStoppedAt(clock.ElapsedSeconds) && DeliveryFeedback.Animate)pair.Value.transform.position+=Vector3.right*Mathf.Sin(Time.unscaledTime*UITheme.Active.shakeFrequency)*UITheme.Active.shakeDistance;

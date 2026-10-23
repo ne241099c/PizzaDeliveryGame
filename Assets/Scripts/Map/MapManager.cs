@@ -5,14 +5,16 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-[Serializable] public sealed class CitySaveState {public bool generated;public int version=3,seed,blocks,day;}
+[Serializable] public sealed class CitySaveState {public bool generated;public int version=CityGenerator.CurrentVersion,seed,blocks,day,housesPerBlock;}
 
 public class MapManager : MonoBehaviour
 {
     [SerializeField] private FacilityManager facilities;
     [SerializeField, Min(0.01f)] private float baseSpeed = 10f;
-    [SerializeField, Min(0.01f), Tooltip("注文増加に合わせた全配達員共通の速度倍率")] private float deliverySpeedMultiplier=1.2f;
+    [SerializeField, Min(0.01f), Tooltip("注文増加に合わせた全配達員共通の速度倍率")] private float deliverySpeedMultiplier=1.6f;
     public float DeliverySpeedMultiplier=>deliverySpeedMultiplier;
+    [SerializeField, Min(0f), Tooltip("裏道の描画上のふくらみ。距離・配達時間は変えません。")] private float backstreetVisualOffset=.85f;
+    public float BackstreetVisualOffset=>backstreetVisualOffset;
     [SerializeField, Min(0f)] private float backstreetPenalty = 1f;
     [SerializeField, Min(0.01f)] private float sampleBackstreetDistance = 11f;
     [SerializeField, Min(0.01f)] private float drivingSpeedBase = 0.7f;
@@ -46,13 +48,13 @@ public class MapManager : MonoBehaviour
     public string TomorrowCityInfo(int day)=>City!=null && citySettings.BlocksForVersion(day+1,CityState.version)>City.blocks.Count?"あした、新しい街区が開きます。":"あしたも同じ街で営業します。";
     public void NewCampaignCity()
     {
-        CityState=generateCampaignCity && !UseSampleForValidation?new CitySaveState{generated=true,seed=SeedOverride??Guid.NewGuid().GetHashCode(),day=1}:null;
+        CityState=generateCampaignCity && !UseSampleForValidation?new CitySaveState{generated=true,housesPerBlock=Mathf.Clamp(citySettings.housesPerBlock,2,4),seed=SeedOverride??Guid.NewGuid().GetHashCode(),day=1}:null;
     }
-    public CitySaveState CaptureCity()=>CityState==null?null:new CitySaveState{generated=true,version=CityState.version,seed=CityState.seed,blocks=CityState.blocks,day=CityState.day};
-    public bool ValidCity(CitySaveState state,int day)=>state==null || !state.generated || (state.version==1 || state.version==2 || state.version==3) && state.day==day && state.blocks==citySettings.BlocksForVersion(day,state.version);
+    public CitySaveState CaptureCity()=>CityState==null?null:new CitySaveState{generated=true,version=CityState.version,seed=CityState.seed,blocks=CityState.blocks,day=CityState.day,housesPerBlock=CityState.housesPerBlock};
+    public bool ValidCity(CitySaveState state,int day)=>state==null || !state.generated || (state.version>=1 && state.version<=CityGenerator.CurrentVersion) && (state.version<4 || state.housesPerBlock>=2 && state.housesPerBlock<=4) && state.day==day && state.blocks==citySettings.BlocksForVersion(day,state.version);
     public void RestoreCity(CitySaveState state)
     {
-        CityState=state==null || !state.generated?null:new CitySaveState{generated=true,version=state.version,seed=state.seed,blocks=state.blocks,day=state.day};
+        CityState=state==null || !state.generated?null:new CitySaveState{generated=true,version=state.version,seed=state.seed,blocks=state.blocks,day=state.day,housesPerBlock=state.housesPerBlock};
         PrepareCity(state?.day??1);
     }
     public void PrepareCity(int day)
@@ -63,8 +65,8 @@ public class MapManager : MonoBehaviour
             if(City!=null){var previousCity=City;City=null;LoadMap(null);Destroy(previousCity.map);}return;
         }
         int blocks=BlocksOverride??citySettings.BlocksForVersion(day,CityState.version);
-        if(City!=null && CityState.blocks==blocks && City.seed==CityState.seed && City.day==day && City.blocks.Count==blocks)return;
-        var old=City;var next=CityGenerator.Generate(CityState.seed,blocks,citySettings);
+        if(City!=null && CityState.blocks==blocks && City.seed==CityState.seed && City.day==day && City.blocks.Count==blocks && City.version==CityState.version && City.housesPerBlock==(CityState.version<4?2:CityState.housesPerBlock))return;
+        var old=City;var next=CityGenerator.Generate(CityState.seed,blocks,citySettings,CityState.version,CityState.housesPerBlock);
         if(day>=citySettings.constructionStartDay)
         {
             var candidates=next.map.Edges.Where(e=>e.Id.EndsWith("AB") && !next.bridges.Contains(e.Id)).ToArray();

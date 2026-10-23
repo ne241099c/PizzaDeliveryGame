@@ -20,7 +20,7 @@ public static class CityCampaignValidation
         try
         {
             map.UseSampleForValidation=false;map.SeedOverride=1401;save.StartNewGame();clock.AutomaticTick=false;spawner.enabled=false;
-            Check(map.City!=null && map.City.blocks.Count==5 && map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==12 && map.City.metrics.failures.Count==0,"new game opens the configured larger safe town");
+            Check(map.City!=null && map.City.blocks.Count==5 && map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==map.City.blocks.Count*map.CaptureCity().housesPerBlock+2 && map.City.metrics.failures.Count==0,"new game opens the configured larger safe town");
             save.StartNewGame();
             Check(save.TryParse(save.SnapshotJson(),out _,out _),"restarting the same seed refreshes saved stage");
             var first=CityGenerationValidation.Fingerprint(map.City);
@@ -47,6 +47,14 @@ public static class CityCampaignValidation
             Check(save.TryParse(JsonUtility.ToJson(data),out var interimTown,out _),"interim version two three-block save remains usable");
             campaign.RestorePreparation(interimTown);
             Check(map.City.blocks.Count==3 && map.CaptureCity().version==2,"Continue retains interim version two town without rewriting file");
+            data.city.version=3;data.city.blocks=map.CitySettings.BlocksForVersion(1,3);
+            Check(save.TryParse(JsonUtility.ToJson(data),out var versionThreeTown,out _),"version three town remains usable");
+            campaign.RestorePreparation(versionThreeTown);
+            Check(map.City.blocks.Count==5 && map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==12,"version three retains original house count");
+            data.city.version=CityGenerator.CurrentVersion;data.city.housesPerBlock=3;
+            Check(save.TryParse(JsonUtility.ToJson(data),out var customDensity,out _),"custom new-town density saves");
+            campaign.RestorePreparation(customDensity);
+            Check(map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==17 && map.CaptureCity().housesPerBlock==3,"Continue uses saved density rather than current Inspector default");
             data.city=null;
             Check(save.TryParse(JsonUtility.ToJson(data),out var legacyData,out _),"legacy null city JSON round trip");
             campaign.RestorePreparation(legacyData);

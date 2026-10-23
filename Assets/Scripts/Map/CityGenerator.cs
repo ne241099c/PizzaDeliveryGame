@@ -21,6 +21,7 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     [SerializeField] private int[] campaignStageBlocks={5,8,10,12};
     public int[] stageBlocks=>campaignStageBlocks;
     public int[] legacyStageBlocks={3,5,8,12};
+    [Range(2,4), Tooltip("新規ゲームの街区ごとの家の数。既存セーブには保存時の数を使います。 ")] public int housesPerBlock=4;
     public int BlocksForVersion(int day,int version)=>version<=2?legacyStageBlocks[Mathf.Min(Stage(day),legacyStageBlocks.Length-1)]:Blocks(day);
     [Min(1)] public int retryCount=6;
     [Min(1)] public int columns=4;
@@ -30,7 +31,7 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     [Min(0)] public float minimumShortcutSaving=.03f;
     [Range(0,1)] public float maximumShortcutSaving=.7f,maximumDeadEndFraction=.3f;
     [Min(0)] public float minimumNodeSpacing=.5f;
-    [Min(1)] public int minimumEdges=6,maximumEdges=300,minimumDestinations=2,maximumDestinations=40;
+    [Min(1)] public int minimumEdges=6,maximumEdges=300,minimumDestinations=2,maximumDestinations=64;
     [Min(1)] public float maximumTotalDistance=4000;
     [Min(1)] public int constructionStartDay=11,constructionDays=3;
     [Range(.1f,1f)] public float constructionTraffic=.45f;
@@ -55,7 +56,7 @@ public sealed class CityBlock
 }
 public sealed class GeneratedCity
 {
-    public int seed,attempt,day;public bool fallback;public MapDefinition map;
+    public int seed,attempt,day,version,housesPerBlock;public bool fallback;public MapDefinition map;
     public readonly List<CityBlock> blocks=new();
     public readonly List<string> bridges=new(),construction=new();
     public CityMetrics metrics;
@@ -65,10 +66,12 @@ public sealed class GeneratedCity
 /// <summary>Deterministic template placement. Prefixes and each block's RNG are independent of later expansion.</summary>
 public static class CityGenerator
 {
-    public static GeneratedCity Build(int seed,int blockCount,CityGenerationSettings s,int variant=0)
+    public const int CurrentVersion=4;
+    public static GeneratedCity Build(int seed,int blockCount,CityGenerationSettings s,int variant=0,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
         if(blockCount<1 || s.templates==null || s.templates.Length<1)throw new ArgumentException("City needs blocks and templates.");
-        var city=new GeneratedCity{seed=seed,map=ScriptableObject.CreateInstance<MapDefinition>()};city.map.hideFlags=HideFlags.DontSave;
+        int houseCount=version<CurrentVersion?2:Mathf.Clamp(savedHousesPerBlock>0?savedHousesPerBlock:s.housesPerBlock,2,4);
+        var city=new GeneratedCity{seed=seed,version=version,housesPerBlock=houseCount,map=ScriptableObject.CreateInstance<MapDefinition>()};city.map.hideFlags=HideFlags.DontSave;
         var m=city.map;
         m.Nodes.AddRange(new[]{new MapNode("Store",new(-4,0),NodeType.Intersection,true),new MapNode("N1",new(-1.5f,0),NodeType.Intersection,false),new MapNode("N2",new(1.5f,0),NodeType.Intersection,false),new MapNode("Goal1",new(4,-1),NodeType.DeliveryAddress,false),new MapNode("Goal2",new(4,-3),NodeType.DeliveryAddress,false)});
         m.Edges.AddRange(new[]{new MapEdge("Store-N1","Store","N1",10,RoadType.Main,.8f),new MapEdge("N1-N2-Main","N1","N2",10,RoadType.Main,.6f),new MapEdge("N1-N2-Backstreet","N1","N2",11,RoadType.Backstreet,1),new MapEdge("N2-Goal1","N2","Goal1",5,RoadType.Main,1),new MapEdge("N2-Goal2","N2","Goal2",7,RoadType.Main,1),new MapEdge("Goal1-Goal2","Goal1","Goal2",3,RoadType.Main,1)});
@@ -80,7 +83,8 @@ public static class CityGenerator
             int col=i%s.columns,row=i/s.columns;float size=s.blockSize,x=7+col*(size+s.blockGap),y=-row*(size+s.blockGap);
             string a=$"B{i}_A",b=$"B{i}_B",c=$"B{i}_C",d=$"B{i}_D",h1=$"B{i}_H1",h2=$"B{i}_H2";
             var area=new Rect(x,y-size,size,size);
-            var block=new CityBlock{index=i,template=template,area=area,addresses=new[]{h1,h2}};
+            var addresses=Enumerable.Range(1,houseCount).Select(h=>$"B{i}_H{h}").ToArray();
+            var block=new CityBlock{index=i,template=template,area=area,addresses=addresses};
             city.blocks.Add(block);
             if(template.roadPorts.Length!=4 || template.addressPositions.Length!=2)throw new ArgumentException("Template needs four ports and two address candidates.");
             Vector2 At(Vector2 local)=>new Vector2(x,y)+local*size;
@@ -89,6 +93,22 @@ public static class CityGenerator
             float length=size*s.roadDistanceScale;
             Edge("AB",a,b,length,traffic:template.traffic);Edge("BC",b,c,length,traffic:template.traffic);Edge("CD",c,d,length);Edge("DA",d,a,length);
             Edge("House1",b,h1,length*.4f);Edge("Pair",h1,h2,length*.4f);Edge("House2",h2,c,length*.4f);
+            // A second row of homes has its own connected local road. Keep legacy IDs,
+            // positions, road costs and random draws unchanged for older saves.
+            if(houseCount>2)
+            {
+                string h3=addresses[2];
+                m.Nodes.Add(new MapNode(h3,At(new Vector2(.25f,-.3f)),NodeType.DeliveryAddress,false));
+                Edge("House3",a,h3,length*.4f);
+                if(houseCount>3)
+                {
+                    string h4=addresses[3];
+                    m.Nodes.Add(new MapNode(h4,At(new Vector2(.25f,-.7f)),NodeType.DeliveryAddress,false));
+                    Edge("PairWest",h3,h4,length*.4f);
+                    Edge("House4",h4,d,length*.4f);
+                }
+                else Edge("House3Return",h3,d,length*.8f);
+            }
             if(template.shortcut)Edge("Shortcut",a,c,s.shortcutDistance,RoadType.Backstreet);
             // A one-way local service road never replaces the bidirectional perimeter.
             if(i>=3 && rng.Next(2)==0)Edge("OneWay",d,h2,length*.7f,RoadType.Backstreet,1,false);
@@ -103,14 +123,14 @@ public static class CityGenerator
         }
         return city;
     }
-    public static GeneratedCity Generate(int seed,int blocks,CityGenerationSettings s)
+    public static GeneratedCity Generate(int seed,int blocks,CityGenerationSettings s,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
         for(int attempt=0;attempt<s.retryCount;attempt++)
         {
             GeneratedCity city=null;
             try
             {
-                city=Build(seed,blocks,s,attempt);
+                city=Build(seed,blocks,s,attempt,version,savedHousesPerBlock);
                 city.attempt=attempt;
                 city.metrics=CityValidator.Measure(city,s);
                 if(city.metrics.failures.Count==0)return city;
@@ -120,15 +140,15 @@ public static class CityGenerator
             if(city!=null)UnityEngine.Object.Destroy(city.map);
         }
         // Two explicitly selected, fixed layouts built from the authored safe loop template.
-        var safe=SafeCity(seed,blocks,s);
+        var safe=SafeCity(seed,blocks,s,version,savedHousesPerBlock);
         safe.fallback=true;
         safe.attempt=s.retryCount;
         Debug.LogWarning($"City fallback: seed {seed}, blocks {blocks}");
         return safe;
     }
-    public static GeneratedCity SafeCity(int seed,int blocks,CityGenerationSettings settings)
+    public static GeneratedCity SafeCity(int seed,int blocks,CityGenerationSettings settings,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
-        var safe=Build(seed%2==0?1401:1402,blocks,new CityGenerationSettings{columns=settings.columns,blockSize=settings.blockSize,blockGap=settings.blockGap,roadDistanceScale=settings.roadDistanceScale,shortcutDistance=settings.shortcutDistance});
+        var safe=Build(seed%2==0?1401:1402,blocks,new CityGenerationSettings{columns=settings.columns,blockSize=settings.blockSize,blockGap=settings.blockGap,roadDistanceScale=settings.roadDistanceScale,shortcutDistance=settings.shortcutDistance,housesPerBlock=settings.housesPerBlock},version:version,savedHousesPerBlock:savedHousesPerBlock);
         safe.seed=seed;safe.metrics=CityValidator.Measure(safe,settings);return safe;
     }
 }
