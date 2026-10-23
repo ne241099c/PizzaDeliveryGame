@@ -9,9 +9,12 @@ using UnityEngine.UI;
 public sealed class StickerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
 {
     [SerializeField] private StickerKind kind;
-    private RectTransform face;
-    private Image shadow,edge,fill,icon,trailing;
-    private TextMeshProUGUI label;
+    // Serialized so a button built into a prefab keeps its parts.
+    [SerializeField] private RectTransform face;
+    [SerializeField] private Image shadow,edge,fill,icon,trailing;
+    [SerializeField] private TextMeshProUGUI label;
+    /// <summary>Moves the caption up (positive) to make room for a second line under it.</summary>
+    [SerializeField] private float labelOffsetY;
     private Button button;
     private bool hover,pressed,lastInteractable=true;
     private float offset;
@@ -19,6 +22,8 @@ public sealed class StickerButton : MonoBehaviour, IPointerEnterHandler, IPointe
     public Button Button=>button!=null?button:(button=GetComponent<Button>());
     public TextMeshProUGUI Label=>label;
     public StickerKind Kind {get=>kind;set{kind=value;Apply();}}
+    public RectTransform Face=>face;
+    public float LabelOffsetY {get=>labelOffsetY;set{labelOffsetY=value;laidOutText=null;}}
     public bool Interactable {get=>Button.interactable;set{if(Button.interactable!=value){Button.interactable=value;Apply();}}}
     public string Text {get=>label!=null?label.text:"";set{if(label==null)return;SetText(value);}}
     // The fonts have no ▶ glyph: a trailing ▶ in the caption becomes a play icon after the text.
@@ -37,7 +42,7 @@ public sealed class StickerButton : MonoBehaviour, IPointerEnterHandler, IPointe
         laidOutText=label.text;laidOutSize=label.fontSize;
         label.verticalAlignment=VerticalAlignmentOptions.Geometry;
         bool lead=icon!=null && icon.gameObject.activeSelf,trail=trailing!=null && trailing.gameObject.activeSelf;
-        if(!lead && !trail){label.rectTransform.anchoredPosition=Vector2.zero;return;}
+        if(!lead && !trail){label.rectTransform.anchoredPosition=new Vector2(0,labelOffsetY);return;}
         label.horizontalAlignment=HorizontalAlignmentOptions.Center;
         label.rectTransform.offsetMin=new Vector2(8,0);label.rectTransform.offsetMax=new Vector2(-8,0);
         float w=0;if(label.text.Length>0){label.ForceMeshUpdate();w=label.textBounds.size.x;if(w<=0 || float.IsNaN(w))w=label.GetPreferredValues(label.text).x;}
@@ -45,7 +50,7 @@ public sealed class StickerButton : MonoBehaviour, IPointerEnterHandler, IPointe
         if(trail){ti=label.fontSize*.8f;trailing.rectTransform.sizeDelta=new Vector2(ti,ti);}
         float gap=label.fontSize*.3f,gl=lead && w>0?gap:0,gt=trail && w>0?gap:0,total=li+gl+w+gt+ti,left=-total/2f;
         if(lead)icon.rectTransform.anchoredPosition=new Vector2(left+li/2f,0);
-        label.rectTransform.anchoredPosition=new Vector2(left+li+gl+w/2f,0);
+        label.rectTransform.anchoredPosition=new Vector2(left+li+gl+w/2f,labelOffsetY);
         if(trail)trailing.rectTransform.anchoredPosition=new Vector2(left+li+gl+w+gt+ti/2f,0);
     }
 

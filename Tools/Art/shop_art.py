@@ -93,18 +93,23 @@ ART = {
 
 ALL = {**{k: v for k, v in ICONS.items()}, **ART}
 
-def render(name):
-    w, h, body = ALL[name]
-    scale = 4 if name.startswith("icon_") else 2
-    pw, ph = w * scale, h * scale
-    html = f'<!doctype html><html><body style="margin:0;background:transparent"><svg xmlns="http://www.w3.org/2000/svg" width="{pw}" height="{ph}" viewBox="0 0 {w} {h}">{body}</svg></body></html>'
+def render_svg(body, out, width, height, scale=1, view=None):
+    """Render an SVG body to a transparent PNG of width*scale x height*scale. view: optional "x y w h" viewBox."""
+    pw, ph = int(width * scale), int(height * scale)
+    box = view or f"0 0 {width} {height}"
+    html = f'<!doctype html><html><body style="margin:0;background:transparent"><svg xmlns="http://www.w3.org/2000/svg" width="{pw}" height="{ph}" viewBox="{box}">{body}</svg></body></html>'
+    out = pathlib.Path(out); out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
         page = pathlib.Path(tmp) / "art.html"; page.write_text(html)
-        out = OUT / f"{name}.png"
         subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
                         f"--window-size={pw},{ph}", "--default-background-color=00000000", f"--screenshot={out}", page.as_uri()],
                        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return out
+
+def render(name):
+    w, h, body = ALL[name]
+    scale = 4 if name.startswith("icon_") else 2
+    return render_svg(body, OUT / f"{name}.png", w, h, scale)
 
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)

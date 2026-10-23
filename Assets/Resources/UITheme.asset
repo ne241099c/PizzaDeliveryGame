@@ -288,6 +288,8 @@ MonoBehaviour:
   fontFaceDilate: 0.12
   font: {fileID: 11400000, guid: ce32a4130d85548658d2a569898e8eba, type: 2}
   roundedPanel: {fileID: -7732186575839875303}
+  roundSprite: {fileID: 21300000, guid: bba9bba85011f401ab33214e04857220, type: 3}
+  circleSprite: {fileID: 21300000, guid: fa6034a0701604cc5bc4f94a644715bd, type: 3}
   courierColors:
   - {r: 0.23529412, g: 0.4745098, b: 0.7607843, a: 1}
   - {r: 0.29803923, g: 0.6039216, b: 0.32156864, a: 1}
@@ -304,6 +306,16 @@ MonoBehaviour:
   congestionWidthScale: 0.35
   worldIconScale: 0.35
   routeArrowSize: 4
+  cityLabelMinimumBlockPixels: 150
+  cityDetailMinimumBlockPixels: 70
+  cityCompactPinPixels: 18
+  cityCompactNumberSize: 120
+  cityExpansionFadeSeconds: 0.6
+  deliveryLaneMinWidth: 560
+  deliveryRouteWidthPixels: 6
+  deliveryRouteOffsetPixels: 9
+  deliveryRouteDotSpacingPixels: 64
+  deliveryRouteDotSpeedPixels: 28
   paper: {r: 1, g: 0.9647059, b: 0.8980392, a: 1}
   paperDeep: {r: 0.9529412, g: 0.8901961, b: 0.7647059, a: 1}
   line: {r: 0.22745098, g: 0.16470589, b: 0.1254902, a: 1}

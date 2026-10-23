@@ -28,7 +28,8 @@ public static class VisualValidation
             Check(UiStrings.Japanese("Aoi / Drive 0.6 / Goal1").Contains("Aoi / 運転 0.6 / Goal1"),"presentation preserves names IDs and numbers");
             var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();driver.Refresh();
             var shop=canvas.GetComponentInChildren<ShopUiRoot>(true);
-            bool Redesigned(Component c)=>shop!=null && c.transform.IsChildOf(shop.transform);
+            var styledSelf=canvas.GetComponentsInChildren<ThemeOptOut>(true);
+            bool Redesigned(Component c)=>shop!=null && c.transform.IsChildOf(shop.transform) || styledSelf.Any(o=>c.transform.IsChildOf(o.transform));
             var shopFonts=new[]{theme.font,theme.displayFont,theme.boldFont,theme.blackFont};
             Check(canvas.GetComponentsInChildren<TMP_Text>(true).All(t=>Redesigned(t)?t.font!=null && shopFonts.Contains(t.font) && t.fontSize>=theme.captionSize:t.font==theme.font && t.fontSize>=theme.caption),"all screens use their readable licensed Japanese theme fonts");
             Check(canvas.GetComponentsInChildren<Button>(true).All(b=>Redesigned(b)?(b.GetComponent<StickerButton>()!=null && b.GetComponent<StickerButton>().Label!=null) || (b.GetComponent<StickerCardAction>()!=null && b.targetGraphic!=null && b.transition==Selectable.Transition.ColorTint && b.colors.highlightedColor==theme.cheeseLight) || !b.gameObject.activeSelf && b.GetComponent<ThemedButton>()!=null:b.GetComponent<ThemedButton>()!=null),"all button actions retain their themed component (hidden legacy menu buttons stay inside the modals)");
@@ -47,7 +48,8 @@ public static class VisualValidation
         {
             var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var edges=UnityEngine.Object.FindObjectsByType<EdgeView>(FindObjectsSortMode.None);
             Check(edges.Length==map.Edges.Count && edges.All(e=>e.GetComponentInChildren<UnityEngine.LineRenderer>()!=null),"existing edge views and click geometry retained");
-            Check(UnityEngine.Object.FindFirstObjectByType<MapVisuals>()!=null && GameObject.Find("CityBlock")!=null,"independent city decoration layer");
+            // Generated towns (G-0..G-5) name their blocks District_N under the CityDecoration layer.
+            Check(UnityEngine.Object.FindFirstObjectByType<MapVisuals>()!=null && GameObject.Find("CityDecoration")!=null && GameObject.Find("CityDecoration").transform.Cast<Transform>().Any(t=>t.name.StartsWith("District_")),"independent city decoration layer");
             Check(UITheme.Active.CourierColor("Aoi")==UITheme.Active.CourierColor("Aoi") && UITheme.Active.CourierColor("Aoi")!=UITheme.Active.CourierColor("Ren"),"stable courier identity colors without random draws");
             Check(UnityEngine.Object.FindObjectsByType<NodeView>(FindObjectsSortMode.None).Length==map.Nodes.Count,"existing node views reused");
             var clone=UnityEngine.Object.Instantiate(edges[0]);try{var a=map.Nodes[0];var b=map.Nodes[1];var road=new MapEdge("ReviewOneWay",a.Id,b.Id,1,RoadType.Main,.5f){Bidirectional=false};clone.Initialize(road,a,b,map,false);Check(clone.transform.Find("OneWayArrow")!=null,"one-way road has a direction arrow");}finally{UnityEngine.Object.DestroyImmediate(clone.gameObject);}

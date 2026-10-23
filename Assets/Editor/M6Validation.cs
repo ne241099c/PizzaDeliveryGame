@@ -148,8 +148,9 @@ public static partial class M6Validation
                 var route=RoadPathfinder.Suggest(map,new[]{M7Validation.ReadyOrder(goal,"Knowledge",0,60)},p);
                 bool usesBackstreet=route.EdgeIds.Any(id=>map.GetEdge(id).RoadType==RoadType.Backstreet);
                 Check(usesBackstreet==(knowledge>.5f),"knowledge chooses road at "+knowledge+" / "+goal);
+                // Times at the original speed; the shared delivery speed multiplier (1.2 since the order increase) divides them.
                 float expected=knowledge<.5f?6.833333f:knowledge<.8f?6.58f:5.92f;
-                Near(route.TotalTime,expected+(goal=="Goal2"?.4f:0),"shortest round trip "+knowledge+" / "+goal);
+                Near(route.TotalTime,(expected+(goal=="Goal2"?.4f:0))/map.DeliverySpeedMultiplier,"shortest round trip "+knowledge+" / "+goal);
             }
         }
     }

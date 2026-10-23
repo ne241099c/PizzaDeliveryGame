@@ -18,9 +18,11 @@ public sealed class UIThemeDriver : MonoBehaviour
     {
         var theme=UITheme.Active;if(theme==null || canvas==null)return;
         var shop=canvas.GetComponentInChildren<ShopUiRoot>(true);var skip=shop!=null?shop.transform:null;
+        var optOut=canvas.GetComponentsInChildren<ThemeOptOut>(true);
+        bool Skipped(Transform t){if(skip!=null && t.IsChildOf(skip))return true;foreach(var o in optOut)if(t.IsChildOf(o.transform))return true;return false;}
         foreach(var text in canvas.GetComponentsInChildren<TextMeshProUGUI>(true))
         {
-            if(!text.gameObject.activeInHierarchy || text.canvasRenderer.GetInheritedAlpha()<=0 || text.text==null || skip!=null && text.transform.IsChildOf(skip))continue;
+            if(!text.gameObject.activeInHierarchy || text.canvasRenderer.GetInheritedAlpha()<=0 || text.text==null || Skipped(text.transform))continue;
             var component=text.GetComponent<ThemedText>();
             if(component==null){component=text.gameObject.AddComponent<ThemedText>();component.size=SizeFor(text);component.numeric=text.name.Contains("Cash") || text.name.Contains("Reputation");}
             if(text.GetComponentInParent<Button>()!=null || text.text=="PIZZA DELIVERY" || text.text=="ピザ配達ゲーム")component.size=SizeFor(text);
@@ -29,7 +31,7 @@ public sealed class UIThemeDriver : MonoBehaviour
         }
         foreach(var image in canvas.GetComponentsInChildren<Image>(true))
         {
-            if(!image.gameObject.activeInHierarchy || image.canvasRenderer.GetInheritedAlpha()<=0 || skip!=null && image.transform.IsChildOf(skip))continue;
+            if(!image.gameObject.activeInHierarchy || image.canvasRenderer.GetInheritedAlpha()<=0 || Skipped(image.transform))continue;
             if(image.GetComponent<Button>()!=null)continue;
             string name=image.name;
             if(name.Contains("Fill") || name.Contains("Limit") || name.Contains("Band") || name.Contains("Handle"))
@@ -41,7 +43,8 @@ public sealed class UIThemeDriver : MonoBehaviour
         var list=FindFirstObjectByType<OrderListUI>();var roster=FindFirstObjectByType<DeliveryPersonSelector>();var hub=FindFirstObjectByType<HubScreenUI>();
         foreach(var button in canvas.GetComponentsInChildren<Button>(true))
         {
-            if(!button.gameObject.activeInHierarchy || button.GetComponent<CanvasRenderer>().GetInheritedAlpha()<=0 || skip!=null && button.transform.IsChildOf(skip))continue;
+            if(!button.gameObject.activeInHierarchy || Skipped(button.transform))continue;
+            var renderer=button.GetComponent<CanvasRenderer>();if(renderer==null || renderer.GetInheritedAlpha()<=0)continue;
             var styled=button.GetComponent<ThemedButton>();if(styled==null)styled=button.gameObject.AddComponent<ThemedButton>();
             styled.kind=primary.Contains(button.name)?ThemeButtonKind.Primary:danger.Contains(button.name)?ThemeButtonKind.Danger:ThemeButtonKind.Secondary;
             var label=button.GetComponentInChildren<TMP_Text>(true);if(label!=null && label.text=="解雇")styled.kind=ThemeButtonKind.Danger;

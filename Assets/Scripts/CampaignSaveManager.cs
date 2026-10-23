@@ -45,13 +45,27 @@ public sealed class CampaignSaveManager : MonoBehaviour
     [SerializeField] private KitchenCrew crew;
     [SerializeField] private GameObject choicePanel;
     [SerializeField] private Button continueButton,newButton;
+    // choiceText is optional: the title screen (TitleView) shows the save state itself.
     [SerializeField] private TextMeshProUGUI notice,choiceText;
     [SerializeField] private string filename="campaign.json";
     [SerializeField,Min(1)] private int formatVersion=3;
     private bool ready,restoring,listenersRegistered;
     public bool AutomaticSavingEnabled {get;set;}=true;
     public string SavePathOverride {get;set;}
-    public string SavePath=>SavePathOverride??Path.Combine(Application.persistentDataPath,filename);
+    public string SavePath=>SavePathOverride??Path.Combine(SaveDirectory,filename);
+    /// <summary>The data folder under the fixed GameInfo.SaveFolder rather than productName, so renaming the game keeps the saves.
+    /// On desktop that is the sibling of persistentDataPath; elsewhere the platform folder itself.</summary>
+    public static string SaveDirectory
+    {
+        get
+        {
+            string data=Application.persistentDataPath;
+            #if UNITY_EDITOR || UNITY_STANDALONE
+            string company=Path.GetDirectoryName(data);if(!string.IsNullOrEmpty(company))return Path.Combine(company,GameInfo.SaveFolder);
+            #endif
+            return data;
+        }
+    }
     public bool AwaitingChoice {get;private set;}
     public string LastMessage {get;private set;}="";
     public void ClearNotice()=>LastMessage="";
@@ -62,6 +76,12 @@ public sealed class CampaignSaveManager : MonoBehaviour
     private void Update() {if(notice!=null)notice.text=LastMessage;}
     public static decimal Decimal(string value)=>decimal.Parse(value,NumberStyles.Number,CultureInfo.InvariantCulture);
     public bool HasUsableSave => TryRead(out _,out _);
+    /// <summary>No save file at all (the first launch): the title highlights the tutorial.</summary>
+    public bool IsFirstLaunch => !File.Exists(SavePath);
+    /// <summary>The usable save in one short line for the continue button, e.g. "3日目 ・ ¥1,240 ・ 評判 72". Empty without one.</summary>
+    public string ContinueSummary => TryRead(out var data,out _)?$"{data.day}日目 ・ {UiKit.Yen(Decimal(data.cash))} ・ 評判 {data.reputation:F0}":"";
+    /// <summary>Why the save cannot be used (unreadable file), or empty.</summary>
+    public string SaveProblem => File.Exists(SavePath) && !TryRead(out _,out var reason)?"セーブを読めませんでした（"+reason+"）。最初から始めます。":"";
     public string TitleDescription
     {
         get
@@ -117,9 +137,9 @@ public sealed class CampaignSaveManager : MonoBehaviour
         if(!listenersRegistered){continueButton.onClick.AddListener(Continue);newButton.onClick.AddListener(StartNewGame);listenersRegistered=true;}
         var router=FindFirstObjectByType<ScreenRouter>();
         if(router!=null && router.StartAtTitle)
-        {ready=false;AwaitingChoice=true;UIVisibility.Set(choicePanel,true);choiceText.text=TitleDescription;return;}
+        {ready=false;AwaitingChoice=true;UIVisibility.Set(choicePanel,true);if(choiceText!=null)choiceText.text=TitleDescription;return;}
         if(File.Exists(SavePath) && TryRead(out var data,out var reason))
-        {ready=false;AwaitingChoice=true;UIVisibility.Set(choicePanel,true);choiceText.text=$"CONTINUE CAMPAIGN?\nDay {data.day} / Cash {data.cash} / Reputation {data.reputation:F1}";return;}
+        {ready=false;AwaitingChoice=true;UIVisibility.Set(choicePanel,true);if(choiceText!=null)choiceText.text=$"CONTINUE CAMPAIGN?\nDay {data.day} / Cash {data.cash} / Reputation {data.reputation:F1}";return;}
         if(File.Exists(SavePath))LastMessage="Cannot load save: "+ReadFailure()+" Starting a new game.";
         StartNewGame();
     }

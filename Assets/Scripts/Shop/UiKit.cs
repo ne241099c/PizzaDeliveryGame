@@ -19,8 +19,8 @@ public static class UiKit
 
     // ---- generated shapes ----
     /// <summary>White rounded square (radius 64px) for 9-slicing; Image.pixelsPerUnitMultiplier picks the radius.</summary>
-    public static Sprite Round=>round!=null?round:(round=Shape(128,64,false));
-    public static Sprite Circle=>circle!=null?circle:(circle=Shape(128,64,true));
+    public static Sprite Round=>T!=null && T.roundSprite!=null?T.roundSprite:round!=null?round:(round=Shape(128,64,false));
+    public static Sprite Circle=>T!=null && T.circleSprite!=null?T.circleSprite:circle!=null?circle:(circle=Shape(128,64,true));
     public static Sprite Triangle
     {
         get
