@@ -4,6 +4,15 @@ using System.Collections.Generic;
 /// (UiStrings.cs translates the older screens and is maintained separately.)</summary>
 public static class ShopStrings
 {
+    public const string GrowthTitle="成長・経験",GrowthMaximum="素質の上限",GrowthEmpty="配達で経験がたまります。裏道では土地勘も育ちます。";
+    public static string GrowthExperience(CourierAbility ability)=>"経験 "+Ability(ability);
+    public static string GrowthNext(float fraction,float gain)=>$"{fraction:P0} → +{gain:0.00}";
+    public static string GrowthProgress(string name,CourierAbility ability)=>name+" ・ "+Ability(ability);
+    public static string GrowthProgressValue(float fraction)=>$"次の成長まで {fraction:P0}";
+    public static string GrowthCount(int increases,int progressing)=>$"成長 {increases} / 経験 {progressing}人";
+    public static string FacilityLevel(int current,int maximum)=>$"Lv {current} / {maximum}";
+    public const string FacilityCompleted="設備を最大まで強化済み";
+    public const string MenuCompleted="すべてのピザを解禁済み";
     public static readonly string[] AbilityNames={"運転","土地勘","接客","体力","安全性","積載量"};
     public static string Ability(CourierAbility a)=>AbilityNames[(int)a];
     public static string Archetype(RecruitArchetype a)=>a switch{RecruitArchetype.Newcomer=>"新人",RecruitArchetype.Experienced=>"即戦力",_=>"標準"};

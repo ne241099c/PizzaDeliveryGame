@@ -138,13 +138,13 @@ public sealed class HubView : MonoBehaviour
     private string Signature()
     {
         var parts=new List<string>{SelectedTab.ToString(),clock.Phase.ToString(),recruitment.MaximumPeople.ToString(),((long)economy.Cash).ToString()};
-        parts.AddRange(roster.People.Select(p=>UiKit.Ref(p)+p.Capacity+p.Driving.ToString("F2")+p.LocalKnowledge.ToString("F2")+p.Status));
+        parts.AddRange(roster.People.Select(p=>UiKit.Ref(p)+p.Capacity+p.Status+string.Join("/",Enumerable.Range(0,5).Select(i=>p.Ability((CourierAbility)i).ToString("F2")+":"+p.Experience((CourierAbility)i).ToString("F1")))));
         parts.AddRange(crew.People.Select(c=>UiKit.Ref(c)));
         parts.AddRange(recruitment.Applicants.Select(a=>UiKit.Ref(a)));
         parts.AddRange(recruitment.KitchenApplicants.Select(a=>UiKit.Ref(a)));
         parts.AddRange(training.Assignments.Select(a=>a.PersonId+a.Ability));
         var f=facilities.Capture();
-        parts.Add(f.oven+"/"+f.bike+"/"+f.expansion+"/"+f.workbench+"/"+facilities.Advertisement);
+        parts.Add(f.oven+"/"+f.bike+"/"+f.expansion+"/"+f.workbench+"/"+f.menu+"/"+facilities.Advertisement);
         parts.Add(records.Count.ToString());
         return string.Join("|",parts);
     }
@@ -154,7 +154,7 @@ public sealed class HubView : MonoBehaviour
         var weakest=roster.People.OrderBy(p=>p.LocalKnowledge).FirstOrDefault();
         if(weakest!=null && weakest.LocalKnowledge<.4f)return $"土地勘は、裏道を通って配達すると育ちます。{weakest.Name} は土地勘が低いので、訓練で伸ばすのも手です。";
         if(facilities.Workbenches<=2 && crew.Count>=2)return "内勤が2人なら、作業台を増やすと同時に作れる枚数が増えます。";
-        return "まとめて配達すると、1回の往復で2軒に届けられます。地図で順番を決めましょう。";
+        return $"まとめて配達すると、1回の往復で最大{DeliveryPerson.MaximumCapacity}軒に届けられます。地図で順番を決めましょう。";
     }
 
     // ---- cards ----
@@ -220,9 +220,11 @@ public sealed class HubView : MonoBehaviour
         else
         {
             card.ShowTraining(null,null);
-            var best=Enumerable.Range(0,5).Select(i=>(CourierAbility)i).Where(a=>person.Ability(a)<person.Potential(a)).OrderByDescending(a=>person.Experience(a)).FirstOrDefault();
-            float threshold=progression!=null?progression.ExperiencePerLevel:200;
-            card.ShowExperience("経験 "+ShopStrings.Ability(best),person.Experience(best)/threshold,$"次 +{(progression!=null?progression.GrowthPerLevel:.02f):0.00}まで");
+            bool canGrow=progression!=null && progression.CanGrow(person);
+            var best=progression!=null?progression.ClosestGrowth(person):CourierAbility.Driving;
+            float fraction=progression!=null?progression.ExperienceFraction(person,best):0;
+            card.ShowExperience(canGrow?ShopStrings.GrowthExperience(best):ShopStrings.GrowthMaximum,
+                canGrow?fraction:1,canGrow?ShopStrings.GrowthNext(fraction,progression.GrowthPerLevel):"");
         }
         card.ShowWage(UiKit.Yen(economy.DailyWage(person)));
         card.Train.Button.onClick.AddListener(()=>OpenTraining(person));
@@ -282,9 +284,9 @@ public sealed class HubView : MonoBehaviour
     }
     private string FacilityLevel(FacilityType type)=>type switch
     {
-        FacilityType.Oven=>$"いま {facilities.Ovens}台",
-        FacilityType.Workbench=>$"いま {facilities.Workbenches}台",
-        FacilityType.Bike=>$"Lv {facilities.BikeLevel}",
+        FacilityType.Oven=>ShopStrings.FacilityLevel(facilities.Ovens,facilities.MaximumLevel(type)),
+        FacilityType.Workbench=>ShopStrings.FacilityLevel(facilities.Workbenches,facilities.MaximumLevel(type)),
+        FacilityType.Bike=>ShopStrings.FacilityLevel(facilities.BikeLevel,facilities.MaximumLevel(type)),
         FacilityType.Menu=>$"いま {facilities.MenuUpgrades+1}種類",
         FacilityType.Expansion=>$"上限 {facilities.MaximumPeople}人",
         _=>facilities.Advertisement>0?$"今日 x{facilities.AdvertisingDemand(facilities.Advertisement):0.00}":"今日はなし"
@@ -300,7 +302,7 @@ public sealed class HubView : MonoBehaviour
     };
     private void ShowFacility(FacilityCardView card,FacilityType type,string picture)
     {
-        card.Show(UiKit.Art(picture),ShopStrings.Facility(type),FacilityLevel(type),FacilityEffect(type));
+        card.Show(UiKit.Art(picture),ShopStrings.Facility(type),FacilityLevel(type),facilities.IsMaximum(type) && type!=FacilityType.Advertising?(type==FacilityType.Menu?ShopStrings.MenuCompleted:ShopStrings.FacilityCompleted):FacilityEffect(type));
         if(type==FacilityType.Advertising)
         {
             card.ShowTiers(facilities.AdvertisingTiers,

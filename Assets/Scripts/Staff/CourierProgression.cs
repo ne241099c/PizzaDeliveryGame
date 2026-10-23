@@ -28,14 +28,22 @@ public sealed class CourierProgression : MonoBehaviour
     [SerializeField,Min(0)] private float lateServiceExperience=5;
     [SerializeField,Min(0)] private float enduranceExperiencePerSecond=.35f;
     [SerializeField,Min(0)] private float safetyExperiencePerRoad=4;
+    [SerializeField,Min(0)] private float earnedExperienceMultiplier=3;
     [SerializeField] private bool automaticGrowth=true;
     private readonly List<string> growth=new();
     private readonly List<GrowthRecord> records=new();
     public IReadOnlyList<GrowthRecord> Records=>records;
     private readonly Dictionary<string,float[]> dailyStart=new();
     private readonly Dictionary<string,float[]> experienceGrowth=new();
+    private readonly Dictionary<string,float[]> dailyExperience=new();
+    public float ExperienceGainedToday(DeliveryPerson person,CourierAbility ability)=>ability!=CourierAbility.Capacity && dailyExperience.TryGetValue(person.Id,out var gained)?gained[(int)ability]:0;
     public float ExperiencePerLevel=>experiencePerLevel;
     public float GrowthPerLevel=>growthPerLevel;
+    public float EarnedExperienceMultiplier=>earnedExperienceMultiplier;
+    public float ExperienceFraction(DeliveryPerson person,CourierAbility ability)=>Mathf.Clamp01(person.Experience(ability)/experiencePerLevel);
+    public CourierAbility ClosestGrowth(DeliveryPerson person)=>Enumerable.Range(0,5).Select(i=>(CourierAbility)i)
+        .Where(a=>person.Ability(a)<person.Potential(a)).OrderByDescending(a=>person.Experience(a)).FirstOrDefault();
+    public bool CanGrow(DeliveryPerson person)=>Enumerable.Range(0,5).Any(i=>person.Ability((CourierAbility)i)<person.Potential((CourierAbility)i));
     public int GrowthCount=>growth.Count;
     public string DailySummary=>growth.Count==0?"Growth: none":"Growth\n"+string.Join("\n",growth);
     private void OnEnable() {if(flow!=null){flow.Returned+=Return;flow.Dispatched+=TrackNewPerson;}}
@@ -46,25 +54,29 @@ public sealed class CourierProgression : MonoBehaviour
         records.Clear();
         dailyStart.Clear();
         experienceGrowth.Clear();
+        dailyExperience.Clear();
         foreach(var person in roster.People)dailyStart[person.Id]=Values(person);
     }
     private void TrackNewPerson(DeliveryTrip trip) {if(!dailyStart.ContainsKey(trip.Person.Id))dailyStart[trip.Person.Id]=Values(trip.Person);}
     public void TrackRoster() {foreach(var p in roster.People)if(!dailyStart.ContainsKey(p.Id))dailyStart[p.Id]=Values(p);}
     public static float[] Values(DeliveryPerson p)=>Enumerable.Range(0,6).Select(i=>p.Ability((CourierAbility)i)).ToArray();
-    public float ExperienceEarned(DeliveryTrip trip,CourierAbility ability)=>ability switch
+    public float ExperienceEarned(DeliveryTrip trip,CourierAbility ability)=>earnedExperienceMultiplier*(ability switch
     {
         CourierAbility.Driving=>trip.DistanceAt(trip.ReturnsAt)*drivingExperiencePerDistance,
         CourierAbility.LocalKnowledge=>trip.BackstreetCount*knowledgeExperiencePerRoad,
         CourierAbility.Service=>trip.Deliveries.Sum(d=>d.ArrivesAt<=d.Order.Deadline?onTimeServiceExperience:lateServiceExperience),
         CourierAbility.Endurance=>(trip.ReturnsAt-trip.StartedAt)*enduranceExperiencePerSecond,
         CourierAbility.Safety=>trip.SafeRoadCount*safetyExperiencePerRoad,_=>0
-    };
+    });
     private void Return(DeliveryTrip trip)
     {if(automaticGrowth)for(int i=0;i<5;i++)AwardExperience(trip.Person,(CourierAbility)i,ExperienceEarned(trip,(CourierAbility)i));}
     public void AwardExperience(DeliveryPerson person,CourierAbility ability,float amount)
     {
         if(ability==CourierAbility.Capacity || person.Ability(ability)>=person.Potential(ability))return;
-        float xp=person.Experience(ability)+Mathf.Max(0,amount),before=person.Ability(ability);
+        float earned=Mathf.Max(0,amount);
+        if(!dailyExperience.TryGetValue(person.Id,out var daily))dailyExperience[person.Id]=daily=new float[5];
+        daily[(int)ability]+=earned;
+        float xp=person.Experience(ability)+earned,before=person.Ability(ability);
         while(xp>=experiencePerLevel && person.Ability(ability)<person.Potential(ability))
         {xp-=experiencePerLevel;person.SetAbility(ability,person.Ability(ability)+growthPerLevel);}
         person.SetExperience(ability,xp);RecordChange(person,ability,before,"Experience");

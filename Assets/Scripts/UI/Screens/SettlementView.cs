@@ -141,17 +141,42 @@ public sealed class SettlementView : MonoBehaviour
     private void BuildGrowth()
     {
         var card=UiKit.Card(right,"Growth",0,0,820,320,T.paper,16,8,3);rows.Add((card,3,0,null,null));
-        UiKit.Label(card,"Title","成長したこと",34,22,400,56,36,T.line,FontRole.Display);
-        var records=progression.Records.ToList();UiKit.Badge(card,"Count",$"{records.Count}件",300,32,T.cheese,T.line,36,18);
-        if(records.Count==0){UiKit.Label(card,"Empty","今日は成長なし。たくさん走ると育ちます。",34,120,740,40,22,T.inkSub,FontRole.Black);return;}
-        for(int i=0;i<records.Count && i<3;i++)
+        UiKit.Label(card,"Title",ShopStrings.GrowthTitle,34,22,280,56,T.headingSize,T.line,FontRole.Display);
+        // A day's repeated increases are one row; no courier's result disappears beyond the first three.
+        var records=progression.Records.GroupBy(r=>(r.Person,r.Ability))
+            .Select(g=>new GrowthRecord(g.Key.Person,g.Key.Ability,g.First().Before,g.Last().After,g.Last().Source)).ToList();
+        var progressing=roster.People.Where(p=>Enumerable.Range(0,5).Any(i=>progression.ExperienceGainedToday(p,(CourierAbility)i)>0)).ToList();
+        UiKit.Badge(card,"Count",ShopStrings.GrowthCount(records.Count,progressing.Count),320,32,T.cheese,T.line,36,T.captionSize);
+        var viewport=UiKit.Box(card,"Viewport",24,92,772,212);
+        var hit=viewport.gameObject.AddComponent<Image>();hit.color=Color.clear;
+        viewport.gameObject.AddComponent<RectMask2D>();
+        var content=UiKit.Box(viewport,"Content",0,0,772,212);
+        var scroll=viewport.gameObject.AddComponent<ScrollRect>();scroll.content=content;scroll.viewport=viewport;
+        scroll.horizontal=false;scroll.vertical=true;scroll.movementType=ScrollRect.MovementType.Clamped;
+        ScrollNavigation.Configure(scroll);
+        int index=0;
+        foreach(var r in records)
         {
-            var r=records[i];float y=96+i*72;
-            UiKit.Avatar(card,"Avatar"+i,34,y,60,T.CourierColor(r.Person.Name),r.Person.Name.Substring(0,1));
-            UiKit.Label(card,"Name"+i,$"{r.Person.Name} ・ {ShopStrings.Ability(r.Ability)}",110,y+8,260,44,24,T.line,FontRole.Black);
-            var bar=UiKit.Bar(card,"Bar"+i,380,y+18,270,24,T.barFill);bar.Set(r.Ability==CourierAbility.Capacity?r.After/2:r.After);
-            UiKit.Label(card,"Change"+i,$"{UiKit.Ability(r.Before)} → {UiKit.Ability(r.After)} <color={UiKit.Html(T.basil)}>▲</color>",660,y+8,150,44,24,T.line,FontRole.Display,TextAlignmentOptions.MidlineRight);
+            float y=index++*72;
+            UiKit.Avatar(content,"Avatar"+index,10,y,60,T.CourierColor(r.Person.Name),r.Person.Name.Substring(0,1));
+            UiKit.Label(content,"Name"+index,ShopStrings.GrowthProgress(r.Person.Name,r.Ability),86,y+8,260,44,T.subheadingSize,T.line,FontRole.Black);
+            var bar=UiKit.Bar(content,"Bar"+index,350,y+18,230,24,T.barFill);
+            bar.Set(r.Ability==CourierAbility.Capacity?r.After/DeliveryPerson.MaximumCapacity:r.After);
+            UiKit.Label(content,"Change"+index,$"{UiKit.Ability(r.Before)} → {UiKit.Ability(r.After)} <color={UiKit.Html(T.basil)}>▲</color>",590,y+8,176,44,T.subheadingSize,T.line,FontRole.Display,TextAlignmentOptions.MidlineRight);
         }
+        foreach(var p in progressing)
+        {
+            var candidates=Enumerable.Range(0,5).Select(i=>(CourierAbility)i)
+                .Where(a=>p.Ability(a)<p.Potential(a) && progression.ExperienceGainedToday(p,a)>0).ToList();
+            if(candidates.Count==0)continue;
+            var ability=candidates.OrderByDescending(a=>p.Experience(a)).First();float fraction=progression.ExperienceFraction(p,ability),y=index++*72;
+            UiKit.Avatar(content,"ExperienceAvatar"+index,10,y,60,T.CourierColor(p.Name),p.Name.Substring(0,1));
+            UiKit.Label(content,"ExperienceName"+index,ShopStrings.GrowthProgress(p.Name,ability),86,y+8,260,44,T.subheadingSize,T.line,FontRole.Black);
+            UiKit.Bar(content,"ExperienceBar"+index,350,y+18,230,24,T.basil).Set(fraction);
+            UiKit.Label(content,"ExperienceProgress"+index,ShopStrings.GrowthProgressValue(fraction),590,y+8,176,44,T.captionSize,T.inkSub,FontRole.Black,TextAlignmentOptions.MidlineRight);
+        }
+        if(index==0)UiKit.Label(content,"Empty",ShopStrings.GrowthEmpty,10,28,740,96,T.bodySize,T.inkSub,FontRole.Black,TextAlignmentOptions.TopLeft,true);
+        content.sizeDelta=new Vector2(772,Mathf.Max(212,index*72));
     }
     private void BuildQuality()
     {

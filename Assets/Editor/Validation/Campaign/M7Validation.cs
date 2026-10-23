@@ -4,6 +4,67 @@ using UnityEngine;
 using UnityEditor;
 public static class M7Validation
 {
+    /// <summary>Focused growth/equipment regression; no campaign simulation and no normal save writes.</summary>
+    public static string RunGrowthFacilitiesOnly()
+    {
+        if(!Application.isPlaying)throw new InvalidOperationException("Play required.");
+        CampaignSaveManager.SessionSavingLocked=true;
+        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var protection=save.SuppressSaving();
+        using var mapScope=new SampleMapValidationScope();
+        var growth=UnityEngine.Object.FindFirstObjectByType<CourierProgression>();
+        var f=UnityEngine.Object.FindFirstObjectByType<FacilityManager>();
+        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();
+        var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
+        var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
+        var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();
+        var funds=new SerializedObject(economy);float initial=funds.FindProperty("initialCash").floatValue;
+        bool ticking=clock.AutomaticTick,spawning=spawner.enabled;int checks=0;
+        void Check(bool ok,string label){if(!ok)throw new Exception("Growth/facilities: "+label);checks++;}
+        try
+        {
+            campaign.NewGame();clock.AutomaticTick=false;spawner.enabled=false;growth.PrepareDay();
+            var p=new DeliveryPerson("Growth",.5f,.5f,2,.5f,.5f,.5f);p.SetPotential(CourierAbility.Driving,.8f);
+            float threshold=growth.ExperiencePerLevel,gain=growth.GrowthPerLevel;
+            growth.AwardExperience(p,CourierAbility.Driving,threshold-1);
+            Check(Mathf.Abs(p.Driving-.5f)<.0001f && growth.ExperienceFraction(p,CourierAbility.Driving)>.9f,"partial experience is visible before a level");
+            Check(growth.CanGrow(p) && growth.ClosestGrowth(p)==CourierAbility.Driving,"hub chooses nearest growing ability");
+            growth.AwardExperience(p,CourierAbility.Driving,1);
+            Check(Mathf.Abs(p.Driving-.5f-gain)<.0001f && p.Experience(CourierAbility.Driving)==0,"threshold increases ability and retains remainder");
+            Check(growth.ExperienceGainedToday(p,CourierAbility.Driving)==threshold && growth.Records.Count==1,"daily experience and ability gain both recorded");
+            growth.PrepareDay();Check(growth.ExperienceGainedToday(p,CourierAbility.Driving)==0 && growth.Records.Count==0,"new day clears feedback without resetting persistent ability");
+            p.SetPotential(CourierAbility.Driving,p.Driving);growth.AwardExperience(p,CourierAbility.Driving,threshold);
+            Check(p.Experience(CourierAbility.Driving)==0,"growth respects potential");
+            var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var route=new ManualDeliveryRoute(map);
+            route.TryReplace(new[]{"Store-N1","N1-N2-Backstreet","N2-Goal1","N2-Goal1","N1-N2-Backstreet","Store-N1"});
+            var trip=new DeliveryTrip(map,route.BuildCompletion(new[]{ReadyOrder("Goal1","Growth",0,100)},p),p,0,5);
+            Check(growth.EarnedExperienceMultiplier>1 && Mathf.Abs(growth.ExperienceEarned(trip,CourierAbility.LocalKnowledge)-30*growth.EarnedExperienceMultiplier)<.001f,"trip experience uses configurable growth multiplier");
+            Check(Mathf.Abs(growth.ExperienceEarned(trip,CourierAbility.Service)-15*growth.EarnedExperienceMultiplier)<.001f,"delivery service experience uses same multiplier");
+            funds.FindProperty("initialCash").floatValue=10000000;funds.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
+            Check(f.MaximumLevel(FacilityType.Oven)>=10 && f.MaximumLevel(FacilityType.Workbench)>=10 && f.MaximumLevel(FacilityType.Bike)>=10,"equipment can reach level ten");
+            Check(f.Price(FacilityType.Oven)==600 && f.Price(FacilityType.Bike)==500 && f.Price(FacilityType.Workbench)==400,"first prices unchanged");
+            Check(f.Purchase(FacilityType.Oven) && f.Price(FacilityType.Oven)==1000,"second oven price unchanged");
+            Check(f.Purchase(FacilityType.Oven) && f.Price(FacilityType.Oven)>1000,"further upgrade price extends existing price ladder");
+            foreach(var type in new[]{FacilityType.Oven,FacilityType.Bike,FacilityType.Workbench})
+            {
+                while(!f.IsMaximum(type))Check(f.Purchase(type),"additional equipment purchase "+type);
+                decimal cash=economy.Cash;
+                Check(f.Price(type)==0 && !f.Purchase(type) && economy.Cash==cash,"maximum rejects purchase without charging "+type);
+            }
+            Check(f.Ovens==f.MaximumLevel(FacilityType.Oven) && f.Workbenches==f.MaximumLevel(FacilityType.Workbench) && f.BikeLevel==f.MaximumLevel(FacilityType.Bike),"all equipment reaches configured limits");
+            Check(f.SpeedMultiplier>1.16f && f.RiskMultiplier>0 && f.RiskMultiplier<=.8f,"higher bike levels improve speed and keep risk nonnegative");
+            var snapshot=f.Capture();Check(f.Valid(snapshot),"extended levels accepted by save validation");f.NewGame();f.Restore(snapshot);
+            Check(f.Ovens==f.MaximumLevel(FacilityType.Oven) && f.BikeLevel==f.MaximumLevel(FacilityType.Bike),"extended equipment save round trip");
+            snapshot.oven=f.MaximumUpgrades(FacilityType.Oven)+1;Check(!f.Valid(snapshot),"above maximum rejected");
+            f.Restore(new FacilitySaveData{oven=2,bike=2,workbench=2,menu=2});
+            Check(f.Ovens==3 && f.BikeLevel==3 && f.Workbenches==4 && f.IsMaximum(FacilityType.Menu),"legacy equipment and three-recipe menu preserved");
+            return $"PASS: {checks} growth/equipment checks.";
+        }
+        finally
+        {
+            funds.FindProperty("initialCash").floatValue=initial;funds.ApplyModifiedPropertiesWithoutUndo();
+            campaign.NewGame();clock.AutomaticTick=ticking;spawner.enabled=spawning;
+        }
+    }
     // Older route/finance tests start with an explicitly baked pizza; fresh orders use the default Waiting state.
     public static Order ReadyOrder(string destination,string name,float spawned,float promise)=>new Order(destination,name,spawned,promise,BakingState.Ready);
     [MenuItem("Tools/Pizza Delivery/Validate M7 (Play Mode)")]
