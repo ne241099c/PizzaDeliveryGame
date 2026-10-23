@@ -22,6 +22,30 @@ public sealed class EditModeTests
         Assert.AreEqual("",TitleValidation.MissingReferences(view));
     }
 
+
+    [TestCase("abc", "120", "0", "120")]
+    [TestCase("99999999999999999999999999999999999999999", "-1", "0", "0")]
+    [TestCase(null, null, "0", "0")]
+    public void InvalidRecordAmountsCannotBreakTitle(string daily,string total,string expectedDaily,string expectedTotal)
+    {
+        string folder=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"pizza-record-test-"+System.Guid.NewGuid().ToString("N"));
+        System.IO.Directory.CreateDirectory(folder);
+        try
+        {
+            string save=System.IO.Path.Combine(folder,"campaign.json");
+            var record=new BestRecords{bestDay=2,bestDelivered=7,bestDailyRevenue=daily,bestTotalRevenue=total};
+            System.IO.File.WriteAllText(CampaignSaveFile.RecordsPath(save),JsonUtility.ToJson(record));
+            string before=System.IO.File.ReadAllText(CampaignSaveFile.RecordsPath(save));
+            var read=CampaignSaveFile.ReadRecords(save);
+            Assert.AreEqual(expectedDaily,read.bestDailyRevenue);
+            Assert.AreEqual(expectedTotal,read.bestTotalRevenue);
+            Assert.DoesNotThrow(()=>CampaignSaveFile.RecordsSummary(read));
+            Assert.AreEqual(before,System.IO.File.ReadAllText(CampaignSaveFile.RecordsPath(save)),"reading malformed records does not overwrite the file");
+            Assert.AreEqual(2,read.bestDay,"valid fields are retained");
+        }
+        finally{System.IO.Directory.Delete(folder,true);}
+    }
+
     [Test]
     public void ThemeSuppliesSharedShapesAsAssets()
     {

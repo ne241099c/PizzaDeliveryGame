@@ -17,8 +17,13 @@ public static class GameScenes
     public const string Game="Game";
     private static LaunchMode pending=LaunchMode.Direct;
 
-    public static void LoadGame(LaunchMode mode){pending=mode;SceneManager.LoadScene(Game);}
-    public static void LoadTitle(){pending=LaunchMode.Direct;SceneManager.LoadScene(Title);}
+    /// <summary>A rejected full save load is shown on the title, without replacing that save.</summary>
+    public static string TitleProblem {get;private set;}="";
+    [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void Reset(){pending=LaunchMode.Direct;TitleProblem="";}
+    public static void LoadGame(LaunchMode mode){TitleProblem="";pending=mode;SceneManager.LoadScene(Game);}
+    public static void LoadTitle()=>LoadTitle("");
+    public static void LoadTitle(string problem){TitleProblem=problem;pending=LaunchMode.Direct;SceneManager.LoadScene(Title);}
     /// <summary>The requested mode, then Direct for any later start (a scene reload or the editor).</summary>
     public static LaunchMode Consume(){var mode=pending;pending=LaunchMode.Direct;return mode;}
 }

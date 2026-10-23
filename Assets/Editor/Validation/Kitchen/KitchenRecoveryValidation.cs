@@ -22,6 +22,8 @@ public static class KitchenRecoveryValidation
         int? originalSeed=cook.SeedOverride;
         var fields=new SerializedObject(cook);
         float successBase=fields.FindProperty("staffSuccessBase").floatValue,successScale=fields.FindProperty("staffSuccessScale").floatValue;
+        var clockFields=new SerializedObject(clock);
+        float originalMultiplier=clockFields.FindProperty("travelTimeMultiplier").floatValue;
         int count=0;void Check(bool ok,string text){if(!ok)throw new Exception("Kitchen recovery: "+text);count++;}
         void Start(bool staffed=false)
         {
@@ -60,10 +62,10 @@ public static class KitchenRecoveryValidation
             Check(zone.Accepts(payload),"trash zone accepts packed pizza");
             hand.BeginAt(payload,Vector2.zero);hand.Cancel();Check(economy.Cash==cash && cook.JobFor(o)==job,"cancel drag costs nothing");
             list.SelectOnly(o);zone.Dropped(payload);
-            Check(economy.Cash==cash-cook.WasteCost && economy.Ledger.Waste==cook.WasteCost && economy.Ledger.WastedPizzas==1,"drop charges exactly one waste fee");
+            Check(economy.Cash==cash-cook.WasteCost && economy.Ledger.Waste==cook.WasteCost && economy.Ledger.WastedPizzas==1,"discard tracks one pizza without an additional cash penalty");
             Check(!cook.Discard(job) && economy.Ledger.WastedPizzas==1,"stale item cannot be discarded twice");
             Check(cook.JobFor(o).Stage==PizzaStage.Dough && cook.IsRedo(o) && o.Deadline==oldDeadline && list.Contains(o) && !list.SelectedOrders.Contains(o),"redo starts dough on same ticket and deadline");
-            Check(economy.Ledger.Profit==-cook.WasteCost,"waste belongs in profit without double charging");
+            Check(cook.WasteCost==0 && economy.Cash==cash && economy.Ledger.Profit==0,"discard has no monetary penalty");
 
             Start();
             o=Ticket();
@@ -120,6 +122,21 @@ public static class KitchenRecoveryValidation
 
             Quality(0,0);Start(true);o=Ticket("Staff failure");job=cook.JobFor(o);float required=cook.AutoRedoSeconds(job);
             Check(!float.IsInfinity(required) && required>=cook.StaffWorkSeconds(member)+cook.BakeDuration(o),"redo budget uses real work, bake and delivery time");
+            var map=Find<MapManager>();
+            float outbound=Find<CourierRoster>().People.Where(p=>p.Status!=DeliveryStatus.Training).Min(p=>
+            {
+                var path=RoadPathfinder.FindShortestPath(map.Edges,"Store",o.DestinationNodeId,e=>map.GetTravelTime(e.Id,p));
+                return path==null?float.PositiveInfinity:path.Sum(id=>map.GetTravelTime(id,p));
+            });
+            clockFields.Update();clockFields.FindProperty("travelTimeMultiplier").floatValue=originalMultiplier+1;clockFields.ApplyModifiedPropertiesWithoutUndo();
+            Check(Mathf.Abs(cook.AutoRedoSeconds(job)-required-outbound)<.001f,"redo delivery estimate converts map travel into the same seconds as DeliveryTrip");
+            clockFields.Update();clockFields.FindProperty("travelTimeMultiplier").floatValue=originalMultiplier;clockFields.ApplyModifiedPropertiesWithoutUndo();
+            float deadline=o.Deadline;
+            o.Deadline=clock.ElapsedSeconds+required-.01f;
+            Check(!cook.CanAutoRedo(job,clock.ElapsedSeconds),"redo rejected just below full cooking plus actual travel budget");
+            o.Deadline=clock.ElapsedSeconds+required+.01f;
+            Check(cook.CanAutoRedo(job,clock.ElapsedSeconds),"redo allowed just above full cooking plus actual travel budget");
+            o.Deadline=deadline;
             var later=Ticket("Later normal");clock.Advance(cook.StaffWorkSeconds(crew.People[0])+cook.BakeDuration(o)+.01f);
             Check(cook.IsRedo(o) && economy.Ledger.WastedPizzas==1 && !o.IsReady,"zero-star-point staff pizza auto discards with time available");
             // The cook is completing the later task; redo must wait, then precede the next ordinary ticket.
@@ -146,6 +163,7 @@ public static class KitchenRecoveryValidation
         finally
         {
             Quality(successBase,successScale);
+            clockFields.Update();clockFields.FindProperty("travelTimeMultiplier").floatValue=originalMultiplier;clockFields.ApplyModifiedPropertiesWithoutUndo();
             hand.Cancel();
             cook.SeedOverride=originalSeed;
             save.StartNewGame();

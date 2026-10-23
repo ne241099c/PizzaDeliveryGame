@@ -41,8 +41,11 @@ public sealed class TitleScene : MonoBehaviour
     {
         string path=SavePath;bool exists=File.Exists(path);
         bool usable=CampaignSaveFile.TryReadSummary(path,out var data,out var reason) && exists;
+        string problem=GameScenes.TitleProblem;
+        if(!string.IsNullOrEmpty(problem))usable=false;
+        else if(exists && !usable)problem=CampaignSaveFile.Problem(reason);
         var records=CampaignSaveFile.ReadRecords(path);
-        view.Refresh(usable?CampaignSaveFile.Summary(data):"",!exists,TutorialReady,exists && !usable?CampaignSaveFile.Problem(reason):"",
+        view.Refresh(usable?CampaignSaveFile.Summary(data):"",!exists,TutorialReady,problem,
             records.bestDay>0?CampaignSaveFile.RecordsSummary(records):"");
     }
     private CanvasGroup Panel(string name)

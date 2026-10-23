@@ -6,6 +6,17 @@ using UnityEngine;
 
 public static partial class M6Validation
 {
+    /// <summary>Focused save regression, without running unrelated M3-M6 UI or simulations.</summary>
+    public static string RunSaveOnly()
+    {
+        if(!Application.isPlaying)throw new InvalidOperationException("Play required");
+        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();
+        using var protection=save.SuppressSaving();
+        using var mapScope=new SampleMapValidationScope();
+        int before=Checks;
+        ValidateSaveGame();
+        return $"PASS: {Checks-before} save preservation checks.";
+    }
     private static void ValidateSaveGame()
     {
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();
@@ -16,7 +27,8 @@ public static partial class M6Validation
         var progression=UnityEngine.Object.FindFirstObjectByType<CourierProgression>();
         string original=save.SavePathOverride;bool automatic=save.AutomaticSavingEnabled,locked=CampaignSaveManager.SessionSavingLocked;
         string actualPath=save.SavePath;byte[] actualBefore=File.Exists(actualPath)?File.ReadAllBytes(actualPath):null;
-        string temp=Path.Combine(Path.GetTempPath(),"pizza-m6-save-validation-"+Guid.NewGuid().ToString("N")+".json");
+        string folder=Path.Combine(Path.GetTempPath(),"pizza-m6-save-validation-"+Guid.NewGuid().ToString("N"));
+        string temp=Path.Combine(folder,"campaign.json");
         try
         {
             // Saving is exercised on a temporary file only, so the session lock is lifted for this part.
@@ -51,18 +63,22 @@ public static partial class M6Validation
             var wrong=save.Capture();
             wrong.version=999;
             Check(!save.TryParse(JsonUtility.ToJson(wrong),out _,out var reason) && reason.Contains("version"),"unsupported save version rejected");
-            File.WriteAllText(temp,JsonUtility.ToJson(wrong));save.Continue();
-            Check(campaign.DayNumber==1 && economy.Cash==300 && save.LastMessage.Contains("version"),"unsupported version starts new game with visible reason");
+            string beforeFailure=save.SnapshotJson();
+            string wrongJson=JsonUtility.ToJson(wrong);
+            File.WriteAllText(temp,wrongJson);save.Continue();save.SavePreparation();
+            Check(File.ReadAllText(temp)==wrongJson && save.SnapshotJson()==beforeFailure && save.LastMessage.Contains("version"),"unsupported save remains untouched and campaign is not reset");
             File.WriteAllText(temp,"{not-json");
-            save.Continue();
-            Check(campaign.DayNumber==1 && save.LastMessage.Contains("Cannot load"),"corrupt file falls back safely");
+            save.Continue();save.SavePreparation();
+            Check(File.ReadAllText(temp)=="{not-json" && save.SnapshotJson()==beforeFailure && save.LastMessage.Contains("読めませんでした"),"corrupt file is preserved and loading failure is visible");
+            save.StartNewGame();
+            Check(save.LastMessage=="" && save.TryParse(File.ReadAllText(temp),out _,out _),"only explicit new game replaces the rejected save and clears notice");
             save.StartNewGame();campaign.StartBusiness();clock.Advance(clock.BusinessDuration+1000);
             Check(campaign.IsBankrupt && !File.Exists(temp),"bankruptcy deletes save");
             save.StartNewGame();Check(campaign.DayNumber==1 && economy.Cash==300 && roster.People.Count==2,"start new resets campaign");
         }
         finally
         {
-            if(File.Exists(temp))File.Delete(temp);if(File.Exists(temp+".tmp"))File.Delete(temp+".tmp");
+            if(Directory.Exists(folder))Directory.Delete(folder,true);
             save.AutomaticSavingEnabled=false;
             save.SavePathOverride=original;
             campaign.NewGame();

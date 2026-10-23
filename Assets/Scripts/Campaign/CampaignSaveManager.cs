@@ -114,15 +114,21 @@ public sealed class CampaignSaveManager : MonoBehaviour
         if(mode==LaunchMode.NewGame){StartNewGame();return;}
         if(!File.Exists(SavePath)){StartNewGame();return;}
         if(TryRead(out _,out var reason)){Continue();return;}
-        LastMessage="Cannot load save: "+reason+" Starting a new game.";
-        StartNewGame();
+        RejectLoad(reason);
+        GameScenes.LoadTitle(LastMessage);
     }
-    public void StartNewGame(){ready=true;campaign.NewGame();}
+    public void StartNewGame(){LastMessage="";ready=true;campaign.NewGame();}
     public void Continue()
     {
         if(TryRead(out var data,out var reason))
         {restoring=true;try{campaign.RestorePreparation(data);}finally{restoring=false;}ready=true;LastMessage=$"Loaded day {data.day}.";}
-        else {LastMessage="Cannot load save: "+reason+" Starting a new game.";StartNewGame();}
+        else RejectLoad(reason);
+    }
+    private void RejectLoad(string reason)
+    {
+        // No campaign reset and no autosave: the original file is recoverable until the player explicitly starts over.
+        ready=false;
+        LastMessage=CampaignSaveFile.Problem(reason);
     }
     public CampaignSaveData Capture()
     {

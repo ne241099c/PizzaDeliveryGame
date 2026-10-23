@@ -44,16 +44,28 @@ public static class CampaignSaveFile
     }
     /// <summary>"3日目 ・ ¥1,240 ・ 評判 72" for the continue button.</summary>
     public static string Summary(CampaignSaveData data)=>$"{data.day}日目 ・ {UiKit.Yen(Decimal(data.cash))} ・ 評判 {data.reputation:F0}";
-    public static string Problem(string reason)=>"セーブを読めませんでした（"+reason+"）。最初から始めます。";
+    public static string Problem(string reason)=>"セーブを読めませんでした（"+reason+"）。元のセーブは変更していません。「最初から」を選ぶと新しく始めます。";
 
     public static BestRecords ReadRecords(string savePath)
     {
         string path=RecordsPath(savePath);
-        try{var records=File.Exists(path)?JsonUtility.FromJson<BestRecords>(File.ReadAllText(path)):null;return records??new BestRecords();}
+        try{var records=File.Exists(path)?JsonUtility.FromJson<BestRecords>(File.ReadAllText(path)):null;return NormalizeRecords(records);}
         catch(Exception e)when(e is IOException || e is UnauthorizedAccessException || e is ArgumentException){return new BestRecords();}
     }
+    private static BestRecords NormalizeRecords(BestRecords records)
+    {
+        records??=new BestRecords();
+        records.bestDay=Math.Max(0,records.bestDay);
+        records.bestDelivered=Math.Max(0,records.bestDelivered);
+        records.bestDailyRevenue=NonnegativeMoney(records.bestDailyRevenue);
+        records.bestTotalRevenue=NonnegativeMoney(records.bestTotalRevenue);
+        return records;
+    }
+    private static string NonnegativeMoney(string value)=>decimal.TryParse(value,NumberStyles.Number,CultureInfo.InvariantCulture,out var amount) && amount>=0
+        ?amount.ToString(CultureInfo.InvariantCulture):"0";
     public static string RecordsSummary(BestRecords r)
     {
+        r=NormalizeRecords(r);
         if(r.bestDay==0)return "最高記録：まだありません";
         return $"最高記録：{r.bestDay}日目まで ・ 1日の売上 {UiKit.Yen(Decimal(r.bestDailyRevenue))} ・ 通算売上 {UiKit.Yen(Decimal(r.bestTotalRevenue))} ・ 配達 {r.bestDelivered}件";
     }

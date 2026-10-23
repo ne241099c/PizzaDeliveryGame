@@ -7,7 +7,7 @@ using UnityEngine;
 public sealed partial class CookingManager
 {
     [SerializeField,Min(0)] private float playerIdleSeconds=8;
-    [SerializeField,Min(0)] private float wasteCost=20;
+    [SerializeField,Min(0)] private float wasteCost=0;
     [SerializeField,Range(1,4)] private int redoBelowStar=2;
     [SerializeField,Min(0)] private float redoMinRemainingSec=0;
     private readonly Dictionary<Order,int> redoCounts=new();
@@ -85,7 +85,7 @@ public sealed partial class CookingManager
             var path=RoadPathfinder.FindShortestPath(map.Edges,"Store",job.Order.DestinationNodeId,e=>map.GetTravelTime(e.Id,person));
             if(path==null)continue;
             float waiting=person.CurrentTrip!=null?Mathf.Max(0,person.CurrentTrip.ReturnsAt-at):0;
-            delivery=Mathf.Min(delivery,waiting+path.Sum(id=>map.GetTravelTime(id,person)));
+            delivery=Mathf.Min(delivery,waiting+clock.ToRealSeconds(path.Sum(id=>map.GetTravelTime(id,person))));
         }
         float ovenWait=ovens.Select(j=>j==null || j==job?0:Mathf.Max(0,j.OvenStartedAt+BakeDuration(j.Order)-at)).DefaultIfEmpty(0).Min();
         float queued=OvenQueue.Where(j=>j!=job).Sum(j=>BakeDuration(j.Order))/Mathf.Max(1,OvenCount);

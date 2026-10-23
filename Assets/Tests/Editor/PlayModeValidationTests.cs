@@ -65,6 +65,13 @@ public sealed class PlayModeValidationTests
     [UnityTest] public IEnumerator Visual()=>Run(VisualValidation.Run,true);
     [UnityTest] public IEnumerator Business()=>Run(M7Validation.Run);
     [UnityTest] public IEnumerator Shop()=>Run(ShopValidation.Run);
+    [UnityTest] public IEnumerator SavePreservation()=>Run(M6Validation.RunSaveOnly);
+    [UnityTest] public IEnumerator KitchenRecovery()=>Run(KitchenRecoveryValidation.Run);
+    [UnityTest] public IEnumerator KitchenQueue()=>Run(KitchenQueueValidation.Run);
+    [UnityTest] public IEnumerator PizzaMenu()=>Run(PizzaMenuValidation.Run);
+    [UnityTest] public IEnumerator CityGeneration()=>Run(CityGenerationValidation.RunBasic);
+    [UnityTest] public IEnumerator CityCampaign()=>Run(CityCampaignValidation.Run);
+    [UnityTest] public IEnumerator CityOrders()=>Run(CityOrderValidation.Run);
     [UnityTest] public IEnumerator PrefabScreens()=>Run(ScreenPrefabValidation.Run);
     /// <summary>The Game scene as the title starts it: continue (the player's save, or a new game without one), then 最初から.</summary>
     [UnityTest] public IEnumerator LaunchContinue()=>Run(LaunchValidation.Run);
