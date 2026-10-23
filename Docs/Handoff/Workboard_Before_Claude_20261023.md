@@ -64,7 +64,7 @@ claude
 ```text
 AGENTS.md、CLAUDE.md、Docs/Handoff/Current.md、Docs/Handoff/Workboard.mdを読み、実装担当として再開してください。
 旧「Claudeはレビューのみ」の制限は撤回済みです。あなたとCodexの両方が実装を担当します。
-あなたは元プロジェクトのuiブランチとUnity Editorを担当し、Docs/計画書_見た目.mdのV-4を最後まで実装してください。
+あなたは元プロジェクトのuiブランチとUnity Editorを担当し、Docs/Archive/計画書_見た目.mdのV-4を最後まで実装してください。
 Codexは別worktreeでAssets/Scripts/UiStrings.csだけを実装します。このファイルは直接変更せず、必要な文言を共有してください。
 V4_candidate.py.txtは未適用・未検証の参考案です。実装を調べ、必要な差分だけ反映し、候補を無条件に実行しないでください。
 1920x1080と1280x720で全11画面を確認・修正し、最終画像を保存してください。Unity操作、配置コード、シーン/Prefab編集、検証、撮影、ローカルコミット、main統合もあなたが担当して構いません。Codexの承認待ちは不要です。

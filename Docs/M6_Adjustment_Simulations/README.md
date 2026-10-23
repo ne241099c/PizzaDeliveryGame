@@ -1,6 +1,6 @@
 # M6調整 再測定
 
-[実装・結果・目標との比較](../M6_Adjustment_Results.md)。シード20261022、刻み0.25秒、最大30日。破産時は打ち切り。各条件2回実行し、CSVの全フィールド一致。
+[実装・結果・目標との比較](../Archive/M6_Adjustment_Results.md)。シード20261022、刻み0.25秒、最大30日。破産時は打ち切り。各条件2回実行し、CSVの全フィールド一致。
 
 | 方針 | 出発 | 雇用 | 目安 | 訓練 | 初期資金 |
 |---|---|---|---|---|---:|
@@ -11,6 +11,6 @@
 | [E](E.csv) | 1件 | なし | 30固定 | あり | 300 |
 | [E2](E2.csv) | 1件 | なし | 30固定 | あり | 600 |
 
-[全方針のCSV](comparisons.csv)、[前回との差の集計](summary.csv)、[8方針の10日検証](policies.csv)、[従来の30/60/120秒対照](legacy/seed-20261022.csv)。前回の測定は[別フォルダー](../M6_Simulations/README.md)に保持。
+[全方針のCSV](comparisons.csv)、[前回との差の集計](summary.csv)、[8方針の10日検証](policies.csv)、[従来の30/60/120秒対照](legacy/seed-20261022.csv)。前回の測定は[別フォルダー](../Archive/M6_Simulations/README.md)に保持。
 
 各CSVの末尾cashは、その方針の終了日の所持金。Eの前回は8日で今回は1日なので、cashの差は同じ期間の比較ではない。couriersは当日終了時、experience_growthは訓練を除く経験由来の増加。初日の訓練もpreparation_costsに含み、profitからは二重控除しない。E2は本体の初期資金300を変更せず、実験中だけ600を使う。

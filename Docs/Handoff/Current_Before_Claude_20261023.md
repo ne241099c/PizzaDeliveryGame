@@ -32,9 +32,9 @@ V-4完了（adffe1f）。**uiをmainへfast-forward統合し、mainで全検証3
 1. `Docs/設計書_ゲーム性.md`、`Docs/設計書_経営.md`：基礎仕様。
 2. `Docs/設計書_画面構成.md`：実装済みS-0〜S-5。
 3. `Docs/設計書_M7.md`：実装済みC-1〜C-5。末尾の指示も確認。
-4. `Docs/計画書_見た目.md`：現在のV-0〜V-4の正。文書内のV-0停止指示より、ユーザーの継続指示が優先。
+4. `Docs/Archive/計画書_見た目.md`：現在のV-0〜V-4の正。文書内のV-0停止指示より、ユーザーの継続指示が優先。
 5. `Docs/Screens_M7_UI_Results.md`：各段階の実績と判断。途中の「停止」は履歴で、後段の修正完了記録と合わせて読む。
-6. `Docs/M4_StageResults.md`、`M5_StageResults.md`、`M6_StageResults.md`、`M6_Adjustment_Results.md`：前段履歴。
+6. `Docs/Archive/M4_StageResults.md`、`M5_StageResults.md`、`M6_StageResults.md`、`M6_Adjustment_Results.md`：前段履歴。
 7. `Docs/UI_Screens/ScreenInventory.md`（並び依存）、`VisualInventory.md`、`Docs/Credits.md`。
 8. `Docs/M7_Simulations/FGH/README.md`とF/G/H.csv：測定結果。古い開発計画のチェック欄だけで実装済みを判断しない。
 

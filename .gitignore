@@ -118,3 +118,14 @@ InitTestScene*.unity*
 
 # Isolated local worktrees for Codex / Claude Code collaboration
 /.worktrees/
+
+# ---- This project ----
+# macOS Finder metadata
+.DS_Store
+# Unity's crash-recovery copies of unsaved scenes (local only)
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta
+# Python caches from Tools/
+__pycache__/
+# Local Codex settings (MCP connection; never commit)
+/.codex/
