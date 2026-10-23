@@ -66,7 +66,7 @@ public static class CitySimulationValidation
         try
         {
             session?.Dispose();session=null;map.SeedOverride=seed;map.BlocksOverride=blocks;map.UseSampleForValidation=sample;
-            if(Application.isPlaying){save.StartNewGame();clock.AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();}
+            if(Application.isPlaying){save.StartNewGame();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
             if(!Same(campaignBytes,Bytes(campaignPath)) || !Same(recordBytes,Bytes(recordsPath)))Status="FAIL: normal save changed";
         }
         finally{protection?.Dispose();protection=null;}

@@ -28,7 +28,15 @@ public sealed class CampaignManager : MonoBehaviour
     public int DayNumber { get; private set; } = 1;
     public int TotalDelivered { get; private set; }
     public int TotalScore { get; private set; }
-    private void Start() {if(saveGame!=null)saveGame.Startup();else PrepareDay();}
+    // The campaign starts once the map is ready: a new game generates its town and a save restores one, and both need the map.
+    private void Start()
+    {
+        var map=FindFirstObjectByType<MapManager>();
+        if(map!=null && !map.IsReady){map.MapReady+=StartWhenMapReady;return;}
+        Begin();
+    }
+    private void StartWhenMapReady(){FindFirstObjectByType<MapManager>().MapReady-=StartWhenMapReady;Begin();}
+    private void Begin(){if(saveGame!=null)saveGame.Startup();else PrepareDay();}
     private void OnEnable() => clock.OnDayEnded += SettleDay;
     private void OnDisable() => clock.OnDayEnded -= SettleDay;
     public bool IsBankrupt { get; private set; }

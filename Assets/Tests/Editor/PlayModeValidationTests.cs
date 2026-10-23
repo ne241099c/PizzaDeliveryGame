@@ -5,29 +5,37 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-/// <summary>The scene validations as Test Runner tests. Each test opens its scene (Game, or Title for the title checks),
-/// enters Play Mode, runs one validation and exits. Simulations (minutes long) are not included.
+/// <summary>The scene validations as Test Runner tests. Each test enters Play Mode in the Title scene, locks saving, loads
+/// the Game scene when needed, runs one validation and exits. Simulations (minutes long) are not included.
 /// Automatic saving is switched off as soon as Play Mode starts and stays off, so the player's save and records are kept.</summary>
 public sealed class PlayModeValidationTests
 {
     private const string GameScene="Assets/Scenes/Game.unity",TitleScene="Assets/Scenes/Title.unity";
 
-    private static IEnumerator Run(Func<string> validation,bool newGameFirst=false,string scene=GameScene)
+    /// <summary>Enters Play Mode in the Title scene, locks saving for the session, loads the scene under test (in the given
+    /// mode), runs the validation and exits. The lock is in place before the Game scene starts, so its startup can never write
+    /// the player's save. One flat coroutine: the Test Runner only handles EnterPlayMode yielded from the test itself.</summary>
+    private static IEnumerator Run(Func<string> validation,bool newGameFirst=false,string scene=GameScene,LaunchMode mode=LaunchMode.Direct)
     {
         if(!Application.isPlaying)
         {
             // Play Mode runs the scene as it is in memory (like pressing Play), so unsaved edits to that scene are fine.
             var active=EditorSceneManager.GetActiveScene();
-            if(active.path!=scene)
+            if(active.path!=TitleScene)
             {
-                if(active.isDirty)Assert.Inconclusive("Save or discard "+active.path+" first (tests open "+scene+").");
-                EditorSceneManager.OpenScene(scene);
+                if(active.isDirty)Assert.Inconclusive("Save or discard "+active.path+" first (tests open "+TitleScene+").");
+                EditorSceneManager.OpenScene(TitleScene);
             }
             yield return new EnterPlayMode();
         }
-        // Saving stays off for the whole test, frames included (scopes inside the validations restore to off).
-        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();if(save!=null)save.AutomaticSavingEnabled=false;
+        CampaignSaveManager.SessionSavingLocked=true;
+        if(scene==GameScene)
+        {
+            GameScenes.LoadGame(mode);
+            for(int i=0;i<300 && !GameReady();i++)yield return null;
+        }
         yield return null; // let Start() run once
+        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();if(save!=null)save.AutomaticSavingEnabled=false;
         if(newGameFirst)
         {
             // As in run_suite.py, where earlier validations leave a started campaign (and its generated town) behind.
@@ -39,6 +47,11 @@ public sealed class PlayModeValidationTests
         finally{CleanUp();}
         yield return new ExitPlayMode();
         StringAssert.StartsWith("PASS",result);
+    }
+    private static bool GameReady()
+    {
+        var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();
+        return UnityEngine.SceneManagement.SceneManager.GetActiveScene().name==GameScenes.Game && clock!=null && map!=null && map.IsReady && clock.Phase==DayPhase.BeforeOpening;
     }
     private static void CleanUp()
     {
@@ -53,4 +66,7 @@ public sealed class PlayModeValidationTests
     [UnityTest] public IEnumerator Business()=>Run(M7Validation.Run);
     [UnityTest] public IEnumerator Shop()=>Run(ShopValidation.Run);
     [UnityTest] public IEnumerator PrefabScreens()=>Run(ScreenPrefabValidation.Run);
+    /// <summary>The Game scene as the title starts it: continue (the player's save, or a new game without one), then 最初から.</summary>
+    [UnityTest] public IEnumerator LaunchContinue()=>Run(LaunchValidation.Run);
+    [UnityTest] public IEnumerator LaunchNewGame()=>Run(LaunchValidation.Run,false,GameScene,LaunchMode.NewGame);
 }

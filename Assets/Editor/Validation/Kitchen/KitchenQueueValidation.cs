@@ -31,6 +31,6 @@ public static class KitchenQueueValidation
             Check(Mathf.Abs(faster*rate-original)<.0001f && rate>1,"delivery multiplier reduces every travel time consistently");
             return $"PASS: {count} kitchen queue and delivery speed checks.";
         }
-        finally{save.StartNewGame();clock.AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();}
+        finally{save.StartNewGame();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
     }
 }

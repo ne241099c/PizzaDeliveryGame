@@ -38,7 +38,7 @@ public static class CityFrameReview
     public static string End()
     {
         if(protection==null)return "Review not active";
-        try{map.StopAllCoroutines();map.SeedOverride=previousSeed;var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();if(!Same(campaign,Bytes(campaignPath)) || !Same(records,Bytes(recordPath)))throw new Exception("normal save changed");return "PASS: normal campaign and records unchanged";}
+        try{map.StopAllCoroutines();map.SeedOverride=previousSeed;var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;if(!Same(campaign,Bytes(campaignPath)) || !Same(records,Bytes(recordPath)))throw new Exception("normal save changed");return "PASS: normal campaign and records unchanged";}
         finally{protection.Dispose();protection=null;}
     }
 }

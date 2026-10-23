@@ -25,6 +25,7 @@ public static class UiKit
     {
         get
         {
+            if(T!=null && T.triangleSprite!=null)return T.triangleSprite;
             if(triangle!=null)return triangle;
             var tex=new Texture2D(32,32,TextureFormat.RGBA32,false){hideFlags=HideFlags.DontSave,wrapMode=TextureWrapMode.Clamp};
             for(int y=0;y<32;y++)for(int x=0;x<32;x++){float half=(y+.5f)/32f*16f;float d=Mathf.Abs(x+.5f-16)-half;tex.SetPixel(x,y,new Color(1,1,1,Mathf.Clamp01(.5f-d)));}

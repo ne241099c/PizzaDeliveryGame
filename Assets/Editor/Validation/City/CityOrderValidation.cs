@@ -23,6 +23,6 @@ public static class CityOrderValidation
             Check(list.Orders.Any(o=>o.DestinationNodeId.StartsWith("B")),"orders reach new districts");
             return $"PASS: {checks} district order checks.";
         }
-        finally{map.SeedOverride=seed;map.UseSampleForValidation=sample;spawn.SeedOverride=null;save.StartNewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();}
+        finally{map.SeedOverride=seed;map.UseSampleForValidation=sample;spawn.SeedOverride=null;save.StartNewGame();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
     }
 }

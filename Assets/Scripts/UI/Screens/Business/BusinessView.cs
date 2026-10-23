@@ -9,36 +9,40 @@ using UnityEngine.UI;
 public enum ShopZone { Kitchen, Handover, Dispatch }
 
 /// <summary>営業中の店内シーン (UI_Mock/Main.png, ShopDispatch.png): one shop with a kitchen, a handover counter and
-/// a full-screen dispatch map. The camera pans between zones; game rules stay in the existing managers.</summary>
+/// a full-screen dispatch map. The camera pans between zones; game rules stay in the existing managers.
+/// The fixed layout is the prefab Assets/Prefabs/UI/BusinessView.prefab: ScreenPrefabs calls BuildLayout once in the
+/// editor and the parts are kept in serialized fields. At runtime Bind attaches the actions; stations, tickets, lanes and
+/// pins follow the data and are built here.</summary>
 public sealed partial class BusinessView : MonoBehaviour
 {
     private ScreenRouter router;private GameClock clock;private BusinessEconomy economy;private ReputationManager reputation;private OrderSpawner spawner;
     private OrderBook orders;private CookingManager cooking;private KitchenCrew crew;private CourierRoster roster;private HandoverManager handover;
     private DeliveryFlowController flow;private DeliveryPlanner planner;private MapManager map;private GameMenu menu;private FacilityManager facilities;private CampaignManager campaign;
     private UITheme T=>UiKit.T;
-    private RectTransform world,hud,rail,railContent,dispatch,dragLayer,toasts;
-    private CanvasGroup worldGroup,hudGroup,dispatchGroup;
-    private TextMeshProUGUI dayText,timeText,cashText,reputationText,promiseText;
-    private Slider promiseSlider;
-    private UiBar timeBar,reputationBar;private RectTransform cashDelta;
-    // Unity must retain generated control references across an Editor script reload.
-    [SerializeField, HideInInspector] private StickerButton[] zoneTabs=new StickerButton[3];
+    [Header("Frame")]
+    [SerializeField] private RectTransform mapArea,world,hud,rail,railContent,dispatch,dragLayer,toasts,zoneKnob,cashDelta;
+    [SerializeField] private CanvasGroup worldGroup,hudGroup,dispatchGroup;
+    [SerializeField] private TextMeshProUGUI dayText,timeText,cashText,reputationText,promiseText;
+    [SerializeField] private Slider promiseSlider;
+    [SerializeField] private UiBar timeBar,reputationBar;
+    [SerializeField] private StickerButton menuButton;
+    [SerializeField] private StickerButton[] zoneTabs=new StickerButton[3];
     private ShopHand hand;
     private readonly Dictionary<Order,int> numbers=new();private int nextNumber=1;
     private float pan,panFrom,panTo,panStarted;
     public ShopZone Zone {get;private set;}=ShopZone.Kitchen;
-    public RectTransform MapArea {get;private set;}
+    /// <summary>The map's slot on screen; MapViewportUI aligns the world camera to it.</summary>
+    public RectTransform MapArea=>mapArea;
     public const float WorldWidth=2880,HandoverPan=-960;
     private const float ToggleX=32,ToggleY=20,ToggleW=340;
-    private RectTransform zoneKnob;
 
     private void Awake()
     {
         router=Find<ScreenRouter>();clock=Find<GameClock>();economy=Find<BusinessEconomy>();reputation=Find<ReputationManager>();spawner=Find<OrderSpawner>();
         orders=Find<OrderBook>();cooking=Find<CookingManager>();crew=Find<KitchenCrew>();roster=Find<CourierRoster>();handover=Find<HandoverManager>();
         flow=Find<DeliveryFlowController>();planner=Find<DeliveryPlanner>();map=Find<MapManager>();menu=Find<GameMenu>();facilities=Find<FacilityManager>();campaign=Find<CampaignManager>();
-        Build();
     }
+    private void Start(){Bind();ShowZone(ShopZone.Kitchen,true);}
     private static TComp Find<TComp>() where TComp:UnityEngine.Object=>FindFirstObjectByType<TComp>();
     private void OnEnable()
     {
@@ -56,10 +60,13 @@ public sealed partial class BusinessView : MonoBehaviour
     public int Number(Order o){if(!numbers.TryGetValue(o,out int n)){AssignNumbers();numbers.TryGetValue(o,out n);}return n;}
     private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}}
 
-    private void Build()
+    /// <summary>Editor only (ScreenPrefabs): creates the fixed layout under this object, reading sizes from the open scene's
+    /// managers (rack capacity, waste cost). Actions are not attached here: Bind does that at runtime.</summary>
+    public void BuildLayout()
     {
+        Awake();
         var root=(RectTransform)transform;
-        MapArea=root.Find("MapArea") as RectTransform;if(MapArea==null)MapArea=UiKit.Stretch(root,"MapArea"); // scene-authored so MapViewportUI can reference it
+        mapArea=UiKit.Stretch(root,"MapArea");
         world=UiKit.Box(root,"World",0,0,WorldWidth,1080);worldGroup=UiKit.Group(world);
         BuildKitchen();BuildHandover();
         dispatch=UiKit.Stretch(root,"Dispatch");dispatchGroup=UiKit.Group(dispatch);BuildDispatch();
@@ -70,15 +77,24 @@ public sealed partial class BusinessView : MonoBehaviour
         zoneKnob=UiKit.Box(tabs,"Knob",6,6,ToggleW/2-9,64);UiKit.Fill(zoneKnob,T.tomato,32);
         for(int i=0;i<3;i++)
         {
-            var z=(ShopZone)i;float x=i==0?6:i==2?ToggleW/2+3:0,w=i==1?0:ToggleW/2-9;
-            zoneTabs[i]=UiKit.Button(tabs,"Zone"+i,names[i],StickerKind.Secondary,x,6,w,64,24,()=>ShowZone(z),FontRole.Display,icons[i]);
+            float x=i==0?6:i==2?ToggleW/2+3:0,w=i==1?0:ToggleW/2-9;
+            zoneTabs[i]=UiKit.Button(tabs,"Zone"+i,names[i],StickerKind.Secondary,x,6,w,64,24,null,FontRole.Display,icons[i]);
             // The knob is the face: the buttons only carry the label and icon.
             foreach(var part in new[]{"Shadow","Face/Edge","Face/Fill"})zoneTabs[i].transform.Find(part).GetComponent<Image>().enabled=false;
         }
         UiKit.Show(zoneTabs[1],false);
         toasts=UiKit.Box(root,"Toasts",1360,300,420,300);
-        dragLayer=UiKit.Stretch(root,"Hand");hand=dragLayer.gameObject.AddComponent<ShopHand>();hand.Init(dragLayer);
-        ShowZone(ShopZone.Kitchen,true);
+        dragLayer=UiKit.Stretch(root,"Hand");
+    }
+    /// <summary>Attaches the actions to the prefab's parts (button listeners and drag/drop handlers are not serialized).</summary>
+    private void Bind()
+    {
+        for(int i=0;i<zoneTabs.Length;i++){var z=(ShopZone)i;zoneTabs[i].Button.onClick.AddListener(()=>ShowZone(z));}
+        menuButton.Button.onClick.AddListener(()=>menu.ShowMenu());
+        UiKit.BindSlider(promiseSlider,v=>spawner.SetPromiseSeconds(v));
+        BindKitchen();BindHandover();BindDispatch();
+        // The hand registers every drop zone already under the screen, so it comes last.
+        hand=dragLayer.gameObject.AddComponent<ShopHand>();hand.Init(dragLayer);
     }
 
     // ---- HUD ----
@@ -96,9 +112,9 @@ public sealed partial class BusinessView : MonoBehaviour
         reputationText=UiKit.Label(hud,"Reputation","50",838,14,70,66,38,T.line,FontRole.Display);
         reputationBar=UiKit.Bar(hud,"ReputationBar",910,36,100,24,T.cheese);
         UiKit.Label(hud,"PromiseTitle",ShopStrings.Promise,1034,24,104,46,20,T.line,FontRole.Black);
-        promiseSlider=UiKit.Slider(hud,"PromiseSlider",1142,34,168,28,T.cheese,v=>spawner.SetPromiseSeconds(v));
+        promiseSlider=UiKit.Slider(hud,"PromiseSlider",1142,34,168,28,T.cheese,null);
         promiseText=UiKit.Label(hud,"Promise","60秒",1318,14,100,66,36,T.line,FontRole.Display,TextAlignmentOptions.Center);
-        UiKit.Button(hud,"MenuButton","",StickerKind.Secondary,1424,14,64,64,20,()=>menu.ShowMenu(),FontRole.Black,"icon_menu");
+        menuButton=UiKit.Button(hud,"MenuButton","",StickerKind.Secondary,1424,14,64,64,20,null,FontRole.Black,"icon_menu");
     }
     private void RefreshHud()
     {

@@ -31,7 +31,7 @@ public static class KitchenComparisonValidation
             }
             Check(cooking.EditorSubstitute==original,"substitute restored after simulation");return $"PASS: {count} kitchen autoplay policy checks.";
         }
-        finally{save.StartNewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();}
+        finally{save.StartNewGame();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
     }
     public static string Begin()
     {
@@ -60,7 +60,7 @@ public static class KitchenComparisonValidation
     private static void Cleanup()
     {
         EditorApplication.update-=Tick;
-        try{session?.Dispose();session=null;save.StartNewGame();Find<GameClock>().AutomaticTick=false;Find<GameMenu>().ReturnTitle();if(!Same(before,Bytes(path)) || !Same(records,Bytes(recordsPath)))Status="FAIL: normal save changed";}
+        try{session?.Dispose();session=null;save.StartNewGame();Find<GameClock>().AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;if(!Same(before,Bytes(path)) || !Same(records,Bytes(recordsPath)))Status="FAIL: normal save changed";}
         finally{protection?.Dispose();protection=null;}
     }
 }

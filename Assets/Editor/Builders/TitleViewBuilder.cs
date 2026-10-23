@@ -41,6 +41,7 @@ public static class TitleViewBuilder
         var so=new SerializedObject(theme);
         so.FindProperty("roundSprite").objectReferenceValue=AssetDatabase.LoadAssetAtPath<Sprite>(UiArt+"ui_round.png");
         so.FindProperty("circleSprite").objectReferenceValue=AssetDatabase.LoadAssetAtPath<Sprite>(UiArt+"ui_circle.png");
+        so.FindProperty("triangleSprite").objectReferenceValue=AssetDatabase.LoadAssetAtPath<Sprite>(UiArt+"ui_triangle.png");
         so.ApplyModifiedProperties();AssetDatabase.SaveAssetIfDirty(theme);
         return $"{count} sprites configured; theme round={theme.roundSprite!=null} circle={theme.circleSprite!=null}";
     }

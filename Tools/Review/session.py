@@ -1,14 +1,16 @@
 """Scene handling shared by the review tools (2 scenes: Title and Game, see Assets/Scripts/Core/GameScenes.cs).
 
-ensure_scene(code, 'Game') loads the Game scene if another scene is playing (it continues the player's save in memory,
-without writing it) and turns automatic saving off for the rest of the Play session, so fixtures never overwrite the
-player's save. finish(code) loads the Title scene, which discards the fixture game.
+ensure_scene(code, scene) first locks saving for the whole Play session (CampaignSaveManager.SessionSavingLocked, which
+survives scene loads), then loads the scene if another one is playing. Fixtures can then never overwrite the player's
+save, even if the Game scene is reloaded meanwhile. finish(code) loads the Title scene, which discards the fixture game.
 """
 import time
 
 def ensure_scene(code, scene):
     if code('return Application.isPlaying?"yes":"no";') != 'yes':
         raise SystemExit('Press Play in Unity first (either scene).')
+    # Before anything else: no Game scene in this Play session may write the save, even after a reload.
+    code('CampaignSaveManager.SessionSavingLocked=true;return "saving locked for this Play session";')
     active = code('return UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;')
     if active != scene:
         code('GameScenes.LoadGame(LaunchMode.Direct);return "load";' if scene == 'Game' else 'GameScenes.LoadTitle();return "load";')

@@ -83,6 +83,6 @@ public static class KitchenRecoveryValidation
             Start();Check(economy.Ledger.Waste==0 && economy.Ledger.WastedPizzas==0 && !cook.Jobs.Any(),"new day resets recovery counters and jobs");
             return $"PASS: {count} kitchen recovery checks.";
         }
-        finally{Quality(successBase,successScale);hand.Cancel();cook.SeedOverride=originalSeed;save.StartNewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();}
+        finally{Quality(successBase,successScale);hand.Cancel();cook.SeedOverride=originalSeed;save.StartNewGame();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
     }
 }

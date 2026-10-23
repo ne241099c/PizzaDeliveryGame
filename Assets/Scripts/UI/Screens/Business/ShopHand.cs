@@ -5,35 +5,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-public enum DragKind { Ticket, Dough, Ladle, Cheese, Topping, Pizza, Box, Bagged }
-
-/// <summary>What the hand holds.</summary>
-public sealed class DragPayload
-{
-    public DragKind Kind;public Order Order;public PizzaJob Job;public Topping Topping;public string Sprite;public Vector2 Size=new(140,140);
-}
-
-/// <summary>Something the player can pick up (drag) or use with a click.</summary>
-public sealed class DragSource : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
-{
-    public Func<DragPayload> Payload;
-    public Action Clicked;
-    public void OnBeginDrag(PointerEventData e){var p=Payload?.Invoke();if(p!=null)ShopHand.Instance?.Begin(p,e);}
-    public void OnDrag(PointerEventData e)=>ShopHand.Instance?.Move(e);
-    public void OnEndDrag(PointerEventData e)=>ShopHand.Instance?.End(e);
-    public void OnPointerClick(PointerEventData e){if(!e.dragging && e.button==PointerEventData.InputButton.Left)Clicked?.Invoke();}
-}
-
-/// <summary>A place that can receive what the hand holds; it glows while a matching item is held.</summary>
-public sealed class DropZone : MonoBehaviour
-{
-    public Func<DragPayload,bool> Accepts;
-    public Action<DragPayload> Dropped;
-    public Action<DragPayload,Vector2> Hovering;
-    public Image Glow;
-    public void SetGlow(bool on,bool hot){if(Glow==null)return;Glow.enabled=on;var c=UiKit.T.cheese;Glow.color=new Color(c.r,c.g,c.b,hot?.95f:.55f);}
-}
-
 /// <summary>The player's hand: one held item that follows the pointer with a shadow; right click returns it.</summary>
 public sealed class ShopHand : MonoBehaviour
 {

@@ -26,6 +26,6 @@ public static class CityViewValidation
             int revision=map.MapRevision;map.LoadMap(map.City.map);business.SyncRoute();Check(map.MapRevision>revision && planner.Route.EdgeIds.SequenceEqual(outward.Concat(home)),"map reload invalidates path cache");
             return $"PASS: {checks} city view checks.";
         }
-        finally{map.SeedOverride=previous;save.StartNewGame();clock.AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();}
+        finally{map.SeedOverride=previous;save.StartNewGame();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
     }
 }

@@ -53,7 +53,11 @@ public sealed partial class BusinessView
     }
     private readonly List<BenchView> benches=new();
     private readonly List<OvenView> ovens=new();
-    private RectTransform kitchenZone,benchArea,ovenArea,shelf,shelfContent;private TextMeshProUGUI shelfTitle;
+    [Header("Kitchen")]
+    [SerializeField] private RectTransform kitchenZone,benchArea,ovenArea,shelf,shelfContent;
+    [SerializeField] private TextMeshProUGUI shelfTitle,trashTitle;
+    [SerializeField] private DragSource[] traySources=new DragSource[7];
+    [SerializeField] private DropZone trashZone;
     private string shelfSignature="";
     private static readonly (string sprite,string label,DragKind kind,Topping topping)[] Trays=
     {
@@ -73,9 +77,7 @@ public sealed partial class BusinessView
             var tray=Trays[i];var r=UiKit.Box(wood,"Tray_"+tray.label,24+i*152,14,136,120);
             var img=r.gameObject.AddComponent<Image>();img.sprite=UiKit.Art(tray.sprite);img.preserveAspect=true;
             UiKit.Label(wood,"TrayLabel"+i,tray.label,24+i*152,130,136,30,20,T.paper,FontRole.Black,TextAlignmentOptions.Center);
-            var source=r.gameObject.AddComponent<DragSource>();var t=tray;
-            source.Payload=()=>cooking.ManualControlEnabled?new DragPayload{Kind=t.kind,Topping=t.topping,Sprite=t.kind==DragKind.Ladle?"ladle":t.sprite,Size=t.kind==DragKind.Ladle?new Vector2(120,120):new Vector2(130,104)}:null;
-            source.Clicked=()=>ClickTray(t.kind,t.topping);
+            traySources[i]=r.gameObject.AddComponent<DragSource>();
         }
         // warming shelf
         shelf=UiKit.Card(kitchenZone,"WarmingShelf",1100,330,820,190,T.plaster,0,8,0);
@@ -88,6 +90,19 @@ public sealed partial class BusinessView
         BuildTrash();
         benchArea=UiKit.Box(kitchenZone,"Benches",40,560,1070,420);ovenArea=UiKit.Box(kitchenZone,"Ovens",1140,560,760,420);
         // Handing boxes to couriers happens only on the dispatch board (2026-10-23 request).
+    }
+    private void BindKitchen()
+    {
+        for(int i=0;i<Trays.Length;i++)
+        {
+            var t=Trays[i];var source=traySources[i];
+            source.Payload=()=>cooking.ManualControlEnabled?new DragPayload{Kind=t.kind,Topping=t.topping,Sprite=t.kind==DragKind.Ladle?"ladle":t.sprite,Size=t.kind==DragKind.Ladle?new Vector2(120,120):new Vector2(130,104)}:null;
+            source.Clicked=()=>ClickTray(t.kind,t.topping);
+        }
+        trashTitle.text=ShopStrings.Trash+"  −"+UiKit.Yen(cooking.WasteCost);
+        PizzaJob Job(DragPayload p)=>p.Job??(p.Order!=null?cooking.JobFor(p.Order):null);
+        trashZone.Accepts=p=>p!=null && (p.Kind==DragKind.Pizza || p.Kind==DragKind.Box || p.Kind==DragKind.Bagged) && cooking.CanDiscard(Job(p));
+        trashZone.Dropped=p=>cooking.Discard(Job(p));
     }
     private void LayoutStations()
     {
@@ -276,7 +291,6 @@ public sealed partial class BusinessView
             float fraction=Mathf.Clamp01((order.Deadline-clock.ElapsedSeconds)/Mathf.Max(.01f,order.TimeLimit));
             var bar=item.Find("Deadline")?.GetComponent<UiBar>();if(bar!=null)bar.Set(fraction,-1,T.DeadlineColor(fraction));
         }
-        RefreshCounterStrip();
     }
     private readonly List<RectTransform> shelfItems=new();
     private void RebuildShelf(List<Order> boxes,List<PizzaJob> waiting)
@@ -316,63 +330,9 @@ public sealed partial class BusinessView
     {
         var trash=UiKit.Card(kitchenZone,"Trash",40,940,400,104,T.paperDeep,12,4,3);
         var glow=UiKit.Stretch(trash,"Glow",-5,-5,-5,-5);var g=UiKit.Fill(glow,T.cheese,16);g.enabled=false;glow.SetAsFirstSibling();
-        UiKit.Label(trash,"Title",ShopStrings.Trash+"  −"+UiKit.Yen(cooking.WasteCost),16,6,368,38,T.subheadingSize,T.line,FontRole.Black);
+        trashTitle=UiKit.Label(trash,"Title",ShopStrings.Trash,16,6,368,38,T.subheadingSize,T.line,FontRole.Black);
         UiKit.Label(trash,"Hint",ShopStrings.TrashHint,16,46,368,42,T.captionSize,T.inkSub,FontRole.Bold);
         var hit=trash.gameObject.AddComponent<Image>();hit.color=Color.clear;
-        var zone=trash.gameObject.AddComponent<DropZone>();zone.Glow=g;
-        PizzaJob Job(DragPayload p)=>p.Job??(p.Order!=null?cooking.JobFor(p.Order):null);
-        zone.Accepts=p=>p!=null && (p.Kind==DragKind.Pizza || p.Kind==DragKind.Box || p.Kind==DragKind.Bagged) && cooking.CanDiscard(Job(p));
-        zone.Dropped=p=>cooking.Discard(Job(p));ShopHand.Instance?.Register(zone);
-    }
-
-    // ---- couriers waiting at the counter (drop packed boxes on them) ----
-    private RectTransform counterStrip;private string counterStripSignature="";private readonly List<RectTransform> counterTokens=new();
-    private void BuildCounterStrip()
-    {
-        counterStrip=UiKit.Card(kitchenZone,"CounterStrip",1110,938,790,128,T.wood,16,6,3);
-        UiKit.Label(counterStrip,"Title","受け渡し",14,4,200,28,16,T.paper,FontRole.Black);
-    }
-    private void RefreshCounterStrip()
-    {
-        if(counterStrip==null)return;
-        string sig=string.Join(",",roster.People.Select(p=>UiKit.Ref(p)+p.Status+string.Join("/",handover.BagOf(p).Select(o=>o.Id))+p.Capacity+(roster.SelectedPerson==p)));
-        if(sig!=counterStripSignature)
-        {
-            counterStripSignature=sig;
-            foreach(var t in counterTokens){var z=t.GetComponent<DropZone>();if(z!=null)ShopHand.Instance?.Unregister(z);Destroy(t.gameObject);}counterTokens.Clear();
-            int n=Mathf.Max(1,roster.People.Count);float w=Mathf.Min(256,(762f-(n-1)*8)/n);
-            for(int i=0;i<roster.People.Count;i++)counterTokens.Add(CourierToken(roster.People[i],14+i*(w+8),30,w,90));
-        }
-        foreach(var t in counterTokens)
-        {
-            var person=roster.People.FirstOrDefault(p=>t.name=="Token_"+p.Name);var state=t.Find("State")?.GetComponent<TextMeshProUGUI>();
-            if(person!=null && state!=null)state.text=person.IsAvailable?(handover.BagOf(person).Count>0?"積み込み中":"待機"):person.Status==DeliveryStatus.Training?"訓練中":$"あと{Mathf.Max(0,(person.CurrentTrip?.ReturnsAt??0)-clock.ElapsedSeconds):F0}秒";
-        }
-    }
-    private RectTransform CourierToken(DeliveryPerson person,float x,float y,float w,float h)
-    {
-        bool here=person.IsAvailable;var bag=handover.BagOf(person);
-        var token=UiKit.Box(counterStrip,"Token_"+person.Name,x,y,w,h);
-        var glow=UiKit.Stretch(token,"Glow",-5,-5,-5,-5);var g=UiKit.Fill(glow,T.cheese,18);g.enabled=false;
-        // Dark wood token so the paper-coloured text stays readable; the selected courier gets a cheese edge.
-        if(roster.SelectedPerson==person)UiKit.Fill(UiKit.Stretch(token,"Selected",-3,-3,-3,-3),T.cheese,17);
-        var face=UiKit.Fill(UiKit.Stretch(token,"Face"),new Color(T.woodDark.r,T.woodDark.g,T.woodDark.b,.9f),14,true);
-        float size=Mathf.Min(64,h-12);UiKit.Avatar(token,"Avatar",6,(h-size)/2,size,here?T.CourierColor(person.Name):T.disabled,person.Name.Substring(0,1));
-        UiKit.Label(token,"Name",person.Name,size+12,4,w-size-16,30,20,T.paper,FontRole.Display);
-        UiKit.Label(token,"State",here?"待機":ShopStrings.Status(person.Status),size+12,32,w-size-16,24,16,T.paper,FontRole.Black);
-        float slotW=Mathf.Min(34,(w-size-18)/Mathf.Max(1,person.Capacity)-4);
-        for(int s=0;s<person.Capacity;s++)
-        {
-            var slot=UiKit.Box(token,"Bag"+s,size+12+s*(slotW+4),58,slotW,28);
-            if(s<bag.Count){var img=slot.gameObject.AddComponent<Image>();img.sprite=UiKit.Art("box_closed");img.preserveAspect=true;img.raycastTarget=false;}
-            else UiKit.Dashed(slot,new Color(1,1,1,.75f),6,4,2);
-        }
-        var zone=token.gameObject.AddComponent<DropZone>();zone.Glow=g;var p=person;
-        zone.Accepts=pl=>pl.Kind==DragKind.Box && handover.BagRejection(pl.Order,p).Length==0;
-        zone.Dropped=pl=>{if(!handover.Bag(pl.Order,p))Toast(handover.LastMessage,T.berry,null,"icon_box");};
-        ShopHand.Instance?.Register(zone);
-        var click=token.gameObject.AddComponent<DragSource>();click.Clicked=()=>ClickCourier(p);
-        if(!here)UiKit.Group(token).alpha=.55f;
-        return token;
+        trashZone=trash.gameObject.AddComponent<DropZone>();trashZone.Glow=g;
     }
 }

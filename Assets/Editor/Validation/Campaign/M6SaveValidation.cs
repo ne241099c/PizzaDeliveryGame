@@ -13,12 +13,13 @@ public static partial class M6Validation
         var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();
         var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();
         var progression=UnityEngine.Object.FindFirstObjectByType<CourierProgression>();
-        string original=save.SavePathOverride;bool automatic=save.AutomaticSavingEnabled;
+        string original=save.SavePathOverride;bool automatic=save.AutomaticSavingEnabled,locked=CampaignSaveManager.SessionSavingLocked;
         string actualPath=save.SavePath;byte[] actualBefore=File.Exists(actualPath)?File.ReadAllBytes(actualPath):null;
         string temp=Path.Combine(Path.GetTempPath(),"pizza-m6-save-validation-"+Guid.NewGuid().ToString("N")+".json");
         try
         {
-            save.SavePathOverride=temp;save.AutomaticSavingEnabled=true;save.StartNewGame();
+            // Saving is exercised on a temporary file only, so the session lock is lifted for this part.
+            save.SavePathOverride=temp;CampaignSaveManager.SessionSavingLocked=false;save.AutomaticSavingEnabled=true;save.StartNewGame();
             Check(File.Exists(temp),"preparation entry creates save");
             var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=10000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
             spawner.SetPromiseSeconds(45);var person=roster.People[0];
@@ -52,6 +53,7 @@ public static partial class M6Validation
         {
             if(File.Exists(temp))File.Delete(temp);if(File.Exists(temp+".tmp"))File.Delete(temp+".tmp");
             save.AutomaticSavingEnabled=false;save.SavePathOverride=original;campaign.NewGame();save.AutomaticSavingEnabled=automatic;save.ClearNotice();
+            CampaignSaveManager.SessionSavingLocked=locked;
         }
         byte[] actualAfter=File.Exists(actualPath)?File.ReadAllBytes(actualPath):null;
         Check(actualBefore==null?actualAfter==null:actualAfter!=null && actualBefore.SequenceEqual(actualAfter),"validation leaves normal player save untouched");

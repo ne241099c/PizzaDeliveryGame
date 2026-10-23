@@ -13,7 +13,7 @@ public sealed class UITheme : ScriptableObject
     [SerializeField] public TMP_FontAsset font;
     [SerializeField] public Sprite roundedPanel;
     /// <summary>White rounded square (128px, 64px 9-slice border) and circle as assets, so prefabs can reference them. UiKit generates them when unset.</summary>
-    [SerializeField] public Sprite roundSprite,circleSprite;
+    [SerializeField] public Sprite roundSprite,circleSprite,triangleSprite;
     [SerializeField] public Color[] courierColors={Hex("#27658A"),Hex("#835191"),Hex("#956129"),Hex("#3E7770"),Hex("#AC4E72"),Hex("#546536")};
     [SerializeField] public float mainRoadWidth=.18f,backstreetWidth=.10f,routeWidth=.24f,roadBorder=.07f,nodeSize=.4f,worldLabelSize=4.5f;
     [SerializeField] public float congestionWidthScale=.35f,worldIconScale=.35f,routeArrowSize=4f;

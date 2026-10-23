@@ -40,11 +40,11 @@ public static class StaffRouteResumeValidation
                 Check(save.TryParse(json,out var loaded,out _) && loaded.people.Count==20,"large roster save is accepted");
                 var invalid=save.Capture();invalid.crew.Add(new KitchenStaff(roster.People[0].Name,.5f,.5f));Check(!save.TryParse(JsonUtility.ToJson(invalid),out _,out _),"duplicate identity is still rejected");
                 string fixture=Path.Combine(folder,"campaign.json");File.WriteAllText(fixture,json);save.SavePathOverride=fixture;
-                var button=(Button)new SerializedObject(save).FindProperty("continueButton").objectReferenceValue;
-                menu.ReturnTitle();button.onClick.Invoke();
-                Check(router.Current==ScreenId.Hub && clock.Phase==DayPhase.BeforeOpening && campaign.DayNumber==7,"actual Continue button reaches saved preparation");
+                // The title's 続きから starts the Game scene with LaunchMode.Continue, which calls Continue.
+                save.Continue();
+                Check(router.Current==ScreenId.Hub && clock.Phase==DayPhase.BeforeOpening && campaign.DayNumber==7,"Continue reaches saved preparation");
                 Check(roster.People.Count==20,"Continue restores every employee");
-                clock.AutomaticTick=true;campaign.StartBusiness();spawner.enabled=false;menu.ShowMenu();menu.ReturnTitle();button.onClick.Invoke();
+                clock.AutomaticTick=true;campaign.StartBusiness();spawner.enabled=false;save.Continue();
                 Check(router.Current==ScreenId.Hub && clock.Phase==DayPhase.BeforeOpening && clock.AutomaticTick,"Continue after leaving business restores clock and hub");
                 Check(flow.ActiveTrips.Count==0 && list.OrderCount==0,"old trips and orders do not survive resume");
                 Check(File.ReadAllText(fixture)==json,"Continue does not overwrite its input save");
@@ -63,7 +63,7 @@ public static class StaffRouteResumeValidation
             }
             finally
             {
-                save.SavePathOverride=originalOverride;save.StartNewGame();clock.AutomaticTick=false;menu.ReturnTitle();Directory.Delete(folder,true);
+                save.SavePathOverride=originalOverride;save.StartNewGame();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;Directory.Delete(folder,true);
             }
         }
         Check(Same(before,Bytes(normalPath)) && Same(records,Bytes(recordPath)),"normal campaign and records remain byte-identical");
@@ -103,7 +103,7 @@ public static class StaffRouteResumeValidation
         if(visualProtection==null)return "Review not running.";
         try
         {
-            var save=Find<CampaignSaveManager>();save.StartNewGame();Find<GameClock>().AutomaticTick=false;Find<GameMenu>().ReturnTitle();
+            var save=Find<CampaignSaveManager>();save.StartNewGame();Find<GameClock>().AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;
             if(!Same(normalCampaign,Bytes(normalCampaignPath)) || !Same(normalRecords,Bytes(normalRecordsPath)))throw new Exception("normal save or records changed during visual review");
             return "PASS: normal campaign and records unchanged after visual review.";
         }

@@ -43,7 +43,14 @@ public sealed class CampaignSaveManager : MonoBehaviour
     [SerializeField] private KitchenCrew crew;
     private const int formatVersion=CampaignSaveFile.FormatVersion;
     private bool ready,restoring;
+    /// <summary>Saving for this manager (validations switch it off around their fixtures).</summary>
     public bool AutomaticSavingEnabled {get;set;}=true;
+    /// <summary>Turns saving off for every manager until Play Mode ends, across scene loads (review tools and tests set it,
+    /// so a reloaded Game scene cannot overwrite the player's save). Reset when Play Mode starts.</summary>
+    public static bool SessionSavingLocked {get;set;}
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetSessionLock()=>SessionSavingLocked=false;
+    private bool Saving=>AutomaticSavingEnabled && !SessionSavingLocked;
     public string SavePathOverride {get;set;}
     public string SavePath=>SavePathOverride??CampaignSaveFile.DefaultPath;
     public string LastMessage {get;private set;}="";
@@ -76,7 +83,7 @@ public sealed class CampaignSaveManager : MonoBehaviour
         if(dailyRevenue>Decimal(r.bestDailyRevenue)){r.bestDailyRevenue=dailyRevenue.ToString(CultureInfo.InvariantCulture);newRecords.Add("1日の売上");}
         if(totalRevenue>Decimal(r.bestTotalRevenue)){r.bestTotalRevenue=totalRevenue.ToString(CultureInfo.InvariantCulture);newRecords.Add("通算売上");}
         if(totalDelivered>r.bestDelivered){r.bestDelivered=totalDelivered;newRecords.Add("配達数");}
-        if(!AutomaticSavingEnabled){records=null;return;} // suppressed: forget the in-memory change too
+        if(!Saving){records=null;return;} // suppressed: forget the in-memory change too
         if(newRecords.Count==0)return;
         try
         {
@@ -160,7 +167,7 @@ public sealed class CampaignSaveManager : MonoBehaviour
     }
     public void SavePreparation()
     {
-        if(!AutomaticSavingEnabled || !ready || restoring || clock.Phase!=DayPhase.BeforeOpening)return;
+        if(!Saving || !ready || restoring || clock.Phase!=DayPhase.BeforeOpening)return;
         try
         {
             string path=SavePath,temp=path+".tmp";Directory.CreateDirectory(Path.GetDirectoryName(path));
@@ -170,7 +177,7 @@ public sealed class CampaignSaveManager : MonoBehaviour
     }
     public void DeleteSave()
     {
-        if(!AutomaticSavingEnabled)return;
+        if(!Saving)return;
         try {if(File.Exists(SavePath))File.Delete(SavePath);}
         catch(Exception e)when(e is IOException || e is UnauthorizedAccessException){LastMessage="Could not delete save: "+e.Message;}
     }

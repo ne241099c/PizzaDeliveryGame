@@ -8,8 +8,10 @@ using UnityEngine.UI;
 /// and the delivery promise. Baked tickets are dragged from here (or from their pin) into a courier's lane.</summary>
 public sealed partial class BusinessView
 {
-    private RectTransform dispatchOrderContent,readyCount;
-    private TextMeshProUGUI dispatchOrderTitle;
+    [Header("Dispatch orders")]
+    [SerializeField] private RectTransform dispatchOrderContent,readyCount;
+    [SerializeField] private TextMeshProUGUI dispatchOrderTitle;
+    [SerializeField] private DropZone ordersZone;
     private string dispatchOrdersSignature="";
     private readonly Dictionary<Order,float> cancelledNotices=new();
     private readonly HashSet<Order> observedOrders=new();
@@ -31,7 +33,7 @@ public sealed partial class BusinessView
         var glow=UiKit.Stretch(panel,"Glow",-8,-8,-8,-8);var g=UiKit.Fill(glow,T.cheese,24);g.enabled=false;glow.SetAsFirstSibling();
         var hit=panel.gameObject.AddComponent<Image>();hit.color=Color.clear;
         // A ticket dragged back here leaves its lane (before departure nothing is paid).
-        var zone=panel.gameObject.AddComponent<DropZone>();zone.Glow=g;zone.Accepts=p=>p!=null && p.Kind==DragKind.Bagged;zone.Dropped=p=>handover.Unbag(p.Order);ShopHand.Instance?.Register(zone);
+        ordersZone=panel.gameObject.AddComponent<DropZone>();ordersZone.Glow=g;
         dispatchOrderTitle=UiKit.Label(panel,"Title","注文",18,10,90,44,T.subheadingSize,T.line,FontRole.Display);
         readyCount=UiKit.Badge(panel,"ReadyCount","焼き上がり 0",100,18,T.basil,Color.white,30,16);
         var viewport=UiKit.Box(panel,"Viewport",8,62,328,492);
@@ -42,6 +44,7 @@ public sealed partial class BusinessView
         scroll.scrollSensitivity=T.largeSpace;
         UiKit.Label(panel,"Hint","伝票を、下の配達員のレーンへドラッグ",18,560,308,32,T.captionSize,T.inkSub,FontRole.Black);
     }
+    private void BindDispatchOrders(){ordersZone.Accepts=p=>p!=null && p.Kind==DragKind.Bagged;ordersZone.Dropped=p=>handover.Unbag(p.Order);}
     private void RefreshDispatchOrders()
     {
         foreach(var order in observedOrders.Where(o=>o.Status==OrderStatus.Cancelled))

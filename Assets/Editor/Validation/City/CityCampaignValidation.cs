@@ -36,6 +36,6 @@ public static class CityCampaignValidation
             data.city=null;Check(save.TryParse(JsonUtility.ToJson(data),out var legacyData,out _),"legacy null city JSON round trip");campaign.RestorePreparation(legacyData);Check(map.City==null && map.Nodes.Count==5,"old save retains original town");
             return $"PASS: {checks} city campaign and save checks.";
         }
-        finally{map.UseSampleForValidation=legacy;map.SeedOverride=original;save.StartNewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();}
+        finally{map.UseSampleForValidation=legacy;map.SeedOverride=original;save.StartNewGame();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
     }
 }

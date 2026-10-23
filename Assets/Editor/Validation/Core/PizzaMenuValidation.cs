@@ -41,6 +41,6 @@ public static class PizzaMenuValidation
             Check(cook.BakeDuration(seafood)==cook.BakeSeconds+1,"seafood bakes one second longer");
             return $"PASS: {count} pizza menu checks.";
         }
-        finally{cook.SeedOverride=originalSeed;save.StartNewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();}
+        finally{cook.SeedOverride=originalSeed;save.StartNewGame();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
     }
 }

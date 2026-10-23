@@ -6,7 +6,10 @@ using UnityEngine.UI;
 
 public sealed partial class BusinessView
 {
-    private RectTransform packing,rackArea,counter;private TextMeshProUGUI packingTitle,rackTitle;
+    [Header("Handover")]
+    [SerializeField] private RectTransform packing,rackArea,counter;
+    [SerializeField] private TextMeshProUGUI packingTitle,rackTitle;
+    [SerializeField] private DropZone packingZone;
     private string packingSignature="",rackSignature="",counterSignature="";
     private readonly List<RectTransform> packingItems=new(),rackItems=new(),counterItems=new();
 
@@ -18,9 +21,7 @@ public sealed partial class BusinessView
         UiKit.Picture(packing,"BoxStack","box_stack",18,170,150,120);
         packingTitle=UiKit.Label(world,"PackingTitle","梱包台",1960,902,440,34,20,T.line,FontRole.Black,TextAlignmentOptions.Center);
         var glow=UiKit.Stretch(packing,"Glow",-6,-6,-6,-6);var g=UiKit.Fill(glow,T.cheese,24);g.enabled=false;glow.SetAsFirstSibling();
-        var zone=packing.gameObject.AddComponent<DropZone>();zone.Glow=g;var hit=packing.gameObject.AddComponent<Image>();hit.color=new Color(0,0,0,0);
-        zone.Accepts=p=>p.Kind==DragKind.Pizza && p.Job!=null && p.Job.Stage==PizzaStage.Baked && p.Job.Worker==PizzaWorker.Player && cooking.PackingTable.Count()<cooking.PackingSlots;
-        zone.Dropped=p=>cooking.Box(p.Job);ShopHand.Instance?.Register(zone);
+        packingZone=packing.gameObject.AddComponent<DropZone>();packingZone.Glow=g;var hit=packing.gameObject.AddComponent<Image>();hit.color=new Color(0,0,0,0);
         // counter rack for closed boxes (top) and the courier counter (right)
         rackArea=UiKit.Card(world,"Rack",1960,330,900,190,T.plaster,0,8,0);
         for(int i=0;i<cooking.RackCapacity;i++){var spot=UiKit.Box(rackArea,"Spot"+i,24+i*146,14,128,128);UiKit.Dashed(spot,new Color(T.inkSub.r,T.inkSub.g,T.inkSub.b,.5f),10,8,2);}
@@ -29,6 +30,11 @@ public sealed partial class BusinessView
         UiKit.Label(world,"CounterTitle","受け渡しカウンター",2420,948,440,34,20,T.line,FontRole.Black,TextAlignmentOptions.Center);
     }
 
+    private void BindHandover()
+    {
+        packingZone.Accepts=p=>p.Kind==DragKind.Pizza && p.Job!=null && p.Job.Stage==PizzaStage.Baked && p.Job.Worker==PizzaWorker.Player && cooking.PackingTable.Count()<cooking.PackingSlots;
+        packingZone.Dropped=p=>cooking.Box(p.Job);
+    }
     private void RefreshHandover()
     {
         // open boxes on the packing table

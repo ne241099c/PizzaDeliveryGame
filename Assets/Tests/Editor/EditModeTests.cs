@@ -26,7 +26,7 @@ public sealed class EditModeTests
     public void ThemeSuppliesSharedShapesAsAssets()
     {
         var theme=AssetDatabase.LoadAssetAtPath<UITheme>("Assets/Resources/UITheme.asset");
-        Assert.IsNotNull(theme.roundSprite);Assert.IsNotNull(theme.circleSprite);
+        Assert.IsNotNull(theme.roundSprite);Assert.IsNotNull(theme.circleSprite);Assert.IsNotNull(theme.triangleSprite);
         Assert.AreEqual(new Vector4(64,64,64,64),theme.roundSprite.border,"rounded sprite keeps its 9-slice border");
     }
 }

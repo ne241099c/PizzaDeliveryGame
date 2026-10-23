@@ -11,11 +11,14 @@ using UnityEngine.UI;
 /// The automatic route is plain on purpose (shortest distance, blind to traffic and local knowledge).</summary>
 public sealed partial class BusinessView
 {
-    private RectTransform stepsBar,bubble,minimapFrame,laneRow;
-    [SerializeField, HideInInspector] private RectTransform[] steps=new RectTransform[2];
-    private TextMeshProUGUI bubbleText;
-    private StickerButton trafficButton;
-    private RawImage minimapImage;private Camera minimapCamera;private RenderTexture minimapTexture;
+    [Header("Dispatch")]
+    [SerializeField] private RectTransform stepsBar,bubble,minimapFrame,laneRow;
+    [SerializeField] private StickerButton zoomIn,zoomOut,fitButton;
+    [SerializeField] private RectTransform[] steps=new RectTransform[2];
+    [SerializeField] private TextMeshProUGUI bubbleText;
+    [SerializeField] private StickerButton trafficButton;
+    [SerializeField] private RawImage minimapImage;
+    private Camera minimapCamera;private RenderTexture minimapTexture;
     private sealed class Lane
     {
         public DeliveryPerson Person;public RectTransform Root,StateBadge,Diff;public TextMeshProUGUI Time,Note;
@@ -58,10 +61,10 @@ public sealed partial class BusinessView
         bubbleText=UiKit.Label(bubble,"Text","",20,50,560,56,T.captionSize,T.line,FontRole.Black,TextAlignmentOptions.TopLeft,true);
         // map controls
         var zoom=UiKit.Card(dispatch,"Zoom",1808,250,76,150,T.paper,14,6,3);
-        UiKit.Button(zoom,"ZoomIn","",StickerKind.Secondary,4,4,68,68,20,()=>Zoom(.8f,Vector2.zero,false),FontRole.Black,"icon_plus");
-        UiKit.Button(zoom,"ZoomOut","",StickerKind.Secondary,4,78,68,68,20,()=>Zoom(1.25f,Vector2.zero,false),FontRole.Black,"icon_minus");
-        UiKit.Button(dispatch,"Fit","",StickerKind.Secondary,1808,418,76,76,20,FitMap,FontRole.Black,"icon_target");
-        trafficButton=UiKit.Button(dispatch,"Traffic","混雑",StickerKind.Selected,1808,510,76,76,16,()=>{ShowCongestion=!ShowCongestion;},FontRole.Black);
+        zoomIn=UiKit.Button(zoom,"ZoomIn","",StickerKind.Secondary,4,4,68,68,20,null,FontRole.Black,"icon_plus");
+        zoomOut=UiKit.Button(zoom,"ZoomOut","",StickerKind.Secondary,4,78,68,68,20,null,FontRole.Black,"icon_minus");
+        fitButton=UiKit.Button(dispatch,"Fit","",StickerKind.Secondary,1808,418,76,76,20,null,FontRole.Black,"icon_target");
+        trafficButton=UiKit.Button(dispatch,"Traffic","混雑",StickerKind.Selected,1808,510,76,76,16,null,FontRole.Black);
         // minimap (above the lanes, bottom right)
         var mini=UiKit.Card(dispatch,"Minimap",1640,632,248,168,T.paper,14,6,3);
         minimapImage=UiKit.Stretch(mini,"Image",6,6,6,6).gameObject.AddComponent<RawImage>();minimapImage.raycastTarget=false;
@@ -73,9 +76,17 @@ public sealed partial class BusinessView
         var laneHit=laneViewport.gameObject.AddComponent<Image>();laneHit.color=Color.clear;
         laneRow=UiKit.Box(laneViewport,"Lanes",0,0,1856,LaneHeight);
         var laneScroll=laneViewport.gameObject.AddComponent<ScrollRect>();laneScroll.viewport=laneViewport;laneScroll.content=laneRow;laneScroll.horizontal=true;laneScroll.vertical=false;laneScroll.movementType=ScrollRect.MovementType.Clamped;
-        UiKit.Label(dispatch,"RouteLegend","行き・配達先へ  ━  /  帰り・お店へ  ━  （動く丸が進行方向）",430,782,1120,32,T.captionSize,T.line,FontRole.Black);
-        var legend=dispatch.Find("RouteLegend").GetComponent<TextMeshProUGUI>();legend.text=$"<color=#{ColorUtility.ToHtmlStringRGB(T.tomato)}>行き・配達先へ ━</color>  /  <color=#{ColorUtility.ToHtmlStringRGB(T.info)}>帰り・お店へ ━</color>  動く丸が進行方向 ／ レーンは横スクロール";
+        string legend=$"<color=#{ColorUtility.ToHtmlStringRGB(T.tomato)}>行き・配達先へ ━</color>  /  <color=#{ColorUtility.ToHtmlStringRGB(T.info)}>帰り・お店へ ━</color>  動く丸が進行方向 ／ レーンは横スクロール";
+        UiKit.Label(dispatch,"RouteLegend",legend,430,782,1120,32,T.captionSize,T.line,FontRole.Black);
         UiKit.Show(dispatch,false);
+    }
+    private void BindDispatch()
+    {
+        zoomIn.Button.onClick.AddListener(()=>Zoom(.8f,Vector2.zero,false));
+        zoomOut.Button.onClick.AddListener(()=>Zoom(1.25f,Vector2.zero,false));
+        fitButton.Button.onClick.AddListener(FitMap);
+        trafficButton.Button.onClick.AddListener(()=>{ShowCongestion=!ShowCongestion;});
+        BindDispatchOrders();
     }
     private TextMeshProUGUI Chip(Transform parent,float x,float w,string icon)
     {

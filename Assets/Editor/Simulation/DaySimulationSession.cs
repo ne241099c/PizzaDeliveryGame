@@ -228,7 +228,7 @@ public sealed class DaySimulationSession : IDisposable
     {
         if(disposed)return;disposed=true;
         // Cleanup remains inside suppression, including frames between batches.
-        campaign.NewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();
+        campaign.NewGame();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;
         map.SeedOverride=originalCitySeed;map.BlocksOverride=originalBlocks;map.UseSampleForValidation=originalSample;
         savingScope?.Dispose();
         cooking.EditorSubstitute=originalSubstitute;cooking.ManualControlEnabled=originalManualCooking;

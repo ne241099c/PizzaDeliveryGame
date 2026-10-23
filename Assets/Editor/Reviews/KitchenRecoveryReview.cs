@@ -45,7 +45,7 @@ public static class KitchenRecoveryReview
         try
         {
             var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();map.SeedOverride=seed;map.UseSampleForValidation=sample;
-            var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();
+            var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;
             if(!Same(campaignBytes,Read(save.SavePath)) || !Same(recordBytes,Read(save.RecordsPath)))throw new Exception("Normal campaign or records changed");
             return "PASS: normal save and records unchanged";
         }

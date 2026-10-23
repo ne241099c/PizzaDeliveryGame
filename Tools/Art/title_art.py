@@ -99,6 +99,8 @@ SPRITES = {
 UI = {
     "ui_round": (128, 128, '<rect width="128" height="128" rx="64" fill="#FFFFFF"/>'),
     "ui_circle": (128, 128, '<circle cx="64" cy="64" r="64" fill="#FFFFFF"/>'),
+    # The ▼ marker above bars (potential / ceiling).
+    "ui_triangle": (32, 32, '<path d="M0 0 H32 L16 32 z" fill="#FFFFFF"/>'),
 }
 
 # Other screens' backgrounds (Assets/Art/Screens): stretched to full screen, so a narrow strip is enough.
