@@ -1,3 +1,5 @@
+> **最新：目標と報酬の機能実装が完了。** [結果・操作・判断点](../Results/Rewards_Implementation.md)を参照。shop、関連226項目通過、通常セーブ/recordsは前後一致、新profileの生成なし。R-6は仮UI（正式モック未提供）、R-7測定の数値調整はユーザー判断待ち。旧プレイは借金なしエンドレスへ移行し、新規通常モードは20日。Unity編集モード、Codex所有、pushなし。以下は過去の引き継ぎ。
+
 > 最新追補（2026-10-23）：Codexが速度1.2倍・窯FIFO・ピザ3種類・生成マップ・内勤方針を実装。最新はshopのgit logを参照。再開時は[Current](Current.md)と[実装/測定記録](../Results/Menu_Map_Implementation.md)を優先。G-4とJ/K/Lの数値調整は判断待ち。以下はClaudeから受け取った時点の履歴。
 
 ## 最新：失敗・作り直し、放置ピザ、初期5街区
