@@ -1,5 +1,27 @@
 # 現在の引き継ぎ
 
+## 最新：D-5aタイトルと構造の整理（Claude Code、2026-10-23）
+
+担当：**Claude Code（Unity操作の所有者）**。shop、pushなし。コミット a9bc3e6 → d7f17c1 → d28f01e → 72aee10 → a86dda4。
+
+- **タイトル（D-5a）**：`Assets/Prefabs/UI/TitleView.prefab`（`TitleView`、生成 `TitleViewBuilder`）。絵は `Tools/Art/title_art.py` → `Assets/Art/Title/`。ゲーム名は `Assets/Scripts/GameInfo.cs` だけで定義し、**Tools > Game Info > Sync** でproductName・README・クレジットへ反映。チュートリアルは未実装なので「準備中」。
+- **セーブ置き場**：productNameを変えるとUnityのデータフォルダ名が変わるため、セーブは固定の `GameInfo.SaveFolder`（PizzaDeliveryGame）に置く。**SaveFolderは変えない**。通常セーブ・最高記録は作業の前後でバイト一致。
+- **プレハブ化**：タイトル・開店準備（枠）・精算（枠）・閉店は `Assets/Prefabs/UI/`。生成は `ScreenPrefabs`（Tools > Screens）。作り直すとプレハブの手修正は消える。データで変わるカード・レシート行・スタッフ行は実行時に作る。
+- **asmdef**：`PizzaDelivery`（実行時）、`PizzaDelivery.Editor`、`PizzaDelivery.Tests`。execute_code・Tools/Reviewはそのまま動く。
+- **Test Runner**：Tools > Pizza Delivery > Run Tests（結果は `Library/TestResults/last.txt`）。編集モード5件＋Play検証7件（タイトル、M3〜M6、画面、見た目、M7、店内、プレハブ画面）。シミュレーションは含まない。各テストはPlay開始直後から保存を止める。
+- **整理**：古い資料は `Docs/Archive/`。古い `*SceneSetup` は削除（現在のシーンを壊すため）。TMPのサンプル削除。`.DS_Store`・`Assets/_Recovery`・`.codex/` は .gitignore。
+- **直した既存の不整合**：M6の配達時間の期待値（速度1.2倍）、Visualの街区名（District_）、validate_shop_ui.pyの保温棚の階層、UIThemeDriverの毎フレーム例外（CanvasRendererのないボタン）。
+- **シーンのdirtyの正体**：非表示の旧UIにある `ContentSizeFitter` 3つ（ResultText、OrdersContent、HistoryContent）が、ドメインの再読み込みごとにsizeDeltaを0と計算値で行き来する。保存しても害はない。
+
+### 残作業（未着手・次の候補）
+
+1. **旧UIの撤去**：旧画面（HubScreen・BusinessScreen など、約2,800コンポーネント）は表示されていないが、`OrderListUI`・`DeliveryPlannerUI`・`CampaignManager` など約20のコンポーネントが77か所で参照し、`ScreenValidation` などは旧画面のボタンを押して確かめている。撤去には「処理（モデル）と表示の分離」と、検証を新しい画面の操作に書き換えることが必要。
+2. **店内（BusinessView）のプレハブ化**：厨房・指示盤・レーン。ゲームの中心で最も大きい（約1,500行）。
+3. **カードのテンプレート化**：配達員・内勤・求人・設備のカードをプレハブにする。
+4. 1行に詰め込んだコード（200文字超が約400行）と、名前の文字列で探す処理は、触る箇所から順に直す（一括整形はしない）。
+5. 旧からの保留（収支バランス、チュートリアルS2-T、大きな地図の負荷など）は下の節のとおり。
+
+
 ## 最新：失敗・作り直し、放置ピザ、初期5街区
 
 Codexがshopで実装・関連245項目と実UI5項目を確認。詳細：[実装記録](../Kitchen_Recovery_Implementation.md)。失敗品は保温棚の選択肢かゴミ箱へのドラッグで扱う。内勤は進行中の作業を中断せず、8秒放置されたピザを引き継ぐ。新規は5/8/10/12街区、旧生成セーブは3/5/8/12を維持。Unityは編集モード、push・main統合なし。最新コミット番号はgit logを正とする。

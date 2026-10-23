@@ -6,7 +6,8 @@
 
 # 共同作業ボード — 現在
 
-> **2026-10-23 12:50 交代：ユーザーの依頼でCodexからClaude Codeへ実装・Unity操作を引き渡し。** 受け取り時：shop / 553a6e1、Unityは編集モード（Play・コンパイルなし）。作業：D-5aタイトル画面と、レビューで出た構造の問題（旧UIの整理、プレハブ化、asmdef、Test Runner、リポジトリ整理）を段階的に。**Unity操作の所有者：Claude Code。** Codexは同じUnityと元フォルダを操作しない。
+> **2026-10-23 12:50 交代：ユーザーの依頼でCodexからClaude Codeへ実装・Unity操作を引き渡し。** **Unity操作の所有者：Claude Code**（Codexは同じUnityと元フォルダを操作しない）。
+> Claude完了（shop、pushなし）：a9bc3e6 D-5aタイトル（プレハブ・GameInfo・セーブ置き場の固定）、d7f17c1 整理（Docs/Archive、古い*SceneSetup削除、TMPサンプル削除、.gitignore）、d28f01e asmdef＋Test Runner、72aee10 精算・閉店のプレハブ化、a86dda4 開店準備のプレハブ化。Unityは編集モード。詳細と残作業は[Current](Current.md)の最新節。
 
 
 > Codex完了：S2-3/S2-4の失敗・作り直し、放置ピザの内勤引き継ぎ、初期5街区。関連245項目＋UI5項目通過。shop / Unityは編集モード。セーブの全期間差異は原因未確定、復元済みとはしない。現行ファイルをLibrary/ReviewBackups/20261023-123909に保全。詳細は [実装記録](../Kitchen_Recovery_Implementation.md)。
