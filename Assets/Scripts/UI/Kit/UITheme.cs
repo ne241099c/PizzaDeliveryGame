@@ -40,6 +40,8 @@ public sealed class UITheme : ScriptableObject
     [SerializeField] public Vector2 dispatchNoticePosition=new(840,122),dispatchNoticeSize=new(1048,64);
     [SerializeField, Min(1)] public float minimumBenchWidth=320,minimumOvenWidth=300;
     [SerializeField, Min(1)] public float notificationSeconds=5;
+    [SerializeField, Range(.1f,1f)] public float mapResidentialWidthScale=.55f;
+    [SerializeField] public Color mapResidentialFill=Hex("#FFF6E5");
     public Color CourierColor(string name)
     {
         var roster=Object.FindFirstObjectByType<CourierRoster>();

@@ -9,7 +9,9 @@ public static class RoadGeometry
     {
         Vector2 start=map.Nodes.First(n=>n.Id==edge.NodeAId).Position;
         Vector2 end=map.Nodes.First(n=>n.Id==edge.NodeBId).Position;
-        return Points(edge,start,end,map.BackstreetVisualOffset);
+        // New towns have separate physical alley routes; their graph geometry is already selectable.
+        float offset=map.City!=null && map.City.version>=6?0:map.BackstreetVisualOffset;
+        return Points(edge,start,end,offset);
     }
 
     public static Vector2[] Points(MapEdge edge,Vector2 start,Vector2 end,float backstreetOffset)

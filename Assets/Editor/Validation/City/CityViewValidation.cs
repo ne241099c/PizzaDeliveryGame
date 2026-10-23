@@ -28,7 +28,7 @@ public static class CityViewValidation
             Check(UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Any(t=>t.name=="DistrictRiver"),"river follows generated riverside district");
             Check(UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Count(t=>t.name=="Bridge")>=2,"two bridge decorations");
             Check(UnityEngine.Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Any(t=>t.name.StartsWith("DistrictName_")),"district captions");
-            Check(map.TodayCityInfo.Contains("街区3") && map.TomorrowCityInfo(5).Contains("新しい街区"),"current information and next-day preview");
+            Check(map.TodayCityInfo.Contains("街区"+map.City.blocks.Count) && map.TomorrowCityInfo(5).Contains("新しい街区"),"current information and next-day preview");
             Check(UiKit.Art("tray_squid")!=null && UiKit.Art("pizza_squid")!=null,"seafood ingredient sprites imported");
             var list=UnityEngine.Object.FindFirstObjectByType<OrderBook>();
             var handover=UnityEngine.Object.FindFirstObjectByType<HandoverManager>();

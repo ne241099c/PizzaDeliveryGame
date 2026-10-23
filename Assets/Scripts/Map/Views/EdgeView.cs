@@ -9,7 +9,7 @@ public class EdgeView : MonoBehaviour
     private LineRenderer border;
     private bool styledUsed,styledAvailable,styledLast;
     private float styledPixelScale;
-    private bool directionalView;
+    private bool directionalView,residentialRoad;
     private void LateUpdate()
     {
         var cam=Camera.main;if(road==null || cam==null)return;
@@ -21,8 +21,9 @@ public class EdgeView : MonoBehaviour
     public void Initialize(MapEdge edge, MapNode nodeA, MapNode nodeB, MapManager mapManager, bool isActive)
     {
         road=edge;EdgeId = edge.Id;
+        residentialRoad=mapManager.City!=null && mapManager.City.version>=6 && (edge.Id.Contains("_Local") || edge.Id.Contains("_House") || edge.Id.Contains("_Pair"));
         gameObject.name = "Edge_" + edge.Id;
-        worldPoints=RoadGeometry.Points(edge,nodeA.Position,nodeB.Position,mapManager.BackstreetVisualOffset);
+        worldPoints=RoadGeometry.Points(mapManager,edge);
         Vector2 start=worldPoints[0];
         transform.position=start;
         var localPoints=new Vector2[worldPoints.Length];
@@ -76,7 +77,8 @@ public class EdgeView : MonoBehaviour
         var cam=Camera.main;styledPixelScale=cam!=null?cam.orthographicSize*2/Mathf.Max(1,cam.pixelHeight):1;
         var theme=UITheme.Active;bool main=road.RoadType==RoadType.Main;bool route=used || last;
         float width=Mathf.Min(main?theme.mapMainRoad:theme.mapBackRoad,theme.mapRoadMaxPixels*styledPixelScale);
-        Color fill=route && !directionalView?theme.tomato:main?theme.mainRoadFill:theme.backRoadFill;
+        if(residentialRoad)width*=theme.mapResidentialWidthScale;
+        Color fill=route && !directionalView?theme.tomato:residentialRoad?theme.mapResidentialFill:main?theme.mainRoadFill:theme.backRoadFill;
         Color edge=route?theme.line:available && !directionalView?theme.tomato:main?theme.mainRoadEdge:theme.backRoadEdge;
         lineRenderer.numCapVertices=6;lineRenderer.numCornerVertices=6;lineRenderer.startWidth=lineRenderer.endWidth=width;lineRenderer.startColor=lineRenderer.endColor=fill;
         if(border!=null)

@@ -4,6 +4,54 @@ using UnityEngine;
 
 public static class CityGenerationValidation
 {
+    /// <summary>Small seed sample of the new topology; no business simulation or normal save writes.</summary>
+    public static string RunOrganic()
+    {
+        if(!Application.isPlaying)throw new InvalidOperationException("Play required");
+        CampaignSaveManager.SessionSavingLocked=true;
+        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var guard=save.SuppressSaving();
+        int checks=0;void Check(bool ok,string label){if(!ok)throw new Exception("Organic city: "+label);checks++;}
+        var settings=new CityGenerationSettings();string previousPositions=null;
+        foreach(int seed in new[]{1401,1402,9187})
+        {
+            var city=CityGenerator.Build(seed,5,settings);var copy=CityGenerator.Build(seed,5,settings);var larger=CityGenerator.Build(seed,12,settings);
+            try
+            {
+                Check(city.version==6,"new version is used");
+                Check(Fingerprint(city)==Fingerprint(copy),"same seed reproduces irregular town");
+                string positions=string.Join("|",city.map.Nodes.Select(n=>n.Position.ToString("R")));
+                if(previousPositions!=null)Check(positions!=previousPositions,"seed changes road and address coordinates");previousPositions=positions;
+                Check(city.map.Nodes.All(n=>larger.map.Nodes.Any(o=>o.Id==n.Id && o.Position==n.Position)),"expansion preserves all existing nodes");
+                Check(city.map.Edges.All(e=>larger.map.Edges.Any(o=>o.Id==e.Id && o.NodeAId==e.NodeAId && o.NodeBId==e.NodeBId && o.Distance==e.Distance && o.TrafficFactor==e.TrafficFactor && o.RoadType==e.RoadType && o.Bidirectional==e.Bidirectional)),"expansion preserves roads and costs");
+                var metrics=CityValidator.Measure(city,settings);Check(metrics.failures.Count==0,"initial topology safety: "+string.Join("/",metrics.failures));
+                var fullMetrics=CityValidator.Measure(larger,settings);Check(fullMetrics.failures.Count==0,"expanded topology safety: "+string.Join("/",fullMetrics.failures));
+                var homes=city.map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress).ToArray();
+                Check(homes.Length==22,"home count maintained");
+                Check(homes.Any(n=>n.Position.x>1) && homes.Any(n=>n.Position.x< -1) && homes.Any(n=>n.Position.y>1) && homes.Any(n=>n.Position.y< -1),"destinations surround the shop");
+                Check(city.blocks.Select(b=>b.area.width.ToString("F2")+"/"+b.area.height.ToString("F2")).Distinct().Count()>2,"blocks have varied dimensions");
+                int Degree(string id)=>city.map.Edges.Count(e=>e.NodeAId==id || e.NodeBId==id);
+                Check(city.map.Nodes.Count(n=>n.NodeType==NodeType.Intersection && Degree(n.Id)>=3)>3,"multiple shared junctions replace four isolated spokes");
+                Check(city.map.Edges.Any(e=>e.RoadType==RoadType.Backstreet),"neighborhood alleys present");
+                Check(city.map.Nodes.Count(n=>n.NodeType==NodeType.Intersection && Mathf.Abs(n.Position.x)>.1f && Mathf.Abs(n.Position.y)>.1f)>4,"intersections extend throughout the town");
+                // Main roads should only meet at traversable junctions, not cross visually without connecting.
+                var main=city.map.Edges.Where(e=>e.RoadType==RoadType.Main).ToArray();
+                var nodes=city.map.Nodes.ToDictionary(n=>n.Id,n=>n.Position);
+                float Cross(Vector2 a,Vector2 b)=>a.x*b.y-a.y*b.x;
+                bool crossed=false;
+                for(int i=0;i<main.Length;i++)for(int j=i+1;j<main.Length;j++)
+                {
+                    var a=main[i];var b=main[j];if(a.NodeAId==b.NodeAId || a.NodeAId==b.NodeBId || a.NodeBId==b.NodeAId || a.NodeBId==b.NodeBId)continue;
+                    Vector2 p=nodes[a.NodeAId],r=nodes[a.NodeBId]-p,q=nodes[b.NodeAId],v=nodes[b.NodeBId]-q;
+                    float denominator=Cross(r,v);if(Mathf.Abs(denominator)<.0001f)continue;
+                    float t=Cross(q-p,v)/denominator,u=Cross(q-p,r)/denominator;
+                    if(t>.0001f && t<.9999f && u>.0001f && u<.9999f)crossed=true;
+                }
+                Check(!crossed,"main road crossings are connected");
+            }
+            finally{UnityEngine.Object.Destroy(city.map);UnityEngine.Object.Destroy(copy.map);UnityEngine.Object.Destroy(larger.map);}
+        }
+        return $"PASS: {checks} irregular city checks.";
+    }
     public static string Fingerprint(GeneratedCity city)=>string.Join("|",city.map.Nodes.Select(n=>$"{n.Id}:{n.Position.x:R},{n.Position.y:R}"))+"/"+string.Join("|",city.map.Edges.Select(e=>$"{e.Id}:{e.NodeAId}:{e.NodeBId}:{e.Distance:R}:{e.TrafficFactor:R}:{e.Bidirectional}"))+"/"+string.Join("|",city.blocks.Select(b=>b.template.kind));
     public static string RunBasic()
     {
@@ -25,7 +73,7 @@ public static class CityGenerationValidation
         }
         var custom=new CityGenerationSettings();
         custom.templates.First(t=>t.kind==DistrictKind.Park).addressPositions[0]=new Vector2(.7f,-.3f);
-        var edited=CityGenerator.Build(72,3,custom);
+        var edited=CityGenerator.Build(72,3,custom,version:5);
         try
         {
             Check(Mathf.Abs(edited.map.Nodes.First(n=>n.Id=="B0_H1").Position.x-(custom.radialFirstBlockDistance+.7f*custom.blockSize))<.001f,"template address positions are data");
@@ -34,7 +82,7 @@ public static class CityGenerationValidation
         {
             UnityEngine.Object.Destroy(edited.map);
         }
-        var dense=CityGenerator.Build(1401,5,settings);
+        var dense=CityGenerator.Build(1401,5,settings,version:5);
         var legacy=CityGenerator.Build(1401,5,settings,version:3);
         var denseLegacy=CityGenerator.Build(1401,5,settings,version:4);
         var tuned=CityGenerator.Build(1401,5,settings,savedHousesPerBlock:3);

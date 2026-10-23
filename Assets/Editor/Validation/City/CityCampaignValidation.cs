@@ -66,7 +66,7 @@ public static class CityCampaignValidation
             Check(save.TryParse(JsonUtility.ToJson(data),out var customDensity,out _),"custom new-town density saves");
             campaign.RestorePreparation(customDensity);
             Check(map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==17 && map.CaptureCity().housesPerBlock==3,"Continue uses saved density rather than current Inspector default");
-            foreach(int version in new[]{1,2,3,4})
+            foreach(int version in new[]{1,2,3,4,5})
             {
                 map.UpgradeRestoredCityLayout=true;
                 data.city.version=version;
@@ -76,7 +76,7 @@ public static class CityCampaignValidation
                 string balance=oldLayout.cash;
                 campaign.RestorePreparation(oldLayout);
                 var migrated=save.Capture();
-                Check(map.CaptureCity().version==5 && map.City.blocks.Count==map.CitySettings.Blocks(data.day),"legacy layout becomes current four-direction map "+version);
+                Check(map.CaptureCity().version==CityGenerator.CurrentVersion && map.City.blocks.Count==map.CitySettings.Blocks(data.day),"legacy layout becomes current irregular map "+version);
                 Check(migrated.day==oldLayout.day && migrated.cash==balance && migrated.people.Count==oldLayout.people.Count,"layout migration keeps day funds and staff "+version);
                 Check(map.City.metrics.failures.Count==0,"migrated layout remains connected and valid "+version);
                 Check(map.CaptureCity().housesPerBlock==(version>=4?3:map.CitySettings.housesPerBlock),"migration respects saved density when present "+version);

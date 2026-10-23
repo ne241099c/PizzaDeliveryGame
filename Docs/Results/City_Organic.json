@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-24",
+  "base": "90690c5",
+  "branch": "shop",
+  "city_version": 6,
+  "checks": {
+    "irregular_city": 41,
+    "city_generation": 75,
+    "city_campaign_save": 55,
+    "city_view": 8
+  },
+  "passed": 179,
+  "full_suite_run": false,
+  "seed_sample": [
+    1401,
+    1402,
+    9187
+  ],
+  "save_unchanged": {
+    "campaign.json": true,
+    "records.json": true
+  },
+  "backup": "Library/ReviewBackups/20261024-014035-organic-play",
+  "screenshots": [
+    "Docs/UI_Screens/city-organic/city-1401.png",
+    "Docs/UI_Screens/city-organic/city-1402.png"
+  ],
+  "push": false
+}

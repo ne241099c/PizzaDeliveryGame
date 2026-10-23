@@ -244,6 +244,8 @@ public static class CityGenerator
             var template=i==0?s.templates.FirstOrDefault(t=>t.kind==DistrictKind.Park)??s.templates[0]:i==1?s.templates.FirstOrDefault(t=>t.kind==DistrictKind.Riverside)??s.templates[0]:s.templates[rng.Next(s.templates.Length)];
             string ab=Street($"B{i}_AB",a,b);Street($"B{i}_BC",b,c);
             string cd=Street($"B{i}_CD",c,d);Street($"B{i}_DA",d,a);
+            var ports=new[]{a,b,c,d};int orientation=rng.Next(4);
+            a=ports[orientation];b=ports[(orientation+1)%4];c=ports[(orientation+2)%4];d=ports[(orientation+3)%4];
             Vector2 At(float u,float v)=>Vector2.Lerp(Vector2.Lerp(positions[d],positions[c],u),Vector2.Lerp(positions[a],positions[b],u),v);
             // Two local streets bend inward from the perimeter. Their different
             // setbacks produce small junctions and variable frontage lengths.
@@ -251,30 +253,33 @@ public static class CityGenerator
             float upper=.67f+(float)rng.NextDouble()*.07f,lower=.26f+(float)rng.NextDouble()*.07f;
             string[] addresses=Enumerable.Range(1,houses).Select(h=>$"B{i}_H{h}").ToArray();
             Node(addresses[0],At(east,upper));Node(addresses[1],At(east,lower));
-            if(houses==2)
+            if(houses==4)
             {
-                Road($"B{i}_House1",a,addresses[0]);Road($"B{i}_House1Return",addresses[0],b);
-                Road($"B{i}_House2Entry",d,addresses[1]);Road($"B{i}_House2",addresses[1],c);
+                Node(addresses[2],At(west,upper));Node(addresses[3],At(west,lower));
+                int layout=rng.Next(3),sequence=0;
+                void Chain(params string[] route)
+                {for(int j=1;j<route.Length;j++)Road($"B{i}_Local{sequence++}",route[j-1],route[j]);}
+                if(layout==0){Chain(a,addresses[2],addresses[3],d);Chain(b,addresses[0],addresses[1],c);}
+                else if(layout==1)Chain(a,addresses[2],addresses[3],addresses[1],addresses[0],b);
+                else{Chain(a,addresses[2],addresses[3],addresses[1],c);Chain(addresses[3],addresses[0]);}
+                if(template.shortcut)Road($"B{i}_Shortcut",addresses[2],addresses[0],RoadType.Backstreet,factor:s.organicShortcutDistanceFactor);
+                if(i>=2 && layout==0 && rng.Next(2)==0)
+                    Road($"B{i}_OneWay",addresses[3],addresses[1],RoadType.Backstreet,both:false,factor:s.organicShortcutDistanceFactor);
             }
             else
             {
-                Road($"B{i}_House1",b,addresses[0]);Road($"B{i}_Pair",addresses[0],addresses[1]);Road($"B{i}_House2",addresses[1],c);
-            }
-            if(houses>2)
-            {
-                Node(addresses[2],At(west,upper));Road($"B{i}_House3",a,addresses[2]);
-                if(houses>3)
+                if(houses==2)
                 {
-                    Node(addresses[3],At(west,lower));Road($"B{i}_PairWest",addresses[2],addresses[3]);Road($"B{i}_House4",addresses[3],d);
+                    Road($"B{i}_House1",a,addresses[0]);Road($"B{i}_House1Return",addresses[0],b);
+                    Road($"B{i}_House2Entry",d,addresses[1]);Road($"B{i}_House2",addresses[1],c);
                 }
-                else Road($"B{i}_House3Return",addresses[2],d);
+                else
+                {
+                    Road($"B{i}_House1",b,addresses[0]);Road($"B{i}_Pair",addresses[0],addresses[1]);Road($"B{i}_House2",addresses[1],c);
+                    Node(addresses[2],At(west,upper));Road($"B{i}_House3",a,addresses[2]);Road($"B{i}_House3Return",addresses[2],d);
+                }
+                if(template.shortcut)Road($"B{i}_Shortcut",houses>2?addresses[2]:addresses[1],addresses[0],RoadType.Backstreet,factor:s.organicShortcutDistanceFactor);
             }
-            if(template.shortcut)
-                Road($"B{i}_Shortcut",houses>2?addresses[2]:addresses[1],addresses[0],RoadType.Backstreet,factor:s.organicShortcutDistanceFactor);
-            // Optional service connector. Existing main streets remain traversable
-            // both ways, so the one-way variation cannot strand a house.
-            if(i>=2 && houses>3 && rng.Next(2)==0)
-                Road($"B{i}_OneWay",addresses[3],addresses[1],RoadType.Backstreet,both:false,factor:s.organicShortcutDistanceFactor);
             var corners=new[]{positions[a],positions[b],positions[c],positions[d]};
             city.blocks.Add(new CityBlock{index=i,template=template,addresses=addresses,area=Rect.MinMaxRect(corners.Min(p=>p.x),corners.Min(p=>p.y),corners.Max(p=>p.x),corners.Max(p=>p.y))});
             if(template.kind==DistrictKind.Riverside){city.bridges.Add(ab);city.bridges.Add(cd);}
