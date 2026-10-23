@@ -28,7 +28,7 @@ public sealed class MapVisuals : MonoBehaviour
             pair.label.fontSize=UITheme.Active.captionSize*10*px;
             pair.label.rectTransform.sizeDelta=new Vector2(pair.area.width*.7f,UITheme.Active.captionSize*2*px);
         }
-        foreach(var sprite in detailSprites)if(sprite!=null)sprite.enabled=Visible(camera,sprite.bounds) && (map.City==null || map.CitySettings.blockSize/px>=UITheme.Active.cityDetailMinimumBlockPixels);
+        foreach(var sprite in detailSprites)if(sprite!=null)sprite.enabled=Visible(camera,sprite.bounds) && (map.City==null || (map.City.version>=7?UITheme.Active.mapBuildingSize/px>=3:map.CitySettings.blockSize/px>=UITheme.Active.cityDetailMinimumBlockPixels));
     }
     private static bool Visible(Camera camera,Bounds bounds)
     {
@@ -125,6 +125,51 @@ public sealed class MapVisuals : MonoBehaviour
         if(sprite!=null)sprite.color=color;
     }
 
+    /// <summary>Roadside plots follow the new street graph rather than drawing rectangular districts.</summary>
+    private void NetworkDetails(UITheme theme)
+    {
+        var positions=map.Nodes.ToDictionary(n=>n.Id,n=>n.Position);
+        float spacing=Mathf.Max(.5f,theme.mapBuildingSpacing),setback=Mathf.Max(.2f,theme.mapBuildingSetback),size=Mathf.Max(.1f,theme.mapBuildingSize);
+        float Distance(Vector2 point,Vector2 a,Vector2 b)
+        {
+            var delta=b-a;float t=delta.sqrMagnitude>0?Mathf.Clamp01(Vector2.Dot(point-a,delta)/delta.sqrMagnitude):0;
+            return Vector2.Distance(point,a+delta*t);
+        }
+        uint Hash(string text){uint hash=2166136261;foreach(char c in text)hash=unchecked((hash^c)*16777619);return hash;}
+        var plots=new List<Vector2>();
+        foreach(var edge in map.Edges)
+        {
+            Vector2 a=positions[edge.NodeAId],b=positions[edge.NodeBId],delta=b-a;float length=delta.magnitude;
+            if(length<spacing)continue;var normal=new Vector2(-delta.y,delta.x).normalized;
+            int count=Mathf.Max(1,Mathf.FloorToInt(length/spacing));
+            for(int i=0;i<count;i++)foreach(int side in new[]{-1,1})
+            {
+                uint hash=Hash(edge.Id+"/"+i+"/"+side);float jitter=((hash%101)/100f-.5f)*spacing*.3f;
+                Vector2 point=Vector2.Lerp(a,b,Mathf.Clamp01(((i+.5f)*spacing+jitter)/length))+normal*setback*side;
+                if(Vector2.Distance(point,positions[map.StoreNodeId])<1 || plots.Any(p=>Vector2.Distance(p,point)<size*1.6f))continue;
+                if(map.Edges.Any(other=>Distance(point,positions[other.NodeAId],positions[other.NodeBId])<size*.7f))continue;
+                plots.Add(point);Vector2 dimensions=new Vector2(size*(.85f+(hash%7)*.05f),size*(1+(hash%5)*.08f));
+                var building=Block(new Rect(point-dimensions*.5f,dimensions),Color.Lerp(theme.mapBuildingFill,theme.paper,(hash%5)*.08f),"NeighborhoodBuilding");
+                building.transform.rotation=Quaternion.Euler(0,0,Mathf.Atan2(delta.y,delta.x)*Mathf.Rad2Deg);
+                building.sortingOrder=-8;detailSprites.Add(building);
+            }
+        }
+        foreach(var district in map.City.blocks)
+        {
+            Vector2 center=district.addresses.Where(positions.ContainsKey).Select(id=>positions[id]).Aggregate(Vector2.zero,(sum,p)=>sum+p)/Mathf.Max(1,district.addresses.Length);
+            var label=new GameObject("DistrictName_"+district.index).AddComponent<TextMeshPro>();label.transform.SetParent(decorationRoot,false);label.transform.position=center;
+            label.font=theme.font;label.text=district.template.title;label.color=theme.inkSub;label.alignment=TextAlignmentOptions.Center;
+            label.GetComponent<MeshRenderer>().sortingOrder=-10;districtLabels.Add((label,district.area));
+        }
+        // Keep bridge markers attached to the actual selected roads; no rectangular river patches.
+        foreach(string id in map.City.bridges.Distinct())
+        {
+            var edge=map.GetEdge(id);Vector2 a=positions[edge.NodeAId],b=positions[edge.NodeBId],center=(a+b)*.5f;
+            var bridge=Block(new Rect(center-new Vector2(.22f,.17f),new Vector2(.44f,.34f)),theme.paperDeep,"Bridge");
+            bridge.transform.rotation=Quaternion.Euler(0,0,Mathf.Atan2(b.y-a.y,b.x-a.x)*Mathf.Rad2Deg);bridge.sortingOrder=-2;
+        }
+    }
+
     private static Sprite rounded;
     private void Create()
     {
@@ -142,7 +187,11 @@ public sealed class MapVisuals : MonoBehaviour
         detailSprites.Clear();
         var theme=UITheme.Active;
         Camera.main.backgroundColor=theme.mapGround;
-        if(map.City!=null)
+        if(map.City!=null && map.City.version>=7)
+        {
+            NetworkDetails(theme);
+        }
+        else if(map.City!=null)
         {
             foreach(var block in map.City.blocks)
             {
@@ -158,12 +207,12 @@ public sealed class MapVisuals : MonoBehaviour
             foreach(var area in cityBlocks)Block(area,theme.mapBlock,"CityBlock");
             foreach(var area in outerBlocks)Block(area,theme.mapBlock,"CityBlock");
         }
-        foreach(var area in parks)
+        foreach(var area in map.City!=null && map.City.version>=7?System.Array.Empty<Rect>():parks)
         {
             Block(area,theme.mapPark,"Park");
             for(int i=0;i<3;i++)Tree(new Vector2(area.xMin+area.width*(.25f+.25f*i),area.center.y+(i%2==0?.12f:-.12f)),theme.mapTree);
         }
-        if(map.City==null)River(theme);else GeneratedDetails(theme);
+        if(map.City==null)River(theme);else if(map.City.version<7)GeneratedDetails(theme);
         Congestion(theme);Route(map.CurrentRouteState);
     }
     private static Sprite Rounded()

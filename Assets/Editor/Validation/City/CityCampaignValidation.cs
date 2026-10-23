@@ -21,7 +21,7 @@ public static class CityCampaignValidation
         try
         {
             map.UseSampleForValidation=false;map.SeedOverride=1401;save.StartNewGame();clock.AutomaticTick=false;spawner.enabled=false;
-            Check(map.City!=null && map.City.blocks.Count==5 && map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==map.City.blocks.Count*map.CaptureCity().housesPerBlock+2 && map.City.metrics.failures.Count==0,"new game opens the configured larger safe town");
+            Check(map.City!=null && map.City.blocks.Count==map.CitySettings.Blocks(1) && map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==map.City.blocks.Count*map.CaptureCity().housesPerBlock+2 && map.City.metrics.failures.Count==0,"new game opens the configured larger safe town");
             save.StartNewGame();
             Check(save.TryParse(save.SnapshotJson(),out _,out _),"restarting the same seed refreshes saved stage");
             var first=CityGenerationValidation.Fingerprint(map.City);
@@ -62,11 +62,11 @@ public static class CityCampaignValidation
                 Check(originalTown.map.Edges.All(road=>map.Edges.Any(other=>road.Id==other.Id && road.NodeAId==other.NodeAId && road.NodeBId==other.NodeBId && road.Distance==other.Distance && road.TrafficFactor==other.TrafficFactor && road.Bidirectional==other.Bidirectional && road.RoadType==other.RoadType)),"expansion preserves every original road and traversal cost");
             }
             finally{UnityEngine.Object.Destroy(originalTown.map);}
-            data.city.version=CityGenerator.CurrentVersion;data.city.housesPerBlock=3;
+            data.city.version=CityGenerator.CurrentVersion;data.city.blocks=map.CitySettings.Blocks(data.day);data.city.housesPerBlock=3;
             Check(save.TryParse(JsonUtility.ToJson(data),out var customDensity,out _),"custom new-town density saves");
             campaign.RestorePreparation(customDensity);
-            Check(map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==17 && map.CaptureCity().housesPerBlock==3,"Continue uses saved density rather than current Inspector default");
-            foreach(int version in new[]{1,2,3,4,5})
+            Check(map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==map.CitySettings.Blocks(data.day)*3+2 && map.CaptureCity().housesPerBlock==3,"Continue uses saved density rather than current Inspector default");
+            foreach(int version in new[]{1,2,3,4,5,6})
             {
                 map.UpgradeRestoredCityLayout=true;
                 data.city.version=version;

@@ -25,7 +25,7 @@ public static class CityViewValidation
             business.ShowZone(ShopZone.Dispatch,true);
             business.FitMap();
             Check(map.RenderChunkCount>1,"map has spatial render chunks");
-            Check(UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Any(t=>t.name=="DistrictRiver"),"river follows generated riverside district");
+            Check(UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Any(t=>t.name==(map.City.version>=7?"NeighborhoodBuilding":"DistrictRiver")),"new network has roadside buildings; legacy town retains district river");
             Check(UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None).Count(t=>t.name=="Bridge")>=2,"two bridge decorations");
             Check(UnityEngine.Object.FindObjectsByType<TMP_Text>(FindObjectsSortMode.None).Any(t=>t.name.StartsWith("DistrictName_")),"district captions");
             Check(map.TodayCityInfo.Contains("街区"+map.City.blocks.Count) && map.TomorrowCityInfo(5).Contains("新しい街区"),"current information and next-day preview");

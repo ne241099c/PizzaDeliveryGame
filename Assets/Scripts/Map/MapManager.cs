@@ -30,7 +30,7 @@ public class MapManager : MonoBehaviour
     [SerializeField] private bool generateCampaignCity=true;
     [SerializeField, Tooltip("旧バージョン3の街は、既存の家と道を保ったまま家を追加します。 ")] private bool expandExistingCityHomes=true;
     public bool ExpandExistingCityHomes=>expandExistingCityHomes;
-    [SerializeField, Tooltip("続きからの開店準備で、古い街を店舗中心の四方向配置に更新します。資金・従業員・営業日を維持します。 ")] private bool upgradeRestoredCityLayout=true;
+    [SerializeField, Tooltip("続きからの開店準備で、古い街を店舗周囲の新しい道路網に更新します。資金・従業員・営業日を維持します。 ")] private bool upgradeRestoredCityLayout=true;
     public bool UpgradeRestoredCityLayout {get=>upgradeRestoredCityLayout;set=>upgradeRestoredCityLayout=value;}
     [SerializeField] private CityGenerationSettings citySettings=new();
     public CityGenerationSettings CitySettings=>citySettings;

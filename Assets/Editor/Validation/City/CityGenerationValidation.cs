@@ -4,6 +4,56 @@ using UnityEngine;
 
 public static class CityGenerationValidation
 {
+    public static string RunNetwork()
+    {
+        if(!Application.isPlaying)throw new InvalidOperationException("Play required");
+        CampaignSaveManager.SessionSavingLocked=true;
+        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var guard=save.SuppressSaving();
+        var settings=new CityGenerationSettings();int count=0;
+        void Check(bool ok,string label){if(!ok)throw new Exception("Street network: "+label);count++;}
+        string previousTopology=null;
+        foreach(int seed in new[]{1401,1402,9187})
+        {
+            int initial=settings.Blocks(1),maximum=settings.Blocks(21);
+            var city=CityGenerator.Build(seed,initial,settings);var copy=CityGenerator.Build(seed,initial,settings);var larger=CityGenerator.Build(seed,maximum,settings);
+            var legacy=CityGenerator.Build(seed,5,settings,version:6);
+            try
+            {
+                Check(city.version==7 && initial>5,"larger new street network is active");
+                Check(Fingerprint(city)==Fingerprint(copy),"seed reproduces positions and roads");
+                Check(city.map.Nodes.All(n=>larger.map.Nodes.Any(other=>other.Id==n.Id && other.Position==n.Position)),"existing nodes do not move on growth");
+                Check(city.map.Edges.All(e=>larger.map.Edges.Any(o=>o.Id==e.Id && o.NodeAId==e.NodeAId && o.NodeBId==e.NodeBId && o.Distance==e.Distance && o.TrafficFactor==e.TrafficFactor && o.RoadType==e.RoadType && o.Bidirectional==e.Bidirectional)),"growth preserves existing roads");
+                foreach(var c in new[]{city,larger})
+                {
+                    var metrics=CityValidator.Measure(c,settings);Check(metrics.failures.Count==0,"safety and return paths: "+string.Join("/",metrics.failures));
+                    Check(c.map.Edges.All(e=>e.Bidirectional),"default streets are two-way");
+                }
+                var homes=city.map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress).ToArray();
+                Check(homes.Length==initial*4+2 && homes.Length>22,"more delivery locations");
+                int sectors=homes.Select(n=>Mathf.FloorToInt((Mathf.Atan2(n.Position.y,n.Position.x)+Mathf.PI)*8/(Mathf.PI*2))%8).Distinct().Count();
+                Check(sectors>=6,"destinations occupy many directions around the store");
+                var nodes=city.map.Nodes.ToDictionary(n=>n.Id,n=>n.Position);
+                int directions=city.map.Edges.Select(e=>{var d=nodes[e.NodeBId]-nodes[e.NodeAId];return Mathf.FloorToInt((Mathf.Atan2(d.y,d.x)+Mathf.PI)*18/Mathf.PI)%18;}).Distinct().Count();
+                Check(directions>=10,"roads are not limited to grid directions");
+                float Area(GeneratedCity c)=> (c.map.Nodes.Max(n=>n.Position.x)-c.map.Nodes.Min(n=>n.Position.x))*(c.map.Nodes.Max(n=>n.Position.y)-c.map.Nodes.Min(n=>n.Position.y));
+                Check(Area(city)>Area(legacy)*1.2f,"map covers more area than v6");
+                string topology=string.Join("|",city.map.Edges.Select(e=>e.NodeAId+"/"+e.NodeBId));
+                if(previousTopology!=null)Check(previousTopology!=topology,"seed changes actual connections");previousTopology=topology;
+                float Cross(Vector2 a,Vector2 b)=>a.x*b.y-a.y*b.x;
+                bool crossing=false;var edges=city.map.Edges;
+                for(int i=0;i<edges.Count;i++)for(int j=i+1;j<edges.Count;j++)
+                {
+                    var a=edges[i];var b=edges[j];if(a.NodeAId==b.NodeAId || a.NodeAId==b.NodeBId || a.NodeBId==b.NodeAId || a.NodeBId==b.NodeBId)continue;
+                    Vector2 p=nodes[a.NodeAId],v=nodes[a.NodeBId]-p,q=nodes[b.NodeAId],w=nodes[b.NodeBId]-q;float d=Cross(v,w);if(Mathf.Abs(d)<.0001f)continue;
+                    float t=Cross(q-p,w)/d,u=Cross(q-p,v)/d;if(t>.0001f && t<.9999f && u>.0001f && u<.9999f)crossing=true;
+                }
+                Check(!crossing,"crossing roads meet at real junctions");
+            }
+            finally{UnityEngine.Object.Destroy(city.map);UnityEngine.Object.Destroy(copy.map);UnityEngine.Object.Destroy(larger.map);UnityEngine.Object.Destroy(legacy.map);}
+        }
+        return $"PASS: {count} street network checks.";
+    }
+
     /// <summary>Small seed sample of the new topology; no business simulation or normal save writes.</summary>
     public static string RunOrganic()
     {
@@ -14,7 +64,7 @@ public static class CityGenerationValidation
         var settings=new CityGenerationSettings();string previousPositions=null;
         foreach(int seed in new[]{1401,1402,9187})
         {
-            var city=CityGenerator.Build(seed,5,settings);var copy=CityGenerator.Build(seed,5,settings);var larger=CityGenerator.Build(seed,12,settings);
+            var city=CityGenerator.Build(seed,5,settings,version:6);var copy=CityGenerator.Build(seed,5,settings,version:6);var larger=CityGenerator.Build(seed,12,settings,version:6);
             try
             {
                 Check(city.version==6,"new version is used");
@@ -61,7 +111,7 @@ public static class CityGenerationValidation
         var settings=new CityGenerationSettings();
         foreach(int seed in new[]{1401,1402,9187})
         {
-            var a=CityGenerator.Build(seed,3,settings);var b=CityGenerator.Build(seed,3,settings);var larger=CityGenerator.Build(seed,5,settings);
+            var a=CityGenerator.Build(seed,3,settings,version:6);var b=CityGenerator.Build(seed,3,settings,version:6);var larger=CityGenerator.Build(seed,5,settings,version:6);
             try
             {
                 Check(Fingerprint(a)==Fingerprint(b),"same seed reproduces topology and templates");
@@ -85,7 +135,7 @@ public static class CityGenerationValidation
         var dense=CityGenerator.Build(1401,5,settings,version:5);
         var legacy=CityGenerator.Build(1401,5,settings,version:3);
         var denseLegacy=CityGenerator.Build(1401,5,settings,version:4);
-        var tuned=CityGenerator.Build(1401,5,settings,savedHousesPerBlock:3);
+        var tuned=CityGenerator.Build(1401,5,settings,version:6,savedHousesPerBlock:3);
         try
         {
             Check(dense.map.Nodes.Count(n=>n.NodeType==NodeType.DeliveryAddress)==22,"new town has four homes per block plus two original homes");
