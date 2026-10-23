@@ -5,18 +5,25 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>今日のまとめ (UI_Mock/Settlement.png): a receipt that fills in line by line with counting numbers,
-/// then growth, reputation and pizza quality. Values are read from the settled DayLedger and day statistics.</summary>
+/// then growth, reputation and pizza quality. Values are read from the settled DayLedger and day statistics.
+/// The frame (sky, title, progress dots, buttons) is the prefab Assets/Prefabs/UI/SettlementView.prefab (ScreenPrefabs);
+/// the receipt and the cards on the right change every day and are built here.</summary>
 public sealed class SettlementView : MonoBehaviour
 {
+    [SerializeField] private TextMeshProUGUI title,cityTomorrow;
+    [SerializeField] private RectTransform titleBadge;
+    [SerializeField] private Image[] legendDots;
+    [SerializeField] private StickerButton nextButton,skipButton;
     private ScreenRouter router;private GameClock clock;private CampaignManager campaign;private BusinessEconomy economy;private DayStats stats;private DeliveryPersonSelector roster;
     private KitchenCrew crew;private DeliveryFlowController flow;private ScoreManager score;private ReputationManager reputation;private CourierProgression progression;private CookingManager cooking;
     private UITheme T=>UiKit.T;
-    private RectTransform receipt,right,legend;private TextMeshProUGUI title;private RectTransform titleBadge;
-    private StickerButton nextButton,skipButton;
+    private RectTransform receipt,right;
     private readonly List<DeliveryTrip> trips=new();private float openingReputation;
     private readonly List<(RectTransform row,int page,decimal target,TextMeshProUGUI value,string format)> rows=new();
     private float shownAt;private int revealed;private bool built,pending;
     public int Page=>revealed;
+    public StickerButton NextButton=>nextButton;
+    public StickerButton SkipButton=>skipButton;
     private const float StepSeconds=.45f;
 
     private void Awake()
@@ -24,8 +31,8 @@ public sealed class SettlementView : MonoBehaviour
         router=FindFirstObjectByType<ScreenRouter>();clock=FindFirstObjectByType<GameClock>();campaign=FindFirstObjectByType<CampaignManager>();economy=FindFirstObjectByType<BusinessEconomy>();
         stats=FindFirstObjectByType<DayStats>();roster=FindFirstObjectByType<DeliveryPersonSelector>();crew=FindFirstObjectByType<KitchenCrew>();flow=FindFirstObjectByType<DeliveryFlowController>();
         score=FindFirstObjectByType<ScoreManager>();reputation=FindFirstObjectByType<ReputationManager>();progression=FindFirstObjectByType<CourierProgression>();cooking=FindFirstObjectByType<CookingManager>();
-        BuildFrame();
     }
+    private void Start(){skipButton.Button.onClick.AddListener(RevealAll);nextButton.Button.onClick.AddListener(Next);}
     private void OnEnable(){if(clock==null)return;clock.OnDayStarted+=Opening;clock.OnDayEnded+=Closed;flow.Dispatched+=Trip;}
     private void OnDisable(){if(clock==null)return;clock.OnDayStarted-=Opening;clock.OnDayEnded-=Closed;flow.Dispatched-=Trip;}
     private void Opening(){trips.Clear();openingReputation=reputation.Value;built=false;}
@@ -33,28 +40,6 @@ public sealed class SettlementView : MonoBehaviour
     // Built on the next frame so the campaign has settled the ledger first.
     private void Closed(){pending=true;}
 
-    private void BuildFrame()
-    {
-        var root=(RectTransform)transform;
-        var sky=UiKit.Stretch(root,"Sky").gameObject.AddComponent<RawImage>();sky.texture=Gradient(new Color(.99f,.89f,.70f),new Color(.91f,.52f,.36f));sky.raycastTarget=true;
-        var sun=UiKit.Box(root,"Sun",1480,120,240,240);var s=sun.gameObject.AddComponent<Image>();s.sprite=UiKit.Circle;s.color=new Color(1,.92f,.70f,.9f);s.raycastTarget=false;
-        var city=UiKit.Box(root,"Skyline",0,900,1920,180);
-        float[] xs={0,90,240,400,520,610,720,860,990,1110,1200,1390,1500,1720,1800};float[] hs={150,110,140,80,120,70,140,110,60,140,90,130,70,120,90};
-        for(int i=0;i<xs.Length;i++){var b=UiKit.Box(city,"B"+i,xs[i],180-hs[i],(i+1<xs.Length?xs[i+1]-xs[i]:120)+10,hs[i]);UiKit.Fill(b,new Color(.62f,.30f,.25f,.55f+.1f*(i%2)),0);}
-        title=UiKit.Label(root,"Title","",120,48,1100,96,64,T.line,FontRole.Display);
-        titleBadge=UiKit.Badge(root,"Closed",ShopStrings.Ended,760,76,T.paper,T.line,38,18);
-        legend=UiKit.Box(root,"Legend",120,150,700,40);
-        string[] names={"売上","コスト","損益","成長と評判"};float x=0;
-        for(int i=0;i<4;i++){var dot=UiKit.Box(legend,"Dot"+i,x,4,28,28);var e=dot.gameObject.AddComponent<Image>();e.sprite=UiKit.Circle;e.color=T.line;var f=UiKit.Stretch(dot,"Fill",3,3,3,3).gameObject.AddComponent<Image>();f.sprite=UiKit.Circle;f.color=T.paper;
-            var l=UiKit.Label(legend,"Name"+i,names[i],x+36,0,160,36,20,T.line,FontRole.Black);x+=36+l.GetPreferredValues().x+28;}
-        skipButton=UiKit.Button(root,"Skip","スキップ",StickerKind.Secondary,1296,896,150,80,24,RevealAll);
-        nextButton=UiKit.Button(root,"NextDay","次の日へ ▶",StickerKind.Primary,1460,880,340,104,42,Next,FontRole.Display);
-    }
-    private static Texture2D Gradient(Color top,Color bottom)
-    {
-        var tex=new Texture2D(1,256,TextureFormat.RGBA32,false){wrapMode=TextureWrapMode.Clamp,hideFlags=HideFlags.DontSave};
-        for(int y=0;y<256;y++)tex.SetPixel(0,y,Color.Lerp(bottom,top,y/255f));tex.Apply();return tex;
-    }
     private void Next()
     {
         if(revealed<4){RevealAll();return;}
@@ -103,8 +88,7 @@ public sealed class SettlementView : MonoBehaviour
         for(int i=0;i<26;i++){var z=UiKit.Box(receipt,"Zig"+i,10+i*30,696,22,22);z.localRotation=Quaternion.Euler(0,0,45);UiKit.Fill(z,T.paper,0);}
         right=UiKit.Box(root,"Right",980,204,820,640);
         BuildGrowth();BuildQuality();BuildAccidents();
-        var previousCityNotice=root.Find("CityTomorrow");if(previousCityNotice!=null)Destroy(previousCityNotice.gameObject);
-        UiKit.Label(root,"CityTomorrow",FindFirstObjectByType<MapManager>().TomorrowCityInfo(campaign.DayNumber),120,962,1050,48,T.bodySize,T.line,FontRole.Black);
+        cityTomorrow.text=FindFirstObjectByType<MapManager>().TomorrowCityInfo(campaign.DayNumber);
         foreach(var r in rows)r.row.gameObject.SetActive(false);
     }
     private void Row(RectTransform card,ref float y,int page,string name,string detail,decimal amount,bool small=false,bool emphasis=false)
@@ -168,7 +152,7 @@ public sealed class SettlementView : MonoBehaviour
         if((pending || !built) && clock.Phase==DayPhase.Ended && economy.Ledger.Settled){pending=false;BuildContent();}
         float t=Time.unscaledTime-shownAt;
         int page=Mathf.Min(4,Mathf.FloorToInt(t/1.1f));if(page>revealed)revealed=page;
-        for(int i=0;i<4;i++){var f=legend.Find("Dot"+i+"/Fill").GetComponent<Image>();f.color=i<revealed?T.basil:i==revealed?T.cheese:T.paper;}
+        for(int i=0;i<legendDots.Length;i++)legendDots[i].color=i<revealed?T.basil:i==revealed?T.cheese:T.paper;
         foreach(var r in rows)
         {
             r.row.gameObject.SetActive(r.page<=revealed);

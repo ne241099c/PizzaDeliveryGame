@@ -53,4 +53,5 @@ public sealed class PlayModeValidationTests
     [UnityTest] public IEnumerator Visual()=>Run(VisualValidation.Run,true);
     [UnityTest] public IEnumerator Business()=>Run(M7Validation.Run);
     [UnityTest] public IEnumerator Shop()=>Run(ShopValidation.Run);
+    [UnityTest] public IEnumerator PrefabScreens()=>Run(ScreenPrefabValidation.Run);
 }

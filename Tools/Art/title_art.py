@@ -7,8 +7,8 @@ replaced independently. Text (logo, PIZZA, OPEN) is not drawn here: it stays as 
 can change without new art.
 
 usage: python3 Tools/Art/title_art.py
-Writes Assets/Art/Title/<layer>.png, Assets/Art/Title/layers.json (the rectangles the prefab builder uses) and the
-shared UI sprites Assets/Art/UI/ui_round.png / ui_circle.png. Re-running reproduces the same files.
+Writes Assets/Art/Title/<layer>.png, Assets/Art/Title/layers.json (the rectangles the prefab builder uses), the
+shared UI sprites Assets/Art/UI/ui_round.png / ui_circle.png and other screens' backgrounds in Assets/Art/Screens. Re-running reproduces the same files.
 """
 import json, pathlib, sys
 
@@ -101,6 +101,13 @@ UI = {
     "ui_circle": (128, 128, '<circle cx="64" cy="64" r="64" fill="#FFFFFF"/>'),
 }
 
+# Other screens' backgrounds (Assets/Art/Screens): stretched to full screen, so a narrow strip is enough.
+SCREENS = {
+    # 精算 (4-3): evening sky, light at the top to tomato-orange at the bottom.
+    "settlement_sky": (16, 256, '<defs><linearGradient id="e" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FCE3B3"/>'
+                       '<stop offset="1" stop-color="#E8855C"/></linearGradient></defs><rect width="16" height="256" fill="url(#e)"/>'),
+}
+
 def main():
     manifest = {"layers": [], "bulbs": [{"x": x, "y": y} for x, y in BULBS]}
     for name, (x, y, w, h, body) in LAYERS.items():
@@ -110,6 +117,8 @@ def main():
         render_svg(body, OUT / f"{name}.png", w, h, 2); print(name)
     for name, (w, h, body) in UI.items():
         render_svg(body, UI_OUT / f"{name}.png", w, h, 1); print(name)
+    for name, (w, h, body) in SCREENS.items():
+        render_svg(body, ROOT / "Assets/Art/Screens" / f"{name}.png", w, h, 1); print(name)
     (OUT / "layers.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + "\n")
 
 if __name__ == "__main__":
