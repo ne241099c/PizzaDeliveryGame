@@ -39,7 +39,6 @@ public sealed partial class BusinessView
 
     private readonly List<SpriteRenderer> autoDots=new();
     private Order nearFor;private readonly Dictionary<string,float> nearSeconds=new();
-    private static bool guided;
     public static bool ShowCongestion {get;private set;}=true;
     [SerializeField, Min(1)] private float nearPinSeconds=8;
     private const float LaneTop=764,LaneHeight=296;
@@ -116,12 +115,13 @@ public sealed partial class BusinessView
         FitMap();
     }
     /// <summary>Fit the whole map into the area left free by the order list, the controls and the lanes.</summary>
+    private float fittedMapZoom=40f;
     public void FitMap()
     {
         var cam=Camera.main;if(cam==null || map==null || !map.IsReady)return;
         float minX=map.Nodes.Min(n=>n.Position.x)-.9f,maxX=map.Nodes.Max(n=>n.Position.x)+.9f,minY=map.Nodes.Min(n=>n.Position.y)-.9f,maxY=map.Nodes.Max(n=>n.Position.y)+.9f;
         float fl=400f/1920,fr=1610f/1920,fb=(1080-LaneTop+20)/1080f,ft=(1080-250f)/1080,aspect=cam.aspect;
-        float size=Mathf.Max((maxY-minY)/(2*(ft-fb)),(maxX-minX)/(2*aspect*(fr-fl)));cam.orthographicSize=size;
+        float size=Mathf.Max((maxY-minY)/(2*(ft-fb)),(maxX-minX)/(2*aspect*(fr-fl)));cam.orthographicSize=size;fittedMapZoom=size;
         var centre=new Vector2((minX+maxX)/2,(minY+maxY)/2);var offset=new Vector2(((fl+fr)/2-.5f)*2*size*aspect,((fb+ft)/2-.5f)*2*size);
         cam.transform.position=new Vector3(centre.x-offset.x,centre.y-offset.y,cam.transform.position.z);
     }
@@ -220,7 +220,7 @@ public sealed partial class BusinessView
         return Name(leg.from)+" → "+Name(leg.to);
     }
     public bool IsEditingRoute=>editingPerson!=null && editingLeg>=0;
-    public void EndRouteEdit(){editingPerson=null;editingLeg=-1;if(clock!=null)clock.IsPlanning=false;}
+    public void EndRouteEdit(){editingPerson=null;editingLeg=-1;}
     public bool BeginRouteEdit(DeliveryPerson person)
     {
         if(person==null || !person.IsAvailable || handover.BagOf(person).Count==0)return false;
@@ -229,7 +229,7 @@ public sealed partial class BusinessView
         if(count==0)return false;
         if(editingPerson==person && editingLeg+1>=count){EndRouteEdit();return true;}
         editingLeg=editingPerson==person?editingLeg+1:0;
-        editingPerson=person;clock.IsPlanning=true;
+        editingPerson=person;SyncPlanningRate();
         return true;
     }
     public void Depart(DeliveryPerson person)
@@ -239,7 +239,7 @@ public sealed partial class BusinessView
         SyncRoute();
         string reason=flow.DispatchRejectionReason(planner.SelectedPlan,person);
         if(reason.Length>0){Toast(handover.BagOf(person).Count==0?"レーンに伝票を入れましょう。":UiStrings.Japanese(reason),T.berry,null,"icon_bike");return;}
-        EndRouteEdit();planner.Dispatch();Toast($"{person.Name} 出発!",T.basil,null,"icon_bike");guided=true;waypoints.Remove(person);
+        EndRouteEdit();planner.Dispatch();Toast($"{person.Name} 出発!",T.basil,null,"icon_bike");waypoints.Remove(person);
         var next=roster.People.FirstOrDefault(p=>p.IsAvailable && handover.BagOf(p).Count>0);if(next!=null)handover.Select(next);
     }
     private int Late(List<string> edges,DeliveryPerson person,IReadOnlyList<Order> bag)
@@ -382,6 +382,26 @@ public sealed partial class BusinessView
         UiKit.Label(parent,name+"Title",title,x,y-4,58,24,16,T.inkSub,FontRole.Black);
         var bar=UiKit.Bar(parent,name,x+60,y+2,Mathf.Max(30,w-60),12,color);bar.Set(Mathf.Clamp01(value));return bar;
     }
+    private readonly HashSet<DeliveryPerson> departureReady=new();
+    public int DepartureReadyNoticeCount {get;private set;}
+    public bool IsDepartureReady(DeliveryPerson person)=>person!=null && person.IsAvailable && clock.Phase==DayPhase.Open && handover.ReadyToDepart(person);
+    private void RefreshDepartureReadiness()
+    {
+        if(roster==null || handover==null || clock==null)return;
+        departureReady.RemoveWhere(p=>!roster.People.Contains(p) || !IsDepartureReady(p));
+        foreach(var person in roster.People)
+        {
+            if(!IsDepartureReady(person) || !departureReady.Add(person))continue;
+            DepartureReadyNoticeCount++;
+            var readyPerson=person;
+            Toast(UiStrings.CourierReady(person.Name),T.departureReady,()=>
+            {
+                ShowZone(ShopZone.Dispatch);
+                if(readyPerson.IsAvailable)handover.Select(readyPerson);
+                RequestLaneFocus();
+            },"icon_bike");
+        }
+    }
     private void RefreshLanes()
     {
         var held=Held;bool holding=Carries(held);
@@ -395,8 +415,10 @@ public sealed partial class BusinessView
             bool editing=editingPerson==p && editingLeg>=0;
             lane.Edit.Text=editing?(editingLeg+1>=Legs(p,bag,false).Count?UiStrings.FinishRoute:ShopStrings.RoadSection(editingLeg+1)+" / "+UiStrings.NextSection):ShopStrings.ChooseRoad;
             lane.Edit.Kind=editing?StickerKind.Selected:StickerKind.Secondary;
-            string state=here?(bag.Count>0?$"{bag.Count} / {p.Capacity}箱":"待機中"):p.Status==DeliveryStatus.Training?"訓練中":$"{ShopStrings.Status(p.Status)}・あと{Mathf.Max(0,(p.CurrentTrip?.ReturnsAt??0)-clock.ElapsedSeconds):F0}秒";
-            UiKit.SetBadge(lane.StateBadge,state,here?(bag.Count>=p.Capacity?T.cheese:T.basil):T.disabled,here && bag.Count<p.Capacity?Color.white:T.line);
+            bool ready=IsDepartureReady(p);
+            UiKit.FaceOf(lane.Root).color=ready?T.departureReadyLight:here?T.paper:T.paperDeep;
+            string state=ready?UiStrings.DepartureReady:here?(bag.Count>0?$"{bag.Count} / {p.Capacity}箱":"待機中"):p.Status==DeliveryStatus.Training?"訓練中":$"{ShopStrings.Status(p.Status)}・あと{Mathf.Max(0,(p.CurrentTrip?.ReturnsAt??0)-clock.ElapsedSeconds):F0}秒";
+            UiKit.SetBadge(lane.StateBadge,state,ready?T.departureReady:here?(bag.Count>=p.Capacity?T.cheese:T.basil):T.disabled,ready || here && bag.Count<p.Capacity?Color.white:T.line);
             var note=lane.Note;note.color=T.inkSub;string noteText="";bool showTime=false,showDiff=false,showReset=false;
             if(!here)noteText="帰ってきたら、ここに入れられます";
             else if(holding)
@@ -439,9 +461,14 @@ public sealed partial class BusinessView
                 note.text=UiStrings.WaitingForBaking+"："+string.Join(" / ",bag.Where(o=>!o.IsReady).Select(o=>"#"+Number(o)));
                 note.color=T.info;
             }
+            if(editing)
+            {
+                note.text=RouteEditCaption()+" ／ "+UiStrings.TapRoadToChange;
+                note.color=T.info;
+            }
             if(lane.Depart!=null)
             {
-                lane.Depart.Interactable=here && handover.ReadyToDepart(p) && clock.Phase==DayPhase.Open;
+                lane.Depart.Interactable=ready;
                 lane.Depart.Text=bag.Any(o=>!o.IsReady)?UiStrings.DepartureWaiting:ShopStrings.Depart+" ▶";
             }
         }
@@ -451,7 +478,8 @@ public sealed partial class BusinessView
     private void RefreshDispatch()
     {
         if(editingPerson!=null && (!editingPerson.IsAvailable || roster.SelectedPerson!=editingPerson || handover.BagOf(editingPerson).Count==0)){EndRouteEdit();}
-        clock.IsPlanning=Zone==ShopZone.Dispatch && clock.Phase==DayPhase.Open && IsEditingRoute;
+        SyncPlanningRate();
+        RefreshDepartureReadiness();
         UpdatePins();
         if(Zone!=ShopZone.Dispatch)return;
         RefreshDispatchOrders();
@@ -466,10 +494,7 @@ public sealed partial class BusinessView
             stepCircles[i].color=done?T.basil:current?T.tomato:T.disabled;
             stepNumbers[i].SetActive(!done);stepChecks[i].SetActive(done);
         }
-        bool showGuide=editingPerson!=null || !guided || Carries(Held);UiKit.Show(bubble,showGuide);
-        bubbleText.text=editingPerson!=null?RouteEditCaption()+" ／ "+UiStrings.SlowPlanning(clock.PlanningTimeRate):Carries(Held)?"伝票を持つと、近い注文のピンが光ります。配達員のレーンに入れると、まとめて運びます。"
-            :step==0?UiStrings.ReserveHint
-            :ShopStrings.RouteControlsHint;
+        UiKit.Show(bubble,false); // Instructions stay in the lane, never over the map.
         trafficButton.Kind=ShowCongestion?StickerKind.Selected:StickerKind.Secondary;
     }
 
@@ -847,7 +872,7 @@ public sealed partial class BusinessView
     public void PointerDown(Vector2 pos)
     {
         pressing=true;dragging=pinDragging=routeDragging=false;pressPosition=lastPointer=pos;
-        routeLegPress=editingPerson==null?RouteLegAt(pos):-1;pinPress=routeLegPress<0?PinOrderAt(pos):null;InputTrace=$"press {pos} route leg {routeLegPress}";
+        routeLegPress=-1;pinPress=PinOrderAt(pos);InputTrace=$"press {pos} route leg {routeLegPress}";
     }
     public void PointerMove(Vector2 pos)
     {
@@ -888,7 +913,7 @@ public sealed partial class BusinessView
     {
         var cam=Camera.main;if(cam==null)return;
         Vector3 before=atCursor?cam.ScreenToWorldPoint(screen):cam.transform.position;
-        cam.orthographicSize=Mathf.Clamp(cam.orthographicSize*factor,1.2f,40f);
+        cam.orthographicSize=Mathf.Clamp(cam.orthographicSize*factor,1.2f,Mathf.Max(40f,fittedMapZoom));
         if(atCursor){Vector3 after=cam.ScreenToWorldPoint(screen);cam.transform.position+=before-after;}
     }
     /// <summary>A tap on a pin puts a baked order into the selected (or first free) lane; on a bagged pin it selects that lane.</summary>

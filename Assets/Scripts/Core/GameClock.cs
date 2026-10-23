@@ -9,7 +9,7 @@ public sealed class GameClock : MonoBehaviour
 {
     [SerializeField, Min(1f)] private float businessDuration = 180f;
     [SerializeField, Min(0.01f)] private float travelTimeMultiplier = 5f;
-    [SerializeField, Range(0.01f, 1f), Tooltip("道順を編集している間の進行倍率。調理・配達・期限を同じ倍率で進めます。") ] private float planningTimeRate = .1f;
+    [SerializeField, Range(0.01f, 1f), Tooltip("配達指示画面を開いている間の進行倍率。調理・配達・期限を同じ倍率で進めます。") ] private float planningTimeRate = .1f;
     [SerializeField] private bool autoStart = true;
     [SerializeField] private bool automaticTick = true;
 
@@ -44,7 +44,7 @@ public sealed class GameClock : MonoBehaviour
         OnDayStarted?.Invoke();
     }
 
-    /// <summary>Advance wall time. Only the closed part of a frame is accelerated; Advance remains simulation time.</summary>
+    /// <summary>Advance wall time. Dispatch uses the shared planning rate; only the closed part is accelerated.</summary>
     public void AdvanceAutomatically(float realSeconds)
     {
         if(realSeconds<0 || float.IsNaN(realSeconds) || float.IsInfinity(realSeconds))throw new ArgumentOutOfRangeException(nameof(realSeconds));
@@ -70,6 +70,7 @@ public sealed class GameClock : MonoBehaviour
             if (RemainingSeconds <= 0f)
             {
                 Phase = DayPhase.Closed;
+                IsPlanning = false;
                 OnClosed?.Invoke();
             }
         }

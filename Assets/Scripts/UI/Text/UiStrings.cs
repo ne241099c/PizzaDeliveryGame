@@ -6,6 +6,9 @@ public static class UiStrings
 {
     public const string ReserveHint="焼く前の注文も、クリックかドラッグで配達員へ予約できます。";
     public const string ReserveShortHint="焼く前でも予約OK・下のレーンへ";
+    public const string DepartureReady="出発できます";
+    public const string TapRoadToChange="通りたい道をクリック";
+    public static string CourierReady(string name)=>name+" のピザが揃いました。出発できます →";
     public const string DepartureWaiting="準備待ち";
     public const string WaitingForBaking="焼き上がり待ち";
     public const string NextSection="次の区間へ";

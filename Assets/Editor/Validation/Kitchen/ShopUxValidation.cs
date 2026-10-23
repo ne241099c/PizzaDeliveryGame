@@ -25,6 +25,7 @@ public static class ShopUxValidation
             campaign.NewGame();clock.AutomaticTick=false;Find<OrderSpawner>().enabled=false;
             Find<KitchenCrew>().Restore(Array.Empty<KitchenStaff>());campaign.StartBusiness();
             business.ShowZone(ShopZone.Dispatch,true);
+            Check(clock.IsPlanning,"opening dispatch immediately enables slow time before editing");
             var p=roster.People[0];Check(p.Capacity==3,"Aoi starts with three slots");
             var raw=new Order("Goal1","raw",0,150);
             var ready=new Order("Goal2","ready",0,150,BakingState.Ready);
@@ -40,31 +41,63 @@ public static class ShopUxValidation
             Check(!depart.Interactable && depart.Text==UiStrings.DepartureWaiting,"departure button waits for baking");
             Check(business.OrderProgress(raw).Contains("予約"),"order shows reservation and kitchen progress");
             Check(business.OrderStage(raw)==0,"reservation does not fake cooking completion");
-            Check(business.BeginRouteEdit(p) && clock.IsPlanning,"route edit enables slow time");
+            Check(business.DepartureReadyNoticeCount==0,"unbaked reservation does not notify ready");
+            var bubble=(RectTransform)new SerializedObject(business).FindProperty("bubble").objectReferenceValue;
+            Check(bubble.GetComponent<CanvasGroup>().alpha==0 && !bubble.GetComponent<CanvasGroup>().blocksRaycasts,"map instructions are hidden without blocking map input");
+            Check(business.BeginRouteEdit(p) && clock.IsPlanning,"route editing keeps dispatch slow time");
+            business.EndRouteEdit();Check(clock.IsPlanning,"ending route edit keeps dispatch slow time");
             float before=clock.ElapsedSeconds;clock.AdvanceAutomatically(10);
             Check(Mathf.Abs(clock.ElapsedSeconds-before-10*clock.PlanningTimeRate)<.001f,"planning slows the shared simulation clock");
             Check(raw.Deadline==150,"planning does not rewrite deadlines");
             business.ShowZone(ShopZone.Kitchen,true);
-            Check(!clock.IsPlanning && !business.IsEditingRoute,"leaving dispatch ends slow time");
+            Check(!clock.IsPlanning && !business.IsEditingRoute,"leaving dispatch immediately ends slow time");
+            float normalBefore=clock.ElapsedSeconds;clock.AdvanceAutomatically(2);
+            Check(Mathf.Abs(clock.ElapsedSeconds-normalBefore-2)<.001f,"kitchen keeps normal speed");
             Check(cook.Claim(raw,0) && cook.AddDough(0) && cook.AddSauce(0,1) && cook.AddCheese(0) && cook.AddTopping(0,Topping.Basil) && cook.PutInOven(0,0),"reserved pizza can still be cooked");
             clock.Advance(cook.BakeDuration(raw));Check(cook.TakeOut(0),"reserved pizza leaves oven");
             var job=cook.JobFor(raw);if(!raw.IsReady){cook.Box(job);cook.CloseBox(job);}
             Check(raw.IsReady && hand.ReadyToDepart(p),"baked reservation automatically becomes ready");
+            business.RefreshPresentation();
+            Check(business.DepartureReadyNoticeCount==1,"ready courier notifies even while kitchen is visible");
             business.ShowZone(ShopZone.Dispatch,true);business.RefreshPresentation();
             depart=business.GetComponentsInChildren<StickerButton>().Last(b=>b.name=="Depart_"+p.Name);
             Check(depart.Interactable,"departure button automatically enables");
+            var lane=(RectTransform)depart.transform.parent;
+            Check(UiKit.FaceOf(lane).color==UITheme.Active.departureReadyLight,"ready courier lane uses ready color");
+            var readyBadge=(RectTransform)lane.Find("State");
+            Check(readyBadge.GetComponentInChildren<TextMeshProUGUI>().text==UiStrings.DepartureReady && readyBadge.GetComponent<UiBadge>().Face.color==UITheme.Active.departureReady,"ready badge names departure state in green");
+            business.RefreshPresentation();business.ShowZone(ShopZone.Kitchen,true);business.ShowZone(ShopZone.Dispatch,true);business.RefreshPresentation();
+            Check(business.DepartureReadyNoticeCount==1,"refresh and screen changes do not duplicate ready notice");
             Check(business.SwapDeliveryOrder(p) && hand.BagOf(p).SequenceEqual(new[]{ready,third,raw}),"three-stop lane button rotates all orders");
             Check(hand.Unbag(third) && !hand.IsBagged(third),"reservation can be removed without dispatch");
+            var waitingAgain=new Order("Goal1","new reservation",clock.ElapsedSeconds,150);
+            orders.AddOrder(waitingAgain);Check(hand.Bag(waitingAgain,p),"another unbaked reservation disables readiness");
+            business.RefreshPresentation();
+            Check(!business.IsDepartureReady(p),"new waiting pizza removes ready state");
+            Check(hand.Unbag(waitingAgain),"waiting reservation can be released");
+            business.RefreshPresentation();
+            Check(business.IsDepartureReady(p) && business.DepartureReadyNoticeCount==2,"becoming ready again notifies once again");
             Check(hand.Bag(third,p),"released pizza can be reserved again");
             business.SyncRoute();Check(flow.CanDispatch(planner.SelectedPlan,p),"all three ready pizzas can depart");
             business.Toast("通知配置の確認",UITheme.Active.info);business.RefreshPresentation();
             var toastRoot=(RectTransform)new SerializedObject(business).FindProperty("toasts").objectReferenceValue;
             Check(-toastRoot.anchoredPosition.y+toastRoot.rect.height<=250,"notification is above map content");
             business.Depart(p);Check(p.CurrentTrip!=null && p.CurrentTrip.Deliveries.Count==3,"three orders really dispatch");
-            Check(hand.BagOf(p).Count==0,"departure releases reservation lane");
+            Check(hand.BagOf(p).Count==0 && !business.IsDepartureReady(p),"departure releases reservation and ready state");
+            Find<ScreenRouter>().Show(ScreenId.Hub,true);Check(!clock.IsPlanning,"leaving business screen restores normal time immediately");
+            Find<ScreenRouter>().Show(ScreenId.Business,true);Check(clock.IsPlanning,"returning to dispatch restores slow time immediately");
+            var isolatedObject=new GameObject("DispatchClosingClockValidation");
+            try
+            {
+                var isolated=isolatedObject.AddComponent<GameClock>();isolated.AutomaticTick=false;isolated.BeginDay();isolated.IsPlanning=true;
+                isolated.AdvanceAutomatically(isolated.BusinessDuration/isolated.PlanningTimeRate+.5f);
+                Check(isolated.Phase==DayPhase.Closed && !isolated.IsPlanning,"closing clears planning state");
+                Check(Mathf.Abs(isolated.ElapsedSeconds-isolated.BusinessDuration-.5f*isolated.ClosedPlaybackSpeed)<.01f,"closing boundary preserves eight-times return speed");
+            }
+            finally{Object.DestroyImmediate(isolatedObject);}
             return $"PASS: {count} reservation / planning UX checks.";
         }
-        finally{business.EndRouteEdit();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
+        finally{business.ShowZone(ShopZone.Kitchen,true);business.EndRouteEdit();clock.AutomaticTick=false;CampaignSaveManager.SessionSavingLocked=true;}
     }
     private static T Find<T>() where T:Object=>Object.FindFirstObjectByType<T>();
     public static string Run()

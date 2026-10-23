@@ -23,6 +23,7 @@ public sealed class UITheme : ScriptableObject
     [SerializeField, Min(1)] public float deliveryLaneMinWidth=560,deliveryRouteWidthPixels=6,deliveryRouteOffsetPixels=9,deliveryRouteDotSpacingPixels=64,deliveryRouteDotSpeedPixels=28;
     [Header("Dispatch status and kitchen")]
     [SerializeField] public Color orderWaitingPin=Hex("#F7BE3D"),orderMakingPin=Hex("#3C79C2"),orderBakingPin=Hex("#E04B2D"),orderReadyPin=Hex("#4C9A52");
+    [SerializeField] public Color departureReady=Hex("#258442"),departureReadyLight=Hex("#DDF1D9");
     [SerializeField, Min(1)] public float orderPinNumberSize=220,orderPinNumberBackgroundPixels=34;
     [SerializeField, Range(.1f,1f)] public float squidToppingScale=.6f;
     [Header("v2: shop redesign (設計書_画面デザイン 2)")]
@@ -41,6 +42,8 @@ public sealed class UITheme : ScriptableObject
     [SerializeField, Min(1)] public float minimumBenchWidth=320,minimumOvenWidth=300;
     [SerializeField, Min(1)] public float notificationSeconds=5;
     [SerializeField, Range(.1f,1f)] public float mapResidentialWidthScale=.55f;
+    [SerializeField, Min(.01f)] public float mapBuildingSpacing=2.1f,mapBuildingSetback=.7f,mapBuildingSize=.55f;
+    [SerializeField] public Color mapBuildingFill=Hex("#E6D9C4");
     [SerializeField] public Color mapResidentialFill=Hex("#FFF6E5");
     public Color CourierColor(string name)
     {

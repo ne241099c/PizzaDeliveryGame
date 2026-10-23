@@ -13,6 +13,7 @@ public enum ShopZone { Kitchen, Handover, Dispatch }
 /// The fixed layout is the prefab Assets/Prefabs/UI/BusinessView.prefab: ScreenPrefabs calls BuildLayout once in the
 /// editor and the parts are kept in serialized fields. At runtime Bind attaches the actions; stations, tickets, lanes and
 /// pins follow the data and are built here.</summary>
+[DefaultExecutionOrder(-110)]
 public sealed partial class BusinessView : MonoBehaviour
 {
     private ScreenRouter router;
@@ -71,17 +72,21 @@ public sealed partial class BusinessView : MonoBehaviour
         if(clock==null)return;clock.OnDayStarted+=DayStarted;orders.OrdersChanged+=AssignNumbers;flow.Returned+=Returned;flow.Message+=FlowMessage;
         if(router!=null)router.Changed+=ScreenChanged;
         if(roster!=null)roster.SelectionChanged+=RequestLaneFocus;
+        if(handover!=null)handover.Changed+=RefreshDepartureReadiness;
     }
     private void OnDisable()
     {
         EndRouteEdit();
+        if(clock!=null)clock.IsPlanning=false;
         if(clock==null)return;clock.OnDayStarted-=DayStarted;orders.OrdersChanged-=AssignNumbers;flow.Returned-=Returned;flow.Message-=FlowMessage;
         if(router!=null)router.Changed-=ScreenChanged;
         if(roster!=null)roster.SelectionChanged-=RequestLaneFocus;
+        if(handover!=null)handover.Changed-=RefreshDepartureReadiness;
         if(map!=null)map.PointerInputEnabled=true;
     }
     private void DayStarted()
     {
+        departureReady.Clear();DepartureReadyNoticeCount=0;
         numbers.Clear();
         nextNumber=1;
         observedOrders.Clear();
@@ -91,7 +96,7 @@ public sealed partial class BusinessView : MonoBehaviour
     }
     private void AssignNumbers(){foreach(var o in orders.Orders){observedOrders.Add(o);if(!numbers.ContainsKey(o))numbers[o]=nextNumber++;}}
     public int Number(Order o){if(!numbers.TryGetValue(o,out int n)){AssignNumbers();numbers.TryGetValue(o,out n);}return n;}
-    private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){EndRouteEdit();hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}}
+    private void ScreenChanged(ScreenId id){if(id!=ScreenId.Business){EndRouteEdit();clock.IsPlanning=false;hand?.Cancel();if(map!=null)map.PointerInputEnabled=true;SetMinimap(false);}SyncPlanningRate();}
 
     /// <summary>Editor only (ScreenPrefabs): creates the fixed layout under this object, reading sizes from the open scene's
     /// managers (rack capacity, waste cost). Actions are not attached here: Bind does that at runtime.</summary>
@@ -253,7 +258,7 @@ public sealed partial class BusinessView : MonoBehaviour
     {
         if(zone==ShopZone.Handover)zone=ShopZone.Dispatch;
         if(zone!=ShopZone.Dispatch)EndRouteEdit();
-        Zone=zone;for(int i=0;i<zoneTabs.Length;i++)if(zoneTabs[i]!=null)zoneTabs[i].Kind=i==(int)zone?StickerKind.Primary:StickerKind.Secondary;
+        Zone=zone;SyncPlanningRate();for(int i=0;i<zoneTabs.Length;i++)if(zoneTabs[i]!=null)zoneTabs[i].Kind=i==(int)zone?StickerKind.Primary:StickerKind.Secondary;
         bool dispatching=zone==ShopZone.Dispatch;
         worldGroup.alpha=dispatching?0:1;worldGroup.blocksRaycasts=worldGroup.interactable=!dispatching;
         UiKit.Show(dispatch,dispatching);UiKit.Show(rail,!dispatching); // the top bar (time, money, promise) stays on both views
@@ -265,6 +270,12 @@ public sealed partial class BusinessView : MonoBehaviour
         if(map!=null)map.PointerInputEnabled=!dispatching;
         SetMinimap(dispatching);
         if(dispatching)EnterDispatch();
+        UiKit.Show(bubble,false);
+    }
+    // Run before GameClock.Update and also on zone switches: no full-speed frame on entry.
+    private void SyncPlanningRate()
+    {
+        if(clock!=null)clock.IsPlanning=isActiveAndEnabled && router!=null && router.Current==ScreenId.Business && Zone==ShopZone.Dispatch && clock.Phase==DayPhase.Open;
     }
     private float knobTarget=6;
     private void Pan()
@@ -331,6 +342,7 @@ public sealed partial class BusinessView : MonoBehaviour
     }
     private void Update()
     {
+        SyncPlanningRate();
         if(UiRendering.Suspended)return;
         if(router.Current!=ScreenId.Business)return;
         Keys();Pan();RefreshPresentation();
