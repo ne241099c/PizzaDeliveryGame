@@ -2,7 +2,7 @@
 
 > M5時点の記録。現在はM6で成長・訓練・3タイプ求人・日別固定費・セーブを追加。[M6_CurrentGuide.md](M6_CurrentGuide.md) を参照。
 
-2026-10-22。M5-0〜M5-6を実装。数値は仕様の初期値で、M4-9の人による数値調整は未実施。段階ごとの変更・検証・判断は [M5_StageResults.md](M5_StageResults.md)、測定結果は [M5_Simulations/README.md](../M5_Simulations/README.md)。
+2026-10-22。M5-0〜M5-6を実装。数値は仕様の初期値で、M4-9の人による数値調整は未実施。段階ごとの変更・検証・判断は [M5_StageResults.md](M5_StageResults.md)、測定結果は [M5_Simulations/README.md](../Simulations/M5/README.md)。
 
 ## 遊び方
 
@@ -39,7 +39,7 @@ Play停止中に `GameManager` を選んで変更すると保存される。Play
 1. Play中に `Tools > Pizza Delivery > Simulate Days` を開く。
 2. 日数・目安時間の配列・シードを指定し、`Run comparison` を押す。各目安時間は初期状態から始まる。**現在の営業状態はリセットされる**。
 3. 期限が近い注文を1件ずつ、待機中の配達員へ実際の推奨出発処理で出す。雇用・解雇は行わず、破産したらその設定は終了。
-4. 日別の結果がConsoleと `Docs/M5_Simulations/comparison-日時.csv` に出る。`Show CSV` でファイルを表示できる。CSVの `promise_seconds` は物理下限で補正後の実際の目安時間。
+4. 日別の結果がConsoleと `Docs/Simulations/M5/comparison-日時.csv` に出る。`Show CSV` でファイルを表示できる。CSVの `promise_seconds` は物理下限で補正後の実際の目安時間。
 
 既存の `GameClock.Advance`、注文生成、`DeliveryPlannerUI.DispatchWithSuggestion`、事故、到着採点、精算を利用する。シミュレーター内で売上・費用・評判の式を再実装していない。注文・事故・求人は独立した乱数列を使い、同一シードを再現可能にした。
 

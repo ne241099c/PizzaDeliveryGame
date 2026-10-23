@@ -11,7 +11,7 @@
 
 ## 現物の状態
 
-- プロジェクト：`/Users/soma/Unity/PizzaDeliveryGame`。Unity 6000.2.10f1、`Assets/Scenes/SampleScene.unity`。
+- プロジェクト：`/Users/soma/Unity/PizzaDeliveryGame`。Unity 6000.2.10f1、`Assets/Scenes/Game.unity`。
 - 元フォルダは **shop**。ゲーム実装の最新は **43e3cac**（配達指示UX）。この引き継ぎ文書のコミットがその後に続く。HEADは `git log` を正とする。
 - `main` は **6bf94d6**（V-4まで統合済み）。新しいshopの作業はmainへ未統合。pushしていない。
 - **引き継ぎ時の読み取りではPlay中**、一時停止なし、コンパイル/更新なし。シーンisDirty=false、営業Open、AutomaticTick=true、RenderingSuspended=false。Codexは今回Playを止めたり営業を初期化したりしていない。進行する状態なので再開時に読み取り確認する。
@@ -25,7 +25,7 @@
 - 配達指示：配達員の名前 → 注文の「積む」→「届け先へ」→「出発」。地図の道を直接選ぶ方法、おすすめ経路、個別配達との時間比較も残す。
 - 注文ごとに調理/積載/配達の状態、目安までの秒数、遅れと受付猶予、配達中の到着予定を表示。キャンセル理由も8秒残す。
 - 未出発注文は元の目安+20秒まで受付。元の目安時刻は書き換えない。出発済みは遅れても配達成功、既存の毎秒5点減点・下限0を使用。遅配にはチップ/品質ボーナスなし。閉店時の未出発キャンセルは維持。
-- 詳細・変更ファイル・判断は [Dispatch_UX_Results.md](../Dispatch_UX_Results.md)。`ManualDeliveryRoute`、`RoadPathfinder`、`MapManager`、`MapDefinition`はこの変更で触っていない。
+- 詳細・変更ファイル・判断は [Dispatch_UX_Results.md](../Results/Dispatch_UX_Results.md)。`ManualDeliveryRoute`、`RoadPathfinder`、`MapManager`、`MapDefinition`はこの変更で触っていない。
 
 ## 検証済みの記録（再実行の指示ではない）
 
@@ -36,7 +36,7 @@
 
 ## 残作業と保留
 
-- 店内UIの全S2/Dが完了したわけではない。残りは [Claude_Resume.md](Claude_Resume.md) と [復旧時の結果](../Shop_UI_StageResults.md) を参照。新しい追加指示を旧仕様へ巻き戻して埋めない。
+- 店内UIの全S2/Dが完了したわけではない。残りは [Claude_Resume.md](Claude_Resume.md) と [復旧時の結果](../Results/Shop_UI_StageResults.md) を参照。新しい追加指示を旧仕様へ巻き戻して埋めない。
 - V-5、M4-9、C-5後のバランス調整、任意S2-6は未実施・保留。main統合や全残項目の一括実装を、この引き継ぎだけで新たに指示されたと解釈しない。
 - 別worktreeの文言コミットe99263aはshopへ未統合。取り込む場合は現行ShopStringsとの重複を先に確認。
 

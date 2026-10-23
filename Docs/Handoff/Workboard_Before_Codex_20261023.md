@@ -28,6 +28,6 @@
 3. 最新の配達UXを維持し、既存実装を調べて次の依頼の差分だけを実装する。旧受け渡しの手動梱包・目安即キャンセルへ戻さない。
 4. 確認は変更箇所に絞り、今回行った確認と未確認を記録してローカルコミット。pushしない。
 
-最新結果：[配達UX](../Dispatch_UX_Results.md)（追加依頼(3)：指示盤をレーン方式に変更、(4)：3分営業・出費減・注文増・内勤を遅く・ルートのドラッグ・モーダル・最高記録、2026-10-23）、[全検証記録](Dispatch_UX_Validation.json)、[画像](../UI_Screens/dispatch-ux/README.md)。残作業・保留・別worktreeはClaude_Resumeに記載。
+最新結果：[配達UX](../Results/Dispatch_UX_Results.md)（追加依頼(3)：指示盤をレーン方式に変更、(4)：3分営業・出費減・注文増・内勤を遅く・ルートのドラッグ・モーダル・最高記録、2026-10-23）、[全検証記録](Dispatch_UX_Validation.json)、[画像](../UI_Screens/dispatch-ux/README.md)。残作業・保留・別worktreeはClaude_Resumeに記載。
 
 過去の分担や詳細は[交代前のWorkboard全文](Workboard_Before_Claude_20261023.md)へ保存した。古いV-4分担やCodex所有の宣言は履歴。

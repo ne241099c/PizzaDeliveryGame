@@ -1,4 +1,4 @@
-"""Scene handling shared by the review tools (2 scenes: Title and Game, see Assets/Scripts/GameScenes.cs).
+"""Scene handling shared by the review tools (2 scenes: Title and Game, see Assets/Scripts/Core/GameScenes.cs).
 
 ensure_scene(code, 'Game') loads the Game scene if another scene is playing (it continues the player's save in memory,
 without writing it) and turns automatic saving off for the rest of the Play session, so fixtures never overwrite the

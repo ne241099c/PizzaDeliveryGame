@@ -5,7 +5,7 @@ Unity操作担当はWorkboardを正とする（2026-10-23の最新交代でClaud
 
 - `unity_call.py <tool> ['JSON' | @args.json]`：既存KitWright MCPのツール呼び出し。エラー時は非ゼロ終了。
 - **毎回の全検証は不要**。UIは変更箇所の表示/操作、ゲーム処理は関連検証。以下の全検証は大きな区切りか明示依頼時だけ行う。引き継ぎだけで実行しない。
-- `run_suite.py <label>`：全単体・シミュレーション検証を順次実行。事前にSampleSceneのPlayと接続を確認。失敗時は停止。
+- `run_suite.py <label>`：全単体・シミュレーション検証を順次実行。事前にUnityでPlayを開始（どちらのシーンでもよい。ツールがGameシーンを読み込む）。失敗時は停止。
 - `capture_views.py <folder>`：`Docs/UI_Screens/<folder>/`へ11画面を保存。事前にPlayと固定解像度を確認。既存ファイルを置き換えるため、フォルダ名は作業ボードで決める。
 - `capture_title.py [--folder after-redesign]`：タイトルを3解像度（1920×1080、1280×720、1920×1200）×4状態（セーブあり・初回・壊れたセーブ・クレジット）で撮影し、重なり・はみ出しも確認。一時セーブだけを使う。
 - Unity内のTest Runner：メニュー **Tools > Pizza Delivery > Run Tests**（結果 `Library/TestResults/last.txt`）。
@@ -21,14 +21,14 @@ python3 Tools/Review/run_suite.py v4
 python3 Tools/Review/capture_views.py after
 ```
 
-全検証・撮影の実行済み。最新の配達UXの結果は `Docs/Dispatch_UX_Results.md` を参照。旧ツールのポート固定を引き継がず、現在のローカル設定を利用する。
+全検証・撮影の実行済み。最新の配達UXの結果は `Docs/Results/Dispatch_UX_Results.md` を参照。旧ツールのポート固定を引き継がず、現在のローカル設定を利用する。
 
 長期計算中に装飾更新だけを抑えるRenderingSuspendedはfinallyで解除する。撮影は通常セーブ抑制下のfixture操作を含むため、ユーザーが営業プレイ中のときに同時実行しない。
 
 
 ## 店内UIの復旧確認（2026-10-23）
 
-元プロジェクトのSampleSceneをPlayしてから、現在のUnity操作担当が順番に実行する。通常セーブを抑制したfixtureで、メモリ上の営業を初期化する。
+元プロジェクトでPlayを開始してから、現在のUnity操作担当が順番に実行する。通常セーブを抑制したfixtureで、メモリ上の営業を初期化する。
 
 ```sh
 python3 Tools/Review/validate_shop_stations.py

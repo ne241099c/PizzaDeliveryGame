@@ -11,4 +11,4 @@
 
 配達指示には調理中の2件と、配達員に積載した2件を表示する。注文一覧は上下スクロールできる。画像内のスクロール範囲外の注文も保持されている。
 
-検証と判断は [Dispatch_UX_Results.md](../../Dispatch_UX_Results.md) を参照。新タイトル等の店内UIの残作業は今回の完了範囲ではない。
+検証と判断は [Dispatch_UX_Results.md](../../Results/Dispatch_UX_Results.md) を参照。新タイトル等の店内UIの残作業は今回の完了範囲ではない。

@@ -13,7 +13,7 @@
 
 Unity操作の所有者：**Codex**。終了時はPlayを止め、SampleSceneを保存。MCP撮影サイズは512へ復帰済み。mainへの統合・pushは行わない。
 
-現在の結果：[配達UX](../Dispatch_UX_Results.md)、[最終検証](Dispatch_UX_Validation.json)、[画像](../UI_Screens/dispatch-ux/README.md)。以前の復旧結果は[Shop_UI_StageResults.md](../Shop_UI_StageResults.md)。
+現在の結果：[配達UX](../Results/Dispatch_UX_Results.md)、[最終検証](Dispatch_UX_Validation.json)、[画像](../UI_Screens/dispatch-ux/README.md)。以前の復旧結果は[Shop_UI_StageResults.md](../Results/Shop_UI_StageResults.md)。
 
 ## 次の作業
 
@@ -39,7 +39,7 @@ Unity操作の所有者：**Codex**。終了時はPlayを止め、SampleSceneを
 | 担当 | 実装する内容 | 所有ファイル | 作業場所・状態 |
 |---|---|---|---|
 | Claude Code | V-4のレイアウト、2解像度対応、画面確認、撮影、全検証、ui→main統合 | UIThemeDriver、VisualSceneSetup、VisualValidation、その他必要な表示/配置コード、シーン/Prefab/UITheme、最終画像・報告。UiStrings.csは除く | 元プロジェクト / ui。**V-4完了・main統合済み**：V-4 adffe1f（ui全検証3772）→ mainへfast-forward、main全検証3772通過。Unityは編集モード・シーン保存済み・Gameビューは元のFree Aspect。現在のブランチはmain。Codexの文言コミットは未着手のため未統合 |
-| Codex | 未翻訳の画面文言の整備。表示文字表のコードを実装する | Assets/Scripts/UiStrings.cs。成果記録はDocs/Handoff/Codex_Implementation.md | .worktrees/codex-text / codex/v4-text。未着手 |
+| Codex | 未翻訳の画面文言の整備。表示文字表のコードを実装する | Assets/Scripts/UI/Text/UiStrings.cs。成果記録はDocs/Handoff/Codex_Implementation.md | .worktrees/codex-text / codex/v4-text。未着手 |
 
 双方の共通所有：このボードは自分の状態欄と成果欄だけを更新。相手の作業中はファイル全体を上書きしない。新規タスクの分担はここで具体的なファイルを指定する。
 
@@ -65,7 +65,7 @@ claude
 AGENTS.md、CLAUDE.md、Docs/Handoff/Current.md、Docs/Handoff/Workboard.mdを読み、実装担当として再開してください。
 旧「Claudeはレビューのみ」の制限は撤回済みです。あなたとCodexの両方が実装を担当します。
 あなたは元プロジェクトのuiブランチとUnity Editorを担当し、Docs/Archive/計画書_見た目.mdのV-4を最後まで実装してください。
-Codexは別worktreeでAssets/Scripts/UiStrings.csだけを実装します。このファイルは直接変更せず、必要な文言を共有してください。
+Codexは別worktreeでAssets/Scripts/UI/Text/UiStrings.csだけを実装します。このファイルは直接変更せず、必要な文言を共有してください。
 V4_candidate.py.txtは未適用・未検証の参考案です。実装を調べ、必要な差分だけ反映し、候補を無条件に実行しないでください。
 1920x1080と1280x720で全11画面を確認・修正し、最終画像を保存してください。Unity操作、配置コード、シーン/Prefab編集、検証、撮影、ローカルコミット、main統合もあなたが担当して構いません。Codexの承認待ちは不要です。
 全検証の直前にCodexの完了コミットがあれば差分を確認して取り込んでください。未着手・未完了なら待たずに自分の作業を進め、残件として報告してください。

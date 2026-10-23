@@ -2,7 +2,7 @@
 
 M1〜M6と、置き換えられた計画書（`計画書_見た目.md` は `設計書_画面デザイン.md` に置き換え）の記録。現在の作業の入口ではありません。再開するときは `AGENTS.md` と `Docs/Handoff/Current.md` から読んでください。
 
-シミュレーションの出力先（`Docs/M5_Simulations`、`Docs/M6_Adjustment_Simulations`）はコードが書き込む場所なので、アーカイブせず元の位置に残しています。
+シミュレーションの出力先（`Docs/Simulations/M5`、`Docs/Simulations/M6_Adjustment`）はコードが書き込む場所なので、アーカイブせず元の位置に残しています。
 
 ## 削除した古いシーン構築スクリプト
 

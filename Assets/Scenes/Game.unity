@@ -3255,7 +3255,7 @@ MonoBehaviour:
   extendLateCount: 3
   promiseTrendDays: 2
   comparisonExtraInitialCash: 600
-  resultsDirectory: Docs/M7_Simulations/legacy
+  resultsDirectory: Docs/Simulations/M7/legacy
   trainingPriority: 00000000050000000400000002000000
 --- !u!114 &1404697827
 MonoBehaviour:

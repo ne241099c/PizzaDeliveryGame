@@ -13,4 +13,4 @@
 
 撮影はTools/Review/capture_shop_views.py。実PNG寸法を検証し、元のGameビューサイズへ復帰。追加した720pの一時サイズも削除。
 
-[作業・検証・残作業](../../Shop_UI_StageResults.md)。タイトル等の新デザイン、地図の見た目の追加調整や大規模化は残っている。
+[作業・検証・残作業](../../Results/Shop_UI_StageResults.md)。タイトル等の新デザイン、地図の見た目の追加調整や大規模化は残っている。

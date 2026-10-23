@@ -4,7 +4,7 @@
 
 担当：**Claude Code（Unity操作の所有者）**。shop、pushなし。コミット a9bc3e6 → d7f17c1 → d28f01e → 72aee10 → a86dda4。
 
-- **タイトル（D-5a）**：`Assets/Prefabs/UI/TitleView.prefab`（`TitleView`、生成 `TitleViewBuilder`）。絵は `Tools/Art/title_art.py` → `Assets/Art/Title/`。ゲーム名は `Assets/Scripts/GameInfo.cs` だけで定義し、**Tools > Game Info > Sync** でproductName・README・クレジットへ反映。チュートリアルは未実装なので「準備中」。
+- **タイトル（D-5a）**：`Assets/Prefabs/UI/TitleView.prefab`（`TitleView`、生成 `TitleViewBuilder`）。絵は `Tools/Art/title_art.py` → `Assets/Art/Title/`。ゲーム名は `Assets/Scripts/Core/GameInfo.cs` だけで定義し、**Tools > Game Info > Sync** でproductName・README・クレジットへ反映。チュートリアルは未実装なので「準備中」。
 - **セーブ置き場**：productNameを変えるとUnityのデータフォルダ名が変わるため、セーブは固定の `GameInfo.SaveFolder`（PizzaDeliveryGame）に置く。**SaveFolderは変えない**。通常セーブ・最高記録は作業の前後でバイト一致。
 - **プレハブ化**：タイトル・開店準備（枠）・精算（枠）・閉店は `Assets/Prefabs/UI/`。生成は `ScreenPrefabs`（Tools > Screens）。作り直すとプレハブの手修正は消える。データで変わるカード・レシート行・スタッフ行は実行時に作る。
 - **asmdef**：`PizzaDelivery`（実行時）、`PizzaDelivery.Editor`、`PizzaDelivery.Tests`。execute_code・Tools/Reviewはそのまま動く。
@@ -24,7 +24,7 @@
 
 ## 最新：失敗・作り直し、放置ピザ、初期5街区
 
-Codexがshopで実装・関連245項目と実UI5項目を確認。詳細：[実装記録](../Kitchen_Recovery_Implementation.md)。失敗品は保温棚の選択肢かゴミ箱へのドラッグで扱う。内勤は進行中の作業を中断せず、8秒放置されたピザを引き継ぐ。新規は5/8/10/12街区、旧生成セーブは3/5/8/12を維持。Unityは編集モード、push・main統合なし。最新コミット番号はgit logを正とする。
+Codexがshopで実装・関連245項目と実UI5項目を確認。詳細：[実装記録](../Results/Kitchen_Recovery_Implementation.md)。失敗品は保温棚の選択肢かゴミ箱へのドラッグで扱う。内勤は進行中の作業を中断せず、8秒放置されたピザを引き継ぐ。新規は5/8/10/12街区、旧生成セーブは3/5/8/12を維持。Unityは編集モード、push・main統合なし。最新コミット番号はgit logを正とする。
 
 **セーブの未確定事項**：撮影前後は一致したが、全作業の開始時と現在の通常セーブは異なる。更新は11:28:14、Codex操作が止まっていた時間帯。ユーザーは操作したか覚えていない。原因を断定しない。元のコピーは発見できず復元済みではない。現在の1日目のファイルと最高記録をLibrary/ReviewBackups/20261023-123909に保全。最高記録は開始時と一致。過去の「2日目を保護」という記載を現在のファイル内容と取り違えない。
 
@@ -34,20 +34,20 @@ Codexがshopで実装・関連245項目と実UI5項目を確認。詳細：[実�
 ## 最初に読むこと
 
 - **毎回の全検証は不要**。UIは変更箇所の表示・操作、計算・ゲーム処理は関連検証。全検証は大きな区切り、またはユーザーの明示依頼時だけ。引き継ぎ・再開・文書変更だけで長時間シミュレーションを回さない。
-- 実装は既存との差分だけ。最新の追加依頼（[Dispatch_UX_Results.md](../Dispatch_UX_Results.md) の追加依頼(2)〜(4)）が、古い設計書・引用指示より優先する。配達指示はレーン方式、厨房に受け渡しはない、途中からは「その日の開店準備から」。
+- 実装は既存との差分だけ。最新の追加依頼（[Dispatch_UX_Results.md](../Results/Dispatch_UX_Results.md) の追加依頼(2)〜(4)）が、古い設計書・引用指示より優先する。配達指示はレーン方式、厨房に受け渡しはない、途中からは「その日の開店準備から」。
 - 実装・Unity操作の担当はCodex。Claude Codeは終了。並行して同じUnity・同じファイルを編集しない。
 
 ## 最新：ピザ・窯キュー・生成マップ
 
 Codexがshopで配達速度1.2倍、窯の共通FIFOキュー、S2-6ピザ3種類、G-0〜G-5の生成マップを実装。最終コミット番号はgit logを正とする。push・main統合なし。
 
-[実装記録・判断・画像・検証](../Menu_Map_Implementation.md)を先に読む。1,000シードの品質検査と100街×3日の実配達確認は通過。通常資金での4段階の30日上限測定は全て初日破産し、数値調整はしていない。S2-7も追補で実装・測定済み。J/Kは初日、Lは6日目に破産（30日上限）。数値調整は判断待ち。通常セーブ・最高記録のバイト一致を確認。新しい街は新規ゲームに適用し、旧セーブは元の地図を維持する。
+[実装記録・判断・画像・検証](../Results/Menu_Map_Implementation.md)を先に読む。1,000シードの品質検査と100街×3日の実配達確認は通過。通常資金での4段階の30日上限測定は全て初日破産し、数値調整はしていない。S2-7も追補で実装・測定済み。J/Kは初日、Lは6日目に破産（30日上限）。数値調整は判断待ち。通常セーブ・最高記録のバイト一致を確認。新しい街は新規ゲームに適用し、旧セーブは元の地図を維持する。
 
 Unity操作担当はCodex。通常セーブは既存の2日目を保護。資料にある毎段階の全検証は再実行せず、関連検証のみ行う。
 
 ## 最新の追加依頼：完了
 
-Codexが従業員人数制限の撤廃、赤・青の行き帰り表示、タイトルの続ける修正、閉店後8倍速を実装。関連441項目と8人分のレーン・ルート表示を確認。通常セーブ・最高記録は前後一致。詳細：[修正結果](../Staff_Route_Resume_Results.md)。Unityは編集モード。shopでローカルコミット、push・main統合なし。コミット番号はgit logを正とする。
+Codexが従業員人数制限の撤廃、赤・青の行き帰り表示、タイトルの続ける修正、閉店後8倍速を実装。関連441項目と8人分のレーン・ルート表示を確認。通常セーブ・最高記録は前後一致。詳細：[修正結果](../Results/Staff_Route_Resume_Results.md)。Unityは編集モード。shopでローカルコミット、push・main統合なし。コミット番号はgit logを正とする。
 
 ## 引き継ぎ時の状態（履歴）
 

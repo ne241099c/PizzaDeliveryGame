@@ -11,7 +11,7 @@ Claudeの利用制限中、Codexが店内UIを復旧し、追加依頼の配達�
 - `/Users/soma/Unity/PizzaDeliveryGame` の **shop**。最新のゲーム実装は `43e3cac S2-5: 配達指示の注文操作と自動梱包・遅配猶予を実装`。その後に今回のdocsコミットが続くので実際のHEADも確認。
 - その前は `31382d8 S2-1: 店内UIの途中実装を接続し表示と回帰検証を復旧`、Claudeの厨房処理は `57c7dba`、設計/承認モックは `52dc71b`。
 - mainは6bf94d6。m4/m5/m6/screens/m7/uiの旧作業はV-4までmain統合済み。新しいshopはmainへ統合していない。pushしていない。
-- Unity 6000.2.10f1。`Assets/Scenes/SampleScene.unity`。引き継ぎ時は**Play中**、営業Open、AutomaticTick=true、一時停止/コンパイル/更新なし、isDirty=false、RenderingSuspended=false。CodexはPlayの停止やfixture初期化をしていない。状態は進行するので再確認する。
+- Unity 6000.2.10f1。`Assets/Scenes/Game.unity`。引き継ぎ時は**Play中**、営業Open、AutomaticTick=true、一時停止/コンパイル/更新なし、isDirty=false、RenderingSuspended=false。CodexはPlayの停止やfixture初期化をしていない。状態は進行するので再確認する。
 - Codexの実行中ジョブはない。ここからUnity操作を引き継いでよい。同じEditorを二人で操作しない。
 
 残る未コミット変更（保護・コミット対象外）：
@@ -35,11 +35,11 @@ Claudeの利用制限中、Codexが店内UIを復旧し、追加依頼の配達�
 6. 遅配は配達成功、既存の毎秒5点減点・下限0。遅配のチップ/品質ボーナスなし。閉店の未出発キャンセルと全員帰還後の精算は維持。
 7. 道幅・方向矢印は画面上の大きさを制限し、ピン背景と名前の重なりを修正。MapManager/ManualDeliveryRoute/RoadPathfinder/MapDefinitionはこの変更で変更していない。
 
-詳しい変更ファイル・操作・判断は[配達UX結果](../Dispatch_UX_Results.md)。これを、旧設計書中の3区画・手動で箱を閉じる・目安で即キャンセルより優先する。自動梱包は「手作りの取り出しも自動」という意味ではない。手作りでは取り出すタイミングと焦げの遊びを残している。
+詳しい変更ファイル・操作・判断は[配達UX結果](../Results/Dispatch_UX_Results.md)。これを、旧設計書中の3区画・手動で箱を閉じる・目安で即キャンセルより優先する。自動梱包は「手作りの取り出しも自動」という意味ではない。手作りでは取り出すタイミングと焦げの遊びを残している。
 
 ## コードを読む入口
 
-- `Assets/Scripts/Shop/BusinessView.cs`：2画面切り替え、伝票、通知。
+- `Assets/Scripts/UI/Screens/Business/BusinessView.cs`：2画面切り替え、伝票、通知。
 - `BusinessView.Dispatch.cs`：配達員・バッグ・地図の操作、出発、参考時間。
 - `BusinessView.Orders.cs`：配達指示の注文一覧、秒数、積み込みボタン、道を戻す/帰路。
 - `BusinessView.Kitchen.cs`：手作りの材料・ソース・窯と自動梱包の見た目。
@@ -82,6 +82,6 @@ Claudeの利用制限中、Codexが店内UIを復旧し、追加依頼の配達�
 - 撮影：`capture_shop_views.py --folder <作業名>`、720pは`--720`。既存beforeを上書きしない。
 - Reflectionによる検証Tickのまとめ呼び出しはMCP安全チェックで拒否されたため不採用。安全チェックを無効化/迂回せず通常方法を使う。
 
-設計書と承認モックは `Docs/設計書_画面デザイン.md`、`Docs/設計書_店内シーン.md`、`Docs/UI_Mock/` に存在し、ユーザーのDownloads添付と一致確認済み。新しい配達UXと検証方針の追加依頼を優先する。
+設計書と承認モックは `Docs/Design/設計書_画面デザイン.md`、`Docs/Design/設計書_店内シーン.md`、`Docs/UI_Mock/` に存在し、ユーザーのDownloads添付と一致確認済み。新しい配達UXと検証方針の追加依頼を優先する。
 
-過去の文脈は[旧Current全文](Current_Before_Claude_20261023.md)、[旧Workboard全文](Workboard_Before_Claude_20261023.md)、[復旧結果](../Shop_UI_StageResults.md)、`git log`に保持。古い「現在」・担当・検証方針を再採用しない。
+過去の文脈は[旧Current全文](Current_Before_Claude_20261023.md)、[旧Workboard全文](Workboard_Before_Claude_20261023.md)、[復旧結果](../Results/Shop_UI_StageResults.md)、`git log`に保持。古い「現在」・担当・検証方針を再採用しない。
