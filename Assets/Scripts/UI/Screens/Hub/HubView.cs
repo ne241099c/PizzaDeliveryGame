@@ -185,7 +185,8 @@ public sealed class HubView : MonoBehaviour
         scroll.horizontal=true;
         scroll.vertical=false;
         scroll.movementType=ScrollRect.MovementType.Clamped;
-        scroll.scrollSensitivity=40;
+        scroll.viewport=viewport;
+        ScrollNavigation.Configure(scroll,true);
         return row;
     }
     private static T Place<T>(T prefab,Transform parent,string name,float x) where T:Component
@@ -274,8 +275,10 @@ public sealed class HubView : MonoBehaviour
     }
     private void BuildFacilities()
     {
+        var row=Scroller();
         var items=new[]{(FacilityType.Oven,"fac_oven"),(FacilityType.Workbench,"fac_bench"),(FacilityType.Bike,"fac_bike"),(FacilityType.Menu,"ticket"),(FacilityType.Advertising,"fac_ad")};
-        for(int i=0;i<items.Length;i++)ShowFacility(Place(facilityCard,content,"Facility_"+items[i].Item1,i*(FacilityW+FacilityGap)),items[i].Item1,items[i].Item2);
+        for(int i=0;i<items.Length;i++)ShowFacility(Place(facilityCard,row,"Facility_"+items[i].Item1,i*(FacilityW+FacilityGap)),items[i].Item1,items[i].Item2);
+        row.sizeDelta=new Vector2(items.Length*(FacilityW+FacilityGap),624);
     }
     private string FacilityLevel(FacilityType type)=>type switch
     {

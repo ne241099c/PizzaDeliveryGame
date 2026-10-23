@@ -15,13 +15,45 @@ public static class ScreenPrefabs
     private static UITheme T=>UiKit.T;
 
     [MenuItem("Tools/Screens/Build And Install Game Over")]
-    public static void GameOverMenu()=>Debug.Log(BuildGameOver()+" | "+Install("GameOverView"));
+    public static void GameOverMenu(){if(ConfirmRebuild("GameOverView"))Debug.Log(BuildGameOver()+" | "+Install("GameOverView"));}
     [MenuItem("Tools/Screens/Build And Install Hub")]
-    public static void HubMenu()=>Debug.Log(BuildCards()+" | "+BuildHub()+" | "+Install("HubView"));
+    public static void HubMenu(){if(ConfirmRebuild("HubView and card prefabs"))Debug.Log(BuildCards()+" | "+BuildHub()+" | "+Install("HubView"));}
     [MenuItem("Tools/Screens/Build And Install Business")]
-    public static void BusinessMenu()=>Debug.Log(BuildBusiness()+" | "+Install("BusinessView"));
+    public static void BusinessMenu(){if(ConfirmRebuild("BusinessView"))Debug.Log(BuildBusiness()+" | "+Install("BusinessView"));}
     [MenuItem("Tools/Screens/Build And Install Settlement")]
-    public static void SettlementMenu()=>Debug.Log(BuildSettlement()+" | "+Install("SettlementView"));
+    public static void SettlementMenu(){if(ConfirmRebuild("SettlementView"))Debug.Log(BuildSettlement()+" | "+Install("SettlementView"));}
+
+    private static bool ConfirmRebuild(string name)
+    {
+        if(Application.isPlaying)
+        {
+            Debug.LogWarning("Exit Play Mode before rebuilding a screen.");
+            return false;
+        }
+        for(int i=0;i<UnityEngine.SceneManagement.SceneManager.sceneCount;i++)
+        {
+            var scene=UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+            if(scene.isDirty)
+            {
+                Debug.LogWarning("Save or discard your scene edits explicitly before rebuilding screens. No changes made.");
+                return false;
+            }
+        }
+        return EditorUtility.DisplayDialog("Rebuild "+name+"?",
+            "This replaces the generated prefab layout and its scene instance. Manual prefab edits will be replaced. "
+            +"The existing prefab files will be copied to Library/PrefabBackups first. "
+            +"The scene will be left unsaved so you can inspect the result.","Back up and rebuild","Cancel");
+    }
+
+    /// <summary>All entry points, including automation, preserve existing prefab bytes before replacement.</summary>
+    private static void BackupPrefab(string path)
+    {
+        if(!File.Exists(path))return;
+        string folder="Library/PrefabBackups/"+System.DateTime.UtcNow.ToString("yyyyMMdd-HHmmss-fffffff");
+        Directory.CreateDirectory(folder);
+        File.Copy(path,Path.Combine(folder,Path.GetFileName(path)));
+        if(File.Exists(path+".meta"))File.Copy(path+".meta",Path.Combine(folder,Path.GetFileName(path)+".meta"));
+    }
 
     /// <summary>Replaces the scene object of the same name under ShopUI with the prefab, keeping its place, its CanvasGroup
     /// state and every serialized reference to it (the router's screen list, for example).</summary>
@@ -92,8 +124,8 @@ public static class ScreenPrefabs
         try
         {
             Directory.CreateDirectory(Folder);
+            BackupPrefab(Folder+name+".prefab");
             PrefabUtility.SaveAsPrefabAsset(root,Folder+name+".prefab",out bool ok);
-            AssetDatabase.SaveAssets();
             return ok?"saved "+Folder+name+".prefab":"save failed "+name;
         }
         finally{Object.DestroyImmediate(root);}
@@ -144,6 +176,7 @@ public static class ScreenPrefabs
         try
         {
             Directory.CreateDirectory(CardFolder);
+            BackupPrefab(CardFolder+name+".prefab");
             PrefabUtility.SaveAsPrefabAsset(root,CardFolder+name+".prefab",out bool ok);
             return ok?name:"FAILED "+name;
         }
@@ -268,7 +301,6 @@ public static class ScreenPrefabs
             Set(so,"rows",UiKit.Box(history,"Rows",28,136,880,440));
             so.ApplyModifiedPropertiesWithoutUndo();log.Add(SaveCard(go,"ManagementPanel"));
         }
-        AssetDatabase.SaveAssets();
         return "cards: "+string.Join(",",log);
     }
     private static T Card<T>(string name) where T:Component=>AssetDatabase.LoadAssetAtPath<GameObject>(CardFolder+name+".prefab")?.GetComponent<T>();
