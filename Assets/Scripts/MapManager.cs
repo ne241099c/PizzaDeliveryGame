@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
-[Serializable] public sealed class CitySaveState {public bool generated;public int version=1,seed,blocks,day;}
+[Serializable] public sealed class CitySaveState {public bool generated;public int version=3,seed,blocks,day;}
 
 public class MapManager : MonoBehaviour
 {
@@ -38,16 +38,16 @@ public class MapManager : MonoBehaviour
     {
         if(City!=null){var block=City.blocks.FirstOrDefault(b=>edgeId.StartsWith($"B{b.index}_"));if(block!=null)return block.template.title+" "+(block.index+1)+"の通り";}return "駅前通り";
     }
-    public string TomorrowCityInfo(int day)=>City!=null && citySettings.Blocks(day+1)>City.blocks.Count?"あした、新しい街区が開きます。":"あしたも同じ街で営業します。";
+    public string TomorrowCityInfo(int day)=>City!=null && citySettings.BlocksForVersion(day+1,CityState.version)>City.blocks.Count?"あした、新しい街区が開きます。":"あしたも同じ街で営業します。";
     public void NewCampaignCity()
     {
         CityState=generateCampaignCity && !UseSampleForValidation?new CitySaveState{generated=true,seed=SeedOverride??Guid.NewGuid().GetHashCode(),day=1}:null;
     }
-    public CitySaveState CaptureCity()=>CityState==null?null:new CitySaveState{generated=true,seed=CityState.seed,blocks=CityState.blocks,day=CityState.day};
-    public bool ValidCity(CitySaveState state,int day)=>state==null || !state.generated || state.version==1 && state.day==day && state.blocks==citySettings.Blocks(day);
+    public CitySaveState CaptureCity()=>CityState==null?null:new CitySaveState{generated=true,version=CityState.version,seed=CityState.seed,blocks=CityState.blocks,day=CityState.day};
+    public bool ValidCity(CitySaveState state,int day)=>state==null || !state.generated || (state.version==1 || state.version==2 || state.version==3) && state.day==day && state.blocks==citySettings.BlocksForVersion(day,state.version);
     public void RestoreCity(CitySaveState state)
     {
-        CityState=state==null || !state.generated?null:new CitySaveState{generated=true,seed=state.seed,blocks=state.blocks,day=state.day};
+        CityState=state==null || !state.generated?null:new CitySaveState{generated=true,version=state.version,seed=state.seed,blocks=state.blocks,day=state.day};
         PrepareCity(state?.day??1);
     }
     public void PrepareCity(int day)
@@ -57,7 +57,7 @@ public class MapManager : MonoBehaviour
         {
             if(City!=null){var previousCity=City;City=null;LoadMap(null);Destroy(previousCity.map);}return;
         }
-        int blocks=BlocksOverride??citySettings.Blocks(day);
+        int blocks=BlocksOverride??citySettings.BlocksForVersion(day,CityState.version);
         if(City!=null && CityState.blocks==blocks && City.seed==CityState.seed && City.day==day && City.blocks.Count==blocks)return;
         var old=City;var next=CityGenerator.Generate(CityState.seed,blocks,citySettings);
         if(day>=citySettings.constructionStartDay)

@@ -17,7 +17,11 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
 }
 [Serializable] public sealed class CityGenerationSettings
 {
-    public int[] stageDays={1,6,11,21},stageBlocks={3,5,8,12};
+    public int[] stageDays={1,6,11,21};
+    [SerializeField] private int[] campaignStageBlocks={5,8,10,12};
+    public int[] stageBlocks=>campaignStageBlocks;
+    public int[] legacyStageBlocks={3,5,8,12};
+    public int BlocksForVersion(int day,int version)=>version<=2?legacyStageBlocks[Mathf.Min(Stage(day),legacyStageBlocks.Length-1)]:Blocks(day);
     [Min(1)] public int retryCount=6;
     [Min(1)] public int columns=4;
     [Min(1)] public float blockSize=4,blockGap=1;
