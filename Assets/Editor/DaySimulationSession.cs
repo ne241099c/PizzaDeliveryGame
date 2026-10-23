@@ -44,11 +44,11 @@ public sealed class DaySimulationSession : IDisposable
     private readonly RecruitmentManager recruitment;
     private readonly BusinessEconomy economy;
     private readonly DeliveryFlowController flow;
-    private readonly DeliveryPersonSelector roster;
-    private readonly OrderListUI orders;
+    private readonly CourierRoster roster;
+    private readonly OrderBook orders;
     private readonly DayStats stats;
     private readonly ReputationManager reputation;
-    private readonly DeliveryPlannerUI planner;
+    private readonly DeliveryPlanner planner;
     private readonly CourierProgression progression;
     private readonly TrainingManager training;
     private readonly FacilityManager facilities;
@@ -96,7 +96,7 @@ public sealed class DaySimulationSession : IDisposable
             || step<=0 || float.IsNaN(step) || float.IsInfinity(step) || maximumDaySeconds<=0 || float.IsNaN(maximumDaySeconds) || float.IsInfinity(maximumDaySeconds))
             throw new ArgumentException("Set valid simulation days, promises and clock step in the Inspector.");
         campaign=Find<CampaignManager>();clock=Find<GameClock>();spawner=Find<OrderSpawner>();dynamics=Find<DeliveryDynamics>();recruitment=Find<RecruitmentManager>();
-        economy=Find<BusinessEconomy>();flow=Find<DeliveryFlowController>();roster=Find<DeliveryPersonSelector>();orders=Find<OrderListUI>();stats=Find<DayStats>();reputation=Find<ReputationManager>();planner=Find<DeliveryPlannerUI>();progression=Find<CourierProgression>();training=Find<TrainingManager>();
+        economy=Find<BusinessEconomy>();flow=Find<DeliveryFlowController>();roster=Find<CourierRoster>();orders=Find<OrderBook>();stats=Find<DayStats>();reputation=Find<ReputationManager>();planner=Find<DeliveryPlanner>();progression=Find<CourierProgression>();training=Find<TrainingManager>();
         cooking=Find<CookingManager>();originalSubstitute=cooking.EditorSubstitute;originalManualCooking=cooking.ManualControlEnabled;cooking.ManualControlEnabled=false;
         originalAutomaticTick=clock.AutomaticTick;originalSpawnerEnabled=spawner.enabled;
         originalOrderSeed=spawner.SeedOverride;originalDynamicsSeed=dynamics.SeedOverride;originalRecruitmentSeed=recruitment.SeedOverride;originalCookingSeed=cooking.SeedOverride;
@@ -228,7 +228,7 @@ public sealed class DaySimulationSession : IDisposable
     {
         if(disposed)return;disposed=true;
         // Cleanup remains inside suppression, including frames between batches.
-        campaign.NewGame();clock.AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();
+        campaign.NewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();
         map.SeedOverride=originalCitySeed;map.BlocksOverride=originalBlocks;map.UseSampleForValidation=originalSample;
         savingScope?.Dispose();
         cooking.EditorSubstitute=originalSubstitute;cooking.ManualControlEnabled=originalManualCooking;

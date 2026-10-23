@@ -14,8 +14,8 @@ public static class ShopValidation
         using var sampleMap=new SampleMapValidationScope();
         int count=0;void Check(bool ok,string name){if(!ok)throw new Exception("Shop: "+name);count++;}
         var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();
-        var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var list=Find<OrderListUI>();var cook=Find<CookingManager>();var spawner=Find<OrderSpawner>();
-        var economy=Find<BusinessEconomy>();var roster=Find<DeliveryPersonSelector>();var handover=Find<HandoverManager>();var planner=Find<DeliveryPlannerUI>();
+        var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var list=Find<OrderBook>();var cook=Find<CookingManager>();var spawner=Find<OrderSpawner>();
+        var economy=Find<BusinessEconomy>();var roster=Find<CourierRoster>();var handover=Find<HandoverManager>();var planner=Find<DeliveryPlanner>();
         var crew=Find<KitchenCrew>();var recruitment=Find<RecruitmentManager>();var facilities=Find<FacilityManager>();var flow=Find<DeliveryFlowController>();
         int? cookingSeed=cook.SeedOverride;bool tick=clock.AutomaticTick,spawning=spawner.enabled;clock.AutomaticTick=false;
         try
@@ -109,7 +109,7 @@ public static class ShopValidation
     }
     private static void ValidateGrace(Action<bool,string> check)
     {
-        var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var list=Find<OrderListUI>();var cook=Find<CookingManager>();var spawner=Find<OrderSpawner>();var roster=Find<DeliveryPersonSelector>();var handover=Find<HandoverManager>();var score=Find<ScoreManager>();var planner=Find<DeliveryPlannerUI>();var stats=Find<DayStats>();var flow=Find<DeliveryFlowController>();
+        var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var list=Find<OrderBook>();var cook=Find<CookingManager>();var spawner=Find<OrderSpawner>();var roster=Find<CourierRoster>();var handover=Find<HandoverManager>();var score=Find<ScoreManager>();var planner=Find<DeliveryPlanner>();var stats=Find<DayStats>();var flow=Find<DeliveryFlowController>();
         campaign.NewGame();spawner.enabled=false;clock.AutomaticTick=false;campaign.StartBusiness();
         var order=M7Validation.ReadyOrder("Goal1","Late success",0,5);list.AddOrder(order);
         float deadline=order.Deadline;clock.Advance(6);

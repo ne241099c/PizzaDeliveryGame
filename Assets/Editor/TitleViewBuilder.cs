@@ -6,9 +6,9 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>Builds the title screen prefab (D-5a) from the art in Assets/Art/Title and installs it in SampleScene.
-/// Run once (Tools/Title/Build Prefab, then Tools/Title/Install In Scene); afterwards the prefab is the source and can be
-/// edited in Prefab Mode. Rebuilding overwrites manual prefab edits, so do that only to start over.</summary>
+/// <summary>Builds the title screen prefab (D-5a) from the art in Assets/Art/Title (Tools/Title/Build Prefab). The Title
+/// scene holds an instance (GameScenesBuilder). Afterwards the prefab is the source and can be edited in Prefab Mode;
+/// rebuilding overwrites manual prefab edits, so do that only to start over.</summary>
 public static class TitleViewBuilder
 {
     public const string PrefabPath="Assets/Prefabs/UI/TitleView.prefab";
@@ -21,8 +21,6 @@ public static class TitleViewBuilder
 
     [MenuItem("Tools/Title/Build Prefab")]
     public static void BuildMenu()=>Debug.Log(Build());
-    [MenuItem("Tools/Title/Install In Scene")]
-    public static void InstallMenu()=>Debug.Log(Install());
 
     // ---- import settings and shared assets ----
     public static string ConfigureArt()
@@ -110,7 +108,7 @@ public static class TitleViewBuilder
         var root=new GameObject("TitleView",typeof(RectTransform));root.layer=5;var rootRect=(RectTransform)root.transform;Place(rootRect,0,0,0,0,Pin.Fill);
         try
         {
-            root.AddComponent<ThemeOptOut>();var view=root.AddComponent<TitleView>();var so=new SerializedObject(view);
+            var view=root.AddComponent<TitleView>();var so=new SerializedObject(view);
             // Background layers, back to front.
             var scene=Node(rootRect,"Scene",0,0,0,0,Pin.Fill);
             Picture(Node(scene,"Sky",0,0,0,0,Pin.Fill),"title_sky");
@@ -184,37 +182,5 @@ public static class TitleViewBuilder
             return ok?$"saved {PrefabPath} ({art})":"prefab save failed";
         }
         finally{Object.DestroyImmediate(root);}
-    }
-
-    // ---- scene installation: the prefab replaces the old title contents and takes over their references ----
-    public static string Install()
-    {
-        if(Application.isPlaying)return "exit Play Mode first";
-        var prefab=AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);if(prefab==null)return "missing "+PrefabPath+" (Tools/Title/Build Prefab)";
-        var router=Object.FindFirstObjectByType<ScreenRouter>(FindObjectsInactive.Include);if(router==null)return "missing ScreenRouter in the open scene";
-        var screen=router.Root(ScreenId.Title);var choice=screen!=null?screen.transform.Find("SaveChoice"):null;if(choice==null)return "missing TitleScreen/SaveChoice";
-        var save=Object.FindFirstObjectByType<CampaignSaveManager>(FindObjectsInactive.Include);var menu=Object.FindFirstObjectByType<TitleMenuUI>(FindObjectsInactive.Include);
-        if(save==null || menu==null)return "missing CampaignSaveManager or TitleMenuUI";
-        var credits=AssetDatabase.LoadAssetAtPath<TextAsset>(GameInfoSync.CreditsAsset);if(credits==null)return "missing "+GameInfoSync.CreditsAsset+" (Tools/Game Info/Sync)";
-
-        var removed=choice.Cast<Transform>().Select(t=>t.gameObject).ToArray();var removedNames=string.Join(",",removed.Select(r=>r.name));
-        foreach(var old in removed)Undo.DestroyObjectImmediate(old);
-        // The panel itself stays: CampaignSaveManager and TitleMenuUI show and hide it as before.
-        var image=choice.GetComponent<Image>();if(image!=null){Undo.RecordObject(image,"Title");image.enabled=false;}
-        var themed=choice.GetComponent<ThemedPanel>();if(themed!=null)Undo.DestroyObjectImmediate(themed);
-        var instance=(GameObject)PrefabUtility.InstantiatePrefab(prefab,choice);Undo.RegisterCreatedObjectUndo(instance,"Title");
-        Place((RectTransform)instance.transform,0,0,0,0,Pin.Fill);
-        var view=instance.GetComponent<TitleView>();
-
-        var s=new SerializedObject(save);
-        s.FindProperty("continueButton").objectReferenceValue=view.ContinueButton.Button;s.FindProperty("newButton").objectReferenceValue=view.NewGameButton.Button;
-        s.FindProperty("choiceText").objectReferenceValue=null;s.ApplyModifiedProperties();
-        var m=new SerializedObject(menu);
-        m.FindProperty("continueGame").objectReferenceValue=view.ContinueButton.Button;m.FindProperty("newGame").objectReferenceValue=view.NewGameButton.Button;
-        m.FindProperty("titleHelp").objectReferenceValue=view.HelpButton.Button;m.FindProperty("quit").objectReferenceValue=view.QuitButton.Button;
-        m.FindProperty("titleStatus").objectReferenceValue=null;m.FindProperty("titleView").objectReferenceValue=view;m.FindProperty("creditsText").objectReferenceValue=credits;
-        m.ApplyModifiedProperties();
-        EditorSceneManager.MarkSceneDirty(choice.gameObject.scene);
-        return $"installed {PrefabPath} under {choice.name}; removed {removed.Length} old objects ({removedNames})";
     }
 }

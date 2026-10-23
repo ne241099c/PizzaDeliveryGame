@@ -14,8 +14,8 @@ public static class M5Validation
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var savingScope=save?.SuppressSaving();save?.StartNewGame();
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();
         var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
-        var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();
-        var orders=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();
+        var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();
+        var orders=UnityEngine.Object.FindFirstObjectByType<OrderBook>();
         var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();
         var rep=UnityEngine.Object.FindFirstObjectByType<ReputationManager>();
         var dynamics=UnityEngine.Object.FindFirstObjectByType<DeliveryDynamics>();
@@ -158,14 +158,14 @@ public static class M5Validation
         check(roster.People.Count==2 && economy.Cash==300 && economy.Ledger.PreparationCosts==0,"new game clears hired roster and preparation expenses");
         spawner.enabled=false;campaign.StartBusiness();clock.Advance(clock.BusinessDuration-1);
         var lastOrder=M7Validation.ReadyOrder("Goal1","Closing trip",clock.ElapsedSeconds,100);orders.AddOrder(lastOrder);orders.SelectOnly(lastOrder);roster.SelectForDispatch(roster.People[0]);
-        UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>().DispatchWithSuggestion();
+        UnityEngine.Object.FindFirstObjectByType<DeliveryPlanner>().DispatchWithSuggestion();
         check(flow.ActiveTrips.Count==1,"late departure uses actual suggested route dispatch");
         clock.Advance(1);
         check(clock.Phase==DayPhase.Closed && flow.ActiveTrips.Count==1,"closing waits for courier before settlement");
         clock.Advance(10000);check(clock.Phase==DayPhase.Ended && flow.ActiveTrips.Count==0 && economy.Ledger.Settled,"last return triggers settlement");
         campaign.NewGame();campaign.StartBusiness();
         var resetOrder=M7Validation.ReadyOrder("Goal1","Reset in flight",0,100);orders.AddOrder(resetOrder);orders.SelectOnly(resetOrder);roster.SelectForDispatch(roster.People[0]);
-        UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>().DispatchWithSuggestion();
+        UnityEngine.Object.FindFirstObjectByType<DeliveryPlanner>().DispatchWithSuggestion();
         check(flow.ActiveTrips.Count==1,"trip exists before new game reset");
         campaign.NewGame();check(flow.ActiveTrips.Count==0 && orders.OrderCount==0 && clock.Phase==DayPhase.BeforeOpening,"new game clears active trips without scene reload");
         return legacy+$" / PASS: {checks} M5 checks.";

@@ -1,9 +1,7 @@
-using TMPro;
 using UnityEngine;
 
 public sealed class ScoreManager : MonoBehaviour
 {
-    [SerializeField] private TextMeshProUGUI scoreText;
     [SerializeField, Min(1)] private int scorePerDelivery = 100;
     [SerializeField, Min(1)] private int pepperoniPoints=120,seafoodPoints=150;
     public int BasePoints(Order order)=>order.Kind==PizzaKind.Seafood?seafoodPoints:order.Kind==PizzaKind.Pepperoni?pepperoniPoints:scorePerDelivery;
@@ -18,13 +16,11 @@ public sealed class ScoreManager : MonoBehaviour
     public int ScorePerDelivery => scorePerDelivery;
     public float LatePenaltyPerSecond => latePenaltyPerSecond;
     public int ClosingCancellationPenalty => closingCancellationPenalty;
-    private void Start() => UpdateScoreText();
-    public void ResetForDay() { Score=0; UpdateScoreText(); }
-    public void AddScore(int amount) { Score += amount; UpdateScoreText(); }
+    public void ResetForDay() => Score=0;
+    public void AddScore(int amount) => Score+=amount;
     public int ScoreArrival(float arrivedAt, float deadline, float service = 0)
         => DeliveryScoring.Calculate(arrivedAt, deadline, scorePerDelivery, latePenaltyPerSecond,service,tipRatio);
     public int TipForArrival(float arrivedAt,float deadline,float service)
         => arrivedAt<=deadline ? (int)System.Math.Round(scorePerDelivery*tipRatio*Mathf.Clamp01(service),System.MidpointRounding.AwayFromZero) : 0;
     public float CancellationAt(Order order) => DeliveryScoring.CancellationAt(order.Deadline, scorePerDelivery, latePenaltyPerSecond, lateAcceptanceSeconds);
-    private void UpdateScoreText() { if (scoreText != null) scoreText.text = $"Score: {Score}"; }
 }

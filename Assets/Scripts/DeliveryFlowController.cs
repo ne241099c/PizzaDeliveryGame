@@ -7,8 +7,8 @@ public class DeliveryFlowController : MonoBehaviour
 {
     [SerializeField] private CookingManager cooking;
     [SerializeField] private ScoreManager scoreManager;
-    [SerializeField] private OrderListUI orderListUI;
-    [SerializeField] private DeliveryPersonSelector deliveryPersonSelector;
+    [SerializeField] private OrderBook orderListUI;
+    [SerializeField] private CourierRoster deliveryPersonSelector;
     [SerializeField] private GameClock clock;
     [SerializeField] private DayStats stats;
     [SerializeField] private ReputationManager reputation;

@@ -10,7 +10,7 @@ public static class KitchenQueueValidation
         using var sampleMap=new SampleMapValidationScope();
         if(!Application.isPlaying)throw new InvalidOperationException("Play required.");
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var scope=save.SuppressSaving();
-        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var crew=UnityEngine.Object.FindFirstObjectByType<KitchenCrew>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();
+        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var crew=UnityEngine.Object.FindFirstObjectByType<KitchenCrew>();var list=UnityEngine.Object.FindFirstObjectByType<OrderBook>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();
         int count=0;void Check(bool ok,string name){if(!ok)throw new Exception(name);count++;}
         try
         {
@@ -31,6 +31,6 @@ public static class KitchenQueueValidation
             Check(Mathf.Abs(faster*rate-original)<.0001f && rate>1,"delivery multiplier reduces every travel time consistently");
             return $"PASS: {count} kitchen queue and delivery speed checks.";
         }
-        finally{save.StartNewGame();clock.AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<TitleMenuUI>().ReturnTitle();}
+        finally{save.StartNewGame();clock.AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();}
     }
 }

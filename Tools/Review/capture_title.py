@@ -1,6 +1,6 @@
 """Title screen screenshots (D-5a) at 1920x1080, 1280x720 and 1920x1200 (16:10) into Docs/UI_Screens/<folder>/.
 States: a save ("save"), first launch ("first"), an unreadable save ("broken") and the credits. Each shot also checks the
-layout (no overflow or overlapping buttons). Play SampleScene first. Uses temporary save files only (the player's save is
+layout (no overflow or overlapping buttons). Press Play first (the Title scene is loaded if needed). Uses temporary save files only (the player's save is
 not read or written) and restores the GameView size afterwards.
 
 usage: python3 Tools/Review/capture_title.py [--folder after-redesign]
@@ -13,7 +13,7 @@ def code(source):
  r=ns['rpc']('tools/call',{'name':'execute_code','arguments':{'code':source,'skip_refresh':True}})['result'];d=json.loads('\n'.join(v.get('text','') for v in r.get('content',[])))
  if r.get('isError') or not d.get('success') or d.get('data',{}).get('logged_error_count',0):raise RuntimeError(d)
  return d.get('data',{}).get('result')
-if code('return Application.isPlaying?"yes":"no";')!='yes':raise SystemExit('Play SampleScene first')
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent));import session;session.ensure_scene(code,'Title')
 window='var window=UnityEngine.Resources.FindObjectsOfTypeAll<EditorWindow>().First(w=>w.GetType().Name=="GameView");var view=new SerializedObject(window);'
 sizes='var sizes=UnityEngine.Resources.FindObjectsOfTypeAll<ScriptableObject>().First(s=>s.GetType().Name=="GameViewSizes");var data=new SerializedObject(sizes);var custom=data.FindProperty("m_Standalone.m_Custom");'
 original=int(code(window+'return view.FindProperty("m_SelectedSizes").GetArrayElementAtIndex(0).intValue;'))

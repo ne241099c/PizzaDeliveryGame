@@ -16,7 +16,7 @@ public sealed class SampleMapValidationScope:IDisposable
         try
         {
             map.UseSampleForValidation=original;
-            if(!original){save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<TitleMenuUI>().ReturnTitle();}
+            if(!original){save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();}
         }
         finally{protection.Dispose();}
     }

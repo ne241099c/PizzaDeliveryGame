@@ -4,7 +4,7 @@ using UnityEngine;
 public sealed class DeliveryDynamics : MonoBehaviour
 {
     [SerializeField] private FacilityManager facilities;
-    [SerializeField] private DeliveryPersonSelector roster;
+    [SerializeField] private CourierRoster roster;
     [SerializeField, Range(0,1)] private float initialStamina = 1f;
     [SerializeField, Min(0)] private float depletionPerSecond = 0.004f;
     [SerializeField, Min(0)] private float depletionBase = 1.5f;

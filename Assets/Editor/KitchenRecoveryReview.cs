@@ -19,7 +19,7 @@ public static class KitchenRecoveryReview
         var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();seed=map.SeedOverride;sample=map.UseSampleForValidation;map.SeedOverride=1401;map.UseSampleForValidation=false;
         save.StartNewGame();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();clock.AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().enabled=false;
         UnityEngine.Object.FindFirstObjectByType<KitchenCrew>().Restore(Array.Empty<KitchenStaff>());UnityEngine.Object.FindFirstObjectByType<CampaignManager>().StartBusiness();
-        var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();
+        var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var list=UnityEngine.Object.FindFirstObjectByType<OrderBook>();
         var burnt=new Order("B0_H1","Review burnt",0,150);var wrong=new Order("B1_H1","Review wrong",0,150,kind:PizzaKind.Pepperoni);list.AddOrder(burnt);list.AddOrder(wrong);
         foreach(var o in new[]{burnt,wrong}){cook.Claim(o,0);cook.AddDough(0);cook.AddSauce(0,1);cook.AddCheese(0);cook.AddTopping(0,Topping.Basil);cook.PutInOven(0,0);clock.Advance(o==burnt?cook.BurnAt+.1f:cook.BakeSeconds);cook.TakeOut(0);}
         UnityEngine.Object.FindFirstObjectByType<BusinessView>().ShowZone(ShopZone.Kitchen,true);
@@ -45,7 +45,7 @@ public static class KitchenRecoveryReview
         try
         {
             var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();map.SeedOverride=seed;map.UseSampleForValidation=sample;
-            var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<TitleMenuUI>().ReturnTitle();
+            var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();
             if(!Same(campaignBytes,Read(save.SavePath)) || !Same(recordBytes,Read(save.RecordsPath)))throw new Exception("Normal campaign or records changed");
             return "PASS: normal save and records unchanged";
         }

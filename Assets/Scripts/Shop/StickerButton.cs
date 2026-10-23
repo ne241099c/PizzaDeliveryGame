@@ -94,7 +94,7 @@ public sealed class StickerButton : MonoBehaviour, IPointerEnterHandler, IPointe
     }
     private void LateUpdate()
     {
-        if(UIThemeDriver.RenderingSuspended)return;
+        if(UiRendering.Suspended)return;
         if(Button.interactable!=lastInteractable || kind!=appliedKind)Apply();
         if(label!=null && (label.text!=laidOutText || !Mathf.Approximately(label.fontSize,laidOutSize)))LayoutContent();
         float target=!Button.interactable?0:pressed?-4:hover?2:0;

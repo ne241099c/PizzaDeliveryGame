@@ -10,7 +10,7 @@ public static class PizzaMenuValidation
         using var sampleMap=new SampleMapValidationScope();
         if(!Application.isPlaying)throw new InvalidOperationException("Play required");
         T Find<T>() where T:UnityEngine.Object=>UnityEngine.Object.FindFirstObjectByType<T>();
-        var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var crew=Find<KitchenCrew>();var cook=Find<CookingManager>();var list=Find<OrderListUI>();var f=Find<FacilityManager>();var spawner=Find<OrderSpawner>();var score=Find<ScoreManager>();
+        var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var crew=Find<KitchenCrew>();var cook=Find<CookingManager>();var list=Find<OrderBook>();var f=Find<FacilityManager>();var spawner=Find<OrderSpawner>();var score=Find<ScoreManager>();
         int? originalSeed=cook.SeedOverride;int count=0;void Check(bool ok,string text){if(!ok)throw new Exception("Menu: "+text);count++;}
         try
         {
@@ -41,6 +41,6 @@ public static class PizzaMenuValidation
             Check(cook.BakeDuration(seafood)==cook.BakeSeconds+1,"seafood bakes one second longer");
             return $"PASS: {count} pizza menu checks.";
         }
-        finally{cook.SeedOverride=originalSeed;save.StartNewGame();clock.AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();}
+        finally{cook.SeedOverride=originalSeed;save.StartNewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();}
     }
 }

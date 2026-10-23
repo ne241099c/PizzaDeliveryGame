@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 /// <summary>The title screen (設計書_画面デザイン D-5a / 4-1, approved mock Docs/UI_Mock/Title.png).
 /// Built as a prefab (Assets/Prefabs/UI/TitleView.prefab) whose parts are referenced here, so the layout and the art can
-/// be edited in the editor. This component only shows state: TitleMenuUI and CampaignSaveManager own the actions.</summary>
+/// be edited in the editor. This component only shows state: GameMenu and CampaignSaveManager own the actions.</summary>
 public sealed class TitleView : MonoBehaviour
 {
     [Header("Buttons")]

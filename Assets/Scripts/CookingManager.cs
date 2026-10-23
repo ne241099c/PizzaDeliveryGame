@@ -47,7 +47,7 @@ public sealed partial class CookingManager : MonoBehaviour
 {
     [SerializeField] private FacilityManager facilities;
     [SerializeField] private GameClock clock;
-    [SerializeField] private OrderListUI orders;
+    [SerializeField] private OrderBook orders;
     [SerializeField] private KitchenCrew crew;
     [SerializeField] private HandoverManager handover;
     [Tooltip("Standard total for one pizza by staff with speed 0.5. Used for the delivery promise minimum.")]
@@ -346,7 +346,7 @@ public sealed partial class CookingManager : MonoBehaviour
     // ---- the player's hands ----
     private PizzaJob PlayerBench(int bench)=>BenchJob(bench) is PizzaJob job && job.Worker==PizzaWorker.Player?job:null;
     private bool Ready(){if(!ManualControlEnabled || clock.Phase!=DayPhase.Open)return false;AdvanceTo(clock.ElapsedSeconds);return true;}
-    private bool Done(){AdvanceTo(clock.ElapsedSeconds);orders.RefreshCookingUI();return true;}
+    private bool Done(){AdvanceTo(clock.ElapsedSeconds);return true;}
     public string ClaimRejection(Order order,int bench)
     {
         if(!ManualControlEnabled)return "いまは自分で調理できません。";

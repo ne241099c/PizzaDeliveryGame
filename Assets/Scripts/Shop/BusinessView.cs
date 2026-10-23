@@ -13,8 +13,8 @@ public enum ShopZone { Kitchen, Handover, Dispatch }
 public sealed partial class BusinessView : MonoBehaviour
 {
     private ScreenRouter router;private GameClock clock;private BusinessEconomy economy;private ReputationManager reputation;private OrderSpawner spawner;
-    private OrderListUI orders;private CookingManager cooking;private KitchenCrew crew;private DeliveryPersonSelector roster;private HandoverManager handover;
-    private DeliveryFlowController flow;private DeliveryPlannerUI planner;private MapManager map;private TitleMenuUI menu;private FacilityManager facilities;private CampaignManager campaign;
+    private OrderBook orders;private CookingManager cooking;private KitchenCrew crew;private CourierRoster roster;private HandoverManager handover;
+    private DeliveryFlowController flow;private DeliveryPlanner planner;private MapManager map;private GameMenu menu;private FacilityManager facilities;private CampaignManager campaign;
     private UITheme T=>UiKit.T;
     private RectTransform world,hud,rail,railContent,dispatch,dragLayer,toasts;
     private CanvasGroup worldGroup,hudGroup,dispatchGroup;
@@ -35,8 +35,8 @@ public sealed partial class BusinessView : MonoBehaviour
     private void Awake()
     {
         router=Find<ScreenRouter>();clock=Find<GameClock>();economy=Find<BusinessEconomy>();reputation=Find<ReputationManager>();spawner=Find<OrderSpawner>();
-        orders=Find<OrderListUI>();cooking=Find<CookingManager>();crew=Find<KitchenCrew>();roster=Find<DeliveryPersonSelector>();handover=Find<HandoverManager>();
-        flow=Find<DeliveryFlowController>();planner=Find<DeliveryPlannerUI>();map=Find<MapManager>();menu=Find<TitleMenuUI>();facilities=Find<FacilityManager>();campaign=Find<CampaignManager>();
+        orders=Find<OrderBook>();cooking=Find<CookingManager>();crew=Find<KitchenCrew>();roster=Find<CourierRoster>();handover=Find<HandoverManager>();
+        flow=Find<DeliveryFlowController>();planner=Find<DeliveryPlanner>();map=Find<MapManager>();menu=Find<GameMenu>();facilities=Find<FacilityManager>();campaign=Find<CampaignManager>();
         Build();
     }
     private static TComp Find<TComp>() where TComp:UnityEngine.Object=>FindFirstObjectByType<TComp>();
@@ -211,7 +211,7 @@ public sealed partial class BusinessView : MonoBehaviour
     private readonly List<(RectTransform card,float until)> toastCards=new();
     public void Toast(string message,Color accent,Action onClick=null,string icon="icon_bell")
     {
-        if(UIThemeDriver.RenderingSuspended || string.IsNullOrEmpty(message))return;
+        if(UiRendering.Suspended || string.IsNullOrEmpty(message))return;
         var card=UiKit.Card(toasts,"Toast",20,0,400,74,T.paper,14,4,3,accent);
         UiKit.Icon(card,"Icon",icon,16,18,38,T.line);
         UiKit.Label(card,"Text",message,64,6,320,62,18,T.line,FontRole.Black,TextAlignmentOptions.MidlineLeft,true);
@@ -228,7 +228,7 @@ public sealed partial class BusinessView : MonoBehaviour
 
     private void Update()
     {
-        if(UIThemeDriver.RenderingSuspended)return;
+        if(UiRendering.Suspended)return;
         if(router.Current!=ScreenId.Business)return;
         Keys();Pan();RefreshHud();RefreshRail();RefreshKitchen();RefreshHandover();RefreshDispatch();RefreshToasts();
     }

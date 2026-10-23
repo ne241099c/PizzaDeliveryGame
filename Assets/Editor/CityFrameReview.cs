@@ -16,7 +16,7 @@ public static class CityFrameReview
         if(!Application.isPlaying || protection!=null)throw new InvalidOperationException("Play required");
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();campaignPath=save.SavePath;recordPath=save.RecordsPath;campaign=Bytes(campaignPath);records=Bytes(recordPath);protection=save.SuppressSaving();
         map=UnityEngine.Object.FindFirstObjectByType<MapManager>();previousSeed=map.SeedOverride;map.SeedOverride=1401;save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<OrderSpawner>().enabled=false;UnityEngine.Object.FindFirstObjectByType<CampaignManager>().StartBusiness();UnityEngine.Object.FindFirstObjectByType<BusinessView>().ShowZone(ShopZone.Dispatch,true);
-        var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var handover=UnityEngine.Object.FindFirstObjectByType<HandoverManager>();var person=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>().People[0];foreach(var destination in new[]{"Goal1","Goal2"}){var order=new Order(destination,"Review",0,120,BakingState.Ready);list.AddOrder(order);handover.Bag(order,person);}
+        var list=UnityEngine.Object.FindFirstObjectByType<OrderBook>();var handover=UnityEngine.Object.FindFirstObjectByType<HandoverManager>();var person=UnityEngine.Object.FindFirstObjectByType<CourierRoster>().People[0];foreach(var destination in new[]{"Goal1","Goal2"}){var order=new Order(destination,"Review",0,120,BakingState.Ready);list.AddOrder(order);handover.Bag(order,person);}
         map.StartCoroutine(Measure());return Status="Measuring normal town";
     }
     private static byte[] Bytes(string path)=>File.Exists(path)?File.ReadAllBytes(path):null;
@@ -38,7 +38,7 @@ public static class CityFrameReview
     public static string End()
     {
         if(protection==null)return "Review not active";
-        try{map.StopAllCoroutines();map.SeedOverride=previousSeed;var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<TitleMenuUI>().ReturnTitle();if(!Same(campaign,Bytes(campaignPath)) || !Same(records,Bytes(recordPath)))throw new Exception("normal save changed");return "PASS: normal campaign and records unchanged";}
+        try{map.StopAllCoroutines();map.SeedOverride=previousSeed;var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();save.StartNewGame();UnityEngine.Object.FindFirstObjectByType<GameClock>().AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();if(!Same(campaign,Bytes(campaignPath)) || !Same(records,Bytes(recordPath)))throw new Exception("normal save changed");return "PASS: normal campaign and records unchanged";}
         finally{protection.Dispose();protection=null;}
     }
 }

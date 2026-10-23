@@ -4,6 +4,8 @@ using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+/// <summary>The look of the Game scene: theme fonts and sizes, sticker buttons, the map's layers, cameras and the
+/// layout of what is shown. LayoutReport is shared by the other screen validations. Play Mode only.</summary>
 public static class VisualValidation
 {
     [MenuItem("Tools/Pizza Delivery/Validate Visuals (Play Mode)")]
@@ -11,80 +13,45 @@ public static class VisualValidation
     public static string Run()
     {
         int count=0;void Check(bool ok,string name){if(!ok)throw new Exception("Visual: "+name);count++;}
-        var theme=UITheme.Active;Check(theme!=null && theme.font!=null && theme.roundedPanel!=null,"shared theme and licensed Japanese font");
-        Check(theme.caption>=14 && theme.body==18 && theme.padding==16 && theme.cornerRadius==8,"readable type and spacing defaults");
-        var go=new GameObject("ThemeValidation",typeof(RectTransform),typeof(CanvasRenderer),typeof(Image),typeof(Button));
-        try
-        {
-            var panel=go.AddComponent<ThemedPanel>();panel.Apply(theme);Check(go.GetComponent<Image>().color==theme.background,"panel reads theme");
-            var label=new GameObject("Label",typeof(RectTransform),typeof(CanvasRenderer),typeof(TextMeshProUGUI));label.transform.SetParent(go.transform,false);var text=label.AddComponent<ThemedText>();text.Apply(theme);Check(label.GetComponent<TMP_Text>().font==theme.font && label.GetComponent<TMP_Text>().fontSize==theme.body,"text reads theme");
-            var button=go.AddComponent<ThemedButton>();foreach(ThemeButtonKind kind in Enum.GetValues(typeof(ThemeButtonKind))){button.kind=kind;button.Apply(theme);Check(go.GetComponent<Button>().transition==Selectable.Transition.ColorTint,"button hover and role "+kind);}
-            float original=theme.body;try{theme.body=22;text.Apply(theme);Check(label.GetComponent<TMP_Text>().fontSize==22,"theme edit updates component");}finally{theme.body=original;}
-        }
-        finally{UnityEngine.Object.DestroyImmediate(go);}
-        var driver=UnityEngine.Object.FindFirstObjectByType<UIThemeDriver>();if(driver!=null)
-        {
-            Check(UiStrings.Japanese("Start business")=="営業開始" && UiStrings.Japanese("Delivery promise: 60s").StartsWith("お届け目安"),"central Japanese table");
-            Check(UiStrings.Japanese("Aoi / Drive 0.6 / Goal1").Contains("Aoi / 運転 0.6 / Goal1"),"presentation preserves names IDs and numbers");
-            var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();driver.Refresh();
-            var shop=canvas.GetComponentInChildren<ShopUiRoot>(true);
-            var styledSelf=canvas.GetComponentsInChildren<ThemeOptOut>(true);
-            bool Redesigned(Component c)=>shop!=null && c.transform.IsChildOf(shop.transform) || styledSelf.Any(o=>c.transform.IsChildOf(o.transform));
-            var shopFonts=new[]{theme.font,theme.displayFont,theme.boldFont,theme.blackFont};
-            Check(canvas.GetComponentsInChildren<TMP_Text>(true).All(t=>Redesigned(t)?t.font!=null && shopFonts.Contains(t.font) && t.fontSize>=theme.captionSize:t.font==theme.font && t.fontSize>=theme.caption),"all screens use their readable licensed Japanese theme fonts");
-            Check(canvas.GetComponentsInChildren<Button>(true).All(b=>Redesigned(b)?(b.GetComponent<StickerButton>()!=null && b.GetComponent<StickerButton>().Label!=null) || (b.GetComponent<StickerCardAction>()!=null && b.targetGraphic!=null && b.transition==Selectable.Transition.ColorTint && b.colors.highlightedColor==theme.cheeseLight) || !b.gameObject.activeSelf && b.GetComponent<ThemedButton>()!=null:b.GetComponent<ThemedButton>()!=null),"all button actions retain their themed component (hidden legacy menu buttons stay inside the modals)");
-            if(shop!=null)
-            {
-                Check(shopFonts.All(f=>f!=null) && theme.captionSize>=16 && theme.bodySize==20,"redesign font family and minimum readable size");
-                foreach(FontRole role in Enum.GetValues(typeof(FontRole)))Check(shopFonts.Contains(UiKit.Font(role)),"redesign role uses theme font "+role);
-            }
-            foreach(var view in canvas.GetComponentsInChildren<CourierAbilitiesView>(true).Where(v=>v==v.GetComponent<CourierAbilitiesView>()))
-            {
-                var labels=new SerializedObject(view).FindProperty("labels");
-                for(int i=0;i<labels.arraySize;i++){var label=(TMP_Text)labels.GetArrayElementAtIndex(i).objectReferenceValue;var group=label.GetComponent<CanvasGroup>();Check(group==null || group.alpha==1,"actual ability label retained "+view.name+" / "+i);}
-            }
-        }
-        if(driver!=null && driver.ImplementationStage>=2)
-        {
-            var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var edges=UnityEngine.Object.FindObjectsByType<EdgeView>(FindObjectsSortMode.None);
-            Check(edges.Length==map.Edges.Count && edges.All(e=>e.GetComponentInChildren<UnityEngine.LineRenderer>()!=null),"existing edge views and click geometry retained");
-            // Generated towns (G-0..G-5) name their blocks District_N under the CityDecoration layer.
-            Check(UnityEngine.Object.FindFirstObjectByType<MapVisuals>()!=null && GameObject.Find("CityDecoration")!=null && GameObject.Find("CityDecoration").transform.Cast<Transform>().Any(t=>t.name.StartsWith("District_")),"independent city decoration layer");
-            Check(UITheme.Active.CourierColor("Aoi")==UITheme.Active.CourierColor("Aoi") && UITheme.Active.CourierColor("Aoi")!=UITheme.Active.CourierColor("Ren"),"stable courier identity colors without random draws");
-            Check(UnityEngine.Object.FindObjectsByType<NodeView>(FindObjectsSortMode.None).Length==map.Nodes.Count,"existing node views reused");
-            var clone=UnityEngine.Object.Instantiate(edges[0]);try{var a=map.Nodes[0];var b=map.Nodes[1];var road=new MapEdge("ReviewOneWay",a.Id,b.Id,1,RoadType.Main,.5f){Bidirectional=false};clone.Initialize(road,a,b,map,false);Check(clone.transform.Find("OneWayArrow")!=null,"one-way road has a direction arrow");}finally{UnityEngine.Object.DestroyImmediate(clone.gameObject);}
-        }
-        if(driver!=null && driver.ImplementationStage>=3)
-        {
-            var feedback=UnityEngine.Object.FindFirstObjectByType<DeliveryFeedback>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
-            Check(theme.DeadlineColor(.8f)==theme.good && theme.DeadlineColor(.3f)==theme.money && theme.DeadlineColor(.1f)==theme.bad,"deadline green yellow red thresholds");
-            Check(theme.effectSeconds>=.5f && theme.effectSeconds<=1.5f,"short feedback duration");
-            var ledger=economy.Ledger;decimal cash=economy.Cash;float elapsed=clock.ElapsedSeconds;bool enabled=feedback.AnimationsEnabled;feedback.AnimationsEnabled=false;feedback.Render();feedback.AnimationsEnabled=enabled;
-            Check(economy.Cash==cash && economy.Ledger==ledger && clock.ElapsedSeconds==elapsed,"feedback toggle leaves cash ledger and clock untouched");
-            var timer=UIVisibility.Find(UnityEngine.Object.FindFirstObjectByType<Canvas>().transform,"TimeFill");Check(!timer.GetComponent<Image>().raycastTarget,"feedback band passes clicks through");
-        }
-        if(driver!=null && driver.ImplementationStage>=4)
-        {
-            var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();var root=(RectTransform)canvas.transform;var main=Camera.main;
-            var clear=UnityEngine.Object.FindFirstObjectByType<ScreenClearCamera>();var clearView=clear!=null?clear.GetComponent<Camera>():null;
-            Check(clearView!=null && main!=null && clearView!=main && clearView.rect==new Rect(0,0,1,1) && clearView.depth<main.depth && clearView.cullingMask==0 && clearView.clearFlags==CameraClearFlags.SolidColor,"full-screen clear behind the map viewport");
-            var scaler=canvas.GetComponent<CanvasScaler>();Check(scaler.uiScaleMode==CanvasScaler.ScaleMode.ScaleWithScreenSize && scaler.referenceResolution==new Vector2(1920,1080),"one 1920x1080 layout scales to 1280x720");
-            var names=canvas.GetComponentsInChildren<Button>(true).Select(b=>b.name).ToArray();
-            foreach(string name in new[]{"StartBusiness","DispatchRoute","DispatchSuggestion","ReplayDay","Continue","AdvancePage"})Check(names.Contains(name),"primary action exists "+name);
-            foreach(var view in canvas.GetComponentsInChildren<CourierAbilitiesView>(true).Where(v=>v==v.GetComponent<CourierAbilitiesView>()))
-            {
-                var labels=new SerializedObject(view).FindProperty("labels");
-                for(int i=0;i<labels.arraySize;i++)Check(UIThemeDriver.SizeFor((TMP_Text)labels.GetArrayElementAtIndex(i).objectReferenceValue)==ThemeTextSize.Caption,"ability rows stay caption size "+view.name+" / "+i);
-            }
-            var corners=new Vector3[4];
-            foreach(string name in new[]{"Selections","CourierViewport","MapViewportFrame","PlanningDrawer","Preparation","ResultCard","SaveChoice","PauseMenu","HelpOverlay","ReturnTitleConfirmation"})
-            {
-                var rect=(RectTransform)UIVisibility.Find(root,name);rect.GetWorldCorners(corners);
-                Check(corners.Select(c=>root.InverseTransformPoint(c)).All(c=>root.rect.xMin-2<=c.x && c.x<=root.rect.xMax+2 && root.rect.yMin-2<=c.y && c.y<=root.rect.yMax+2),"screen bounds "+name);
-            }
-            Check(UIVisibility.Find(root,"LedgerViewport").GetComponent<ScrollRect>().vertical,"settlement remains scrollable");
-            string report=LayoutReport();Check(report.Length==0,"current screen has no overflow or overlap: "+report);
-        }
+        var theme=UITheme.Active;var fonts=new[]{theme.font,theme.displayFont,theme.boldFont,theme.blackFont};
+        Check(fonts.All(f=>f!=null) && theme.captionSize>=16 && theme.bodySize==20,"theme fonts and the 16px minimum");
+        foreach(FontRole role in Enum.GetValues(typeof(FontRole)))Check(fonts.Contains(UiKit.Font(role)),"font role uses a theme font "+role);
+        Check(theme.roundSprite!=null && theme.circleSprite!=null,"shared shapes are sprite assets");
+        Check(UiStrings.Japanese("Start business")=="営業開始" && UiStrings.Japanese("Delivery promise: 60s").StartsWith("お届け目安"),"central Japanese table");
+        Check(UiStrings.Japanese("Aoi / Drive 0.6 / Goal1").Contains("Aoi / 運転 0.6 / Goal1"),"presentation preserves names IDs and numbers");
+
+        var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();var root=(RectTransform)canvas.transform;
+        Check(canvas.GetComponentsInChildren<TMP_Text>(true).All(t=>t.font!=null && fonts.Contains(t.font) && t.fontSize>=theme.captionSize),"every text uses a theme font at 16px or more");
+        Check(canvas.GetComponentsInChildren<Button>(true).All(b=>(b.GetComponent<StickerButton>()!=null && b.GetComponent<StickerButton>().Label!=null)
+            || (b.GetComponent<StickerCardAction>()!=null && b.targetGraphic!=null && b.transition==Selectable.Transition.ColorTint && b.colors.highlightedColor==theme.cheeseLight)),"every button is a sticker button or a sticker card");
+        var scaler=canvas.GetComponent<CanvasScaler>();
+        Check(scaler.uiScaleMode==CanvasScaler.ScaleMode.ScaleWithScreenSize && scaler.referenceResolution==new Vector2(1920,1080) && scaler.screenMatchMode==CanvasScaler.ScreenMatchMode.Expand,"one 1920x1080 layout that expands to other aspect ratios");
+
+        // The town on the map: roads, addresses and decoration are separate layers.
+        var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var edges=UnityEngine.Object.FindObjectsByType<EdgeView>(FindObjectsSortMode.None);
+        Check(edges.Length==map.Edges.Count && edges.All(e=>e.GetComponentInChildren<LineRenderer>()!=null),"edge views and click geometry");
+        Check(UnityEngine.Object.FindObjectsByType<NodeView>(FindObjectsSortMode.None).Length==map.Nodes.Count,"node views");
+        var decoration=GameObject.Find("CityDecoration");
+        Check(UnityEngine.Object.FindFirstObjectByType<MapVisuals>()!=null && decoration!=null && decoration.transform.childCount>0,"independent city decoration layer");
+        Check(theme.CourierColor("Aoi")==theme.CourierColor("Aoi") && theme.CourierColor("Aoi")!=theme.CourierColor("Ren"),"stable courier identity colors without random draws");
+        var clone=UnityEngine.Object.Instantiate(edges[0]);
+        try{var a=map.Nodes[0];var b=map.Nodes[1];var road=new MapEdge("ReviewOneWay",a.Id,b.Id,1,RoadType.Main,.5f){Bidirectional=false};clone.Initialize(road,a,b,map,false);Check(clone.transform.Find("OneWayArrow")!=null,"one-way road has a direction arrow");}
+        finally{UnityEngine.Object.DestroyImmediate(clone.gameObject);}
+        var main=Camera.main;var clear=UnityEngine.Object.FindFirstObjectByType<ScreenClearCamera>();var clearView=clear!=null?clear.GetComponent<Camera>():null;
+        Check(clearView!=null && main!=null && clearView!=main && clearView.rect==new Rect(0,0,1,1) && clearView.depth<main.depth && clearView.cullingMask==0 && clearView.clearFlags==CameraClearFlags.SolidColor,"full-screen clear behind the map camera");
+
+        // Feedback timing and colors; switching animations off changes nothing in the game.
+        var feedback=UnityEngine.Object.FindFirstObjectByType<DeliveryFeedback>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
+        Check(theme.DeadlineColor(.8f)==theme.good && theme.DeadlineColor(.3f)==theme.money && theme.DeadlineColor(.1f)==theme.bad,"deadline green yellow red thresholds");
+        Check(theme.effectSeconds>=.5f && theme.effectSeconds<=1.5f,"short feedback duration");
+        decimal cash=economy.Cash;float elapsed=clock.ElapsedSeconds;bool enabled=feedback.AnimationsEnabled;feedback.AnimationsEnabled=false;
+        Check(!DeliveryFeedback.Animate && economy.Cash==cash && clock.ElapsedSeconds==elapsed,"animation switch leaves cash and clock untouched");feedback.AnimationsEnabled=enabled;
+
+        // The preparation screen as shown.
+        var router=UnityEngine.Object.FindFirstObjectByType<ScreenRouter>();var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();
+        using(save.SuppressSaving()){save.StartNewGame();router.Show(ScreenId.Hub,true);}
+        var hub=UnityEngine.Object.FindFirstObjectByType<HubView>();hub.ShowTab(0);
+        string report=LayoutReport();Check(report.Length==0,"preparation screen has no overflow or overlap: "+report);
         return $"PASS: {count} visual checks.";
     }
     /// <summary>Issues on the screen as currently shown: text larger than its box, overlapping buttons, and text outside the canvas.
@@ -107,15 +74,14 @@ public static class VisualValidation
         {
             var a=buttons[i];var b=buttons[j];
             if(a.transform.IsChildOf(b.transform) || b.transform.IsChildOf(a.transform))continue;
-            // Scrolled lists and the overlay layer are compared only with their own members.
-            if(a.GetComponentInParent<ScrollRect>()!=b.GetComponentInParent<ScrollRect>() || InOverlay(a.transform)!=InOverlay(b.transform))continue;
+            // Scrolled lists are compared only with their own members.
+            if(a.GetComponentInParent<ScrollRect>()!=b.GetComponentInParent<ScrollRect>())continue;
             var overlap=Bounds((RectTransform)a.transform);var other=Bounds((RectTransform)b.transform);
             float w=Mathf.Min(overlap.xMax,other.xMax)-Mathf.Max(overlap.xMin,other.xMin),h=Mathf.Min(overlap.yMax,other.yMax)-Mathf.Max(overlap.yMin,other.yMin);
             if(w>1 && h>1)issues.Add("buttons overlap "+Path(a.transform)+" / "+Path(b.transform));
         }
         return string.Join("; ",issues);
     }
-    private static bool InOverlay(Transform t){for(;t!=null;t=t.parent)if(t.name=="OverlayScreens")return true;return false;}
     private static bool Shown(Transform t)
     {
         if(!t.gameObject.activeInHierarchy)return false;

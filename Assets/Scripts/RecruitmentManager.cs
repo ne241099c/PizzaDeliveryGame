@@ -28,7 +28,7 @@ public sealed class RecruitmentManager : MonoBehaviour
     [SerializeField] private DeliveryDynamics dynamics;
     [SerializeField] private TrainingManager training;
     [SerializeField] private GameClock clock;
-    [SerializeField] private DeliveryPersonSelector roster;
+    [SerializeField] private CourierRoster roster;
     [SerializeField] private KitchenCrew crew;
     [SerializeField,Range(0,1)] private float kitchenApplicantChance=.6f;
     [SerializeField] private Vector2 kitchenAbilityRange=new(.3f,.8f);

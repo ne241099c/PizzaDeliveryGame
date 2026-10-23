@@ -12,17 +12,20 @@ public static partial class M6Validation
     private static void ValidatePreparationButtons()
     {
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
-        var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
-        var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();
-        campaign.StartBusiness();campaign.NewGame();
-        var content=UIVisibility.Find(canvas.transform,"TeamContent");var row=content.GetChild(0);var person=roster.People[0];
-        row.Find("TrainingControls/Train0").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
-        Check(training.HasAssignment(person) && economy.Cash==130,"actual training button rebinds new roster after hidden preparation");
-        row.Find("CancelTraining").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(economy.Cash==300 && person.IsAvailable,"actual cancel button refunds");
-        row.Find("Action").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();Check(roster.People.Count==1 && !roster.People.Contains(person),"actual fire button targets current person");
+        var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
+        var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var hub=UnityEngine.Object.FindFirstObjectByType<HubView>();
+        var recruitment=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();
+        // The hub's cards are rebuilt from the current roster, so each button acts on the person shown.
+        StickerButton Button(string card,string name){hub.RefreshNow();var root=hub.Content.GetComponentsInChildren<RectTransform>(true).First(r=>r.name==card);return root.GetComponentsInChildren<StickerButton>(true).First(b=>b.name==name);}
+        campaign.StartBusiness();campaign.NewGame();hub.ShowTab(0);var person=roster.People[0];
+        Button("Courier_"+person.Name,"Train").Button.onClick.Invoke();
+        hub.GetComponentsInChildren<StickerButton>(true).First(b=>b.name=="Train0").Button.onClick.Invoke();
+        Check(training.HasAssignment(person) && economy.Cash==130,"hub training dialog trains the person on the card");
+        Button("Courier_"+person.Name,"CancelTraining").Button.onClick.Invoke();Check(economy.Cash==300 && person.IsAvailable,"hub cancel button refunds");
+        Button("Courier_"+person.Name,"Fire").Button.onClick.Invoke();Check(roster.People.Count==1 && !roster.People.Contains(person),"hub fire button targets the person on the card");
         campaign.NewGame();var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
-        UIVisibility.Find(canvas.transform,"ApplicantsContent").GetChild(0).Find("Action").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
-        Check(roster.People.Count==3,"actual hire button targets current applicant");campaign.NewGame();
+        hub.ShowTab(1);var applicant=recruitment.Applicants[0].Person;Button("Applicant_"+applicant.Name,"Hire").Button.onClick.Invoke();
+        Check(roster.People.Count==3 && roster.People.Contains(applicant),"hub hire button hires the applicant on the card");hub.ShowTab(0);campaign.NewGame();
         Check(roster.People.Count==2 && clock.Phase==DayPhase.BeforeOpening,"button integration returns clean campaign");
     }
     private static void ValidateRecruitment()
@@ -55,7 +58,7 @@ public static partial class M6Validation
     {
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();spawner.enabled=false;
-        var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var hiring=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();
+        var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var hiring=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();
         var aoi=roster.People[0];Check(training.Cost(aoi,CourierAbility.Driving)==170 && training.Cost(aoi,CourierAbility.Capacity)==300,"training costs");
         Check(!training.Request(aoi,CourierAbility.Capacity) && training.LastMessage.Contains("potential"),"capped ability rejected");
         var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=0;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();
@@ -101,7 +104,7 @@ public static partial class M6Validation
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();spawner.enabled=false;
         var funding=new SerializedObject(economy);funding.FindProperty("initialCash").floatValue=5000;funding.ApplyModifiedPropertiesWithoutUndo();economy.NewGame();funding.FindProperty("initialCash").floatValue=300;funding.ApplyModifiedPropertiesWithoutUndo();
-        var person=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>().People[0];campaign.StartBusiness();
+        var person=UnityEngine.Object.FindFirstObjectByType<CourierRoster>().People[0];campaign.StartBusiness();
         rules.AwardExperience(person,CourierAbility.Driving,200);Near(person.Driving,.62f,"actual roster gains ability during business");
         clock.Advance(clock.BusinessDuration+1);Check(economy.Ledger.Wages==242.4m+economy.KitchenWages && economy.KitchenWages==48,"current-day courier (242.4) and apprentice (48) wages are frozen at opening");
         campaign.NextDay();Near(person.Driving,.62f,"growth carries to next day");
@@ -110,14 +113,16 @@ public static partial class M6Validation
     }
     private static void ValidatePotentials()
     {
-        var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>().People;
+        var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>().People;
         foreach(var p in roster)for(int i=0;i<5;i++)
         {var a=(CourierAbility)i;Near(p.Potential(a),Mathf.Min(1,p.Ability(a)+.25f),"initial potential bonus");Near(p.Experience(a),0,"initial experience");}
         var fixture=new DeliveryPerson("Clamp",.5f,.5f,2,.5f,.5f,.5f);
         fixture.SetPotential(CourierAbility.Driving,.6f);fixture.Driving=1;Near(fixture.Driving,.6f,"ability setter clamps to potential");
         fixture.SetPotential(CourierAbility.Capacity,1);fixture.Capacity=2;Check(fixture.Capacity==1,"capacity upper bound");
         fixture.SetExperience(CourierAbility.Service,123);var copy=fixture.Clone();Near(copy.Experience(CourierAbility.Service),123,"copy preserves experience");Near(copy.Potential(CourierAbility.Driving),.6f,"copy preserves potential");
-        var views=UnityEngine.Object.FindObjectsByType<CourierAbilitiesView>(FindObjectsInactive.Include,FindObjectsSortMode.None);Check(views.Length>=3,"ability bars on business and preparation rows");
+        var hub=UnityEngine.Object.FindFirstObjectByType<HubView>();hub.ShowTab(0);hub.RefreshNow();
+        var card=hub.Content.GetComponentsInChildren<RectTransform>(true).First(r=>r.name.StartsWith("Courier_"));
+        Check(Enumerable.Range(0,5).All(i=>card.Find("AbilityBar"+i)!=null && card.Find("AbilityBar"+i).GetComponent<UiBar>()!=null),"ability bars with a potential marker on courier cards");
     }
     private static void ValidateAdjustment(DaySimulationSettings settings)
     {

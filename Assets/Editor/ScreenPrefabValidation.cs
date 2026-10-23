@@ -15,7 +15,7 @@ public static class ScreenPrefabValidation
         if(!Application.isPlaying)return "FAIL: Play Mode required";
         int count=0;void Check(bool ok,string name){if(!ok)throw new Exception("Screen prefabs: "+name);count++;}
         var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();
-        var router=Find<ScreenRouter>();var campaign=Find<CampaignManager>();var roster=Find<DeliveryPersonSelector>();var crew=Find<KitchenCrew>();
+        var router=Find<ScreenRouter>();var campaign=Find<CampaignManager>();var roster=Find<CourierRoster>();var crew=Find<KitchenCrew>();
 
         // 開店準備 (4-2): tabs, the promise slider and the start button.
         var hub=Find<HubView>();Check(hub!=null,"hub view exists");
@@ -61,8 +61,9 @@ public static class ScreenPrefabValidation
         int members=Mathf.Min(6,roster.People.Count)+Mathf.Min(2,crew.People.Count);
         Check(over.transform.GetComponentsInChildren<Transform>(true).Count(t=>t.name.StartsWith("Avatar_"))==members,"staff row shows "+members+" people");
         Check(VisualValidation.LayoutReport()=="","game over layout: "+VisualValidation.LayoutReport());
-        over.ToTitle.Button.onClick.Invoke();Check(router.Current==ScreenId.Title,"タイトルへ returns to the title");
-        router.Show(ScreenId.GameOver,true);over.Retry.Button.onClick.Invoke();
+        // タイトルへ loads the Title scene (GameScenes.LoadTitle), which would end this validation; it is checked by name only.
+        Check(over.ToTitle!=null && over.ToTitle.Label.text=="タイトルへ","タイトルへ button on the game over card");
+        over.Retry.Button.onClick.Invoke();
         Check(router.Current==ScreenId.Hub && campaign.DayNumber==1 && !campaign.IsBankrupt,"もう一度 starts a new campaign");
         return $"PASS: {count} screen prefab checks.";
     }

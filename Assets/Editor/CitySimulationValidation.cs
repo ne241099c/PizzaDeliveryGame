@@ -42,7 +42,7 @@ public static class CitySimulationValidation
     }
     private static void Record(SimulationDayRecord r)
     {
-        float knowledge=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>().People.Average(p=>p.LocalKnowledge);
+        float knowledge=UnityEngine.Object.FindFirstObjectByType<CourierRoster>().People.Average(p=>p.LocalKnowledge);
         csv.AppendLine(FormattableString.Invariant($"{(run<100?"safety":"balance")},{map.CityState.seed},{map.City.blocks.Count},{knowledge},{mainRoads},{backRoads},")+r.Csv);mainRoads=backRoads=0;
     }
     private static void Tick()
@@ -66,7 +66,7 @@ public static class CitySimulationValidation
         try
         {
             session?.Dispose();session=null;map.SeedOverride=seed;map.BlocksOverride=blocks;map.UseSampleForValidation=sample;
-            if(Application.isPlaying){save.StartNewGame();clock.AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<TitleMenuUI>().ReturnTitle();}
+            if(Application.isPlaying){save.StartNewGame();clock.AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();}
             if(!Same(campaignBytes,Bytes(campaignPath)) || !Same(recordBytes,Bytes(recordsPath)))Status="FAIL: normal save changed";
         }
         finally{protection?.Dispose();protection=null;}

@@ -16,7 +16,7 @@ public sealed class TrainingAssignment
 public sealed class TrainingManager : MonoBehaviour
 {
     [SerializeField] private GameClock clock;
-    [SerializeField] private DeliveryPersonSelector roster;
+    [SerializeField] private CourierRoster roster;
     [SerializeField] private BusinessEconomy economy;
     [SerializeField] private CourierProgression progression;
     [SerializeField,Min(0)] private float baseCost=80;

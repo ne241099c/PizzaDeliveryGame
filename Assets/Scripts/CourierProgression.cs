@@ -12,7 +12,7 @@ public readonly struct GrowthRecord
 public sealed class CourierProgression : MonoBehaviour
 {
     [SerializeField] private DeliveryFlowController flow;
-    [SerializeField] private DeliveryPersonSelector roster;
+    [SerializeField] private CourierRoster roster;
     [SerializeField,Min(1)] private float experiencePerLevel=200;
     [SerializeField,Range(.0001f,1)] private float growthPerLevel=.02f;
     [SerializeField,Min(0)] private float drivingExperiencePerDistance=.3f;

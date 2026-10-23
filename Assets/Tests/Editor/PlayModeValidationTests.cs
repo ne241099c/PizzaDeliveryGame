@@ -5,24 +5,23 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-/// <summary>The existing scene validations (Tools/Review/run_suite.py) as Test Runner tests. Each test opens SampleScene,
+/// <summary>The scene validations as Test Runner tests. Each test opens its scene (Game, or Title for the title checks),
 /// enters Play Mode, runs one validation and exits. Simulations (minutes long) are not included.
 /// Automatic saving is switched off as soon as Play Mode starts and stays off, so the player's save and records are kept.</summary>
 public sealed class PlayModeValidationTests
 {
-    private const string Scene="Assets/Scenes/SampleScene.unity";
+    private const string GameScene="Assets/Scenes/Game.unity",TitleScene="Assets/Scenes/Title.unity";
 
-    private static IEnumerator Run(Func<string> validation,bool newGameFirst=false)
+    private static IEnumerator Run(Func<string> validation,bool newGameFirst=false,string scene=GameScene)
     {
         if(!Application.isPlaying)
         {
-            // Play Mode runs the scene as it is in memory (like pressing Play), so unsaved edits to SampleScene are fine.
-            // Hidden legacy layouts (ContentSizeFitter) re-mark it dirty after every domain reload.
+            // Play Mode runs the scene as it is in memory (like pressing Play), so unsaved edits to that scene are fine.
             var active=EditorSceneManager.GetActiveScene();
-            if(active.path!=Scene)
+            if(active.path!=scene)
             {
-                if(active.isDirty)Assert.Inconclusive("Save or discard "+active.path+" first (tests open "+Scene+").");
-                EditorSceneManager.OpenScene(Scene);
+                if(active.isDirty)Assert.Inconclusive("Save or discard "+active.path+" first (tests open "+scene+").");
+                EditorSceneManager.OpenScene(scene);
             }
             yield return new EnterPlayMode();
         }
@@ -43,11 +42,11 @@ public sealed class PlayModeValidationTests
     }
     private static void CleanUp()
     {
-        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();if(save==null)return;
-        using(save.SuppressSaving()){save.StartNewGame();var menu=UnityEngine.Object.FindFirstObjectByType<TitleMenuUI>();if(menu!=null)menu.ReturnTitle();}
+        // Saving is already off; leaving Play Mode discards the test's game.
+        var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();if(save!=null)save.AutomaticSavingEnabled=false;
     }
 
-    [UnityTest] public IEnumerator Title()=>Run(TitleValidation.Run);
+    [UnityTest] public IEnumerator Title()=>Run(TitleValidation.Run,false,TitleScene);
     [UnityTest] public IEnumerator CoreAndCampaign()=>Run(M6Validation.Run); // M3/M4, M5, reset and M6
     [UnityTest] public IEnumerator Screens()=>Run(ScreenValidation.Run);
     [UnityTest] public IEnumerator Visual()=>Run(VisualValidation.Run,true);

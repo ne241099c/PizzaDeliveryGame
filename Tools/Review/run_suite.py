@@ -25,8 +25,10 @@ def code(s):
  x=call('execute_code',dict(code=s,skip_refresh=True));data=x.get('data',{})
  if data.get('logged_error_count',0):raise RuntimeError(x)
  return data.get('result',x.get('message',''))
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))
+import session;session.ensure_scene(code,'Game')
 results=[code('return M6Validation.Run()+" / "+ScreenValidation.Run()+" / "+M7Validation.Run()+" / "+VisualValidation.Run()+" / "+ShopValidation.Run();')];print(label,results[-1],flush=True)
-code('UIThemeDriver.RenderingSuspended=true;return "Visual frame styling suspended only during accounting simulations";')
+code('UiRendering.Suspended=true;return "Visual frame styling suspended only during accounting simulations";')
 try:
  for cls,start in [('M5SimulationValidation','Begin'),('M6SimulationValidation','Begin'),('M6SimulationValidation','BeginComparisons'),('M7SimulationValidation','Begin')]:
   code(cls+'.'+start+'(); return '+cls+'.Status;')
@@ -39,5 +41,7 @@ try:
    if status.startswith('PASS'):results.append(status);break
   else:raise RuntimeError('timeout '+cls)
 finally:
- code('UIThemeDriver.RenderingSuspended=false;return "Visual frame styling restored";')
+ code('UiRendering.Suspended=false;return "Visual frame styling restored";')
 path=Path('/private/tmp/pizza_suite_'+label+'.json');path.write_text(json.dumps(results,ensure_ascii=False,indent=2));print('ALL PASS',label,flush=True)
+
+session.finish(code)

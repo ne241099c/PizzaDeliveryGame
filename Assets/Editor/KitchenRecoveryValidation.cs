@@ -11,7 +11,7 @@ public static class KitchenRecoveryValidation
         using var mapScope=new SampleMapValidationScope();
         T Find<T>() where T:UnityEngine.Object=>UnityEngine.Object.FindFirstObjectByType<T>();
         var save=Find<CampaignSaveManager>();using var protection=save.SuppressSaving();
-        var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var spawner=Find<OrderSpawner>();var crew=Find<KitchenCrew>();var cook=Find<CookingManager>();var list=Find<OrderListUI>();var economy=Find<BusinessEconomy>();var hand=Find<ShopHand>();
+        var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var spawner=Find<OrderSpawner>();var crew=Find<KitchenCrew>();var cook=Find<CookingManager>();var list=Find<OrderBook>();var economy=Find<BusinessEconomy>();var hand=Find<ShopHand>();
         int? originalSeed=cook.SeedOverride;var fields=new SerializedObject(cook);float successBase=fields.FindProperty("staffSuccessBase").floatValue,successScale=fields.FindProperty("staffSuccessScale").floatValue;
         int count=0;void Check(bool ok,string text){if(!ok)throw new Exception("Kitchen recovery: "+text);count++;}
         void Start(bool staffed=false){cook.SeedOverride=1;campaign.NewGame();clock.AutomaticTick=false;spawner.enabled=false;if(!staffed)crew.Restore(Array.Empty<KitchenStaff>());campaign.StartBusiness();}
@@ -46,7 +46,7 @@ public static class KitchenRecoveryValidation
             Start();o=Ticket();job=Assemble(o);cook.PutInOven(job.Bench,0);clock.Advance(cook.BurnAtFor(o)+.1f);cook.TakeOut(0);
             Check(job.Burnt && job.Stars==1 && job.NeedsDecision && !o.IsReady,"burnt pizza waits for the player's choice");
             Check(cook.ServeAsIs(job) && o.IsReady && o.Stars==1 && cook.BonusForArrival(o,clock.ElapsedSeconds)==0,"burnt pizza can be delivered with no quality bonus");
-            var holder=Find<DeliveryPersonSelector>().People[0];handoverBag();
+            var holder=Find<CourierRoster>().People[0];handoverBag();
             void handoverBag(){Check(Find<HandoverManager>().Bag(o,holder),"burnt pizza can enter real delivery bag");}
             clock.Advance(Find<ScoreManager>().CancellationAt(o)-clock.ElapsedSeconds+.01f);
             Check(!list.Contains(o) && cook.JobFor(o)==null && !Find<HandoverManager>().IsBagged(o),"expired pizza and its bag entry are cleared");
@@ -83,6 +83,6 @@ public static class KitchenRecoveryValidation
             Start();Check(economy.Ledger.Waste==0 && economy.Ledger.WastedPizzas==0 && !cook.Jobs.Any(),"new day resets recovery counters and jobs");
             return $"PASS: {count} kitchen recovery checks.";
         }
-        finally{Quality(successBase,successScale);hand.Cancel();cook.SeedOverride=originalSeed;save.StartNewGame();clock.AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();}
+        finally{Quality(successBase,successScale);hand.Cancel();cook.SeedOverride=originalSeed;save.StartNewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();}
     }
 }

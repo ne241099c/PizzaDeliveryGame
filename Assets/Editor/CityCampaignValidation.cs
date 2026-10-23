@@ -8,7 +8,7 @@ public static class CityCampaignValidation
     {
         if(!Application.isPlaying)throw new InvalidOperationException("Play required");
         T Find<T>() where T:UnityEngine.Object=>UnityEngine.Object.FindFirstObjectByType<T>();
-        var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();var campaign=Find<CampaignManager>();var map=Find<MapManager>();var clock=Find<GameClock>();var spawner=Find<OrderSpawner>();var roster=Find<DeliveryPersonSelector>();
+        var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();var campaign=Find<CampaignManager>();var map=Find<MapManager>();var clock=Find<GameClock>();var spawner=Find<OrderSpawner>();var roster=Find<CourierRoster>();
         var original=map.SeedOverride;bool legacy=map.UseSampleForValidation;int checks=0;
         void Check(bool ok,string name){if(!ok)throw new Exception("City campaign: "+name);checks++;}
         try
@@ -36,6 +36,6 @@ public static class CityCampaignValidation
             data.city=null;Check(save.TryParse(JsonUtility.ToJson(data),out var legacyData,out _),"legacy null city JSON round trip");campaign.RestorePreparation(legacyData);Check(map.City==null && map.Nodes.Count==5,"old save retains original town");
             return $"PASS: {checks} city campaign and save checks.";
         }
-        finally{map.UseSampleForValidation=legacy;map.SeedOverride=original;save.StartNewGame();clock.AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();}
+        finally{map.UseSampleForValidation=legacy;map.SeedOverride=original;save.StartNewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();}
     }
 }

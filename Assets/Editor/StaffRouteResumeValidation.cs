@@ -16,8 +16,8 @@ public static class StaffRouteResumeValidation
         using var sampleMap=new SampleMapValidationScope();
         if(!Application.isPlaying)throw new InvalidOperationException("Play required.");
         int count=0;void Check(bool ok,string message){if(!ok)throw new Exception(message);count++;}
-        var save=Find<CampaignSaveManager>();var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var menu=Find<TitleMenuUI>();var router=Find<ScreenRouter>();
-        var roster=Find<DeliveryPersonSelector>();var crew=Find<KitchenCrew>();var recruitment=Find<RecruitmentManager>();var economy=Find<BusinessEconomy>();var spawner=Find<OrderSpawner>();var list=Find<OrderListUI>();var planner=Find<DeliveryPlannerUI>();var flow=Find<DeliveryFlowController>();
+        var save=Find<CampaignSaveManager>();var campaign=Find<CampaignManager>();var clock=Find<GameClock>();var menu=Find<GameMenu>();var router=Find<ScreenRouter>();
+        var roster=Find<CourierRoster>();var crew=Find<KitchenCrew>();var recruitment=Find<RecruitmentManager>();var economy=Find<BusinessEconomy>();var spawner=Find<OrderSpawner>();var list=Find<OrderBook>();var planner=Find<DeliveryPlanner>();var flow=Find<DeliveryFlowController>();
         string originalOverride=save.SavePathOverride,normalPath=save.SavePath,recordPath=save.RecordsPath;
         byte[] before=Bytes(normalPath),records=Bytes(recordPath);
         string folder=Path.Combine(Path.GetTempPath(),"PizzaResumeReview-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);
@@ -79,8 +79,8 @@ public static class StaffRouteResumeValidation
         var save=Find<CampaignSaveManager>();normalCampaignPath=save.SavePath;normalRecordsPath=save.RecordsPath;normalCampaign=Bytes(normalCampaignPath);normalRecords=Bytes(normalRecordsPath);
         visualProtection=save.SuppressSaving();
         save.StartNewGame();var clock=Find<GameClock>();clock.AutomaticTick=false;Find<OrderSpawner>().enabled=false;
-        var roster=Find<DeliveryPersonSelector>();for(int i=0;i<6;i++)roster.AddPerson(new DeliveryPerson("Review "+(i+1),.6f));
-        Find<CampaignManager>().StartBusiness();var list=Find<OrderListUI>();var handover=Find<HandoverManager>();
+        var roster=Find<CourierRoster>();for(int i=0;i<6;i++)roster.AddPerson(new DeliveryPerson("Review "+(i+1),.6f));
+        Find<CampaignManager>().StartBusiness();var list=Find<OrderBook>();var handover=Find<HandoverManager>();
         var first=M7Validation.ReadyOrder("Goal1","Route one",0,120);var second=M7Validation.ReadyOrder("Goal2","Route two",0,120);list.AddOrder(first);list.AddOrder(second);handover.Bag(first,roster.People[0]);handover.Bag(second,roster.People[0]);Find<BusinessView>().ShowZone(ShopZone.Dispatch,true);
         return "Protected visual review: eight courier lanes, outbound and return.";
     }
@@ -103,7 +103,7 @@ public static class StaffRouteResumeValidation
         if(visualProtection==null)return "Review not running.";
         try
         {
-            var save=Find<CampaignSaveManager>();save.StartNewGame();Find<GameClock>().AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();
+            var save=Find<CampaignSaveManager>();save.StartNewGame();Find<GameClock>().AutomaticTick=false;Find<GameMenu>().ReturnTitle();
             if(!Same(normalCampaign,Bytes(normalCampaignPath)) || !Same(normalRecords,Bytes(normalRecordsPath)))throw new Exception("normal save or records changed during visual review");
             return "PASS: normal campaign and records unchanged after visual review.";
         }

@@ -8,7 +8,7 @@ public static class CityOrderValidation
     {
         if(!Application.isPlaying)throw new InvalidOperationException("Play required");
         T Find<T>() where T:UnityEngine.Object=>UnityEngine.Object.FindFirstObjectByType<T>();
-        var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();var map=Find<MapManager>();var clock=Find<GameClock>();var spawn=Find<OrderSpawner>();var f=Find<FacilityManager>();var list=Find<OrderListUI>();
+        var save=Find<CampaignSaveManager>();using var scope=save.SuppressSaving();var map=Find<MapManager>();var clock=Find<GameClock>();var spawn=Find<OrderSpawner>();var f=Find<FacilityManager>();var list=Find<OrderBook>();
         int? seed=map.SeedOverride;bool sample=map.UseSampleForValidation;int checks=0;
         void Check(bool ok,string text){if(!ok)throw new Exception(text);checks++;}
         try
@@ -23,6 +23,6 @@ public static class CityOrderValidation
             Check(list.Orders.Any(o=>o.DestinationNodeId.StartsWith("B")),"orders reach new districts");
             return $"PASS: {checks} district order checks.";
         }
-        finally{map.SeedOverride=seed;map.UseSampleForValidation=sample;spawn.SeedOverride=null;save.StartNewGame();clock.AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();}
+        finally{map.SeedOverride=seed;map.UseSampleForValidation=sample;spawn.SeedOverride=null;save.StartNewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();}
     }
 }

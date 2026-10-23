@@ -17,10 +17,10 @@ public static class M4PlayValidation
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();
         var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();
         var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
-        var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();
+        var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();
         var rep=UnityEngine.Object.FindFirstObjectByType<ReputationManager>();
         var stats=UnityEngine.Object.FindFirstObjectByType<DayStats>();
-        var orders=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();
+        var orders=UnityEngine.Object.FindFirstObjectByType<OrderBook>();
         var flow=UnityEngine.Object.FindFirstObjectByType<DeliveryFlowController>();
         bool[] checks={campaign.DayNumber==1 && !campaign.IsBankrupt,clock.Phase==DayPhase.BeforeOpening && clock.ElapsedSeconds==0,
             economy.Cash==300 && economy.DailyRevenue==0,rep.Value==50,

@@ -1,6 +1,4 @@
 using UnityEngine;
-using TMPro;
-using UnityEngine.UI;
 
 /// <summary>Campaign state survives daily resets; business rules stay in the existing clock/flow.</summary>
 [DefaultExecutionOrder(-75)]
@@ -15,28 +13,24 @@ public sealed class CampaignManager : MonoBehaviour
     [SerializeField] private RecruitmentManager recruitment;
     [SerializeField] private BusinessEconomy economy;
     [SerializeField] private GameClock clock;
-    [SerializeField] private OrderListUI orders;
-    [SerializeField] private DeliveryPersonSelector roster;
+    [SerializeField] private OrderBook orders;
+    [SerializeField] private CourierRoster roster;
     [SerializeField] private DeliveryFlowController flow;
     [SerializeField] private DeliveryDynamics dynamics;
     [SerializeField] private OrderSpawner spawner;
     [SerializeField] private ReputationManager reputation;
     [SerializeField] private ScoreManager score;
     [SerializeField] private DayStats stats;
-    [SerializeField] private DeliveryPlannerUI planner;
+    [SerializeField] private DeliveryPlanner planner;
     [SerializeField] private KitchenCrew crew;
     [SerializeField] private CookingManager cooking;
     [SerializeField] private HandoverManager handover;
-    [SerializeField] private GameObject preparationPanel;
-    [SerializeField] private Button openButton;
-    [SerializeField] private TextMeshProUGUI dayText;
     public int DayNumber { get; private set; } = 1;
     public int TotalDelivered { get; private set; }
     public int TotalScore { get; private set; }
-    private void Start() {openButton.onClick.AddListener(StartBusiness);if(saveGame!=null)saveGame.Startup();else PrepareDay();}
+    private void Start() {if(saveGame!=null)saveGame.Startup();else PrepareDay();}
     private void OnEnable() => clock.OnDayEnded += SettleDay;
     private void OnDisable() => clock.OnDayEnded -= SettleDay;
-    private void Update() => dayText.text=$"Day {DayNumber} / {clock.Phase}";
     public bool IsBankrupt { get; private set; }
     public int ConsecutiveNegativeDays { get; private set; }
     public decimal TotalRevenue { get; private set; }
@@ -57,8 +51,8 @@ public sealed class CampaignManager : MonoBehaviour
         +$"Total revenue: {TotalRevenue:F2} / Best day: {BestDailyRevenue:F2}\n"+progression.DailySummary+"\n";
     public void StartBusiness()
     {
-        if(clock.Phase!=DayPhase.BeforeOpening || IsBankrupt || (saveGame!=null && saveGame.AwaitingChoice && saveGame.AutomaticSavingEnabled))return;
-        facilities?.BeginBusiness();saveGame?.SavePreparation();UIVisibility.Set(preparationPanel,false); clock.BeginDay();
+        if(clock.Phase!=DayPhase.BeforeOpening || IsBankrupt)return;
+        facilities?.BeginBusiness();saveGame?.SavePreparation();clock.BeginDay();
     }
     public void NextDay()
     {
@@ -85,7 +79,7 @@ public sealed class CampaignManager : MonoBehaviour
         score.ResetForDay();stats.ResetForDay();training.RestoreAssignments(data.training);
         recruitment.RestoreApplicants(data.applicants.ConvertAll(a=>new Applicant(a.person,a.baselines,a.strengths,a.weaknesses)));
         recruitment.RestoreKitchenApplicants(data.kitchenApplicants.ConvertAll(k=>new KitchenApplicant(k)));handover?.Clear();
-        progression.PrepareDay();planner.PrepareDay();UIVisibility.Set(preparationPanel,true);PreparationEntered?.Invoke();
+        progression.PrepareDay();planner.PrepareDay();PreparationEntered?.Invoke();
     }
     private void PrepareDay()
     {
@@ -93,6 +87,6 @@ public sealed class CampaignManager : MonoBehaviour
         orders.ClearSelection(); roster.ResetDailyState(); crew?.ResetDailyState(); handover?.Clear(); dynamics.ResetForDay(); spawner.ResetForDay();
         FindFirstObjectByType<MapManager>().PrepareCity(DayNumber);
         training.PrepareDay();score.ResetForDay(); stats.ResetForDay(); planner.PrepareDay(); recruitment.GenerateDay();progression.PrepareDay();
-        UIVisibility.Set(preparationPanel,true);PreparationEntered?.Invoke();
+        PreparationEntered?.Invoke();
     }
 }

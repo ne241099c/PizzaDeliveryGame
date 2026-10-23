@@ -10,7 +10,7 @@ public static partial class M6Validation
     {
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();
         var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
-        var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();
+        var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();
         var training=UnityEngine.Object.FindFirstObjectByType<TrainingManager>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();
         var progression=UnityEngine.Object.FindFirstObjectByType<CourierProgression>();
         string original=save.SavePathOverride;bool automatic=save.AutomaticSavingEnabled;
@@ -28,8 +28,8 @@ public static partial class M6Validation
             Check(data.training.Count==1 && data.people[0].Status==DeliveryStatus.Training,"training instructions and status saved");
             Check(data.applicants.Count>=2 && data.applicants[0].strengths.Length==2,"daily applicants and traits saved");
             save.StartNewGame();File.WriteAllText(temp,snapshot);save.Startup();
-            Check(save.AwaitingChoice && File.ReadAllText(temp)==snapshot,"startup offers continue without overwriting save");
-            save.Continue();Check(!save.AwaitingChoice && save.SnapshotJson()==snapshot,"JSON load round trip preserves all campaign data");
+            Check(File.ReadAllText(temp)==snapshot,"starting the Game scene continues the save without overwriting it");
+            Check(save.SnapshotJson()==snapshot,"JSON load round trip preserves all campaign data");
             Near(roster.People[0].Driving,.62f,"loaded grown ability");Near(roster.People[0].Experience(CourierAbility.Service),123,"loaded XP remainder");
             Check(roster.People[0].Status==DeliveryStatus.Training && training.Assignments.Count==1,"loaded training blocks dispatch");
             var recruiting=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();var loadedApplicant=recruiting.Applicants[0];

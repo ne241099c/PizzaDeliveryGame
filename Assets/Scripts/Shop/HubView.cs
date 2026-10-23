@@ -10,9 +10,9 @@ using UnityEngine.UI;
 /// Assets/Prefabs/UI/HubView.prefab (ScreenPrefabs); the cards in Content follow the data and are built here.</summary>
 public sealed class HubView : MonoBehaviour
 {
-    private CampaignManager campaign;private GameClock clock;private BusinessEconomy economy;private DeliveryPersonSelector roster;private KitchenCrew crew;
+    private CampaignManager campaign;private GameClock clock;private BusinessEconomy economy;private CourierRoster roster;private KitchenCrew crew;
     private RecruitmentManager recruitment;private TrainingManager training;private FacilityManager facilities;private OrderSpawner spawner;private ReputationManager reputation;
-    private TitleMenuUI menu;private CourierProgression progression;private ScreenRouter router;private CookingManager cooking;
+    private GameMenu menu;private CourierProgression progression;private ScreenRouter router;private CookingManager cooking;
     private UITheme T=>UiKit.T;
     [SerializeField] private RectTransform content,dialog;
     [SerializeField] private TextMeshProUGUI dayText,phaseText,cashText,reputationText,hintText,noteText,forecastWages,forecastFixed,forecastMaintenance,forecastTraining,promiseText,messageText;
@@ -30,9 +30,9 @@ public sealed class HubView : MonoBehaviour
 
     private void Awake()
     {
-        campaign=Find<CampaignManager>();clock=Find<GameClock>();economy=Find<BusinessEconomy>();roster=Find<DeliveryPersonSelector>();crew=Find<KitchenCrew>();
+        campaign=Find<CampaignManager>();clock=Find<GameClock>();economy=Find<BusinessEconomy>();roster=Find<CourierRoster>();crew=Find<KitchenCrew>();
         recruitment=Find<RecruitmentManager>();training=Find<TrainingManager>();facilities=Find<FacilityManager>();spawner=Find<OrderSpawner>();reputation=Find<ReputationManager>();
-        menu=Find<TitleMenuUI>();progression=Find<CourierProgression>();router=Find<ScreenRouter>();cooking=Find<CookingManager>();
+        menu=Find<GameMenu>();progression=Find<CourierProgression>();router=Find<ScreenRouter>();cooking=Find<CookingManager>();
     }
     private void Start()
     {
@@ -55,7 +55,7 @@ public sealed class HubView : MonoBehaviour
 
     private void Update()
     {
-        if(UIThemeDriver.RenderingSuspended)return;
+        if(UiRendering.Suspended)return;
         if(router!=null && router.Current!=ScreenId.Hub)return;
         dayText.text=campaign.DayNumber+ShopStrings.Day;
         cashText.text=UiKit.Yen(economy.Cash);
@@ -98,9 +98,12 @@ public sealed class HubView : MonoBehaviour
     }
 
     // ---- cards ----
+    /// <summary>Rebuilds the cards now (normally they follow the data on the next frame).</summary>
+    public void RefreshNow(){signature=Signature();Rebuild();}
     private void Rebuild()
     {
-        for(int i=content.childCount-1;i>=0;i--)Destroy(content.GetChild(i).gameObject);
+        // Detached first, so the new cards are the only ones under Content in this frame.
+        for(int i=content.childCount-1;i>=0;i--){var old=content.GetChild(i);old.SetParent(null,false);Destroy(old.gameObject);}
         switch(SelectedTab)
         {
             case 0:BuildTeam();break;case 1:BuildApplicants();break;case 2:BuildFacilities();break;default:BuildManagement();break;

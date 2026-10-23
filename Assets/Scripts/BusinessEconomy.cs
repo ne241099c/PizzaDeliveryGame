@@ -1,6 +1,5 @@
 using System.Linq;
 using UnityEngine;
-using TMPro;
 
 /// <summary>Only confirmed arrival revenue credits cash; daily scores may also contain penalties.</summary>
 public sealed class BusinessEconomy : MonoBehaviour
@@ -12,7 +11,7 @@ public sealed class BusinessEconomy : MonoBehaviour
     [SerializeField] private GameClock clock;
     private readonly System.Collections.Generic.Dictionary<string,decimal> openingWages=new();
     [SerializeField] private DeliveryFlowController flow;
-    [SerializeField] private DeliveryPersonSelector roster;
+    [SerializeField] private CourierRoster roster;
     [SerializeField] private KitchenCrew crew;
     [SerializeField, Min(0)] private float kitchenWageBase = 24f;
     [SerializeField, Min(0)] private float kitchenWageAbilityFactor = 30f;
@@ -24,7 +23,6 @@ public sealed class BusinessEconomy : MonoBehaviour
     [SerializeField, Min(0)] private float dailyFixedCost = 90f;
     [SerializeField, Min(0)] private float fixedCostGrowthPerDay = 15f;
     private int dayNumber=1;
-    [SerializeField] private TextMeshProUGUI cashText;
     [SerializeField, Min(0)] private float initialCash = 300f;
     public decimal InitialCash => (decimal)initialCash;
     public decimal Cash { get; private set; }
@@ -34,7 +32,6 @@ public sealed class BusinessEconomy : MonoBehaviour
     private void Awake() => NewGame();
     private void OnEnable() { flow.RevenueEarned+=CreditArrival;flow.QualityBonusEarned+=RecordQualityBonus; flow.Dispatched+=ChargeMaterials; flow.Returned+=RecordDistance;clock.OnDayStarted+=CaptureWages; }
     private void OnDisable() { flow.RevenueEarned-=CreditArrival;flow.QualityBonusEarned-=RecordQualityBonus; flow.Dispatched-=ChargeMaterials; flow.Returned-=RecordDistance;clock.OnDayStarted-=CaptureWages; }
-    private void Update() => cashText.text=$"Cash: {Cash:F2} / Sales: {DailyRevenue:F2}";
     private void RecordQualityBonus(int amount)=>Ledger.QualityBonus+=amount;
     private void CreditArrival(int points) { Cash+=points; Ledger.Revenue+=points; }
     public void RestorePreparation(decimal cash,decimal opening,decimal costs,int day)

@@ -23,7 +23,7 @@ public static partial class M3Validation
         near(route.BuildCompletion(orders,person).TotalTime,route.GetTime(person),"M4-2 plan uses six-ability person");
         var trip=new DeliveryTrip(map,route.BuildCompletion(orders,person),person,0,5);
         near(trip.ReturnsAt,route.GetTime(person)*5,"M4-2 actual trip and prediction agree");
-        var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>().People;
+        var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>().People;
         check(roster.Count==2,"M5 initial roster has two people");
         check(roster.Select(p=>p.Name).SequenceEqual(new[]{"Aoi","Ren"}),"M5 initial names");
         near(roster[0].Driving,0.6f,"M5 Aoi driving");
@@ -133,40 +133,19 @@ public static partial class M3Validation
             check(Enumerable.Range(0,10).All(_=>firstRoll()==secondRoll()),"M4-7 fixed seed reproduces draws");
         }
         finally {UnityEngine.Object.DestroyImmediate(dynamicsFixture);}
-        var actualSelector=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();
-        var actualSettings=new SerializedObject(actualSelector);
-        var actualContent=(RectTransform)actualSettings.FindProperty("deliveryPersonListContent").objectReferenceValue;
-        var rosterScroll=actualContent.GetComponentInParent<ScrollRect>();
-        var screenRouter=UnityEngine.Object.FindFirstObjectByType<ScreenRouter>();bool bottomBand=screenRouter!=null && screenRouter.ImplementationStage>=3;
-        check(rosterScroll!=null && (bottomBand ? rosterScroll.horizontal && !rosterScroll.vertical : rosterScroll.vertical && !rosterScroll.horizontal),"M4-0 variable roster scroll follows current screen layout");
-        check(rosterScroll.content==actualContent,"M4-0 preserves existing roster content");
-        Canvas.ForceUpdateCanvases();
-        check(actualContent.rect.height>=0 && rosterScroll.viewport.rect.height>0,"M5 short roster fits scroll viewport");
-        var rosterFixture=new GameObject("Variable roster UI validation",typeof(RectTransform));rosterFixture.SetActive(false);
+        // A fifth courier (more than the starting two) joins the roster and can be selected for a dispatch.
+        var rosterFixture=new GameObject("Variable roster validation");rosterFixture.SetActive(false);
         try
         {
-            var selector=rosterFixture.AddComponent<DeliveryPersonSelector>();var settings=new SerializedObject(selector);
-            settings.FindProperty("deliveryPersonListContent").objectReferenceValue=rosterFixture.transform;
-            settings.FindProperty("deliveryPersonItemPrefab").objectReferenceValue=actualSettings.FindProperty("deliveryPersonItemPrefab").objectReferenceValue;
-            var fixtureClock=rosterFixture.AddComponent<GameClock>();fixtureClock.BeginDay();
-            settings.FindProperty("clock").objectReferenceValue=fixtureClock;
+            var selector=rosterFixture.AddComponent<CourierRoster>();var fixtureClock=rosterFixture.AddComponent<GameClock>();
+            var settings=new SerializedObject(selector);settings.FindProperty("clock").objectReferenceValue=fixtureClock;
             var entries=settings.FindProperty("deliveryPeople");entries.arraySize=5;entries.GetArrayElementAtIndex(4).FindPropertyRelative("Name").stringValue="Extra";
-            settings.ApplyModifiedPropertiesWithoutUndo();rosterFixture.SetActive(true);selector.RebuildRoster();
-            var rows=rosterFixture.GetComponentsInChildren<Button>(true);
-            check(rows.Length==5,"M4-0 fifth inspector courier gets a row");
-            rows[4].onClick.Invoke();check(selector.SelectedPerson==selector.People[4],"M4-0 fifth courier is selectable");
-            string abilities=rows[4].GetComponentInChildren<TextMeshProUGUI>().text;
-            check(new[]{"Drive","Know","Load","Service","Endurance","Safety"}.All(abilities.Contains),"M4-0 six abilities shown on extra row");
-            check(rows.All(r=>r.transform.Find("StaminaBar/Fill")!=null),"M4-0 every row has a stamina bar");
+            settings.ApplyModifiedPropertiesWithoutUndo();rosterFixture.SetActive(true);fixtureClock.BeginDay();
+            check(selector.People.Count==5,"M4-0 fifth inspector courier joins the roster");
+            check(selector.SelectForDispatch(selector.People[4]) && selector.SelectedPerson==selector.People[4],"M4-0 fifth courier is selectable");
         }
         finally {UnityEngine.Object.DestroyImmediate(rosterFixture);}
-        var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>();
-        var resultsPanel=(GameObject)new SerializedObject(planner).FindProperty("resultsPanel").objectReferenceValue;
-        check(resultsPanel.transform.GetSiblingIndex()==resultsPanel.transform.parent.childCount-1,"M4-8 results cover policy controls");
-        var canvas=UnityEngine.Object.FindFirstObjectByType<Canvas>();
-        check(canvas.GetComponent<CanvasScaler>().screenMatchMode==CanvasScaler.ScreenMatchMode.Expand,"M4-8 whole layout fits variable aspect ratio");
-        var footer=UIVisibility.Find(canvas.transform,"Footer").GetComponent<RectTransform>();var footerCorners=new Vector3[4];footer.GetWorldCorners(footerCorners);
-        check(footerCorners.All(p=>p.x>=canvas.pixelRect.xMin-1 && p.x<=canvas.pixelRect.xMax+1 && p.y>=canvas.pixelRect.yMin-1 && p.y<=canvas.pixelRect.yMax+1),"M4-8 dispatch and reset remain inside Game view");
+        var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlanner>();
         check(planner.ResultSummary.Contains("Reputation:"),"M4-8 result includes reputation");
         check(planner.ResultSummary.Contains("Aoi / Load 2"),"M4-8 result includes capacity");
         check(planner.ResultSummary.Contains("Stamina"),"M4-8 result includes remaining stamina");

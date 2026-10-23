@@ -32,10 +32,7 @@ public sealed class UITheme : ScriptableObject
     [SerializeField] public Color mapGround=Hex("#EFEBE2"),mapBlock=Hex("#E7E1D3"),mapPark=Hex("#C9E3B4"),mapTree=Hex("#9FC98A"),mapWater=Hex("#B9DDF0"),mainRoadEdge=Hex("#D9A93A"),mainRoadFill=Hex("#FDE08A"),backRoadEdge=Hex("#B9AE98"),backRoadFill=Hex("#FFFDF6"),congestion=Hex("#E04B2D");
     [SerializeField, Min(1)] public float mapRoadMaxPixels=24f,mapRoadBorderPixels=3f,mapRouteArrowPixels=22f;
     [SerializeField] public float mapMainRoad=.26f,mapBackRoad=.14f,mapRoute=.22f,mapRoadEdge=.05f,mapPinScale=.012f;
-    public Color CourierColor(string name){var roster=Object.FindFirstObjectByType<DeliveryPersonSelector>();if(roster!=null){for(int i=0;i<roster.People.Count;i++)if(roster.People[i].Name==name)return courierColors[i%courierColors.Length];}uint hash=2166136261;foreach(char c in name)hash=unchecked((hash^c)*16777619);return courierColors[hash%(uint)courierColors.Length];}
+    public Color CourierColor(string name){var roster=Object.FindFirstObjectByType<CourierRoster>();if(roster!=null){for(int i=0;i<roster.People.Count;i++)if(roster.People[i].Name==name)return courierColors[i%courierColors.Length];}uint hash=2166136261;foreach(char c in name)hash=unchecked((hash^c)*16777619);return courierColors[hash%(uint)courierColors.Length];}
     [SerializeField] public float effectSeconds=.9f,effectRise=.6f,deadlineWarning=.5f,deadlineUrgent=.2f,lowStamina=.25f,closingWarning=.2f,shakeDistance=.04f,shakeFrequency=22;
     public Color DeadlineColor(float fraction)=>fraction<=deadlineUrgent?bad:fraction<=deadlineWarning?money:good;
-    public float Size(ThemeTextSize size)=>size switch {ThemeTextSize.Heading=>heading,ThemeTextSize.Subheading=>subheading,ThemeTextSize.Caption=>caption,_=>body};
 }
-public enum ThemeTextSize {Heading,Subheading,Body,Caption}
-public enum ThemeButtonKind {Primary,Secondary,Danger,Disabled,Selected}

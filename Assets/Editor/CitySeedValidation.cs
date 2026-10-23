@@ -55,7 +55,7 @@ public static class CitySeedValidation
         EditorApplication.update-=Tick;Running=false;
         try
         {
-            if(Application.isPlaying){save.StartNewGame();clock.AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<TitleMenuUI>().ReturnTitle();}
+            if(Application.isPlaying){save.StartNewGame();clock.AutomaticTick=false;UnityEngine.Object.FindFirstObjectByType<GameMenu>().ReturnTitle();}
             if(!Same(campaign,Bytes(campaignPath)) || !Same(records,Bytes(recordsPath)))Status="FAIL: normal save changed during city audit";
         }
         finally{protection?.Dispose();protection=null;}

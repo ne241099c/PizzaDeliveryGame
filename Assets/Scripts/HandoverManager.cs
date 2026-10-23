@@ -7,8 +7,8 @@ using UnityEngine;
 /// opening the dispatch board for that courier selects exactly the bagged orders. Delivery rules stay in DeliveryFlowController.</summary>
 public sealed class HandoverManager : MonoBehaviour
 {
-    [SerializeField] private OrderListUI orders;
-    [SerializeField] private DeliveryPersonSelector roster;
+    [SerializeField] private OrderBook orders;
+    [SerializeField] private CourierRoster roster;
     [SerializeField] private DeliveryFlowController flow;
     [SerializeField] private GameClock clock;
     private readonly Dictionary<DeliveryPerson,List<Order>> bags=new();

@@ -9,7 +9,7 @@ public sealed class OrderSpawner : MonoBehaviour
     [SerializeField] private DayStats stats;
     [SerializeField] private GameClock clock;
     [SerializeField] private MapManager map;
-    [SerializeField] private OrderListUI orders;
+    [SerializeField] private OrderBook orders;
     [SerializeField] private ReputationManager reputation;
     [SerializeField, Min(0.1f)] private float interval = 10f;
     [SerializeField, Range(0f, 0.9f)] private float intervalVariation = 0.3f;

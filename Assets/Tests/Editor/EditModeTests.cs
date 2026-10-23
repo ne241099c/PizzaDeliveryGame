@@ -12,7 +12,7 @@ public sealed class EditModeTests
     public void BuildSettingsReadmeAndCreditsMatchGameInfo()=>Assert.AreEqual("",GameInfoSync.Differences(),"run Tools > Game Info > Sync");
 
     [Test]
-    public void SaveFolderDoesNotFollowTheDisplayName()=>Assert.AreEqual(GameInfo.SaveFolder,System.IO.Path.GetFileName(CampaignSaveManager.SaveDirectory));
+    public void SaveFolderDoesNotFollowTheDisplayName()=>Assert.AreEqual(GameInfo.SaveFolder,System.IO.Path.GetFileName(CampaignSaveFile.Directory));
 
     [Test]
     public void TitlePrefabHasEveryReference()

@@ -13,7 +13,7 @@ public static class M7Validation
         using var sampleMap=new SampleMapValidationScope();
         int count=0;void Check(bool ok,string name){if(!ok)throw new Exception("M7: "+name);count++;}
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();using var scope=save.SuppressSaving();
-        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
+        var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderBook>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();
         int? originalSeed=cook.SeedOverride;cook.SeedOverride=1;
         try
         {
@@ -47,7 +47,7 @@ public static class M7Validation
     }
     private static void ValidateQuality(Action<bool,string> check)
     {
-        var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlannerUI>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();var crew=UnityEngine.Object.FindFirstObjectByType<KitchenCrew>();var stats=UnityEngine.Object.FindFirstObjectByType<DayStats>();var reputation=UnityEngine.Object.FindFirstObjectByType<ReputationManager>();
+        var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var list=UnityEngine.Object.FindFirstObjectByType<OrderBook>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();var planner=UnityEngine.Object.FindFirstObjectByType<DeliveryPlanner>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();var crew=UnityEngine.Object.FindFirstObjectByType<KitchenCrew>();var stats=UnityEngine.Object.FindFirstObjectByType<DayStats>();var reputation=UnityEngine.Object.FindFirstObjectByType<ReputationManager>();
         cook.ManualControlEnabled=true;
         // Hand-made pizzas only: no kitchen staff today.
         Order Start(float promise){campaign.NewGame();crew.Restore(new KitchenStaff[0]);spawner.enabled=false;campaign.StartBusiness();var order=new Order("Goal1","Hand made",0,promise);list.AddOrder(order);return order;}
@@ -106,7 +106,7 @@ public static class M7Validation
     }
     private static void ValidateEffects(Action<bool,string> check)
     {
-        var f=UnityEngine.Object.FindFirstObjectByType<FacilityManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var dynamics=UnityEngine.Object.FindFirstObjectByType<DeliveryDynamics>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var roster=UnityEngine.Object.FindFirstObjectByType<DeliveryPersonSelector>();var recruitment=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();var list=UnityEngine.Object.FindFirstObjectByType<OrderListUI>();var stats=UnityEngine.Object.FindFirstObjectByType<DayStats>();
+        var f=UnityEngine.Object.FindFirstObjectByType<FacilityManager>();var economy=UnityEngine.Object.FindFirstObjectByType<BusinessEconomy>();var campaign=UnityEngine.Object.FindFirstObjectByType<CampaignManager>();var clock=UnityEngine.Object.FindFirstObjectByType<GameClock>();var spawner=UnityEngine.Object.FindFirstObjectByType<OrderSpawner>();var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var dynamics=UnityEngine.Object.FindFirstObjectByType<DeliveryDynamics>();var cook=UnityEngine.Object.FindFirstObjectByType<CookingManager>();var roster=UnityEngine.Object.FindFirstObjectByType<CourierRoster>();var recruitment=UnityEngine.Object.FindFirstObjectByType<RecruitmentManager>();var list=UnityEngine.Object.FindFirstObjectByType<OrderBook>();var stats=UnityEngine.Object.FindFirstObjectByType<DayStats>();
         campaign.NewGame();float baseTime=map.GetTravelTime("Store-N1",roster.People[0]),minimum=spawner.MinimumPromiseSeconds;
         var order=spawner.CreateOrder("Goal1",0);float deadline=order.Deadline;
         f.Restore(new FacilitySaveData{oven=1,bike=1,expansion=1});

@@ -10,22 +10,22 @@ public sealed class GameOverView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI[] statValues;
     [SerializeField] private RectTransform team;
     [SerializeField] private StickerButton retry,toTitle;
-    private ScreenRouter router;private CampaignManager campaign;private DeliveryPersonSelector roster;private KitchenCrew crew;private CampaignSaveManager save;
+    private ScreenRouter router;private CampaignManager campaign;private CourierRoster roster;private KitchenCrew crew;private CampaignSaveManager save;
     private UITheme T=>UiKit.T;private ScreenId last=(ScreenId)(-1);
     public StickerButton Retry=>retry;
     public StickerButton ToTitle=>toTitle;
     private void Awake()
     {
-        router=FindFirstObjectByType<ScreenRouter>();campaign=FindFirstObjectByType<CampaignManager>();roster=FindFirstObjectByType<DeliveryPersonSelector>();crew=FindFirstObjectByType<KitchenCrew>();save=FindFirstObjectByType<CampaignSaveManager>();
+        router=FindFirstObjectByType<ScreenRouter>();campaign=FindFirstObjectByType<CampaignManager>();roster=FindFirstObjectByType<CourierRoster>();crew=FindFirstObjectByType<KitchenCrew>();save=FindFirstObjectByType<CampaignSaveManager>();
     }
     private void Start()
     {
         retry.Button.onClick.AddListener(()=>save.StartNewGame());
-        toTitle.Button.onClick.AddListener(()=>router.Show(ScreenId.Title));
+        toTitle.Button.onClick.AddListener(GameScenes.LoadTitle);
     }
     private void Update()
     {
-        if(UIThemeDriver.RenderingSuspended)return;
+        if(UiRendering.Suspended)return;
         if(router.Current==last)return;last=router.Current;if(last==ScreenId.GameOver)Refresh();
     }
     public void Refresh()

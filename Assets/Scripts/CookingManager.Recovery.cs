@@ -77,7 +77,7 @@ public sealed partial class CookingManager
     private float AutoRedoSeconds(PizzaJob job,float at)
     {
         if(job==null || job.Staff==null)return float.PositiveInfinity;
-        var map=FindFirstObjectByType<MapManager>();var roster=FindFirstObjectByType<DeliveryPersonSelector>();
+        var map=FindFirstObjectByType<MapManager>();var roster=FindFirstObjectByType<CourierRoster>();
         float delivery=float.PositiveInfinity;
         foreach(var person in roster.People)
         {

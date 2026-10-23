@@ -14,7 +14,7 @@ public sealed class SettlementView : MonoBehaviour
     [SerializeField] private RectTransform titleBadge;
     [SerializeField] private Image[] legendDots;
     [SerializeField] private StickerButton nextButton,skipButton;
-    private ScreenRouter router;private GameClock clock;private CampaignManager campaign;private BusinessEconomy economy;private DayStats stats;private DeliveryPersonSelector roster;
+    private ScreenRouter router;private GameClock clock;private CampaignManager campaign;private BusinessEconomy economy;private DayStats stats;private CourierRoster roster;
     private KitchenCrew crew;private DeliveryFlowController flow;private ScoreManager score;private ReputationManager reputation;private CourierProgression progression;private CookingManager cooking;
     private UITheme T=>UiKit.T;
     private RectTransform receipt,right;
@@ -29,7 +29,7 @@ public sealed class SettlementView : MonoBehaviour
     private void Awake()
     {
         router=FindFirstObjectByType<ScreenRouter>();clock=FindFirstObjectByType<GameClock>();campaign=FindFirstObjectByType<CampaignManager>();economy=FindFirstObjectByType<BusinessEconomy>();
-        stats=FindFirstObjectByType<DayStats>();roster=FindFirstObjectByType<DeliveryPersonSelector>();crew=FindFirstObjectByType<KitchenCrew>();flow=FindFirstObjectByType<DeliveryFlowController>();
+        stats=FindFirstObjectByType<DayStats>();roster=FindFirstObjectByType<CourierRoster>();crew=FindFirstObjectByType<KitchenCrew>();flow=FindFirstObjectByType<DeliveryFlowController>();
         score=FindFirstObjectByType<ScoreManager>();reputation=FindFirstObjectByType<ReputationManager>();progression=FindFirstObjectByType<CourierProgression>();cooking=FindFirstObjectByType<CookingManager>();
     }
     private void Start(){skipButton.Button.onClick.AddListener(RevealAll);nextButton.Button.onClick.AddListener(Next);}
@@ -147,7 +147,7 @@ public sealed class SettlementView : MonoBehaviour
 
     private void Update()
     {
-        if(UIThemeDriver.RenderingSuspended)return;
+        if(UiRendering.Suspended)return;
         if(router.Current!=ScreenId.Settlement)return;
         if((pending || !built) && clock.Phase==DayPhase.Ended && economy.Ledger.Settled){pending=false;BuildContent();}
         float t=Time.unscaledTime-shownAt;

@@ -26,12 +26,12 @@ public static class KitchenComparisonValidation
             {
                 trial.Step();Check(Find<KitchenCrew>().Count==0 && cooking.EditorSubstitute!=null,"substitute is outside the roster");
                 Check(!cooking.ManualControlEnabled && cooking.IsStaffBusy(cooking.EditorSubstitute),"real automatic cooking drives substitute");
-                var economy=Find<BusinessEconomy>();Check(economy.TeamWages==Find<DeliveryPersonSelector>().People.Sum(p=>economy.DailyWage(p)),"substitute has no wages");
-                clock.Advance(cooking.CookSeconds+.1f);Check(Find<OrderListUI>().Orders.Any(o=>o.IsReady),"substitute completes and packs real pizza");
+                var economy=Find<BusinessEconomy>();Check(economy.TeamWages==Find<CourierRoster>().People.Sum(p=>economy.DailyWage(p)),"substitute has no wages");
+                clock.Advance(cooking.CookSeconds+.1f);Check(Find<OrderBook>().Orders.Any(o=>o.IsReady),"substitute completes and packs real pizza");
             }
             Check(cooking.EditorSubstitute==original,"substitute restored after simulation");return $"PASS: {count} kitchen autoplay policy checks.";
         }
-        finally{save.StartNewGame();clock.AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();}
+        finally{save.StartNewGame();clock.AutomaticTick=false;Find<GameMenu>().ReturnTitle();}
     }
     public static string Begin()
     {
@@ -60,7 +60,7 @@ public static class KitchenComparisonValidation
     private static void Cleanup()
     {
         EditorApplication.update-=Tick;
-        try{session?.Dispose();session=null;save.StartNewGame();Find<GameClock>().AutomaticTick=false;Find<TitleMenuUI>().ReturnTitle();if(!Same(before,Bytes(path)) || !Same(records,Bytes(recordsPath)))Status="FAIL: normal save changed";}
+        try{session?.Dispose();session=null;save.StartNewGame();Find<GameClock>().AutomaticTick=false;Find<GameMenu>().ReturnTitle();if(!Same(before,Bytes(path)) || !Same(records,Bytes(recordsPath)))Status="FAIL: normal save changed";}
         finally{protection?.Dispose();protection=null;}
     }
 }

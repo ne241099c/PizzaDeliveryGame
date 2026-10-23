@@ -2,7 +2,8 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-public enum ScreenId { Title, Hub, Business, Settlement, GameOver }
+/// <summary>The screens of the Game scene. The title is its own scene (GameScenes).</summary>
+public enum ScreenId { Hub, Business, Settlement, GameOver }
 
 /// <summary>Observes campaign events and owns presentation only.</summary>
 [DefaultExecutionOrder(100)]
@@ -13,11 +14,9 @@ public sealed class ScreenRouter : MonoBehaviour
     [SerializeField] private CanvasGroup[] screens;
     [SerializeField] private CanvasGroup sharedHeader;
     [SerializeField, Min(0)] private float fadeSeconds = .3f;
-    [SerializeField] private bool startAtTitle;
     [SerializeField] private int implementationStage = 1;
     public int ImplementationStage => implementationStage;
     public ScreenId Current { get; private set; }
-    public bool StartAtTitle => startAtTitle;
     public event Action<ScreenId> Changed;
     private Coroutine fade;
     private void OnEnable()
@@ -32,7 +31,7 @@ public sealed class ScreenRouter : MonoBehaviour
         clock.OnDayStarted -= OnBusiness;
         clock.OnDayEnded -= OnSettlement;
     }
-    private void Start() => Show(startAtTitle || FindFirstObjectByType<CampaignSaveManager>().AwaitingChoice ? ScreenId.Title : ScreenId.Hub, true);
+    private void Start() => Show(Current, true); // the campaign has already entered preparation (or restored a save)
     private void OnPreparation() => Show(ScreenId.Hub);
     private void OnBusiness() => Show(ScreenId.Business);
     private void OnSettlement() => Show(ScreenId.Settlement);
