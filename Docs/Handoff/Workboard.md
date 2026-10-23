@@ -1,3 +1,7 @@
+> **現在（2026-10-23 夜）：Codexが利用制限で停止したため、ユーザーの依頼でClaude Codeが引き継ぎ。Unity操作の所有者：Claude Code。** Codexの未コミット分を確認・検証し、小さな修正2件を加えてコミット済み（詳細：[実装・確認記録](../Results/Shop_UX_Structure_Improvements.md)の最終節）。Unityは編集モード。Codexは同じUnityを操作しない。
+
+> （直前）**現在：Codexが追加UX改善・家の増加の実装とUnity操作を担当。** 開始時 shop / b647cfe、Unityは編集モード・コンパイルなし。Claudeの完了コミット後、ユーザーの最新依頼で再開。独立したソース作業は /private/tmp の専用worktreeで分担し、Unity操作・統合はCodex本体のみ。
+
 > 完了：S2-7の内勤方針・代役調理の5項目通過、J/K/Lを30日上限で測定。J/Kは初日、Lは6日目に破産。正常保存の前後一致を確認。数値調整は判断待ち。
 
 > 完了：Codexが速度1.2倍・窯FIFO・ピザ3種類・生成マップG-0〜G-5を実装。関連検証、1000シード、100街3日が通過。通常資金の段階別測定は初日破産で数値判断待ち。詳細：[実装記録](../Results/Menu_Map_Implementation.md)。S2-7のJ/K/Lは追補で実装・測定済み。shopで段階別ローカルコミット、pushなし。

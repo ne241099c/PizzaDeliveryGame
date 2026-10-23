@@ -1,7 +1,7 @@
 # レビュー・再開用ツール
 
 Python 3.11以上。元のUnityプロジェクトで、Unity操作担当者だけが使用する。
-Unity操作担当はWorkboardを正とする（2026-10-23の最新交代でClaude Code）。並行実装用worktreeからは実行しない。
+Unity操作担当はWorkboardを正とする（2026-10-23の最新依頼でCodex）。並行実装用worktreeからは実行しない。
 
 - `unity_call.py <tool> ['JSON' | @args.json]`：既存KitWright MCPのツール呼び出し。エラー時は非ゼロ終了。
 - **毎回の全検証は不要**。UIは変更箇所の表示/操作、ゲーム処理は関連検証。以下の全検証は大きな区切りか明示依頼時だけ行う。引き継ぎだけで実行しない。
@@ -9,7 +9,7 @@ Unity操作担当はWorkboardを正とする（2026-10-23の最新交代でClaud
 - `capture_views.py <folder>`：`Docs/UI_Screens/<folder>/`へ11画面を保存。事前にPlayと固定解像度を確認。既存ファイルを置き換えるため、フォルダ名は作業ボードで決める。
 - `capture_title.py [--folder after-redesign]`：タイトルを3解像度（1920×1080、1280×720、1920×1200）×4状態（セーブあり・初回・壊れたセーブ・クレジット）で撮影し、重なり・はみ出しも確認。一時セーブだけを使う。
 - Unity内のTest Runner：メニュー **Tools > Pizza Delivery > Run Tests**（結果 `Library/TestResults/last.txt`）。
-- `session.py`：各ツールが最初に使う。Play中の保存を止め（シーンを読み直しても有効）、Gameシーンを読み込む。終わるとTitleシーンへ戻す。
+- `session.py`：各ツールが最初に使う。Play中の保存を止め（シーンを読み直しても有効）、Gameシーンを読み込む。実ファイルをバックアップし、終了時に前後比較する。後片付けではシーンを切り替えず、時計を止めて保存ロックを維持する。
 - `unity_mcp.py`：内部HTTP補助。サーバー起動や設定変更は行わない。
 
 接続先はローカルの `.codex/config.toml` の既存設定を利用する。別のクライアントはネイティブMCPを優先し、必要な場合のみローカル環境変数PIZZA_MCP_URLを設定する。認証付きURLをコマンド、文書、gitへ貼らない。設定の内容をログに出さない。

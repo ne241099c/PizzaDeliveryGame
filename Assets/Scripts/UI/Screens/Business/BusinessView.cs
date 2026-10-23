@@ -70,11 +70,13 @@ public sealed partial class BusinessView : MonoBehaviour
     {
         if(clock==null)return;clock.OnDayStarted+=DayStarted;orders.OrdersChanged+=AssignNumbers;flow.Returned+=Returned;flow.Message+=FlowMessage;
         if(router!=null)router.Changed+=ScreenChanged;
+        if(roster!=null)roster.SelectionChanged+=RequestLaneFocus;
     }
     private void OnDisable()
     {
         if(clock==null)return;clock.OnDayStarted-=DayStarted;orders.OrdersChanged-=AssignNumbers;flow.Returned-=Returned;flow.Message-=FlowMessage;
         if(router!=null)router.Changed-=ScreenChanged;
+        if(roster!=null)roster.SelectionChanged-=RequestLaneFocus;
         if(map!=null)map.PointerInputEnabled=true;
     }
     private void DayStarted()
@@ -310,10 +312,14 @@ public sealed partial class BusinessView : MonoBehaviour
         if(message.StartsWith("ACCIDENT"))Toast("事故: "+UiStrings.Japanese(message).Replace("ACCIDENT: ",""),T.berry,null,"icon_flame");
     }
 
+    public void RefreshPresentation()
+    {
+        RefreshHud();RefreshRail();RefreshKitchen();RefreshHandover();RefreshDispatch();RefreshToasts();
+    }
     private void Update()
     {
         if(UiRendering.Suspended)return;
         if(router.Current!=ScreenId.Business)return;
-        Keys();Pan();RefreshHud();RefreshRail();RefreshKitchen();RefreshHandover();RefreshDispatch();RefreshToasts();
+        Keys();Pan();RefreshPresentation();
     }
 }

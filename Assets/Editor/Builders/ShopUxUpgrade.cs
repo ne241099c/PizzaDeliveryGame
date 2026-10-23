@@ -1,11 +1,69 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine.SceneManagement;
+using Object=UnityEngine.Object;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using Object=UnityEngine.Object;
+using UnityEngine.UI;
+
+/// <summary>Updates only the affected prefab parts. Existing artwork, bindings and manual layout edits stay in place.</summary>
+public static class ShopUxUpgrade
+{
+    private static RectTransform Part(SerializedObject owner,string field)=>(RectTransform)owner.FindProperty(field).objectReferenceValue;
+    public static string Apply()
+    {
+        if(Application.isPlaying)throw new InvalidOperationException("Exit Play before applying prefab changes.");
+        const string path="Assets/Prefabs/UI/BusinessView.prefab";
+        string backup="Library/PrefabBackups/ShopUx-"+DateTime.Now.ToString("yyyyMMdd-HHmmss");
+        Directory.CreateDirectory(backup);File.Copy(path,backup+"/BusinessView.prefab",true);
+        var root=PrefabUtility.LoadPrefabContents(path);
+        try
+        {
+            var view=root.GetComponent<BusinessView>();var so=new SerializedObject(view);
+            if(Part(so,"ovenQueueContent")==null)view.BuildOvenQueue();
+            so.Update();
+            var lanes=Part(so,"laneRow");var viewport=(RectTransform)lanes.parent;
+            UiKit.Place(viewport,32,764,1856,296);lanes.sizeDelta=new Vector2(lanes.sizeDelta.x,296);
+            ScrollNavigation.Configure(viewport.GetComponent<ScrollRect>(),true);
+            var content=Part(so,"dispatchOrderContent");var orderViewport=(RectTransform)content.parent;
+            orderViewport.sizeDelta=new Vector2(328,428);content.sizeDelta=new Vector2(328,428);
+            var panel=(RectTransform)orderViewport.parent;panel.sizeDelta=new Vector2(344,540);
+            var hint=panel.Find("Hint") as RectTransform;if(hint!=null)UiKit.Place(hint,18,496,308,32);
+            var dispatch=Part(so,"dispatch");var legend=dispatch.Find("RouteLegend") as RectTransform;
+            if(legend!=null)UiKit.Place(legend,430,724,1120,32);
+            var minimap=dispatch.Find("Minimap") as RectTransform;if(minimap!=null)UiKit.Place(minimap,1640,584,248,168);
+            so.ApplyModifiedPropertiesWithoutUndo();
+            PrefabUtility.SaveAsPrefabAsset(root,path);
+        }
+        finally{PrefabUtility.UnloadPrefabContents(root);}
+        var theme=UITheme.Active;theme.cityLabelMinimumBlockPixels=300;
+        EditorUtility.SetDirty(theme);AssetDatabase.SaveAssetIfDirty(theme);
+        var map=UnityEngine.Object.FindFirstObjectByType<MapManager>(FindObjectsInactive.Include);
+        if(map==null)throw new InvalidOperationException("Open Game scene to update its Inspector settings.");
+        var settings=new SerializedObject(map);
+        settings.FindProperty("deliverySpeedMultiplier").floatValue=1.6f;
+        settings.FindProperty("backstreetVisualOffset").floatValue=.85f;
+        settings.FindProperty("citySettings.housesPerBlock").intValue=4;
+        settings.FindProperty("citySettings.maximumDestinations").intValue=64;
+        var templates=settings.FindProperty("citySettings.templates");
+        for(int i=0;i<templates.arraySize;i++)
+        {
+            var positions=templates.GetArrayElementAtIndex(i).FindPropertyRelative("additionalAddressPositions");
+            if(positions.arraySize==2)continue;
+            positions.arraySize=2;positions.GetArrayElementAtIndex(0).vector2Value=new Vector2(.25f,-.3f);positions.GetArrayElementAtIndex(1).vector2Value=new Vector2(.25f,-.7f);
+        }
+        settings.ApplyModifiedProperties();
+        var kitchen=UnityEngine.Object.FindFirstObjectByType<CookingManager>(FindObjectsInactive.Include);
+        var cooking=new SerializedObject(kitchen);cooking.FindProperty("wasteCost").floatValue=0;cooking.ApplyModifiedProperties();
+        var marker=UnityEngine.Object.FindFirstObjectByType<DeliveryMarkerView>(FindObjectsInactive.Include);
+        var markerSettings=new SerializedObject(marker);markerSettings.FindProperty("minimumMarkerPixels").floatValue=44;markerSettings.ApplyModifiedProperties();
+        EditorSceneManager.MarkSceneDirty(map.gameObject.scene);
+        return "Updated BusinessView prefab parts and Game Inspector settings. Original prefab: "+backup;
+    }
+}
 
 /// <summary>One-time, undoable scene migration. Copies existing serialized managers; never recreates their settings.</summary>
 public static class GameSystemsOrganizer
@@ -169,3 +227,5 @@ public static class GameSystemsOrganizer
         return count;
     }
 }
+
+// Scene migration is invoked explicitly; it never runs automatically on Play.

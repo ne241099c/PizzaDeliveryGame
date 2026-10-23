@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-23",
+  "branch": "shop",
+  "base": "b647cfe",
+  "scope": "targeted; no full suite or simulations",
+  "checks": [
+    {
+      "group": "save preservation",
+      "passed": 22,
+      "result": "PASS: 22 save preservation checks."
+    },
+    {
+      "group": "kitchen queue and delivery speed",
+      "passed": 11,
+      "result": "PASS: 11 kitchen queue and delivery speed checks."
+    },
+    {
+      "group": "kitchen recovery",
+      "passed": 40,
+      "result": "PASS: 40 kitchen recovery checks."
+    },
+    {
+      "group": "city generation",
+      "passed": 67,
+      "result": "PASS: 67 city generation checks."
+    },
+    {
+      "group": "city campaign and save",
+      "passed": 30,
+      "result": "PASS: 30 city campaign and save checks."
+    },
+    {
+      "group": "shop UX",
+      "passed": 20,
+      "result": "PASS: 20 shop UX checks."
+    },
+    {
+      "group": "malformed record amounts",
+      "passed": 3,
+      "result": "PASS: 3 malformed-record cases."
+    }
+  ],
+  "total": 193,
+  "notes": [
+    "Initial wheel direction assertion failed; input direction fixed and 20 UX checks passed.",
+    "After visual layout refinement, the 20 UX checks passed again.",
+    "Final number background, squid import mode and queue thumbnail changes are display changes; their verification is by Play screenshots."
+  ]
+}

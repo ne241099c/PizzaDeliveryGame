@@ -127,6 +127,9 @@ public sealed partial class BusinessView
                     img.sprite=UiKit.Art("box_closed");
                     img.preserveAspect=true;
                     UiKit.Label(slot,"N","#"+Number(bag[s]),0,16,68,28,16,T.line,FontRole.Black,TextAlignmentOptions.Center);
+                    var carried=bag[s];var source=slot.gameObject.AddComponent<DragSource>();
+                    source.Payload=()=>new DragPayload{Kind=DragKind.Bagged,Order=carried,Sprite="box_closed",Size=new Vector2(96,96)};
+                    source.Clicked=()=>handover.Unbag(carried);
                 }
                 else UiKit.Dashed(slot,new Color(1,1,1,.7f),8,6,2);
             }

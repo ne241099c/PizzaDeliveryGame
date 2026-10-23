@@ -17,6 +17,7 @@ public sealed class TitleView : MonoBehaviour
     /// <summary>Logo lines: [0] the small first line, then the large words. Each shadow is a copy drawn behind its line.</summary>
     [SerializeField] private TextMeshProUGUI[] logoLines,logoShadows;
     [SerializeField] private TextMeshProUGUI kana,footer,status,records;
+    private float statusSize;
     [Header("Motion (stops when DeliveryFeedback animations are off)")]
     [SerializeField] private Image[] bulbGlows;
     [SerializeField] private Image windowGlow;
@@ -63,7 +64,14 @@ public sealed class TitleView : MonoBehaviour
         if(tutorialButton!=null){tutorialButton.Interactable=tutorialReady;tutorialButton.LabelOffsetY=tutorialReady?0:10;}
         if(tutorialNote!=null)tutorialNote.gameObject.SetActive(!tutorialReady);
         if(firstTimeBadge!=null)firstTimeBadge.gameObject.SetActive(firstLaunch);
-        if(status!=null){status.text=problem;status.transform.parent.gameObject.SetActive(!string.IsNullOrEmpty(problem));}
+        // The reason is the reader's own message and varies in length: shrink it, and cut it off rather than overflow.
+        if(status!=null)
+        {
+            if(statusSize==0)statusSize=status.fontSize;
+            status.enableAutoSizing=true;status.fontSizeMin=14;status.fontSizeMax=statusSize;
+            status.overflowMode=TextOverflowModes.Ellipsis;
+            status.text=problem;status.transform.parent.gameObject.SetActive(!string.IsNullOrEmpty(problem));
+        }
         if(records!=null){records.text=recordLine;records.transform.parent.gameObject.SetActive(!string.IsNullOrEmpty(recordLine));}
     }
     private void Update()=>Tick(Time.unscaledTime,DeliveryFeedback.Animate);

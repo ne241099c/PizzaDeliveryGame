@@ -44,7 +44,7 @@ public static class CampaignSaveFile
     }
     /// <summary>"3日目 ・ ¥1,240 ・ 評判 72" for the continue button.</summary>
     public static string Summary(CampaignSaveData data)=>$"{data.day}日目 ・ {UiKit.Yen(Decimal(data.cash))} ・ 評判 {data.reputation:F0}";
-    public static string Problem(string reason)=>"セーブを読めませんでした（"+reason+"）。元のセーブは変更していません。「最初から」を選ぶと新しく始めます。";
+    public static string Problem(string reason)=>"セーブを読めませんでした（"+reason+"）。元のファイルはそのままです。「最初から」で新しく始めます。";
 
     public static BestRecords ReadRecords(string savePath)
     {

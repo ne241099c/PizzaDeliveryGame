@@ -1,11 +1,22 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 /// <summary>Shared input setup for the hub cards and dispatch lanes. Does not rebuild their contents.</summary>
-public static class ScrollNavigation
+public sealed class ScrollNavigation : MonoBehaviour, IScrollHandler
 {
+    [SerializeField] private ScrollRect target;
+    public void OnScroll(PointerEventData data)
+    {
+        if(target==null || !target.IsActive() || !target.horizontal || target.vertical)return;
+        Canvas.ForceUpdateCanvases();
+        float hidden=target.content.rect.width-target.viewport.rect.width;
+        if(hidden<=0)return;
+        float delta=Mathf.Abs(data.scrollDelta.x)>Mathf.Abs(data.scrollDelta.y)?data.scrollDelta.x:data.scrollDelta.y;
+        target.horizontalNormalizedPosition=Mathf.Clamp01(target.horizontalNormalizedPosition-delta*UiKit.T.largeSpace*6/hidden);
+    }
     /// <summary>Wheel scrolling, dragging the background, and an optional visible horizontal handle.
-    /// Unity's ScrollRect maps an ordinary vertical wheel to x when horizontal is its only enabled axis.</summary>
+    /// Downward wheel movement advances right through cards; native horizontal wheel input is disabled to avoid double handling.</summary>
     public static void Configure(ScrollRect scroll,bool createScrollbar=false)
     {
         if(scroll==null)return;
@@ -20,7 +31,14 @@ public static class ScrollNavigation
         }
         surface.raycastTarget=true;
         scroll.movementType=ScrollRect.MovementType.Clamped;
-        scroll.scrollSensitivity=UiKit.T.largeSpace*6;
+        bool horizontalOnly=scroll.horizontal && !scroll.vertical;
+        scroll.scrollSensitivity=horizontalOnly?0:UiKit.T.largeSpace*6;
+        if(horizontalOnly)
+        {
+            var input=scroll.GetComponent<ScrollNavigation>();
+            if(input==null)input=scroll.gameObject.AddComponent<ScrollNavigation>();
+            input.target=scroll;
+        }
         if(createScrollbar && scroll.horizontal && !scroll.vertical && scroll.horizontalScrollbar==null)
             AddHorizontalScrollbar(scroll);
     }

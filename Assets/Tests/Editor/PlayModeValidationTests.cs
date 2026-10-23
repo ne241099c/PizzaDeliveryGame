@@ -65,6 +65,7 @@ public sealed class PlayModeValidationTests
     [UnityTest] public IEnumerator Visual()=>Run(VisualValidation.Run,true);
     [UnityTest] public IEnumerator Business()=>Run(M7Validation.Run);
     [UnityTest] public IEnumerator Shop()=>Run(ShopValidation.Run);
+    [UnityTest] public IEnumerator ShopUx()=>Run(ShopUxValidation.Run);
     [UnityTest] public IEnumerator SavePreservation()=>Run(M6Validation.RunSaveOnly);
     [UnityTest] public IEnumerator KitchenRecovery()=>Run(KitchenRecoveryValidation.Run);
     [UnityTest] public IEnumerator KitchenQueue()=>Run(KitchenQueueValidation.Run);

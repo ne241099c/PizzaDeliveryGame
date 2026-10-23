@@ -15,9 +15,9 @@ public sealed partial class BusinessView
     private string dispatchOrdersSignature="";
     private readonly Dictionary<Order,float> cancelledNotices=new();
     private readonly HashSet<Order> observedOrders=new();
-    private readonly List<(Order order,RectTransform card,TextMeshProUGUI detail,TextMeshProUGUI countdown,RectTransform state,Image[] steps)> dispatchOrderRows=new();
+    private readonly List<(Order order,RectTransform card,TextMeshProUGUI detail,TextMeshProUGUI progress,TextMeshProUGUI countdown,RectTransform state,Image[] steps)> dispatchOrderRows=new();
     private ScoreManager deadlineScore;
-    private const float RowHeight=100;
+    private const float RowHeight=132;
     public string OrderCountdown(Order order)
     {
         if(order.Status==OrderStatus.Cancelled)return "キャンセル：閉店または受付猶予終了";
@@ -29,17 +29,17 @@ public sealed partial class BusinessView
     }
     private void BuildDispatchOrders()
     {
-        var panel=UiKit.Card(dispatch,"Orders",32,212,344,604,T.paper);
+        var panel=UiKit.Card(dispatch,"Orders",32,212,344,540,T.paper);
         var glow=UiKit.Stretch(panel,"Glow",-8,-8,-8,-8);var g=UiKit.Fill(glow,T.cheese,24);g.enabled=false;glow.SetAsFirstSibling();
         var hit=panel.gameObject.AddComponent<Image>();hit.color=Color.clear;
         // A ticket dragged back here leaves its lane (before departure nothing is paid).
         ordersZone=panel.gameObject.AddComponent<DropZone>();ordersZone.Glow=g;
         dispatchOrderTitle=UiKit.Label(panel,"Title","注文",18,10,90,44,T.subheadingSize,T.line,FontRole.Display);
         readyCount=UiKit.Badge(panel,"ReadyCount","焼き上がり 0",100,18,T.basil,Color.white,30,16);
-        var viewport=UiKit.Box(panel,"Viewport",8,62,328,492);
+        var viewport=UiKit.Box(panel,"Viewport",8,62,328,428);
         viewport.gameObject.AddComponent<RectMask2D>();
         var back=viewport.gameObject.AddComponent<Image>();back.color=Color.clear;
-        dispatchOrderContent=UiKit.Box(viewport,"Content",0,0,328,492);
+        dispatchOrderContent=UiKit.Box(viewport,"Content",0,0,328,428);
         var scroll=viewport.gameObject.AddComponent<ScrollRect>();
         scroll.content=dispatchOrderContent;
         scroll.viewport=viewport;
@@ -47,7 +47,7 @@ public sealed partial class BusinessView
         scroll.vertical=true;
         scroll.movementType=ScrollRect.MovementType.Clamped;
         scroll.scrollSensitivity=T.largeSpace;
-        UiKit.Label(panel,"Hint","伝票を、下の配達員のレーンへドラッグ",18,560,308,32,T.captionSize,T.inkSub,FontRole.Black);
+        UiKit.Label(panel,"Hint","伝票を、下の配達員のレーンへドラッグ",18,496,308,32,T.captionSize,T.inkSub,FontRole.Black);
     }
     private void BindDispatchOrders(){ordersZone.Accepts=p=>p!=null && p.Kind==DragKind.Bagged;ordersZone.Dropped=p=>handover.Unbag(p.Order);}
     private void RefreshDispatchOrders()
@@ -71,23 +71,28 @@ public sealed partial class BusinessView
                 var card=UiKit.Card(dispatchOrderContent,"Order_"+Number(o),4,i*RowHeight+4,316,RowHeight-10,T.paperDeep,12,3,2);
                 UiKit.Label(card,"Title",$"#{Number(o)}  {ShopStrings.House(map,o.DestinationNodeId)}",12,4,180,32,T.bodySize,T.line,FontRole.Black);
                 var state=UiKit.Badge(card,"State","",0,8,T.disabled,T.line,26,T.captionSize);
-                var detail=UiKit.Label(card,"Detail","",12,36,296,24,T.captionSize,T.line,FontRole.Black);
-                var countdown=UiKit.Label(card,"Countdown","",12,60,296,24,T.captionSize,T.inkSub,FontRole.Bold);
+                var detail=UiKit.Label(card,"Detail","",12,36,292,24,T.captionSize,T.line,FontRole.Black);
+                detail.textWrappingMode=TextWrappingModes.NoWrap;detail.overflowMode=TextOverflowModes.Ellipsis;
+                var progress=UiKit.Label(card,"Progress","",12,60,292,24,T.captionSize,T.info,FontRole.Black);
+                progress.enableAutoSizing=true;progress.fontSizeMin=12;progress.textWrappingMode=TextWrappingModes.NoWrap;progress.overflowMode=TextOverflowModes.Ellipsis;
+                var countdown=UiKit.Label(card,"Countdown","",12,84,292,30,T.captionSize,T.inkSub,FontRole.Bold);
+                countdown.enableAutoSizing=true;countdown.fontSizeMin=12;countdown.overflowMode=TextOverflowModes.Ellipsis;
                 var steps=new Image[5];
-                for(int k=0;k<5;k++)steps[k]=UiKit.Fill(UiKit.Box(card,"Step"+k,12+k*59,82,55,5),T.disabled,2.5f);
+                for(int k=0;k<5;k++)steps[k]=UiKit.Fill(UiKit.Box(card,"Step"+k,12+k*59,116,55,5),T.disabled,2.5f);
                 var hit=card.gameObject.AddComponent<Image>();hit.color=Color.clear;
                 var source=card.gameObject.AddComponent<DragSource>();
                 source.Payload=()=>o.Status==OrderStatus.Pending && o.IsReady?new DragPayload{Kind=handover.IsBagged(o)?DragKind.Bagged:DragKind.Box,Order=o,Sprite="box_closed",Size=new Vector2(96,96)}:null;
                 source.Clicked=()=>TapOrder(o);
-                dispatchOrderRows.Add((o,card,detail,countdown,state,steps));
+                dispatchOrderRows.Add((o,card,detail,progress,countdown,state,steps));
             }
-            dispatchOrderContent.sizeDelta=new Vector2(328,Mathf.Max(492,shown.Count*RowHeight+8));
+            dispatchOrderContent.sizeDelta=new Vector2(328,Mathf.Max(428,shown.Count*RowHeight+8));
             if(shown.Count==0)UiKit.Label(dispatchOrderContent,"Empty","注文を待っています。\n調理中の注文もここに表示します。",16,16,296,100,T.bodySize,T.inkSub,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
         }
-        foreach(var (o,card,detail,countdown,state,steps) in dispatchOrderRows)
+        foreach(var (o,card,detail,progress,countdown,state,steps) in dispatchOrderRows)
         {
             var (text,fill,ink)=OrderState(o);UiKit.SetBadge(state,text,fill,ink);state.anchoredPosition=new Vector2(316-10-state.sizeDelta.x,-8);
-            detail.text=o.PizzaName+" ["+o.Ingredients+"] ・ "+OrderProgress(o);
+            detail.text=o.PizzaName+" ["+o.Ingredients+"]";
+            progress.text=OrderProgress(o);
             string time=OrderCountdown(o);
             if(o.Status==OrderStatus.Dispatched)
             {

@@ -4,57 +4,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>A pizza drawn in layers (dough, sauce, cheese, topping, burn).</summary>
-public sealed class PizzaVisual
-{
-    public RectTransform Root;private Image dough,sauce,cheese,topping,secondTopping,burnt;public RectTransform Blobs;
-    public static PizzaVisual Make(Transform parent,string name,float x,float y,float size)
-    {
-        var v=new PizzaVisual{Root=UiKit.Box(parent,name,x,y,size,size)};
-        v.dough=Layer(v.Root,"Dough","pizza_base");
-        var mask=UiKit.Stretch(v.Root,"SauceMask",size*.12f,size*.12f,size*.12f,size*.12f);
-        var m=mask.gameObject.AddComponent<Image>();
-        m.sprite=UiKit.Circle;
-        m.raycastTarget=false;
-        mask.gameObject.AddComponent<Mask>().showMaskGraphic=false;v.Blobs=mask;
-        v.sauce=Layer(v.Root,"Sauce","pizza_sauce");
-        v.cheese=Layer(v.Root,"Cheese","pizza_cheese");
-        v.topping=Layer(v.Root,"Topping","pizza_basil");
-        v.secondTopping=Layer(v.Root,"Squid","pizza_squid");
-        v.burnt=Layer(v.Root,"Burnt","pizza_burnt");
-        return v;
-    }
-    private static Image Layer(RectTransform root,string name,string sprite)
-    {
-        var i=UiKit.Stretch(root,name).gameObject.AddComponent<Image>();
-        i.sprite=UiKit.Art(sprite);
-        i.raycastTarget=false;
-        i.preserveAspect=true;
-        return i;
-    }
-    /// <summary>Shows a job. For staff assembly the layers appear over time (fraction 0-1).</summary>
-    public void Show(PizzaJob job,float staffFraction=1)
-    {
-        Root.gameObject.SetActive(job!=null);if(job==null)return;
-        var stage=job.Stage;bool staffAssembling=job.Worker==PizzaWorker.Staff && stage==PizzaStage.Topping && staffFraction<1;
-        int visible=staffAssembling?(staffFraction<.25f?1:staffFraction<.55f?2:4):stage switch{PizzaStage.Ticket=>0,PizzaStage.Dough=>1,PizzaStage.Sauce=>2,PizzaStage.Cheese=>3,_=>4};
-        dough.enabled=visible>=1;
-        bool hand=job.Worker==PizzaWorker.Player && stage<=PizzaStage.Topping;
-        sauce.enabled=visible>=2 && !hand;Blobs.gameObject.SetActive(hand && visible>=1);
-        cheese.enabled=visible>=3;
-        topping.enabled=job.AddedToppings.Count>0 || visible>=4 && job.AddedTopping.HasValue || staffAssembling && visible>=4;
-        var t=job.AddedTopping??job.Order.RequiredTopping;
-        topping.sprite=UiKit.Art(t==Topping.Pepperoni?"pizza_pepperoni":t==Topping.Shrimp?"pizza_shrimp":"pizza_basil");
-        secondTopping.enabled=visible>=4 && job.AddedToppings.Contains(Topping.Squid);
-        bool baked=stage>=PizzaStage.Baked;var warm=new Color(.93f,.80f,.62f);dough.color=baked?warm:Color.white;
-        var cookedTint=job.Burnt?Color.Lerp(Color.white,UiKit.T.line,.8f):Color.white;
-        sauce.color=cheese.color=topping.color=secondTopping.color=cookedTint;
-        if(job.Burnt)dough.color=Color.Lerp(warm,UiKit.T.line,.8f);
-        burnt.enabled=job.Burnt;
-    }
-    public void ClearBlobs(){for(int i=Blobs.childCount-1;i>=0;i--)Object.Destroy(Blobs.GetChild(i).gameObject);}
-}
-
 public sealed partial class BusinessView
 {
     private sealed class BenchView
@@ -79,11 +28,11 @@ public sealed partial class BusinessView
     private readonly List<BenchView> benches=new();
     private readonly List<OvenView> ovens=new();
     [Header("Kitchen")]
-    [SerializeField] private RectTransform kitchenZone,benchArea,ovenArea,shelf,shelfContent;
+    [SerializeField] private RectTransform kitchenZone,benchArea,ovenArea,shelf,shelfContent,ovenQueueContent;
     [SerializeField] private TextMeshProUGUI shelfTitle,trashTitle;
     [SerializeField] private DragSource[] traySources=new DragSource[7];
     [SerializeField] private DropZone trashZone;
-    private string shelfSignature="";
+    private string shelfSignature="",ovenQueueSignature="";
     private static readonly (string sprite,string label,DragKind kind,Topping topping)[] Trays=
     {
         ("tray_dough","生地",DragKind.Dough,Topping.Basil),("tray_sauce","ソース",DragKind.Ladle,Topping.Basil),("tray_cheese","チーズ",DragKind.Cheese,Topping.Basil),
@@ -122,6 +71,7 @@ public sealed partial class BusinessView
         shelfScroll.vertical=false;
         shelfScroll.movementType=ScrollRect.MovementType.Clamped;
         BuildTrash();
+        BuildOvenQueue();
         benchArea=UiKit.Box(kitchenZone,"Benches",40,560,1070,420);ovenArea=UiKit.Box(kitchenZone,"Ovens",1140,560,760,420);
         // Handing boxes to couriers happens only on the dispatch board (2026-10-23 request).
     }
@@ -133,7 +83,7 @@ public sealed partial class BusinessView
             source.Payload=()=>cooking.ManualControlEnabled?new DragPayload{Kind=t.kind,Topping=t.topping,Sprite=t.kind==DragKind.Ladle?"ladle":t.sprite,Size=t.kind==DragKind.Ladle?new Vector2(120,120):new Vector2(130,104)}:null;
             source.Clicked=()=>ClickTray(t.kind,t.topping);
         }
-        trashTitle.text=ShopStrings.Trash+"  −"+UiKit.Yen(cooking.WasteCost);
+        trashTitle.text=cooking.WasteCost==0?ShopStrings.FreeDiscard:ShopStrings.Trash+"  −"+UiKit.Yen(cooking.WasteCost);
         PizzaJob Job(DragPayload p)=>p.Job??(p.Order!=null?cooking.JobFor(p.Order):null);
         trashZone.Accepts=p=>p!=null && (p.Kind==DragKind.Pizza || p.Kind==DragKind.Box || p.Kind==DragKind.Bagged) && cooking.CanDiscard(Job(p));
         trashZone.Dropped=p=>cooking.Discard(Job(p));
@@ -318,7 +268,7 @@ public sealed partial class BusinessView
 
     private void RefreshKitchen()
     {
-        LayoutStations();float now=clock.ElapsedSeconds;
+        LayoutStations();RefreshOvenQueue();float now=clock.ElapsedSeconds;
         foreach(var v in benches)
         {
             var job=cooking.BenchJob(v.Index);
@@ -432,5 +382,35 @@ public sealed partial class BusinessView
         UiKit.Label(trash,"Hint",ShopStrings.TrashHint,16,46,368,42,T.captionSize,T.inkSub,FontRole.Bold);
         var hit=trash.gameObject.AddComponent<Image>();hit.color=Color.clear;
         trashZone=trash.gameObject.AddComponent<DropZone>();trashZone.Glow=g;
+    }
+    public void BuildOvenQueue()
+    {
+        var root=UiKit.Card(kitchenZone,"OvenQueue",1140,974,760,86,T.paperDeep,12,3,2);
+        UiKit.Label(root,"Title",ShopStrings.OvenQueueTitle,10,0,100,76,T.captionSize,T.line,FontRole.Black);
+        var viewport=UiKit.Box(root,"Viewport",112,4,636,76);
+        viewport.gameObject.AddComponent<RectMask2D>();
+        viewport.gameObject.AddComponent<Image>().color=Color.clear;
+        ovenQueueContent=UiKit.Box(viewport,"Content",0,0,636,76);
+        var scroll=viewport.gameObject.AddComponent<ScrollRect>();
+        scroll.viewport=viewport;scroll.content=ovenQueueContent;scroll.horizontal=true;scroll.vertical=false;
+        ScrollNavigation.Configure(scroll);
+    }
+    private void RefreshOvenQueue()
+    {
+        if(ovenQueueContent==null)return;
+        var queue=cooking.OvenQueue.ToList();
+        string signature=string.Join(",",queue.Select(j=>j.Order.Id));
+        if(signature==ovenQueueSignature)return;
+        ovenQueueSignature=signature;
+        for(int i=ovenQueueContent.childCount-1;i>=0;i--)Destroy(ovenQueueContent.GetChild(i).gameObject);
+        for(int i=0;i<queue.Count;i++)
+        {
+            var job=queue[i];var card=UiKit.Card(ovenQueueContent,"Queue_"+Number(job.Order),i*150,0,142,70,T.paper,8,2,2);
+            PizzaVisual.Make(card,"Pizza",2,4,62).Show(job,1,false);
+            UiKit.Label(card,"Order","#"+Number(job.Order),66,2,72,30,T.bodySize,T.line,FontRole.Black);
+            var label=UiKit.Label(card,"PizzaName",job.Order.PizzaName,66,30,72,34,T.captionSize,T.inkSub,FontRole.Bold);
+            label.enableAutoSizing=true;label.fontSizeMin=12;
+        }
+        ovenQueueContent.sizeDelta=new Vector2(Mathf.Max(636,queue.Count*150),76);
     }
 }

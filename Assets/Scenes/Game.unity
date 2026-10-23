@@ -1833,6 +1833,343 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 133529527138892620, guid: 44b33bfb1798f4481ab343ea093cfcc5, type: 3}
   m_PrefabInstance: {fileID: 715115549}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &864088358
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 864088362}
+  - component: {fileID: 864088361}
+  - component: {fileID: 864088359}
+  - component: {fileID: 864088360}
+  m_Layer: 0
+  m_Name: KitchenSystems
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &864088359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 864088358}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 704259c50f5de4b3c9367d7f80828203, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::KitchenCrew
+  crew:
+  - Name: Mio
+    id: 
+    speed: 0.4
+    care: 0.4
+--- !u!114 &864088360
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 864088358}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48419bcec540440a68a9a74d5e8ff137, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HandoverManager
+  orders: {fileID: 884947485}
+  roster: {fileID: 884947491}
+  flow: {fileID: 884947492}
+  clock: {fileID: 1660095297}
+--- !u!114 &864088361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 864088358}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a8c119f490da41c382363f0fc3902cd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CookingManager
+  facilities: {fileID: 1737208721}
+  clock: {fileID: 1660095297}
+  orders: {fileID: 884947485}
+  crew: {fileID: 864088359}
+  handover: {fileID: 864088360}
+  initialOvens: 1
+  initialBenches: 2
+  doughSeconds: 2
+  sauceSeconds: 4
+  assemblySeconds: 6
+  bakeSeconds: 6
+  seafoodExtraBakeSeconds: 1
+  extraToppingSeconds: 2
+  packSeconds: 0
+  bakeBandHalfWidth: 0.4
+  burnAfterBand: 5
+  staffTimeBase: 1.3
+  staffTimeScale: 0.6
+  sauceThreshold: 0.7
+  staffSuccessBase: 0.3
+  staffSuccessScale: 0.5
+  qualityTwoStarBonus: 15
+  qualityThreeStarBonus: 40
+  threeStarReputation: 0.5
+  rackCapacity: 6
+  packingSlots: 2
+  useFixedSeed: 0
+  randomSeed: 5113
+  playerIdleSeconds: 8
+  wasteCost: 0
+  redoBelowStar: 2
+  redoMinRemainingSec: 0
+--- !u!4 &864088362
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 864088358}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1404697811}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &884947484
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 884947490}
+  - component: {fileID: 884947485}
+  - component: {fileID: 884947491}
+  - component: {fileID: 884947492}
+  - component: {fileID: 884947489}
+  - component: {fileID: 884947488}
+  - component: {fileID: 884947487}
+  - component: {fileID: 884947486}
+  m_Layer: 0
+  m_Name: DeliverySystems
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &884947485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884947484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7f3c389b4189d46d589e8493db77e1fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OrderListUI
+  clock: {fileID: 1660095297}
+--- !u!114 &884947486
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884947484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5efaaf8e55024c2697dc26d15900e8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryDynamics
+  facilities: {fileID: 1737208721}
+  roster: {fileID: 884947491}
+  initialStamina: 1
+  depletionPerSecond: 0.004
+  depletionBase: 1.5
+  recoveryPerSecond: 0.003
+  recoveryBase: 0.5
+  baseAccidentProbability: 0.05
+  mainRoadRisk: 1
+  backstreetRisk: 1.5
+  fatigueRiskScale: 1
+  accidentStopSeconds: 15
+  useFixedSeed: 0
+  randomSeed: 2718
+--- !u!114 &884947487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884947484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 015131f721704749b26d5df9c47b64f9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryMarkerView
+  flow: {fileID: 884947492}
+  clock: {fileID: 1660095297}
+  markersParent: {fileID: 506782586}
+  markerOffset: 0.2
+  markerFontSize: 5.5
+  minimumMarkerPixels: 44
+--- !u!114 &884947488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884947484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65b5a637f8ba4cf08a5aa220ea2cacd9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::OrderSpawner
+  facilities: {fileID: 1737208721}
+  cooking: {fileID: 864088361}
+  stats: {fileID: 1737208731}
+  clock: {fileID: 1660095297}
+  map: {fileID: 937587058}
+  orders: {fileID: 884947485}
+  reputation: {fileID: 1737208723}
+  interval: 10
+  intervalVariation: 0.3
+  initialPromiseSeconds: 60
+  maximumPromiseSeconds: 240
+  minimumPromiseMargin: 1.1
+  referencePromiseSeconds: 60
+  demandExponent: 0.7
+  minimumDemand: 0.4
+  maximumDemand: 2
+  openingOrders: 3
+  useFixedSeed: 0
+  randomSeed: 9187
+--- !u!114 &884947489
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884947484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a3707bce76b407ea6c539cb58460562, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryPlannerUI
+  orders: {fileID: 884947485}
+  people: {fileID: 884947491}
+  map: {fileID: 937587058}
+  clock: {fileID: 1660095297}
+  flow: {fileID: 884947492}
+  stats: {fileID: 1737208731}
+  reputation: {fileID: 1737208723}
+--- !u!4 &884947490
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884947484}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1404697811}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &884947491
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884947484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c1b1243411b841f5a4ff0924cb5214d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryPersonSelector
+  clock: {fileID: 1660095297}
+  deliveryPeople:
+  - Name: Aoi
+    Archetype: 2
+    id: 
+    driving: 0.6
+    localKnowledge: 0.6
+    capacity: 2
+    service: 0.8
+    endurance: 0.7
+    safety: 0.8
+    potentials:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    experience:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    capacityPotential: 2
+    status: 0
+  - Name: Ren
+    Archetype: 2
+    id: 
+    driving: 0.5
+    localKnowledge: 0.3
+    capacity: 2
+    service: 0.5
+    endurance: 0.9
+    safety: 0.4
+    potentials:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    experience:
+    - 0
+    - 0
+    - 0
+    - 0
+    - 0
+    capacityPotential: 2
+    status: 0
+  initialPotentialBonus: 0.25
+--- !u!114 &884947492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 884947484}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8015589fe4ec34c539e8effa53d307d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryFlowController
+  cooking: {fileID: 864088361}
+  scoreManager: {fileID: 1737208724}
+  orderListUI: {fileID: 884947485}
+  deliveryPersonSelector: {fileID: 884947491}
+  clock: {fileID: 1660095297}
+  stats: {fileID: 1737208731}
+  reputation: {fileID: 1737208723}
+  dynamics: {fileID: 884947486}
 --- !u!1 &908971449
 GameObject:
   m_ObjectHideFlags: 0
@@ -1964,9 +2301,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbce3d843e3274112bf48b90a0874ed0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapManager
-  facilities: {fileID: 1404697836}
+  facilities: {fileID: 1737208721}
   baseSpeed: 10
-  deliverySpeedMultiplier: 1.2
+  deliverySpeedMultiplier: 1.6
+  backstreetVisualOffset: 0.85
   backstreetPenalty: 1
   sampleBackstreetDistance: 11
   drivingSpeedBase: 0.7
@@ -1979,10 +2317,12 @@ MonoBehaviour:
   edgesParent: {fileID: 582078028}
   mapDefinition: {fileID: 0}
   generateCampaignCity: 1
+  expandExistingCityHomes: 1
   citySettings:
     stageDays: 01000000060000000b00000015000000
     campaignStageBlocks: 05000000080000000a0000000c000000
     legacyStageBlocks: 0300000005000000080000000c000000
+    housesPerBlock: 4
     retryCount: 6
     columns: 4
     blockSize: 4
@@ -1996,7 +2336,7 @@ MonoBehaviour:
     minimumEdges: 6
     maximumEdges: 300
     minimumDestinations: 2
-    maximumDestinations: 40
+    maximumDestinations: 64
     maximumTotalDistance: 4000
     constructionStartDay: 11
     constructionDays: 3
@@ -2019,6 +2359,9 @@ MonoBehaviour:
       addressPositions:
       - {x: 0.6, y: -0.3}
       - {x: 0.6, y: -0.7}
+      additionalAddressPositions:
+      - {x: 0.25, y: -0.3}
+      - {x: 0.25, y: -0.7}
       title: "\u4F4F\u5B85\u8857"
     - kind: 1
       demand: 1.3
@@ -2036,6 +2379,9 @@ MonoBehaviour:
       addressPositions:
       - {x: 0.6, y: -0.3}
       - {x: 0.6, y: -0.7}
+      additionalAddressPositions:
+      - {x: 0.25, y: -0.3}
+      - {x: 0.25, y: -0.7}
       title: "\u5546\u5E97\u8857"
     - kind: 2
       demand: 0.6
@@ -2053,6 +2399,9 @@ MonoBehaviour:
       addressPositions:
       - {x: 0.6, y: -0.3}
       - {x: 0.6, y: -0.7}
+      additionalAddressPositions:
+      - {x: 0.25, y: -0.3}
+      - {x: 0.25, y: -0.7}
       title: "\u516C\u5712\u901A\u308A"
     - kind: 3
       demand: 0.9
@@ -2070,6 +2419,9 @@ MonoBehaviour:
       addressPositions:
       - {x: 0.6, y: -0.3}
       - {x: 0.6, y: -0.7}
+      additionalAddressPositions:
+      - {x: 0.25, y: -0.3}
+      - {x: 0.25, y: -0.7}
       title: "\u5DDD\u6CBF\u3044"
     - kind: 4
       demand: 1.5
@@ -2087,6 +2439,9 @@ MonoBehaviour:
       addressPositions:
       - {x: 0.6, y: -0.3}
       - {x: 0.6, y: -0.7}
+      additionalAddressPositions:
+      - {x: 0.25, y: -0.3}
+      - {x: 0.25, y: -0.7}
       title: "\u56E3\u5730"
 --- !u!4 &937587059
 Transform:
@@ -3005,6 +3360,10 @@ PrefabInstance:
       propertyPath: m_TextStyleHashCode
       value: -1183493901
       objectReference: {fileID: 0}
+    - target: {fileID: 5527652452336866269, guid: a48d7913e95544b9bb152eace3dd785d, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5630383961171122691, guid: a48d7913e95544b9bb152eace3dd785d, type: 3}
       propertyPath: m_TextStyleHashCode
       value: -1183493901
@@ -3085,6 +3444,10 @@ PrefabInstance:
       propertyPath: m_fontColor32.rgba
       value: 4280298042
       objectReference: {fileID: 0}
+    - target: {fileID: 8857316339562487649, guid: a48d7913e95544b9bb152eace3dd785d, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8888595914321469790, guid: a48d7913e95544b9bb152eace3dd785d, type: 3}
       propertyPath: m_fontSize
       value: 16
@@ -3100,6 +3463,14 @@ PrefabInstance:
     - target: {fileID: 9006373989109049237, guid: a48d7913e95544b9bb152eace3dd785d, type: 3}
       propertyPath: m_fontColor32.rgba
       value: 4280298042
+      objectReference: {fileID: 0}
+    - target: {fileID: 9187158786555864193, guid: a48d7913e95544b9bb152eace3dd785d, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9187158786555864193, guid: a48d7913e95544b9bb152eace3dd785d, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3202,32 +3573,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1404697811}
-  - component: {fileID: 1404697810}
-  - component: {fileID: 1404697812}
-  - component: {fileID: 1404697813}
-  - component: {fileID: 1404697814}
-  - component: {fileID: 1404697815}
-  - component: {fileID: 1404697819}
-  - component: {fileID: 1404697818}
-  - component: {fileID: 1404697817}
-  - component: {fileID: 1404697816}
-  - component: {fileID: 1404697821}
-  - component: {fileID: 1404697822}
-  - component: {fileID: 1404697823}
-  - component: {fileID: 1404697824}
-  - component: {fileID: 1404697825}
-  - component: {fileID: 1404697826}
-  - component: {fileID: 1404697827}
-  - component: {fileID: 1404697828}
-  - component: {fileID: 1404697829}
-  - component: {fileID: 1404697830}
-  - component: {fileID: 1404697834}
-  - component: {fileID: 1404697835}
-  - component: {fileID: 1404697836}
-  - component: {fileID: 1404697839}
-  - component: {fileID: 1404697840}
-  - component: {fileID: 1404697842}
-  - component: {fileID: 1404697841}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -3235,25 +3580,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1404697810
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab33204bba25643b99cb482d632db675, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
-  scorePerDelivery: 100
-  pepperoniPoints: 120
-  seafoodPoints: 150
-  latePenaltyPerSecond: 5
-  closingCancellationPenalty: 0
-  tipRatio: 0.2
-  lateAcceptanceSeconds: 20
 --- !u!4 &1404697811
 Transform:
   m_ObjectHideFlags: 0
@@ -3266,781 +3592,13 @@ Transform:
   m_LocalPosition: {x: 1.01157, y: -1.16274, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1737208730}
+  - {fileID: 884947490}
+  - {fileID: 1660095291}
+  - {fileID: 864088362}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1404697812
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7f3c389b4189d46d589e8493db77e1fc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OrderListUI
-  clock: {fileID: 1404697819}
---- !u!114 &1404697813
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5c1b1243411b841f5a4ff0924cb5214d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeliveryPersonSelector
-  clock: {fileID: 1404697819}
-  deliveryPeople:
-  - Name: Aoi
-    Archetype: 2
-    id: 
-    driving: 0.6
-    localKnowledge: 0.6
-    capacity: 2
-    service: 0.8
-    endurance: 0.7
-    safety: 0.8
-    potentials:
-    - 1
-    - 1
-    - 1
-    - 1
-    - 1
-    experience:
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
-    capacityPotential: 2
-    status: 0
-  - Name: Ren
-    Archetype: 2
-    id: 
-    driving: 0.5
-    localKnowledge: 0.3
-    capacity: 2
-    service: 0.5
-    endurance: 0.9
-    safety: 0.4
-    potentials:
-    - 1
-    - 1
-    - 1
-    - 1
-    - 1
-    experience:
-    - 0
-    - 0
-    - 0
-    - 0
-    - 0
-    capacityPotential: 2
-    status: 0
-  initialPotentialBonus: 0.25
---- !u!114 &1404697814
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8015589fe4ec34c539e8effa53d307d4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeliveryFlowController
-  cooking: {fileID: 1404697835}
-  scoreManager: {fileID: 1404697810}
-  orderListUI: {fileID: 1404697812}
-  deliveryPersonSelector: {fileID: 1404697813}
-  clock: {fileID: 1404697819}
-  stats: {fileID: 1404697818}
-  reputation: {fileID: 1404697821}
-  dynamics: {fileID: 1404697822}
---- !u!114 &1404697815
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5a3707bce76b407ea6c539cb58460562, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeliveryPlannerUI
-  orders: {fileID: 1404697812}
-  people: {fileID: 1404697813}
-  map: {fileID: 937587058}
-  clock: {fileID: 1404697819}
-  flow: {fileID: 1404697814}
-  stats: {fileID: 1404697818}
-  reputation: {fileID: 1404697821}
---- !u!114 &1404697816
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 015131f721704749b26d5df9c47b64f9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeliveryMarkerView
-  flow: {fileID: 1404697814}
-  clock: {fileID: 1404697819}
-  markersParent: {fileID: 506782586}
-  markerOffset: 0.2
-  markerFontSize: 5.5
---- !u!114 &1404697817
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 65b5a637f8ba4cf08a5aa220ea2cacd9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::OrderSpawner
-  facilities: {fileID: 1404697836}
-  cooking: {fileID: 1404697835}
-  stats: {fileID: 1404697818}
-  clock: {fileID: 1404697819}
-  map: {fileID: 937587058}
-  orders: {fileID: 1404697812}
-  reputation: {fileID: 1404697821}
-  interval: 10
-  intervalVariation: 0.3
-  initialPromiseSeconds: 60
-  maximumPromiseSeconds: 240
-  minimumPromiseMargin: 1.1
-  referencePromiseSeconds: 60
-  demandExponent: 0.7
-  minimumDemand: 0.4
-  maximumDemand: 2
-  openingOrders: 3
-  useFixedSeed: 0
-  randomSeed: 9187
---- !u!114 &1404697818
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: db80a873e1e9469791d29ea943f72203, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DayStats
---- !u!114 &1404697819
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b8e2a71741b84a469a743ad3bee14f3f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::GameClock
-  businessDuration: 180
-  travelTimeMultiplier: 5
-  planningTimeRate: 1
-  autoStart: 0
-  automaticTick: 1
-  closedPlaybackSpeed: 8
---- !u!114 &1404697821
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c409a3d94c1374428a4c8db1a8a5cc34, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ReputationManager
-  maximumReputation: 100
-  initialReputation: 50
-  onTimeGain: 1
-  lateBaseLoss: 1
-  lateLossPerSecond: 0.1
-  maximumLateLoss: 5
-  serviceProtection: 0.5
-  cancellationLoss: 5
-  closingCancellationLoss: 0
-  demandBase: 0.6
-  demandScale: 0.8
---- !u!114 &1404697822
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a5efaaf8e55024c2697dc26d15900e8b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeliveryDynamics
-  facilities: {fileID: 1404697836}
-  roster: {fileID: 1404697813}
-  initialStamina: 1
-  depletionPerSecond: 0.004
-  depletionBase: 1.5
-  recoveryPerSecond: 0.003
-  recoveryBase: 0.5
-  baseAccidentProbability: 0.05
-  mainRoadRisk: 1
-  backstreetRisk: 1.5
-  fatigueRiskScale: 1
-  accidentStopSeconds: 15
-  useFixedSeed: 0
-  randomSeed: 2718
---- !u!114 &1404697823
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5b45e343bd87f47908df7f523227a0dd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CampaignManager
-  bankruptcyGraceDays: 0
-  facilities: {fileID: 1404697836}
-  saveGame: {fileID: 1404697829}
-  training: {fileID: 1404697828}
-  progression: {fileID: 1404697827}
-  recruitment: {fileID: 1404697825}
-  economy: {fileID: 1404697824}
-  clock: {fileID: 1404697819}
-  orders: {fileID: 1404697812}
-  roster: {fileID: 1404697813}
-  flow: {fileID: 1404697814}
-  dynamics: {fileID: 1404697822}
-  spawner: {fileID: 1404697817}
-  reputation: {fileID: 1404697821}
-  score: {fileID: 1404697810}
-  stats: {fileID: 1404697818}
-  planner: {fileID: 1404697815}
-  crew: {fileID: 1404697842}
-  cooking: {fileID: 1404697835}
-  handover: {fileID: 1404697841}
---- !u!114 &1404697824
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 68eaa9bdfd4a14f198edc906fdf0f8bf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BusinessEconomy
-  facilities: {fileID: 1404697836}
-  stats: {fileID: 1404697818}
-  accidentRepairCost: 30
-  clock: {fileID: 1404697819}
-  flow: {fileID: 1404697814}
-  roster: {fileID: 1404697813}
-  crew: {fileID: 1404697842}
-  kitchenWageBase: 24
-  kitchenWageAbilityFactor: 30
-  materialCostPerOrder: 20
-  fuelCostPerDistance: 0.4
-  wageBase: 30
-  wageAbilityFactor: 24
-  wageCapacityFactor: 18
-  dailyFixedCost: 90
-  fixedCostGrowthPerDay: 15
-  initialCash: 300
---- !u!114 &1404697825
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d8dc3286de2a43a9a03c0a01949cd6d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RecruitmentManager
-  facilities: {fileID: 1404697836}
-  dynamics: {fileID: 1404697822}
-  training: {fileID: 1404697828}
-  clock: {fileID: 1404697819}
-  roster: {fileID: 1404697813}
-  crew: {fileID: 1404697842}
-  kitchenApplicantChance: 0.6
-  kitchenAbilityRange: {x: 0.3, y: 0.8}
-  kitchenNamePool:
-  - Sakura
-  - Tsumugi
-  - Kanata
-  - Hiro
-  - Asahi
-  - Ema
-  - Shion
-  - Ritsu
-  economy: {fileID: 1404697824}
-  minimumApplicants: 2
-  maximumApplicants: 3
-  hiringWageDays: 3
-  severanceWageDays: 1
-  newcomerWeight: 0.3
-  experiencedWeight: 0.3
-  standardWeight: 0.4
-  newcomerBaseline: {x: 0.2, y: 0.5}
-  experiencedBaseline: {x: 0.5, y: 0.8}
-  newcomerPotential: {x: 0.3, y: 0.5}
-  experiencedPotential: {x: 0.05, y: 0.15}
-  standardPotential: {x: 0.15, y: 0.3}
-  newcomerCapacityPotentialTwo: 0.7
-  experiencedCapacityTwo: 0.6
-  potentialHiringFactor: 400
-  baselineRange: {x: 0.3, y: 0.7}
-  advantageRange: {x: 0.2, y: 0.3}
-  strengthCount: 2
-  weaknessCount: 2
-  twoOrderProbability: 0.5
-  smallCapacity: 1
-  largeCapacity: 2
-  namePool:
-  - Minato
-  - Sora
-  - Haru
-  - Yui
-  - Kai
-  - Riku
-  - Mei
-  - Rio
-  - Nagi
-  - Hina
-  - Itsuki
-  - Towa
-  - Akari
-  - Kohaku
-  useFixedSeed: 0
-  randomSeed: 4351
---- !u!114 &1404697826
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6d6d01ad618674c6cafeda3c88a552db, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DaySimulationSettings
-  daysPerPolicy: 10
-  promiseSeconds:
-  - 30
-  - 60
-  - 120
-  randomSeed: 20261022
-  clockStepSeconds: 0.25
-  maximumDaySeconds: 3600
-  initialKitchenStaff: -1
-  hireKitchenStaff: 0
-  substituteWhenEmpty: 1
-  substituteSpeed: 0.5
-  substituteCare: 0.5
-  buyFacilities: 0
-  facilityReserve: 100
-  trainCouriers: 0
-  trainingReserve: 100
-  comparisonDays: 30
-  batchDispatch: 0
-  hireApplicants: 0
-  adjustPromise: 0
-  hiringReserve: 100
-  promiseAdjustment: 10
-  shortenReputation: 90
-  extendLateCount: 3
-  promiseTrendDays: 2
-  comparisonExtraInitialCash: 600
-  resultsDirectory: Docs/Simulations/M7/legacy
-  trainingPriority: 00000000050000000400000002000000
---- !u!114 &1404697827
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 91910e4f9ee9a4ad884818b7233b75de, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CourierProgression
-  flow: {fileID: 1404697814}
-  roster: {fileID: 1404697813}
-  experiencePerLevel: 200
-  growthPerLevel: 0.02
-  drivingExperiencePerDistance: 0.3
-  knowledgeExperiencePerRoad: 15
-  onTimeServiceExperience: 15
-  lateServiceExperience: 5
-  enduranceExperiencePerSecond: 0.35
-  safetyExperiencePerRoad: 4
-  automaticGrowth: 1
---- !u!114 &1404697828
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3671816be4c6f48bb8d0b212f1f10f19, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TrainingManager
-  clock: {fileID: 1404697819}
-  roster: {fileID: 1404697813}
-  economy: {fileID: 1404697824}
-  progression: {fileID: 1404697827}
-  baseCost: 80
-  abilityCostFactor: 150
-  capacityCost: 300
-  trainingDurationRatio: 0.5
-  abilityGain: 0.1
-  capacityGain: 1
---- !u!114 &1404697829
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 185b1b92eff494b1fbc824f53a85fd14, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CampaignSaveManager
-  facilities: {fileID: 1404697836}
-  campaign: {fileID: 1404697823}
-  clock: {fileID: 1404697819}
-  economy: {fileID: 1404697824}
-  reputation: {fileID: 1404697821}
-  roster: {fileID: 1404697813}
-  recruitment: {fileID: 1404697825}
-  training: {fileID: 1404697828}
-  spawner: {fileID: 1404697817}
-  crew: {fileID: 1404697842}
---- !u!114 &1404697830
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e357f92c55ff47a0a64aee8eb27f9d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ScreenRouter
-  campaign: {fileID: 1404697823}
-  clock: {fileID: 1404697819}
-  screens:
-  - {fileID: 2050669986}
-  - {fileID: 1392993734}
-  - {fileID: 605443772}
-  - {fileID: 691474896}
-  sharedHeader: {fileID: 181310858}
-  fadeSeconds: 0.3
-  implementationStage: 5
---- !u!114 &1404697834
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 737b84fc2e7e9411cb3a112610d5d3f2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TitleMenuUI
-  clock: {fileID: 1404697819}
-  menu: {fileID: 1254866507}
-  help: {fileID: 992495862}
-  confirmation: {fileID: 268586003}
---- !u!114 &1404697835
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5a8c119f490da41c382363f0fc3902cd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CookingManager
-  facilities: {fileID: 1404697836}
-  clock: {fileID: 1404697819}
-  orders: {fileID: 1404697812}
-  crew: {fileID: 1404697842}
-  handover: {fileID: 1404697841}
-  initialOvens: 1
-  initialBenches: 2
-  doughSeconds: 2
-  sauceSeconds: 4
-  assemblySeconds: 6
-  bakeSeconds: 6
-  seafoodExtraBakeSeconds: 1
-  extraToppingSeconds: 2
-  packSeconds: 0
-  bakeBandHalfWidth: 0.4
-  burnAfterBand: 5
-  staffTimeBase: 1.3
-  staffTimeScale: 0.6
-  sauceThreshold: 0.7
-  staffSuccessBase: 0.3
-  staffSuccessScale: 0.5
-  qualityTwoStarBonus: 15
-  qualityThreeStarBonus: 40
-  threeStarReputation: 0.5
-  rackCapacity: 6
-  packingSlots: 2
-  useFixedSeed: 0
-  randomSeed: 5113
-  playerIdleSeconds: 8
-  wasteCost: 20
-  redoBelowStar: 2
-  redoMinRemainingSec: 0
---- !u!114 &1404697836
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e1193324546644f53bd11169322ea9ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FacilityManager
-  clock: {fileID: 1404697819}
-  economy: {fileID: 1404697824}
-  ovenPrices:
-  - 600
-  - 1000
-  bikePrices:
-  - 500
-  - 900
-  expansionPrices:
-  - 800
-  - 1400
-  workbenchPrices:
-  - 400
-  - 700
-  menuPrices:
-  - 400
-  - 700
-  menuMaintenance: 10
-  advertisingPrices:
-  - 100
-  - 200
-  - 350
-  advertisingDemand:
-  - 1
-  - 1.1
-  - 1.2
-  - 1.3
-  bikeSpeed:
-  - 1
-  - 1.08
-  - 1.16
-  bikeRisk:
-  - 1
-  - 0.9
-  - 0.8
-  ovenMaintenance: 30
-  bikeMaintenance: 20
-  expansionMaintenance: 40
-  workbenchMaintenance: 15
-  initialOvens: 1
-  initialBikeLevel: 1
-  initialWorkbenches: 2
-  implementationStage: 4
---- !u!114 &1404697839
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8566621b1e5d644189f3973ac1e47d49, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MapVisuals
-  map: {fileID: 937587058}
-  cityBlocks:
-  - serializedVersion: 2
-    x: -3.3
-    y: 0.35
-    width: 2
-    height: 1
-  - serializedVersion: 2
-    x: -1
-    y: 0.4
-    width: 2
-    height: 1.2
-  - serializedVersion: 2
-    x: 1.9
-    y: 0.4
-    width: 1.6
-    height: 1
-  - serializedVersion: 2
-    x: -3.3
-    y: -2.2
-    width: 3
-    height: 1.2
-  - serializedVersion: 2
-    x: 0
-    y: -2.3
-    width: 2.5
-    height: 0.7
-  - serializedVersion: 2
-    x: 4.4
-    y: -2.8
-    width: 0.8
-    height: 1.6
-  parks:
-  - serializedVersion: 2
-    x: -3
-    y: -3.4
-    width: 2
-    height: 0.8
-  outerBlocks:
-  - serializedVersion: 2
-    x: -7.4
-    y: 0.5
-    width: 2.6
-    height: 1.6
-  - serializedVersion: 2
-    x: -7.4
-    y: -2.2
-    width: 2.6
-    height: 1.8
-  - serializedVersion: 2
-    x: 5.6
-    y: 0.5
-    width: 2.2
-    height: 1.6
-  - serializedVersion: 2
-    x: 5.6
-    y: -2.6
-    width: 2.2
-    height: 2.2
-  - serializedVersion: 2
-    x: -3.3
-    y: 1.7
-    width: 4.6
-    height: 1
-  - serializedVersion: 2
-    x: 1.9
-    y: 1.7
-    width: 3.6
-    height: 1
-  riverY: -4.6
---- !u!114 &1404697840
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 688949b5f62854aaabb322ee7c99b96a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::DeliveryFeedback
-  animationsEnabled: 1
-  rise:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  flow: {fileID: 1404697814}
-  clock: {fileID: 1404697819}
-  map: {fileID: 937587058}
-  score: {fileID: 1404697810}
-  cooking: {fileID: 1404697835}
---- !u!114 &1404697841
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 48419bcec540440a68a9a74d5e8ff137, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HandoverManager
-  orders: {fileID: 1404697812}
-  roster: {fileID: 1404697813}
-  flow: {fileID: 1404697814}
-  clock: {fileID: 1404697819}
---- !u!114 &1404697842
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1404697809}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 704259c50f5de4b3c9367d7f80828203, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::KitchenCrew
-  crew:
-  - Name: Mio
-    id: 
-    speed: 0.4
-    care: 0.4
 --- !u!1 &1604364207
 GameObject:
   m_ObjectHideFlags: 0
@@ -4220,6 +3778,264 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 10
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &1660095290
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1660095291}
+  - component: {fileID: 1660095297}
+  - component: {fileID: 1660095296}
+  - component: {fileID: 1660095295}
+  - component: {fileID: 1660095294}
+  - component: {fileID: 1660095293}
+  - component: {fileID: 1660095292}
+  m_Layer: 0
+  m_Name: CoreSystems
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1660095291
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660095290}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1404697811}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1660095292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660095290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 688949b5f62854aaabb322ee7c99b96a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DeliveryFeedback
+  animationsEnabled: 1
+  rise:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  flow: {fileID: 884947492}
+  clock: {fileID: 1660095297}
+  map: {fileID: 937587058}
+  score: {fileID: 1737208724}
+  cooking: {fileID: 864088361}
+--- !u!114 &1660095293
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660095290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8566621b1e5d644189f3973ac1e47d49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MapVisuals
+  map: {fileID: 937587058}
+  cityBlocks:
+  - serializedVersion: 2
+    x: -3.3
+    y: 0.35
+    width: 2
+    height: 1
+  - serializedVersion: 2
+    x: -1
+    y: 0.4
+    width: 2
+    height: 1.2
+  - serializedVersion: 2
+    x: 1.9
+    y: 0.4
+    width: 1.6
+    height: 1
+  - serializedVersion: 2
+    x: -3.3
+    y: -2.2
+    width: 3
+    height: 1.2
+  - serializedVersion: 2
+    x: 0
+    y: -2.3
+    width: 2.5
+    height: 0.7
+  - serializedVersion: 2
+    x: 4.4
+    y: -2.8
+    width: 0.8
+    height: 1.6
+  parks:
+  - serializedVersion: 2
+    x: -3
+    y: -3.4
+    width: 2
+    height: 0.8
+  outerBlocks:
+  - serializedVersion: 2
+    x: -7.4
+    y: 0.5
+    width: 2.6
+    height: 1.6
+  - serializedVersion: 2
+    x: -7.4
+    y: -2.2
+    width: 2.6
+    height: 1.8
+  - serializedVersion: 2
+    x: 5.6
+    y: 0.5
+    width: 2.2
+    height: 1.6
+  - serializedVersion: 2
+    x: 5.6
+    y: -2.6
+    width: 2.2
+    height: 2.2
+  - serializedVersion: 2
+    x: -3.3
+    y: 1.7
+    width: 4.6
+    height: 1
+  - serializedVersion: 2
+    x: 1.9
+    y: 1.7
+    width: 3.6
+    height: 1
+  riverY: -4.6
+--- !u!114 &1660095294
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660095290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 737b84fc2e7e9411cb3a112610d5d3f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TitleMenuUI
+  clock: {fileID: 1660095297}
+  menu: {fileID: 1254866507}
+  help: {fileID: 992495862}
+  confirmation: {fileID: 268586003}
+--- !u!114 &1660095295
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660095290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3e357f92c55ff47a0a64aee8eb27f9d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScreenRouter
+  campaign: {fileID: 1737208725}
+  clock: {fileID: 1660095297}
+  screens:
+  - {fileID: 2050669986}
+  - {fileID: 1392993734}
+  - {fileID: 605443772}
+  - {fileID: 691474896}
+  sharedHeader: {fileID: 181310858}
+  fadeSeconds: 0.3
+  implementationStage: 5
+--- !u!114 &1660095296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660095290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d6d01ad618674c6cafeda3c88a552db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DaySimulationSettings
+  daysPerPolicy: 10
+  promiseSeconds:
+  - 30
+  - 60
+  - 120
+  randomSeed: 20261022
+  clockStepSeconds: 0.25
+  maximumDaySeconds: 3600
+  initialKitchenStaff: -1
+  hireKitchenStaff: 0
+  substituteWhenEmpty: 1
+  substituteSpeed: 0.5
+  substituteCare: 0.5
+  buyFacilities: 0
+  facilityReserve: 100
+  trainCouriers: 0
+  trainingReserve: 100
+  comparisonDays: 30
+  batchDispatch: 0
+  hireApplicants: 0
+  adjustPromise: 0
+  hiringReserve: 100
+  promiseAdjustment: 10
+  shortenReputation: 90
+  extendLateCount: 3
+  promiseTrendDays: 2
+  comparisonExtraInitialCash: 600
+  resultsDirectory: Docs/Simulations/M7/legacy
+  trainingPriority: 00000000050000000400000002000000
+--- !u!114 &1660095297
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1660095290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8e2a71741b84a469a743ad3bee14f3f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameClock
+  businessDuration: 180
+  travelTimeMultiplier: 5
+  planningTimeRate: 1
+  autoStart: 0
+  automaticTick: 1
+  closedPlaybackSpeed: 8
 --- !u!1 &1662362904
 GameObject:
   m_ObjectHideFlags: 0
@@ -4251,6 +4067,353 @@ Transform:
   m_Children: []
   m_Father: {fileID: 937587059}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1737208720
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1737208730}
+  - component: {fileID: 1737208724}
+  - component: {fileID: 1737208731}
+  - component: {fileID: 1737208723}
+  - component: {fileID: 1737208725}
+  - component: {fileID: 1737208722}
+  - component: {fileID: 1737208726}
+  - component: {fileID: 1737208727}
+  - component: {fileID: 1737208728}
+  - component: {fileID: 1737208729}
+  - component: {fileID: 1737208721}
+  m_Layer: 0
+  m_Name: CampaignSystems
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1737208721
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1193324546644f53bd11169322ea9ec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FacilityManager
+  clock: {fileID: 1660095297}
+  economy: {fileID: 1737208722}
+  ovenPrices:
+  - 600
+  - 1000
+  bikePrices:
+  - 500
+  - 900
+  expansionPrices:
+  - 800
+  - 1400
+  workbenchPrices:
+  - 400
+  - 700
+  menuPrices:
+  - 400
+  - 700
+  menuMaintenance: 10
+  advertisingPrices:
+  - 100
+  - 200
+  - 350
+  advertisingDemand:
+  - 1
+  - 1.1
+  - 1.2
+  - 1.3
+  bikeSpeed:
+  - 1
+  - 1.08
+  - 1.16
+  bikeRisk:
+  - 1
+  - 0.9
+  - 0.8
+  ovenMaintenance: 30
+  bikeMaintenance: 20
+  expansionMaintenance: 40
+  workbenchMaintenance: 15
+  initialOvens: 1
+  initialBikeLevel: 1
+  initialWorkbenches: 2
+  implementationStage: 4
+--- !u!114 &1737208722
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68eaa9bdfd4a14f198edc906fdf0f8bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BusinessEconomy
+  facilities: {fileID: 1737208721}
+  stats: {fileID: 1737208731}
+  accidentRepairCost: 30
+  clock: {fileID: 1660095297}
+  flow: {fileID: 884947492}
+  roster: {fileID: 884947491}
+  crew: {fileID: 864088359}
+  kitchenWageBase: 24
+  kitchenWageAbilityFactor: 30
+  materialCostPerOrder: 20
+  fuelCostPerDistance: 0.4
+  wageBase: 30
+  wageAbilityFactor: 24
+  wageCapacityFactor: 18
+  dailyFixedCost: 90
+  fixedCostGrowthPerDay: 15
+  initialCash: 300
+--- !u!114 &1737208723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c409a3d94c1374428a4c8db1a8a5cc34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReputationManager
+  maximumReputation: 100
+  initialReputation: 50
+  onTimeGain: 1
+  lateBaseLoss: 1
+  lateLossPerSecond: 0.1
+  maximumLateLoss: 5
+  serviceProtection: 0.5
+  cancellationLoss: 5
+  closingCancellationLoss: 0
+  demandBase: 0.6
+  demandScale: 0.8
+--- !u!114 &1737208724
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab33204bba25643b99cb482d632db675, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
+  scorePerDelivery: 100
+  pepperoniPoints: 120
+  seafoodPoints: 150
+  latePenaltyPerSecond: 5
+  closingCancellationPenalty: 0
+  tipRatio: 0.2
+  lateAcceptanceSeconds: 20
+--- !u!114 &1737208725
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b45e343bd87f47908df7f523227a0dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CampaignManager
+  bankruptcyGraceDays: 0
+  facilities: {fileID: 1737208721}
+  saveGame: {fileID: 1737208729}
+  training: {fileID: 1737208728}
+  progression: {fileID: 1737208727}
+  recruitment: {fileID: 1737208726}
+  economy: {fileID: 1737208722}
+  clock: {fileID: 1660095297}
+  orders: {fileID: 884947485}
+  roster: {fileID: 884947491}
+  flow: {fileID: 884947492}
+  dynamics: {fileID: 884947486}
+  spawner: {fileID: 884947488}
+  reputation: {fileID: 1737208723}
+  score: {fileID: 1737208724}
+  stats: {fileID: 1737208731}
+  planner: {fileID: 884947489}
+  crew: {fileID: 864088359}
+  cooking: {fileID: 864088361}
+  handover: {fileID: 864088360}
+--- !u!114 &1737208726
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d8dc3286de2a43a9a03c0a01949cd6d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RecruitmentManager
+  facilities: {fileID: 1737208721}
+  dynamics: {fileID: 884947486}
+  training: {fileID: 1737208728}
+  clock: {fileID: 1660095297}
+  roster: {fileID: 884947491}
+  crew: {fileID: 864088359}
+  kitchenApplicantChance: 0.6
+  kitchenAbilityRange: {x: 0.3, y: 0.8}
+  kitchenNamePool:
+  - Sakura
+  - Tsumugi
+  - Kanata
+  - Hiro
+  - Asahi
+  - Ema
+  - Shion
+  - Ritsu
+  economy: {fileID: 1737208722}
+  minimumApplicants: 2
+  maximumApplicants: 3
+  hiringWageDays: 3
+  severanceWageDays: 1
+  newcomerWeight: 0.3
+  experiencedWeight: 0.3
+  standardWeight: 0.4
+  newcomerBaseline: {x: 0.2, y: 0.5}
+  experiencedBaseline: {x: 0.5, y: 0.8}
+  newcomerPotential: {x: 0.3, y: 0.5}
+  experiencedPotential: {x: 0.05, y: 0.15}
+  standardPotential: {x: 0.15, y: 0.3}
+  newcomerCapacityPotentialTwo: 0.7
+  experiencedCapacityTwo: 0.6
+  potentialHiringFactor: 400
+  baselineRange: {x: 0.3, y: 0.7}
+  advantageRange: {x: 0.2, y: 0.3}
+  strengthCount: 2
+  weaknessCount: 2
+  twoOrderProbability: 0.5
+  smallCapacity: 1
+  largeCapacity: 2
+  namePool:
+  - Minato
+  - Sora
+  - Haru
+  - Yui
+  - Kai
+  - Riku
+  - Mei
+  - Rio
+  - Nagi
+  - Hina
+  - Itsuki
+  - Towa
+  - Akari
+  - Kohaku
+  useFixedSeed: 0
+  randomSeed: 4351
+--- !u!114 &1737208727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91910e4f9ee9a4ad884818b7233b75de, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CourierProgression
+  flow: {fileID: 884947492}
+  roster: {fileID: 884947491}
+  experiencePerLevel: 200
+  growthPerLevel: 0.02
+  drivingExperiencePerDistance: 0.3
+  knowledgeExperiencePerRoad: 15
+  onTimeServiceExperience: 15
+  lateServiceExperience: 5
+  enduranceExperiencePerSecond: 0.35
+  safetyExperiencePerRoad: 4
+  automaticGrowth: 1
+--- !u!114 &1737208728
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3671816be4c6f48bb8d0b212f1f10f19, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TrainingManager
+  clock: {fileID: 1660095297}
+  roster: {fileID: 884947491}
+  economy: {fileID: 1737208722}
+  progression: {fileID: 1737208727}
+  baseCost: 80
+  abilityCostFactor: 150
+  capacityCost: 300
+  trainingDurationRatio: 0.5
+  abilityGain: 0.1
+  capacityGain: 1
+--- !u!114 &1737208729
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 185b1b92eff494b1fbc824f53a85fd14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CampaignSaveManager
+  facilities: {fileID: 1737208721}
+  campaign: {fileID: 1737208725}
+  clock: {fileID: 1660095297}
+  economy: {fileID: 1737208722}
+  reputation: {fileID: 1737208723}
+  roster: {fileID: 884947491}
+  recruitment: {fileID: 1737208726}
+  training: {fileID: 1737208728}
+  spawner: {fileID: 884947488}
+  crew: {fileID: 864088359}
+--- !u!4 &1737208730
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1404697811}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1737208731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1737208720}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db80a873e1e9469791d29ea943f72203, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DayStats
 --- !u!1 &1740072650
 GameObject:
   m_ObjectHideFlags: 0
@@ -4972,6 +5135,14 @@ PrefabInstance:
     - target: {fileID: 962820853831331909, guid: 1713527ba18aa469fab4d0d7db9fff0b, type: 3}
       propertyPath: m_TextStyleHashCode
       value: -1183493901
+      objectReference: {fileID: 0}
+    - target: {fileID: 1095732289895468098, guid: 1713527ba18aa469fab4d0d7db9fff0b, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1287318352933771011, guid: 1713527ba18aa469fab4d0d7db9fff0b, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1438269741883157586, guid: 1713527ba18aa469fab4d0d7db9fff0b, type: 3}
       propertyPath: m_Name

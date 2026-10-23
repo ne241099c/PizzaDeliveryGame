@@ -16,6 +16,7 @@ public sealed class DeliveryTrip
 {
     private readonly Vector2[] starts;
     private readonly Vector2[] ends;
+    private readonly Vector2[][] displayPaths;
     private readonly float[] segmentEndTimes;
     private readonly float[] segmentStartTimes;
     private readonly float[] stopSeconds;
@@ -56,6 +57,7 @@ public sealed class DeliveryTrip
         EdgeIds = Array.AsReadOnly(plan.EdgeIds.ToArray());
         starts = new Vector2[EdgeIds.Count];
         ends = new Vector2[EdgeIds.Count];
+        displayPaths = new Vector2[EdgeIds.Count][];
         segmentEndTimes = new float[EdgeIds.Count];
         segmentStartTimes = new float[EdgeIds.Count];
         stopSeconds = new float[EdgeIds.Count];
@@ -73,14 +75,8 @@ public sealed class DeliveryTrip
             if (!edge.TryTraverse(current, out string next)) throw new ArgumentException("Disconnected dispatched route.");
             starts[i] = positions[current];
             ends[i] = positions[next];
-            // Match the backstreet's visible offset, including on the reverse traversal.
-            if (edge.RoadType == RoadType.Backstreet)
-            {
-                Vector2 direction = (positions[edge.NodeBId] - positions[edge.NodeAId]).normalized;
-                Vector2 offset = new Vector2(-direction.y, direction.x) * 0.35f;
-                starts[i] += offset;
-                ends[i] += offset;
-            }
+            displayPaths[i]=RoadGeometry.Points(map,edge);
+            if(current!=edge.NodeAId)Array.Reverse(displayPaths[i]);
             elapsed += map.GetTravelTime(edge.Id, person) * multiplier;
             segmentEndTimes[i] = startedAt + elapsed;
             if (!arrivals.ContainsKey(next)) {arrivals[next] = startedAt + elapsed;arrivalSegments[next]=i;}
@@ -144,7 +140,7 @@ public sealed class DeliveryTrip
             if (now > segmentEndTimes[i]) continue;
             float movingFrom=segmentStartTimes[i]+stopSeconds[i];
             return now<=movingFrom ? starts[i]
-                : Vector2.Lerp(starts[i],ends[i],Mathf.InverseLerp(movingFrom,segmentEndTimes[i],now));
+                : RoadGeometry.PointAt(displayPaths[i],Mathf.InverseLerp(movingFrom,segmentEndTimes[i],now));
         }
         return ends[ends.Length - 1];
     }

@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>指示盤 (UI_Mock/Batch.png, ShopDispatch.png): the map fills the screen, one lane per courier at the bottom.
-/// ① drop tickets into a courier's lane (several = one trip) ② fix the route by dragging the round handles, then 出発.
+/// ① drop tickets into a courier's lane (several = one trip) ② choose a leg and click its roads, then 出発.
 /// The automatic route is plain on purpose (shortest distance, blind to traffic and local knowledge).</summary>
 public sealed partial class BusinessView
 {
@@ -26,22 +26,25 @@ public sealed partial class BusinessView
     private sealed class Lane
     {
         public DeliveryPerson Person;public RectTransform Root,StateBadge,Diff;public TextMeshProUGUI Time,Note;
-        public StickerButton Depart,Reset;public UiBar Stamina;public DropZone Zone;public readonly List<DropZone> Slots=new();
+        public StickerButton Depart,Reset,Swap,Edit;public UiBar Stamina,ReturnProgress;public DropZone Zone;public readonly List<DropZone> Slots=new();
     }
     private readonly List<Lane> lanes=new();private string laneSignature="";
     private readonly Dictionary<DeliveryPerson,Dictionary<(string,string),string>> waypoints=new();
     private bool pressing,dragging;private Vector2 pressPosition,lastPointer;
-    private Order pinPress;private bool pinDragging;private int handlePress=-1;private bool handleDragging;
+    private Order pinPress;private bool pinDragging;private int routeLegPress=-1;private bool routeDragging;
     private Transform pinRoot;
-    private sealed class Pin {public Transform Root;public SpriteRenderer Sprite,Glow,Pill,PillEdge;public TextMeshPro Number,Label;}
+    private sealed class Pin {public Transform Root;public SpriteRenderer Sprite,Glow,Pill,PillEdge,NumberBack;public TextMeshPro Number,Label;}
     private readonly Dictionary<string,Pin> pins=new();
-    private readonly List<(Transform root,Vector2 at,string from,string to)> handles=new();
+
     private readonly List<SpriteRenderer> autoDots=new();
     private Order nearFor;private readonly Dictionary<string,float> nearSeconds=new();
     private static bool guided;
     public static bool ShowCongestion {get;private set;}=true;
     [SerializeField, Min(1)] private float nearPinSeconds=8;
-    private const float LaneTop=836,LaneHeight=224;
+    private const float LaneTop=764,LaneHeight=296;
+    private bool focusLaneRequested;
+    private DeliveryPerson editingPerson;
+    private int editingLeg=-1;
 
     private void BuildDispatch()
     {
@@ -70,7 +73,7 @@ public sealed partial class BusinessView
         fitButton=UiKit.Button(dispatch,"Fit","",StickerKind.Secondary,1808,418,76,76,20,null,FontRole.Black,"icon_target");
         trafficButton=UiKit.Button(dispatch,"Traffic","混雑",StickerKind.Selected,1808,510,76,76,16,null,FontRole.Black);
         // minimap (above the lanes, bottom right)
-        var mini=UiKit.Card(dispatch,"Minimap",1640,632,248,168,T.paper,14,6,3);
+        var mini=UiKit.Card(dispatch,"Minimap",1640,584,248,168,T.paper,14,6,3);
         minimapImage=UiKit.Stretch(mini,"Image",6,6,6,6).gameObject.AddComponent<RawImage>();minimapImage.raycastTarget=false;
         minimapFrame=UiKit.Box(minimapImage.transform,"Frame",0,0,40,30);
         string[] sides={"T","B","L","R"};
@@ -86,8 +89,9 @@ public sealed partial class BusinessView
         laneScroll.horizontal=true;
         laneScroll.vertical=false;
         laneScroll.movementType=ScrollRect.MovementType.Clamped;
+        ScrollNavigation.Configure(laneScroll,true);
         string legend=$"<color=#{ColorUtility.ToHtmlStringRGB(T.tomato)}>行き・配達先へ ━</color>  /  <color=#{ColorUtility.ToHtmlStringRGB(T.info)}>帰り・お店へ ━</color>  動く丸が進行方向 ／ レーンは横スクロール";
-        UiKit.Label(dispatch,"RouteLegend",legend,430,782,1120,32,T.captionSize,T.line,FontRole.Black);
+        UiKit.Label(dispatch,"RouteLegend",legend,430,724,1120,32,T.captionSize,T.line,FontRole.Black);
         UiKit.Show(dispatch,false);
     }
     private void BindDispatch()
@@ -96,6 +100,7 @@ public sealed partial class BusinessView
         zoomOut.Button.onClick.AddListener(()=>Zoom(1.25f,Vector2.zero,false));
         fitButton.Button.onClick.AddListener(FitMap);
         trafficButton.Button.onClick.AddListener(()=>{ShowCongestion=!ShowCongestion;});
+        ScrollNavigation.Configure(laneRow.GetComponentInParent<ScrollRect>(),true);
         BindDispatchOrders();
     }
     private TextMeshProUGUI Chip(Transform parent,float x,float w,string icon)
@@ -120,7 +125,7 @@ public sealed partial class BusinessView
         cam.transform.position=new Vector3(centre.x-offset.x,centre.y-offset.y,cam.transform.position.z);
     }
 
-    // ---- routes: the lane's visit order, plus the handles' waypoints ----
+    // ---- routes: the lane's visit order, plus selected waypoint roads ----
     private Dictionary<(string,string),string> Waypoints(DeliveryPerson p)
     {
         if(!waypoints.TryGetValue(p,out var w))waypoints[p]=w=new Dictionary<(string,string),string>();
@@ -197,6 +202,32 @@ public sealed partial class BusinessView
     /// <summary>Route a leg along a road (the red line dragged onto it).</summary>
     public bool SetWaypointRoad(DeliveryPerson person,int legIndex,string edgeId)=>SetWaypoint(person,legIndex,"E:"+edgeId);
     public void ResetRoute(DeliveryPerson person){if(person==null)return;Waypoints(person).Clear();SyncRoute();}
+    public bool SwapDeliveryOrder(DeliveryPerson person)
+    {
+        var bag=handover.BagOf(person);
+        if(!person.IsAvailable || bag.Count<2)return false;
+        bool moved=handover.Move(bag[1],person,0);
+        if(moved){handover.Select(person);editingPerson=null;editingLeg=-1;SyncRoute();}
+        return moved;
+    }
+    private string RouteEditCaption()
+    {
+        var legs=Legs(editingPerson,handover.BagOf(editingPerson),false);
+        if(editingLeg<0 || editingLeg>=legs.Count)return "道を選択";
+        var leg=legs[editingLeg];
+        string Name(string id)=>id==map.StoreNodeId?ShopStrings.Store:ShopStrings.House(map,id);
+        return Name(leg.from)+" → "+Name(leg.to);
+    }
+    public bool BeginRouteEdit(DeliveryPerson person)
+    {
+        if(person==null || !person.IsAvailable || handover.BagOf(person).Count==0)return false;
+        handover.Select(person);
+        int count=Legs(person,handover.BagOf(person),false).Count;
+        if(count==0)return false;
+        editingLeg=editingPerson==person?(editingLeg+1)%count:0;
+        editingPerson=person;
+        return true;
+    }
     public void Depart(DeliveryPerson person)
     {
         if(person==null)return;
@@ -204,7 +235,7 @@ public sealed partial class BusinessView
         SyncRoute();
         string reason=flow.DispatchRejectionReason(planner.SelectedPlan,person);
         if(reason.Length>0){Toast(handover.BagOf(person).Count==0?"レーンに伝票を入れましょう。":UiStrings.Japanese(reason),T.berry,null,"icon_bike");return;}
-        planner.Dispatch();Toast($"{person.Name} 出発!",T.basil,null,"icon_bike");guided=true;waypoints.Remove(person);
+        editingPerson=null;editingLeg=-1;planner.Dispatch();Toast($"{person.Name} 出発!",T.basil,null,"icon_bike");guided=true;waypoints.Remove(person);
         var next=roster.People.FirstOrDefault(p=>p.IsAvailable && handover.BagOf(p).Count>0);if(next!=null)handover.Select(next);
     }
     private int Late(List<string> edges,DeliveryPerson person,IReadOnlyList<Order> bag)
@@ -279,15 +310,10 @@ public sealed partial class BusinessView
             StatBar(lane.Root,"Knowledge","土地勘",16+sw*2,80,sw-10,p.LocalKnowledge,T.info);
             // bag slots (load = number of slots)
             var bag=handover.BagOf(p);int cap=p.Capacity;float slotW=Mathf.Min(176,(w-32-(cap-1)*10f)/cap);
-            for(int s=0;s<cap;s++)
+            // While away, the return gauge takes the place of the bag slots.
+            for(int s=0;s<cap && here;s++)
             {
                 var slot=UiKit.Box(lane.Root,"Slot"+s,16+s*(slotW+10),108,slotW,60);int index=s;
-                if(!here)
-                {
-                    UiKit.Dashed(slot,T.disabled,10,6,2);
-                    UiKit.Label(slot,"Away",ShopStrings.Status(p.Status),0,0,slotW,60,16,T.disabled,FontRole.Black,TextAlignmentOptions.Center);
-                    continue;
-                }
                 var zone=slot.gameObject.AddComponent<DropZone>();
                 zone.Accepts=pl=>LaneRejection(pl,p).Length==0;
                 zone.Dropped=pl=>LaneDrop(pl,p,index);
@@ -300,7 +326,7 @@ public sealed partial class BusinessView
                     UiKit.Label(slot,"Pizza",o.PizzaName,10,32,slotW-16,24,16,T.inkSub,FontRole.Bold);
                     var source=slot.gameObject.AddComponent<DragSource>();var img=slot.gameObject.AddComponent<Image>();img.color=Color.clear;
                     source.Payload=()=>new DragPayload{Kind=DragKind.Bagged,Order=o,Sprite="box_closed",Size=new Vector2(96,96)};
-                    source.Clicked=()=>handover.Select(p);slot.name="Bag_"+Number(o);
+                    source.Clicked=()=>handover.Unbag(o);slot.name="Bag_"+Number(o);
                 }
                 else
                 {
@@ -316,11 +342,34 @@ public sealed partial class BusinessView
                 }
             }
             // footer: trip time, difference from the automatic route, fit with the promise
-            lane.Time=UiKit.Label(lane.Root,"Time","",16,172,110,44,30,T.line,FontRole.Display);
-            lane.Diff=UiKit.Badge(lane.Root,"Diff","",128,182,T.basil,Color.white,26,16);
+            lane.Time=UiKit.Label(lane.Root,"Time","",16,168,110,32,30,T.line,FontRole.Display);
+            lane.Diff=UiKit.Badge(lane.Root,"Diff","",128,174,T.basil,Color.white,26,16);
             lane.Note=UiKit.Label(lane.Root,"Note","",16,176,w-32,40,16,T.inkSub,FontRole.Black);
-            lane.Reset=UiKit.Button(lane.Root,"Reset_"+p.Name,ShopStrings.ResetRoute,StickerKind.Secondary,w-146,176,130,38,16,()=>ResetRoute(p));
+            lane.ReturnProgress=UiKit.Bar(lane.Root,"ReturnProgress",16,120,w-32,32,T.info);
+            UiKit.Show(lane.ReturnProgress,!here);
+            lane.Swap=UiKit.Button(lane.Root,"Swap_"+p.Name,ShopStrings.SwapDeliveryOrder,StickerKind.Secondary,16,232,148,40,16,()=>SwapDeliveryOrder(p));
+            lane.Swap.Interactable=here && bag.Count>1;
+            lane.Edit=UiKit.Button(lane.Root,"Edit_"+p.Name,ShopStrings.ChooseRoad,StickerKind.Secondary,176,232,210,40,16,()=>BeginRouteEdit(p));
+            lane.Edit.Interactable=here && bag.Count>0;
+            lane.Reset=UiKit.Button(lane.Root,"Reset_"+p.Name,ShopStrings.ResetRoute,StickerKind.Secondary,w-146,232,130,40,16,()=>ResetRoute(p));
         }
+    }
+    private void RequestLaneFocus()=>focusLaneRequested=true;
+    private void FocusSelectedLane()
+    {
+        if(!focusLaneRequested)return;
+        var lane=lanes.FirstOrDefault(l=>l.Person==roster.SelectedPerson);
+        if(lane==null)return;
+        var scroll=laneRow.GetComponentInParent<ScrollRect>();
+        Canvas.ForceUpdateCanvases();
+        float hidden=laneRow.rect.width-scroll.viewport.rect.width;
+        if(hidden>0)
+        {
+            float left=-laneRow.anchoredPosition.x,x=lane.Root.anchoredPosition.x;
+            float target=x<left?x:x+lane.Root.rect.width>left+scroll.viewport.rect.width?x+lane.Root.rect.width-scroll.viewport.rect.width:left;
+            scroll.StopMovement();scroll.horizontalNormalizedPosition=Mathf.Clamp01(target/hidden);
+        }
+        focusLaneRequested=false;
     }
     private string ShortHouse(Order o)=>ShopStrings.House(map,o.DestinationNodeId).Replace("さん宅","");
     private UiBar StatBar(Transform parent,string name,string title,float x,float y,float w,float value,Color color)
@@ -335,6 +384,12 @@ public sealed partial class BusinessView
         {
             var p=lane.Person;bool here=p.IsAvailable;var bag=handover.BagOf(p);
             lane.Stamina.Set(Mathf.Clamp01(p.CurrentStamina));
+            var trip=p.CurrentTrip;
+            lane.ReturnProgress.Set(trip==null?1:Mathf.InverseLerp(trip.StartedAt,trip.ReturnsAt,clock.ElapsedSeconds));
+            UiKit.Show(lane.ReturnProgress,!here && trip!=null);
+            bool editing=editingPerson==p && editingLeg>=0;
+            lane.Edit.Text=editing?ShopStrings.RoadSection(editingLeg+1):ShopStrings.ChooseRoad;
+            lane.Edit.Kind=editing?StickerKind.Selected:StickerKind.Secondary;
             string state=here?(bag.Count>0?$"{bag.Count} / {p.Capacity}箱":"待機中"):p.Status==DeliveryStatus.Training?"訓練中":$"{ShopStrings.Status(p.Status)}・あと{Mathf.Max(0,(p.CurrentTrip?.ReturnsAt??0)-clock.ElapsedSeconds):F0}秒";
             UiKit.SetBadge(lane.StateBadge,state,here?(bag.Count>=p.Capacity?T.cheese:T.basil):T.disabled,here && bag.Count<p.Capacity?Color.white:T.line);
             var note=lane.Note;note.color=T.inkSub;string noteText="";bool showTime=false,showDiff=false,showReset=false;
@@ -363,10 +418,10 @@ public sealed partial class BusinessView
                 bool changed=!mine.SequenceEqual(auto);float saved=autoTime-time;
                 UiKit.SetBadge(lane.Diff,!changed?"自動ルート":Mathf.Abs(saved)<.05f?"自動と同じ":saved>0?$"自動より −{saved:F1}秒":$"自動より +{-saved:F1}秒",!changed?T.paperDeep:saved>=0?T.basil:T.cheese,!changed || saved<0?T.line:Color.white);
                 showDiff=true;showReset=changed;
-                lane.Diff.anchoredPosition=new Vector2(16+lane.Time.GetPreferredValues().x+10,-182);
+                lane.Diff.anchoredPosition=new Vector2(16+lane.Time.GetPreferredValues().x+10,-174);
                 int late=Late(mine,p,bag);noteText=late==0?"往復・目安に間に合う":$"{late}件 目安に遅れそう";note.color=late==0?T.basil:T.berry;
-                note.rectTransform.anchoredPosition=new Vector2(lane.Diff.anchoredPosition.x+lane.Diff.sizeDelta.x+12,-176);
-                note.rectTransform.sizeDelta=new Vector2(Mathf.Max(60,lane.Root.sizeDelta.x-note.rectTransform.anchoredPosition.x-(showReset?156:16)),40);
+                note.rectTransform.anchoredPosition=new Vector2(16,-200);
+                note.rectTransform.sizeDelta=new Vector2(lane.Root.sizeDelta.x-32,24);
             }
             if(!showTime)
             {
@@ -381,12 +436,13 @@ public sealed partial class BusinessView
     private int Step()=>roster.People.Any(p=>p.IsAvailable && handover.BagOf(p).Count>0)?1:0;
     private void RefreshDispatch()
     {
+        if(editingPerson!=null && (!editingPerson.IsAvailable || roster.SelectedPerson!=editingPerson || handover.BagOf(editingPerson).Count==0)){editingPerson=null;editingLeg=-1;}
         UpdatePins();
         if(Zone!=ShopZone.Dispatch)return;
         RefreshDispatchOrders();
         string sig=string.Join(",",roster.People.Select(p=>UiKit.Ref(p)+p.Status+p.Capacity+string.Join("/",handover.BagOf(p).Select(o=>o.Id))))+"|"+UiKit.Ref(roster.SelectedPerson);
         if(sig!=laneSignature){laneSignature=sig;RebuildLanes();}
-        SyncRoute();RefreshLanes();
+        FocusSelectedLane();SyncRoute();RefreshLanes();
         Navigate();UpdateMinimap();UpdateRouteMarks();
         int step=Step();
         for(int i=0;i<2;i++)
@@ -395,10 +451,10 @@ public sealed partial class BusinessView
             stepCircles[i].color=done?T.basil:current?T.tomato:T.disabled;
             stepNumbers[i].SetActive(!done);stepChecks[i].SetActive(done);
         }
-        bool showGuide=!guided || Carries(Held);UiKit.Show(bubble,showGuide);
-        bubbleText.text=Carries(Held)?"伝票を持つと、近い注文のピンが光ります。配達員のレーンに入れると、まとめて運びます。"
+        bool showGuide=editingPerson!=null || !guided || Carries(Held);UiKit.Show(bubble,showGuide);
+        bubbleText.text=editingPerson!=null?RouteEditCaption()+ShopStrings.RoadEditHint:Carries(Held)?"伝票を持つと、近い注文のピンが光ります。配達員のレーンに入れると、まとめて運びます。"
             :step==0?(handover.RackOrders.Any()?"焼き上がった伝票を、下の配達員のレーンへドラッグします。":"焼き上がった注文が、左の一覧とピンに出ます。")
-            :"赤い線（丸いつまみ）を、通りたい道までドラッグすると道順が変わります。届ける順番は、レーンの伝票を入れ替えます。";
+            :ShopStrings.RouteControlsHint;
         trafficButton.Kind=ShowCongestion?StickerKind.Selected:StickerKind.Secondary;
     }
 
@@ -420,13 +476,22 @@ public sealed partial class BusinessView
         foreach(var id in pins.Keys.Where(id=>!map.HasNode(id)).ToArray()){Destroy(pins[id].Root.gameObject);pins.Remove(id);}
         var person=roster.SelectedPerson;var bag=person!=null && person.IsAvailable?handover.BagOf(person):System.Array.Empty<Order>();
         var held=Held;UpdateNear(held);
-        var waiting=orders.Orders.Where(o=>o.Status==OrderStatus.Pending).OrderBy(o=>o.Deadline).ToList();
-        string signature=map.MapRevision+"/"+cam.transform.position.ToString("R")+"/"+cam.orthographicSize.ToString("R")+"/"+cam.pixelHeight+"/"+person?.Id+"/"+held?.Order?.Id+"/"+string.Join(",",bag.Select(o=>o.Id))+"/"+string.Join(",",waiting.Select(o=>o.Id+o.Baking))+"/"+T.line.GetHashCode()+T.paper.GetHashCode()+T.basil.GetHashCode();
+        var waiting=orders.Orders.Where(o=>o.Status==OrderStatus.Pending)
+            .Concat(flow.ActiveTrips.SelectMany(t=>t.Deliveries).Where(d=>!d.Resolved).Select(d=>d.Order))
+            .Distinct().OrderBy(o=>o.Deadline).ToList();
+        string signature=map.MapRevision+"/"+cam.transform.position.ToString("R")+"/"+cam.orthographicSize.ToString("R")+"/"+cam.pixelHeight+"/"+person?.Id+"/"+held?.Order?.Id+"/"+string.Join(",",bag.Select(o=>o.Id))+"/"+string.Join(",",waiting.Select(o=>o.Id+":"+OrderStage(o)+":"+(cooking.JobFor(o)?.QueuedForOven??false)))+"/"+T.line.GetHashCode()+T.paper.GetHashCode()+T.basil.GetHashCode();
         if(signature==pinViewSignature)return;pinViewSignature=signature;
         foreach(var node in map.Nodes)
         {
             if(!node.IsStore && node.NodeType!=NodeType.DeliveryAddress)continue;
+            var activeOrder=waiting.FirstOrDefault(o=>o.DestinationNodeId==node.Id);
+            if(!node.IsStore && activeOrder==null)
+            {
+                if(pins.TryGetValue(node.Id,out var inactive))inactive.Root.gameObject.SetActive(false);
+                continue;
+            }
             if(!pins.TryGetValue(node.Id,out var pin))pin=pins[node.Id]=MakePin(node);
+            pin.Root.gameObject.SetActive(true);
             pin.Root.position=new Vector3(node.Position.x,node.Position.y,-1);pin.Root.localScale=Vector3.one*px;
             if(node.IsStore)
             {
@@ -442,21 +507,37 @@ public sealed partial class BusinessView
             var order=waiting.FirstOrDefault(o=>o.DestinationNodeId==node.Id);
             bool red=visit>=0 || (order!=null && order.IsReady);
             bool compact=map.City!=null && map.CitySettings.blockSize/px<T.cityDetailMinimumBlockPixels;
-            pin.Sprite.sprite=UiKit.Art(red?"pin_drop":"pin_white");
-            pin.Sprite.transform.localScale=Vector3.one*(compact?T.cityCompactPinPixels:red?50:42);
+            pin.Sprite.sprite=UiKit.Art("pin_white");
+            pin.Sprite.transform.localScale=Vector3.one*(compact?Mathf.Max(T.cityCompactPinPixels,T.orderPinNumberSize*.2f):red?50:42);
             pin.Sprite.transform.localPosition=new Vector3(0,compact?14:red?36:30,0);
-            pin.Number.text=visit>=0?(visit+1).ToString():order!=null?"#"+Number(order):"";
-            pin.Number.fontSize=compact?T.cityCompactNumberSize:visit>=0?220:150;
-            pin.Number.color=visit>=0 || order==null || order.IsReady?T.line:T.inkSub;
-            pin.Number.transform.localPosition=new Vector3(0,compact?16:red?44:36,0);
+            pin.Number.text=order!=null?"#"+Number(order):"";
+            pin.Number.fontSize=T.orderPinNumberSize;
+            pin.Number.rectTransform.sizeDelta=new Vector2(110,42);
+            pin.Number.fontStyle=FontStyles.Normal;
+            pin.Number.outlineWidth=0;
+            pin.Number.color=T.line;
+            pin.Number.transform.localPosition=new Vector3(0,compact?18:red?44:36,0);
+            pin.NumberBack.enabled=true;
+            pin.NumberBack.transform.localPosition=pin.Number.transform.localPosition;
+            float numberWidth=Mathf.Max(T.orderPinNumberBackgroundPixels,pin.Number.GetPreferredValues().x+T.smallSpace);
+            pin.NumberBack.transform.localScale=new Vector3(numberWidth,T.orderPinNumberBackgroundPixels,1)/1.28f;
             bool near=Carries(held) && nearSeconds.TryGetValue(node.Id,out _);
             pin.Glow.enabled=near;
             if(near)SetPinLabel(pin,nearSeconds[node.Id]<.5f?"同じ届け先":$"近い・{nearSeconds[node.Id]:F0}秒",T.basil,Color.white);
-            else SetPinLabel(pin,!compact && (order!=null || visit>=0)?ShopStrings.House(map,node.Id):"",T.paper,T.line);
-            pin.Sprite.color=new Color(1,1,1,order!=null || visit>=0?1:.45f);
+            else SetPinLabel(pin,(!compact && (map.City==null || map.CitySettings.blockSize/px>=T.cityLabelMinimumBlockPixels))?ShopStrings.House(map,node.Id):"",T.paper,T.line);
+            pin.Sprite.color=PinColor(order);
         }
     }
     /// <summary>While a ticket is held, the other orders within a short ride of its address light up.</summary>
+    public Color PinColor(Order order)
+    {
+        if(order==null)return T.disabled;
+        if(order.IsReady)return T.orderReadyPin;
+        var job=cooking.JobFor(order);
+        if(job==null || job.QueuedForOven)return T.orderWaitingPin;
+        if(job.Stage>=PizzaStage.Baked)return T.orderReadyPin;
+        return job.Stage>=PizzaStage.Baking?T.orderBakingPin:T.orderMakingPin;
+    }
     private void UpdateNear(DragPayload held)
     {
         var order=Carries(held)?held.Order:null;if(order==nearFor)return;nearFor=order;nearSeconds.Clear();if(order==null)return;
@@ -490,6 +571,9 @@ public sealed partial class BusinessView
         pin.Glow.transform.localPosition=new Vector3(0,34,0);
         pin.Glow.enabled=false;
         pin.Sprite=new GameObject("Pin").AddComponent<SpriteRenderer>();pin.Sprite.transform.SetParent(pin.Root,false);pin.Sprite.sortingOrder=40;
+        pin.NumberBack=new GameObject("NumberBack").AddComponent<SpriteRenderer>();
+        pin.NumberBack.transform.SetParent(pin.Root,false);pin.NumberBack.sprite=UiKit.Circle;
+        pin.NumberBack.color=T.paper;pin.NumberBack.sortingOrder=41;pin.NumberBack.enabled=false;
         pin.Number=new GameObject("Number").AddComponent<TextMeshPro>();
         pin.Number.transform.SetParent(pin.Root,false);
         pin.Number.font=UiKit.Font(FontRole.Display);
@@ -526,16 +610,18 @@ public sealed partial class BusinessView
         pin.Label.text="";return pin;
     }
 
-    // ---- route marks: round handles on each leg of the red route, and the automatic route as grey dots ----
+    // ---- route marks: coloured route legs, and the automatic route as grey dots ----
     private Vector2 NodeAt(string id)=>map.Nodes.First(n=>n.Id==id).Position;
     private List<Vector2> Polyline(string start,IEnumerable<string> edges)
     {
         var points=new List<Vector2>();string at=start;
         foreach(var id in edges)
         {
-            var e=map.GetEdge(id);if(!e.TryTraverse(at,out var next))break;Vector2 a=NodeAt(at),b=NodeAt(next);
-            if(e.RoadType==RoadType.Backstreet){var d=(NodeAt(e.NodeBId)-NodeAt(e.NodeAId)).normalized;var o=new Vector2(-d.y,d.x)*.35f;a+=o;b+=o;}
-            points.Add(a);points.Add(b);at=next;
+            var e=map.GetEdge(id);if(!e.TryTraverse(at,out var next))break;
+            var road=RoadGeometry.Points(map,e);
+            if(at!=e.NodeAId)System.Array.Reverse(road);
+            for(int i=0;i+1<road.Length;i++){points.Add(road[i]);points.Add(road[i+1]);}
+            at=next;
         }
         return points;
     }
@@ -556,22 +642,12 @@ public sealed partial class BusinessView
         foreach(var id in pins.Keys.Where(id=>!map.HasNode(id)).ToArray()){Destroy(pins[id].Root.gameObject);pins.Remove(id);}
         var person=roster.SelectedPerson;var bag=person!=null && person.IsAvailable?handover.BagOf(person):System.Array.Empty<Order>();
         var legs=bag.Count>0?Legs(person,bag,false):new List<(string from,string to,List<string> edges)>();
-        for(int i=0;i<legs.Count || i<handles.Count;i++)
-        {
-            if(i>=handles.Count)handles.Add((MakeHandle(),Vector2.zero,"",""));
-            var h=handles[i];
-            if(i>=legs.Count || legs[i].edges.Count==0){h.root.gameObject.SetActive(false);continue;}
-            var at=Along(Polyline(legs[i].from,legs[i].edges),.5f);handles[i]=(h.root,at,legs[i].from,legs[i].to);
-            h.root.gameObject.SetActive(map.City==null || map.CitySettings.blockSize/px>=T.cityDetailMinimumBlockPixels);
-            h.root.localScale=Vector3.one*px;
-            if(!(handleDragging && handlePress==i))h.root.position=new Vector3(at.x,at.y,-1.5f);
-        }
         // Separate outbound and return with coloured, offset strokes and moving round direction markers.
         var dotsOnRoute=new List<(Vector2 at,Color color)>();int stroke=0;
         for(int leg=0;leg<legs.Count;leg++)
         {
             var line=Polyline(legs[leg].from,legs[leg].edges);bool returning=leg==legs.Count-1;
-            var color=returning?T.info:T.tomato;
+            var color=editingPerson==person && editingLeg==leg?T.cheese:returning?T.info:T.tomato;
             float spacing=T.deliveryRouteDotSpacingPixels*px;
             float carry=Mathf.Repeat(Time.unscaledTime*T.deliveryRouteDotSpeedPixels*px,spacing);
             for(int i=0;i+1<line.Count;i+=2)
@@ -663,45 +739,15 @@ public sealed partial class BusinessView
         }
         return root;
     }
-    private Transform MakeHandle()
-    {
-        var root=new GameObject("RouteHandle").transform;root.SetParent(pinRoot,false);
-        SpriteRenderer Disc(string name,float size,Color c,int order)
-        {
-            var s=new GameObject(name).AddComponent<SpriteRenderer>();
-            s.transform.SetParent(root,false);
-            s.sprite=UiKit.Circle;
-            s.color=c;
-            s.sortingOrder=order;
-            s.transform.localScale=Vector3.one*size/1.28f;
-            return s;
-        }
-        var shadow=Disc("Shadow",44,new Color(0,0,0,.25f),45);Disc("Edge",40,T.line,46);Disc("Face",34,Color.white,47);
-        foreach(float x in new[]{-5f,5f})foreach(float y in new[]{-6f,0f,6f})
-        {
-            var dot=new GameObject("Grip").AddComponent<SpriteRenderer>();
-            dot.transform.SetParent(root,false);
-            dot.sprite=UiKit.Circle;
-            dot.color=T.line;
-            dot.sortingOrder=48;
-            dot.transform.localPosition=new Vector3(x,y,0);
-            dot.transform.localScale=Vector3.one*3/1.28f;
-        }
-
-        shadow.transform.localPosition=new Vector3(0,-3,0);
-        return root;
-    }
-
-    // ---- map input: drag to pan, wheel to zoom at the cursor, drag pins to lanes, drag handles to reroute ----
+    // ---- map input: drag to pan, wheel to zoom at the cursor, drag pins to lanes, drag route lines to reroute ----
     private bool OverUi(Vector2 screen)
     {
         if(EventSystem.current==null)return false;var hits=new List<RaycastResult>();
         EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current){position=screen},hits);return hits.Count>0;
     }
-    private int HandleAt(Vector2 screen)
+    private int RouteLegAt(Vector2 screen)
     {
         var cam=Camera.main;
-        for(int i=0;i<handles.Count;i++)if(handles[i].root.gameObject.activeSelf && ((Vector2)cam.WorldToScreenPoint(handles[i].at)-screen).magnitude<=30)return i;
         // anywhere on the red line also grabs the leg under the pointer
         var person=roster.SelectedPerson;if(person==null || !person.IsAvailable)return -1;var bag=handover.BagOf(person);if(bag.Count==0)return -1;
         var legs=Legs(person,bag,false);int best=-1;float bestDistance=22;
@@ -732,15 +778,7 @@ public sealed partial class BusinessView
         var cam=Camera.main;MapEdge best=null;float bestDistance=within;
         foreach(var e in map.Edges)
         {
-            Vector2 a=NodeAt(e.NodeAId),b=NodeAt(e.NodeBId);
-            if(e.RoadType==RoadType.Backstreet)
-            {
-                var d=(b-a).normalized;
-                var o=new Vector2(-d.y,d.x)*.35f;
-                a+=o;
-                b+=o;
-            }
-            float dist=SegmentDistance(screen,cam.WorldToScreenPoint(a),cam.WorldToScreenPoint(b));if(dist<bestDistance){bestDistance=dist;best=e;}
+            float dist=RoadGeometry.DistanceToScreenPoint(cam,RoadGeometry.Points(map,e),screen);if(dist<bestDistance){bestDistance=dist;best=e;}
         }
         return best;
     }
@@ -766,7 +804,9 @@ public sealed partial class BusinessView
         foreach(var pair in pins)
         {
             if(!pair.Value.Root.gameObject.activeSelf || !pair.Value.Sprite.enabled)continue;
-            Vector2 head=cam.WorldToScreenPoint(pair.Value.Sprite.transform.position);if((head-screen).magnitude>36)continue;
+            Vector2 head=cam.WorldToScreenPoint(pair.Value.Sprite.transform.position);
+            Vector2 number=cam.WorldToScreenPoint(pair.Value.Number.transform.position);
+            if(Mathf.Min((head-screen).magnitude,(number-screen).magnitude)>36)continue;
             var person=roster.SelectedPerson;var bagged=person!=null?handover.BagOf(person).FirstOrDefault(o=>o.DestinationNodeId==pair.Key):null;
             return bagged??handover.RackOrders.FirstOrDefault(o=>o.DestinationNodeId==pair.Key)??orders.Orders.FirstOrDefault(o=>o.DestinationNodeId==pair.Key && o.Status==OrderStatus.Pending);
         }
@@ -781,6 +821,7 @@ public sealed partial class BusinessView
     {
         var mouse=Mouse.current;var cam=Camera.main;if(mouse==null || cam==null || menu.MenuOpen || menu.HelpOpen)return;
         Vector2 pos=mouse.position.ReadValue();bool over=OverUi(pos);
+        if(mouse.rightButton.wasPressedThisFrame){editingPerson=null;editingLeg=-1;}
         float scroll=mouse.scroll.ReadValue().y;if(scroll!=0 && !over)Zoom(Mathf.Pow(.85f,Mathf.Clamp(scroll/120f,-1,1)),pos,true);
         if(mouse.leftButton.wasPressedThisFrame){if(over || Held!=null)InputTrace=$"press {pos} ignored (over UI {over})";else PointerDown(pos);}
         if(pressing && mouse.leftButton.isPressed)PointerMove(pos);
@@ -790,8 +831,8 @@ public sealed partial class BusinessView
     // Map pointer steps (screen pixels). The mouse drives them every frame; checks can call them directly.
     public void PointerDown(Vector2 pos)
     {
-        pressing=true;dragging=pinDragging=handleDragging=false;pressPosition=lastPointer=pos;
-        handlePress=HandleAt(pos);pinPress=handlePress<0?PinOrderAt(pos):null;InputTrace=$"press {pos} route leg {handlePress}";
+        pressing=true;dragging=pinDragging=routeDragging=false;pressPosition=lastPointer=pos;
+        routeLegPress=editingPerson==null?RouteLegAt(pos):-1;pinPress=routeLegPress<0?PinOrderAt(pos):null;InputTrace=$"press {pos} route leg {routeLegPress}";
     }
     public void PointerMove(Vector2 pos)
     {
@@ -799,14 +840,12 @@ public sealed partial class BusinessView
         if(!dragging && (pos-pressPosition).magnitude>8)
         {
             dragging=true;
-            if(handlePress>=0){handleDragging=true;BeginRouteDrag(handlePress);}
+            if(routeLegPress>=0){routeDragging=true;BeginRouteDrag(routeLegPress);}
             else if(PinPayload(pinPress) is DragPayload payload && ShopHand.Instance!=null){pinDragging=true;ShopHand.Instance.BeginAt(payload,pos);}
         }
         if(pinDragging)ShopHand.Instance?.MoveAt(pos);
-        else if(handleDragging)
+        else if(routeDragging)
         {
-            var w=cam.ScreenToWorldPoint(pos);
-            if(handlePress<handles.Count)handles[handlePress].root.position=new Vector3(w.x,w.y,-1.5f);
             PreviewRouteDrag(pos);
         }
         else if(dragging)PanBy(pos-lastPointer,cam);
@@ -816,14 +855,14 @@ public sealed partial class BusinessView
     {
         if(!pressing)return;pressing=false;
         if(pinDragging){pinDragging=false;ShopHand.Instance?.EndAt(pos);}
-        else if(handleDragging)
+        else if(routeDragging)
         {
-            handleDragging=false;
+            routeDragging=false;
             InputTrace+=$" / released {pos} on {RoadAt(pos)?.Id}";
             if(RoadAt(pos)==null)Toast("赤い線を、通りたい道の上まで引っぱって離します。",T.cheese,null,"icon_map");
         }
         else if(!dragging)Tap(pos);
-        handlePress=-1;pinPress=null;
+        routeLegPress=-1;pinPress=null;
     }
     private static void PanBy(Vector2 delta,Camera cam)
     {
@@ -840,6 +879,12 @@ public sealed partial class BusinessView
     /// <summary>A tap on a pin puts a baked order into the selected (or first free) lane; on a bagged pin it selects that lane.</summary>
     public void Tap(Vector2 screen)
     {
+        if(editingPerson!=null && editingLeg>=0)
+        {
+            var road=RoadAt(screen);
+            if(road!=null && SetWaypointRoad(editingPerson,editingLeg,road.Id))Toast(map.RoadCaption(road.Id)+" を通ります。",T.basil,null,"icon_map");
+            return;
+        }
         var order=PinOrderAt(screen);if(order!=null)TapOrder(order);
     }
     public void TapOrder(Order order)

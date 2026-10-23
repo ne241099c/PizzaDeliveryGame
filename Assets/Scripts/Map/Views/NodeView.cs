@@ -37,13 +37,13 @@ public class NodeView : MonoBehaviour
             line.startColor=line.endColor=node.IsStore?theme.money:theme.ink;
             line.sortingOrder=6;
         }
-        // Shops and delivery addresses are drawn as pins and labels by the dispatch board; intersections stay small dots.
-        if(node.IsStore || node.NodeType==NodeType.DeliveryAddress)
+        // The shop has a UI badge. Homes remain visible as buildings even when they have no order pin.
+        if(node.IsStore)
         {
             spriteRenderer.enabled=false;
             foreach(var line in GetComponentsInChildren<LineRenderer>())line.enabled=false;
         }
-        else{spriteRenderer.color=theme.backRoadEdge;transform.localScale=Vector3.one*theme.nodeSize*.45f;}
+        else if(node.NodeType==NodeType.Intersection){spriteRenderer.color=theme.backRoadEdge;transform.localScale=Vector3.one*theme.nodeSize*.45f;}
         baseColor = spriteRenderer.color;
         baseScale = transform.localScale;
         var labelObject = new GameObject("NodeLabel");
