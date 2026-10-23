@@ -28,6 +28,10 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     [Min(1)] public int columns=4;
     [Min(1)] public float blockSize=4,blockGap=1;
     [Min(1), Tooltip("店舗から四方向の最初の街区までの距離。既存v1〜4の配置には影響しません。 ")] public float radialFirstBlockDistance=11;
+    [Min(3), Tooltip("v6の街区の最小幅・高さ。既存v1〜5の配置には影響しません。 ")] public float organicMinimumBlockSize=5;
+    [Min(3), Tooltip("v6の街区の最大幅・高さ。軸ごとに幅を変えて区画の反復を減らします。 ")] public float organicMaximumBlockSize=8;
+    [Range(0,.8f), Tooltip("共有交差点のずれ。街区の幅とは別に交差点をずらします。 ")] public float organicJunctionJitter=.45f;
+    [Range(.5f,1.5f), Tooltip("v6の裏道距離の倍率。道路の実際の長さに掛けます。 ")] public float organicShortcutDistanceFactor=1;
     [Min(.1f)] public float roadDistanceScale=1.5f;
     [Min(.1f)] public float shortcutDistance=9;
     [Min(0)] public float minimumShortcutSaving=.03f;
@@ -68,10 +72,11 @@ public sealed class GeneratedCity
 /// <summary>Deterministic template placement. Prefixes and each block's RNG are independent of later expansion.</summary>
 public static class CityGenerator
 {
-    public const int CurrentVersion=5;
+    public const int CurrentVersion=6;
     public static GeneratedCity Build(int seed,int blockCount,CityGenerationSettings s,int variant=0,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
         if(blockCount<1 || s.templates==null || s.templates.Length<1)throw new ArgumentException("City needs blocks and templates.");
+        if(version>=6)return BuildOrganic(seed,blockCount,s,variant,version,savedHousesPerBlock);
         int houseCount=version<4?2:Mathf.Clamp(savedHousesPerBlock>0?savedHousesPerBlock:s.housesPerBlock,2,4);
         var city=new GeneratedCity{seed=seed,version=version,housesPerBlock=houseCount,map=ScriptableObject.CreateInstance<MapDefinition>()};city.map.hideFlags=HideFlags.DontSave;
         var m=city.map;
@@ -161,6 +166,125 @@ public static class CityGenerator
         }
         return city;
     }
+    // Each junction and each street has its own seed. Adding a block never moves
+    // an existing junction or changes a shared street's direction, cost or traffic.
+    private static GeneratedCity BuildOrganic(int seed,int blockCount,CityGenerationSettings s,int variant,int version,int savedHousesPerBlock)
+    {
+        int houses=Mathf.Clamp(savedHousesPerBlock>0?savedHousesPerBlock:s.housesPerBlock,2,4);
+        var city=new GeneratedCity{seed=seed,version=version,housesPerBlock=houses,map=ScriptableObject.CreateInstance<MapDefinition>()};
+        var m=city.map;m.hideFlags=HideFlags.DontSave;
+        var positions=new Dictionary<string,Vector2>();
+        var sharedRoads=new Dictionary<string,string>();
+        System.Random RandomFor(int x,int y,int salt)=>new(unchecked(seed*486187739+x*104729+y*130363+variant*7919+salt*15485863));
+        float Axis(int n,int salt)
+        {
+            float position=0;
+            int sign=n<0?-1:1;
+            for(int k=0;k<Mathf.Abs(n);k++)
+            {
+                int segment=n<0?-k-1:k;
+                float low=Mathf.Max(3,s.organicMinimumBlockSize),high=Mathf.Max(low,s.organicMaximumBlockSize);
+                position+=sign*Mathf.Lerp(low,high,(float)RandomFor(segment,0,salt).NextDouble());
+            }
+            return position;
+        }
+        Vector2 JunctionPosition(int x,int y)
+        {
+            if(x==0 && y==0)return Vector2.zero;
+            var r=RandomFor(x,y,13);
+            return new Vector2(Axis(x,1),Axis(y,2))+new Vector2((float)r.NextDouble()*2-1,(float)r.NextDouble()*2-1)*s.organicJunctionJitter;
+        }
+        string Junction(int x,int y)
+        {
+            string id=x==0 && y==0?"Store":$"J{x}_{y}";
+            if(!positions.ContainsKey(id))
+            {
+                Vector2 p=JunctionPosition(x,y);positions.Add(id,p);
+                m.Nodes.Add(new MapNode(id,p,NodeType.Intersection,id=="Store"));
+            }
+            return id;
+        }
+        void Node(string id,Vector2 p)
+        {
+            positions.Add(id,p);m.Nodes.Add(new MapNode(id,p,NodeType.DeliveryAddress,false));
+        }
+        string Road(string id,string from,string to,RoadType type=RoadType.Main,float traffic=1,bool both=true,float factor=1)
+        {
+            float distance=Vector2.Distance(positions[from],positions[to])*s.roadDistanceScale*factor;
+            m.Edges.Add(new MapEdge(id,from,to,distance,type,traffic,both));return id;
+        }
+        string Street(string id,string from,string to)
+        {
+            string key=string.CompareOrdinal(from,to)<0?from+"|"+to:to+"|"+from;
+            if(sharedRoads.TryGetValue(key,out string existing))return existing;
+            // Congestion is tied to the street, not whichever district introduced it.
+            float traffic=.75f+(float)RandomFor(StableHash(key),0,31).NextDouble()*.25f;
+            if(from=="Store" && to=="J1_0" || to=="Store" && from=="J1_0")
+            {
+                var east=positions["J1_0"];
+                if(!positions.ContainsKey("Goal1")){Node("Goal1",east*.3f);Node("Goal2",east*.65f);}
+                Road("Store-Goal1","Store","Goal1",traffic:traffic);
+                Road("Goal1-Goal2","Goal1","Goal2",traffic:traffic);
+                Road("Goal2-East","Goal2","J1_0",traffic:traffic);
+                id="Store-Goal1";
+            }
+            else Road(id,from,to,traffic:traffic);
+            sharedRoads.Add(key,id);return id;
+        }
+        // Compact connected growth around the shop. Unlike four detached spokes,
+        // neighbouring districts share their boundary roads and intersections.
+        var cells=new[]{new Vector2Int(0,0),new(-1,0),new(-1,-1),new(0,-1),new(1,0),new(1,-1),new(0,1),new(-1,1),new(-2,0),new(-2,-1),new(0,-2),new(-1,-2)};
+        Junction(0,0);
+        for(int i=0;i<blockCount;i++)
+        {
+            Vector2Int cell=i<cells.Length?cells[i]:new Vector2Int(2+(i-cells.Length)/4,(i-cells.Length)%4-2);
+            int x=cell.x,y=cell.y;
+            string a=Junction(x,y+1),b=Junction(x+1,y+1),c=Junction(x+1,y),d=Junction(x,y);
+            var rng=RandomFor(i,0,23);
+            var template=i==0?s.templates.FirstOrDefault(t=>t.kind==DistrictKind.Park)??s.templates[0]:i==1?s.templates.FirstOrDefault(t=>t.kind==DistrictKind.Riverside)??s.templates[0]:s.templates[rng.Next(s.templates.Length)];
+            string ab=Street($"B{i}_AB",a,b);Street($"B{i}_BC",b,c);
+            string cd=Street($"B{i}_CD",c,d);Street($"B{i}_DA",d,a);
+            Vector2 At(float u,float v)=>Vector2.Lerp(Vector2.Lerp(positions[d],positions[c],u),Vector2.Lerp(positions[a],positions[b],u),v);
+            // Two local streets bend inward from the perimeter. Their different
+            // setbacks produce small junctions and variable frontage lengths.
+            float west=.24f+(float)rng.NextDouble()*.07f,east=.69f+(float)rng.NextDouble()*.07f;
+            float upper=.67f+(float)rng.NextDouble()*.07f,lower=.26f+(float)rng.NextDouble()*.07f;
+            string[] addresses=Enumerable.Range(1,houses).Select(h=>$"B{i}_H{h}").ToArray();
+            Node(addresses[0],At(east,upper));Node(addresses[1],At(east,lower));
+            if(houses==2)
+            {
+                Road($"B{i}_House1",a,addresses[0]);Road($"B{i}_House1Return",addresses[0],b);
+                Road($"B{i}_House2Entry",d,addresses[1]);Road($"B{i}_House2",addresses[1],c);
+            }
+            else
+            {
+                Road($"B{i}_House1",b,addresses[0]);Road($"B{i}_Pair",addresses[0],addresses[1]);Road($"B{i}_House2",addresses[1],c);
+            }
+            if(houses>2)
+            {
+                Node(addresses[2],At(west,upper));Road($"B{i}_House3",a,addresses[2]);
+                if(houses>3)
+                {
+                    Node(addresses[3],At(west,lower));Road($"B{i}_PairWest",addresses[2],addresses[3]);Road($"B{i}_House4",addresses[3],d);
+                }
+                else Road($"B{i}_House3Return",addresses[2],d);
+            }
+            if(template.shortcut)
+                Road($"B{i}_Shortcut",houses>2?addresses[2]:addresses[1],addresses[0],RoadType.Backstreet,factor:s.organicShortcutDistanceFactor);
+            // Optional service connector. Existing main streets remain traversable
+            // both ways, so the one-way variation cannot strand a house.
+            if(i>=2 && houses>3 && rng.Next(2)==0)
+                Road($"B{i}_OneWay",addresses[3],addresses[1],RoadType.Backstreet,both:false,factor:s.organicShortcutDistanceFactor);
+            var corners=new[]{positions[a],positions[b],positions[c],positions[d]};
+            city.blocks.Add(new CityBlock{index=i,template=template,addresses=addresses,area=Rect.MinMaxRect(corners.Min(p=>p.x),corners.Min(p=>p.y),corners.Max(p=>p.x),corners.Max(p=>p.y))});
+            if(template.kind==DistrictKind.Riverside){city.bridges.Add(ab);city.bridges.Add(cd);}
+        }
+        return city;
+    }
+    private static int StableHash(string value)
+    {
+        unchecked {int hash=17;foreach(char c in value)hash=hash*31+c;return hash;}
+    }
     public static GeneratedCity Generate(int seed,int blocks,CityGenerationSettings s,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
         for(int attempt=0;attempt<s.retryCount;attempt++)
@@ -186,7 +310,7 @@ public static class CityGenerator
     }
     public static GeneratedCity SafeCity(int seed,int blocks,CityGenerationSettings settings,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
-        var safe=Build(seed%2==0?1401:1402,blocks,new CityGenerationSettings{columns=settings.columns,radialFirstBlockDistance=settings.radialFirstBlockDistance,blockSize=settings.blockSize,blockGap=settings.blockGap,roadDistanceScale=settings.roadDistanceScale,shortcutDistance=settings.shortcutDistance,housesPerBlock=settings.housesPerBlock},version:version,savedHousesPerBlock:savedHousesPerBlock);
+        var safe=Build(seed%2==0?1401:1402,blocks,new CityGenerationSettings{columns=settings.columns,organicMinimumBlockSize=settings.organicMinimumBlockSize,organicMaximumBlockSize=settings.organicMaximumBlockSize,organicJunctionJitter=settings.organicJunctionJitter,organicShortcutDistanceFactor=settings.organicShortcutDistanceFactor,radialFirstBlockDistance=settings.radialFirstBlockDistance,blockSize=settings.blockSize,blockGap=settings.blockGap,roadDistanceScale=settings.roadDistanceScale,shortcutDistance=settings.shortcutDistance,housesPerBlock=settings.housesPerBlock},version:version,savedHousesPerBlock:savedHousesPerBlock);
         safe.seed=seed;safe.metrics=CityValidator.Measure(safe,settings);return safe;
     }
 }
