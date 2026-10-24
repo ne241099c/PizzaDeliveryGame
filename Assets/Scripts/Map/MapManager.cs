@@ -215,6 +215,41 @@ public class MapManager : MonoBehaviour
     public IReadOnlyList<MapNode> Nodes => nodes;
     public IReadOnlyList<MapEdge> Edges => edges;
 
+    private readonly Dictionary<string,Vector2> homePositions=new();
+    /// <summary>Where a delivery home is drawn: beside its road, like a real house (2026-10-24). The graph keeps the
+    /// house's frontage on the road (routes, distances and pins of older saves are unchanged); the house stands off to
+    /// the side that is clearer of other roads, joined by a short driveway. Other nodes are drawn where they are.</summary>
+    public Vector2 HomeAt(string nodeId)
+    {
+        if(!nodeLookup.TryGetValue(nodeId,out var node))return Vector2.zero;
+        if(node.IsStore || node.NodeType!=NodeType.DeliveryAddress)return node.Position;
+        if(homePositions.TryGetValue(nodeId,out var cached))return cached;
+        float offset=UITheme.Active!=null?UITheme.Active.mapHomeOffset:.6f;
+        var own=edges.Where(e=>e.NodeAId==nodeId || e.NodeBId==nodeId).ToList();
+        var neighbours=own.Select(e=>nodeLookup[e.NodeAId==nodeId?e.NodeBId:e.NodeAId].Position).ToList();
+        Vector2 p=node.Position,result=p;
+        if(offset>0 && neighbours.Count>0)
+        {
+            Vector2 dir=neighbours.Count>=2?neighbours[1]-neighbours[0]:neighbours[0]-p;
+            if(dir.sqrMagnitude<1e-6f)dir=Vector2.right;
+            var side=new Vector2(-dir.y,dir.x).normalized*offset;
+            float Clearance(Vector2 q)
+            {
+                float best=float.MaxValue;
+                foreach(var e in edges)
+                {
+                    if(own.Contains(e))continue;
+                    Vector2 a=nodeLookup[e.NodeAId].Position,b=nodeLookup[e.NodeBId].Position,ab=b-a;
+                    float t=ab.sqrMagnitude<=0?0:Mathf.Clamp01(Vector2.Dot(q-a,ab)/ab.sqrMagnitude);
+                    best=Mathf.Min(best,(a+ab*t-q).magnitude);
+                }
+                return best;
+            }
+            result=Clearance(p+side)>=Clearance(p-side)?p+side:p-side;
+        }
+        homePositions[nodeId]=result;return result;
+    }
+
     private void Start()
     {
         CreateMap();
@@ -223,7 +258,8 @@ public class MapManager : MonoBehaviour
     private void BuildViews()
     {
         ValidateAndIndex();
-        foreach(var node in nodes){var view=Instantiate(nodeViewPrefab,nodesParent);view.Initialize(node);nodeViews.Add(node.Id,view);}
+        homePositions.Clear();
+        foreach(var node in nodes){var view=Instantiate(nodeViewPrefab,nodesParent);view.Initialize(node,HomeAt(node.Id));nodeViews.Add(node.Id,view);}
         foreach(var edge in edges)
         {
             var view=Instantiate(edgeViewPrefab,edgesParent);

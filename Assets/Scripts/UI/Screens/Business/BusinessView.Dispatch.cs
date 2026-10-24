@@ -539,7 +539,7 @@ public sealed partial class BusinessView
             }
             if(!pins.TryGetValue(node.Id,out var pin))pin=pins[node.Id]=MakePin(node);
             pin.Root.gameObject.SetActive(true);
-            pin.Root.position=new Vector3(node.Position.x,node.Position.y,-1);pin.Root.localScale=Vector3.one*px;
+            var home=map.HomeAt(node.Id);pin.Root.position=new Vector3(home.x,home.y,-1);pin.Root.localScale=Vector3.one*px;
             if(node.IsStore)
             {
                 pin.Sprite.sprite=UiKit.Art("shop_badge");
@@ -880,7 +880,10 @@ public sealed partial class BusinessView
     public void PointerDown(Vector2 pos)
     {
         pressing=true;dragging=pinDragging=routeDragging=false;pressPosition=lastPointer=pos;
-        routeLegPress=-1;pinPress=PinOrderAt(pos);InputTrace=$"press {pos} route leg {routeLegPress}";
+        // A pin under the pointer wins (drag it to a lane); otherwise the route line grabs the leg (drag to reroute),
+        // and anywhere else the drag pans the map.
+        pinPress=PinOrderAt(pos);routeLegPress=pinPress==null && editingPerson==null?RouteLegAt(pos):-1;
+        InputTrace=$"press {pos} route leg {routeLegPress}";
     }
     public void PointerMove(Vector2 pos)
     {

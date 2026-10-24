@@ -10,11 +10,24 @@ public class NodeView : MonoBehaviour
     private Color baseColor;
     private Vector3 baseScale;
 
-    public void Initialize(MapNode node)
+    public void Initialize(MapNode node)=>Initialize(node,node.Position);
+    /// <summary>Draws the node at drawAt; a delivery home drawn beside its road gets a driveway to its frontage.</summary>
+    public void Initialize(MapNode node,Vector2 drawAt)
     {
         nodeId = node.Id;
         gameObject.name = "Node_" + node.Id;
-        transform.position = node.Position;
+        transform.position = drawAt;
+        if((drawAt-node.Position).sqrMagnitude>1e-6f)
+        {
+            var drive=new GameObject("Driveway").AddComponent<LineRenderer>();
+            drive.transform.SetParent(transform,false);
+            drive.sharedMaterial=spriteRenderer.sharedMaterial;
+            drive.useWorldSpace=true;drive.positionCount=2;
+            drive.SetPosition(0,new Vector3(node.Position.x,node.Position.y,0));drive.SetPosition(1,new Vector3(drawAt.x,drawAt.y,0));
+            drive.startWidth=drive.endWidth=UITheme.Active.backstreetWidth*.7f;
+            drive.startColor=drive.endColor=UITheme.Active.backRoadEdge;
+            drive.sortingOrder=4;
+        }
 
         var theme=UITheme.Active;
         caption=node.IsStore?"ピザ屋":node.NodeType==NodeType.DeliveryAddress?"配達先 "+node.Id.Replace("Goal",""):node.Id;

@@ -34,7 +34,25 @@ public sealed partial class TutorialDirector
     }
     private PizzaStage StageOf(Order o)=>Cooking.JobFor(o) is PizzaJob j?j.Stage:o.IsReady?PizzaStage.Packed:PizzaStage.Ticket;
     private RectTransform Ticket()=>business.GetComponentsInChildren<RectTransform>(true).FirstOrDefault(t=>t.name.StartsWith("Ticket_") && t.gameObject.activeInHierarchy);
-    private RectTransform OrderCard()=>business.GetComponentsInChildren<RectTransform>(true).FirstOrDefault(t=>t.name.StartsWith("Order_") && t.gameObject.activeInHierarchy);
+    /// <summary>The card of a baked order that is not in a lane yet (the one to drag next).</summary>
+    private RectTransform OrderCard()
+    {
+        var next=Orders.Orders.FirstOrDefault(o=>o.IsReady && o.Status==OrderStatus.Pending && !Handover.IsBagged(o));
+        return next!=null?Part("Order_"+business.Number(next)):null;
+    }
+    /// <summary>Two homes a fair way from the shop and near each other, so the joint route is easy to see.</summary>
+    private string[] DeliveryHomes()
+    {
+        var map=FindFirstObjectByType<MapManager>();var spawner=FindFirstObjectByType<OrderSpawner>();
+        var homes=map.Nodes.Where(n=>n.NodeType==NodeType.DeliveryAddress && !n.IsStore)
+            .Select(n=>{float t;try{t=spawner.ShortestArrivalSeconds(n.Id);}catch(System.InvalidOperationException){t=float.MaxValue;}return (node:n,time:t);})
+            .Where(h=>h.time<float.MaxValue).OrderBy(h=>h.time).ToList();
+        if(homes.Count<2)return homes.Select(h=>h.node.Id).DefaultIfEmpty(NearestHomes(1)[0]).ToArray();
+        var first=homes[Mathf.Clamp(homes.Count*2/5,0,homes.Count-1)];
+        var second=homes.Where(h=>h.node!=first.node && Mathf.Abs(h.time-first.time)<first.time*.5f)
+            .OrderBy(h=>Vector2.Distance(h.node.Position,first.node.Position)).Select(h=>(h.node,h.time)).DefaultIfEmpty(homes.First(h=>h.node!=first.node)).First();
+        return new[]{first.node.Id,second.node.Id};
+    }
     private static string TrayName(Topping t)=>"Tray_"+ShopStrings.Topping(t);
 
     // ---- 1. 作る ----
@@ -61,15 +79,27 @@ public sealed partial class TutorialDirector
     private void ChapterDelivery()
     {
         OpenShop(ShopZone.Dispatch);
-        var homes=NearestHomes(2);
+        var homes=DeliveryHomes();
         var a=AddOrder(homes[0],BakingState.Ready);var b=AddOrder(homes[homes.Length>1?1:0],BakingState.Ready);
-        Explain("ここは配達指示の画面です。左に焼き上がった伝票、下に配達員のレーン、地図に届け先が出ます。",()=>Parts("Orders","LaneViewport"));
+        Explain("ここは配達指示の画面です。左に焼き上がった伝票、下に配達員のレーン、地図に届け先が出ます。",()=>Parts("Orders","LaneViewport"),()=>FocusMap(homes));
         Add($"伝票を、配達員のレーンへドラッグしましょう（{Courier.Name} は{Courier.Capacity}枚まで運べます）。",()=>Roster.People.Any(p=>Handover.BagOf(p).Count>=1),()=>new[]{OrderCard(),Part("Lane_"+Courier.Name)});
         Add("もう1枚も同じレーンへ入れると、1回の配達でまとめて届けられます。",()=>Roster.People.Any(p=>Handover.BagOf(p).Count>=2),()=>new[]{OrderCard(),Part("Lane_"+Courier.Name)});
-        Explain("地図の線が、配達員が通る道です。線をつかんで別の道へドラッグすると、道順を変えられます。混んでいる道は避けましょう。");
+        Explain("地図の赤い線が、配達員が通る道です。線をつかんで別の道へドラッグすると、道順を変えられます（道をクリックしても選べます）。混んでいる道は避けましょう。");
         Add("「出発」を押しましょう。",()=>Roster.People.Any(p=>p.CurrentTrip!=null),()=>Parts("Depart_"+Courier.Name));
         Add("配達中です。「早送り」を押している間は時間が早く進みます。2軒に届くまで待ちましょう。",()=>a.Status==OrderStatus.Delivered && b.Status==OrderStatus.Delivered,()=>Parts("FastForward"));
         Explain("配達完了！ 期限内に届けると、チップと品質ボーナスがもらえます。配達員は店に戻ると、次の配達に行けます。",()=>Parts("Lane_"+Courier.Name));
+    }
+
+    /// <summary>Zooms the dispatch map onto the shop and the tutorial's homes, so the route is large enough to follow.</summary>
+    private void FocusMap(string[] homes)
+    {
+        var map=FindFirstObjectByType<MapManager>();var cam=Camera.main;if(map==null || cam==null)return;
+        var points=homes.Select(map.HomeAt).Append(map.HomeAt(map.StoreNodeId)).ToList();
+        Vector2 min=points.Aggregate(Vector2.Min),max=points.Aggregate(Vector2.Max),center=(min+max)/2;
+        // The map shows between the order list (left), the lanes (bottom) and the controls (right): aim a bit up and right.
+        float size=Mathf.Max((max.y-min.y)*.5f/.45f,(max.x-min.x)*.5f/(.45f*cam.aspect),3f);
+        cam.orthographicSize=size;
+        cam.transform.position=new Vector3(center.x-size*cam.aspect*.08f,center.y-size*.22f,cam.transform.position.z);
     }
 
     // ---- 3. 内勤と作り直し ----
@@ -87,7 +117,7 @@ public sealed partial class TutorialDirector
         Explain("次は、失敗したピザの扱いです。いまから、ソースが薄くて具がちがうピザを焼いてみます。");
         Add($"焼いています…（{name}は別の注文を作っています）",()=>failed!=null && failed.NeedsDecision,()=>Parts("Ovens"),()=>BakeFailedPizza(homes[0],homes[homes.Length>1?1:0]));
         steps[^1].Tick=KeepFailedPizzaWithPlayer;
-        Add("失敗したピザが保温棚に出ました。ゴミ箱へドラッグすると、作り直しになります（材料費がかかります）。",()=>discarded || remake.IsReady,()=>Parts("WarmingShelf","Trash"));
+        Add("失敗したピザが保温棚に出ました。ゴミ箱へドラッグすると、作り直しになります（捨てても費用はかかりません。材料費は出発のときに1枚分だけです）。",()=>discarded || remake.IsReady,()=>Parts("WarmingShelf","Trash"));
         Add($"作り直しは生地から始まります。自分で作るか、そのまま8秒待つと{name}が引き継ぎます。完成させましょう。",()=>remake.IsReady,()=>Parts("Benches"));
         Explain($"完成！ 内勤は手が空くと、放っておかれたピザを引き継ぎます。失敗したピザは「そのまま出す」（★が少ない）か、作り直すかを選べます。");
     }

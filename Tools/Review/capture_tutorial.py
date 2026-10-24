@@ -39,6 +39,16 @@ def wait(cond,seconds=120):
   time.sleep(.3)
  raise RuntimeError('timed out at '+json.dumps(state()))
 NEXT='d.Next();return "next";'
+# Presses the red route line and drags it onto a nearby road that is not on the route (the map must not pan).
+ROUTE_DRAG=('var bv=UnityEngine.Object.FindFirstObjectByType<BusinessView>();var map=UnityEngine.Object.FindFirstObjectByType<MapManager>();var cam=Camera.main;'
+ 'var p=roster.People.OrderByDescending(x=>x.Capacity).First();var path=RoadPathfinder.Suggest(map,handover.BagOf(p),p).EdgeIds.ToList();'
+ 'var pins=handover.BagOf(p).Select(o=>(Vector2)cam.WorldToScreenPoint(map.HomeAt(o.DestinationNodeId))).Append((Vector2)cam.WorldToScreenPoint(map.HomeAt(map.StoreNodeId))).ToList();'
+ 'Vector2 a=path.Select(id=>{var x=map.Edges.First(y=>y.Id==id);var q=RoadGeometry.Points(map,x);return (Vector2)cam.WorldToScreenPoint(q[q.Length/2]);}).OrderByDescending(q=>pins.Min(pp=>(pp-q).magnitude)).First();'
+ 'var nodes=path.SelectMany(id=>{var x=map.Edges.First(y=>y.Id==id);return new[]{x.NodeAId,x.NodeBId};}).ToHashSet();'
+ 'var other=map.Edges.Where(x=>!path.Contains(x.Id) && (nodes.Contains(x.NodeAId)||nodes.Contains(x.NodeBId))).OrderBy(x=>((Vector2)cam.WorldToScreenPoint(RoadGeometry.Points(map,x)[RoadGeometry.Points(map,x).Length/2])-a).sqrMagnitude).First();'
+ 'var op=RoadGeometry.Points(map,other);Vector2 b=cam.WorldToScreenPoint(op[op.Length/2]);var before=cam.transform.position;'
+ 'bv.PointerDown(a);string t1=bv.InputTrace;bv.PointerMove(a+new Vector2(12,0));bv.PointerMove(b);bv.PointerUp(b);'
+ 'return t1+" || "+bv.InputTrace+" || camera moved "+(cam.transform.position-before).magnitude.ToString("F3");')
 ACTIONS={
  1:[NEXT,
     'var o=orders.Orders.First();return cooking.Claim(o,0).ToString();',
@@ -53,7 +63,7 @@ ACTIONS={
  2:[NEXT,
     'var p=roster.People.OrderByDescending(x=>x.Capacity).First();return handover.Bag(orders.Orders.First(o=>o.IsReady && !handover.IsBagged(o)),p).ToString();',
     'var p=roster.People.OrderByDescending(x=>x.Capacity).First();return handover.Bag(orders.Orders.First(o=>o.IsReady && !handover.IsBagged(o)),p).ToString();',
-    NEXT,
+    ('drag',ROUTE_DRAG),
     'var p=roster.People.OrderByDescending(x=>x.Capacity).First();var b=UnityEngine.Object.FindFirstObjectByType<BusinessView>().GetComponentsInChildren<StickerButton>(true).First(x=>x.name=="Depart_"+p.Name);b.Button.onClick.Invoke();return "depart";',
     ('wait',None),
     NEXT],
@@ -77,6 +87,8 @@ try:
    report.append(f'ch{ch} step {k+1}/{s["n"]}: frames {s["t"]} -> {p}')
    if isinstance(action,tuple):
     kind,src=action
+    if kind=='drag':
+     report.append('   route drag: '+str(code(PRE+src)));time.sleep(.8);report.append('   after drag -> '+str(shot(f'ch{ch}-step{k+1}-dragged')));code(PRE+NEXT)
     if kind=='poll':
      for _ in range(400):
       if code(PRE+src)!='wait':break

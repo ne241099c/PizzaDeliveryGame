@@ -37,8 +37,9 @@ public sealed partial class TutorialDirector : MonoBehaviour
     private BusinessView business;
     private ScreenRouter router;
     private GameMenu menu;
-    private RectTransform overlay,coach,frames;
-    private TextMeshProUGUI coachTitle,coachText;
+    private RectTransform overlay,coach,frames,pointer;
+    private float poppedAt=-10;
+    private TextMeshProUGUI coachTitle,coachText,pointerText;
     private StickerButton nextButton,quitButton,secondButton;
     private readonly List<RectTransform> frameList=new();
     private bool started;
@@ -79,7 +80,7 @@ public sealed partial class TutorialDirector : MonoBehaviour
     {
         StepIndex=index;
         if(index>=steps.Count){Finish();return;}
-        var step=steps[index];step.Enter?.Invoke();nextLookup=0;
+        var step=steps[index];step.Enter?.Invoke();nextLookup=0;poppedAt=Time.unscaledTime;
         clock.AutomaticTick=!step.Manual;
         coachTitle.text=$"チュートリアル {Chapter}. {ChapterTitles[Chapter-1]}　{index+1}/{steps.Count}";
         coachText.text=step.Text;
@@ -126,12 +127,18 @@ public sealed partial class TutorialDirector : MonoBehaviour
         var canvas=router.Root(ScreenId.Business).GetComponentInParent<Canvas>();
         overlay=UiKit.Stretch(canvas.rootCanvas.transform,"TutorialOverlay");
         frames=UiKit.Stretch(overlay,"Frames");
-        coach=UiKit.Card(overlay,"TutorialCoach",0,0,660,236,T.paper,18,6,3,T.tomato);
-        coachTitle=UiKit.Label(coach,"Title","",28,16,604,32,T.bodySize,T.tomato,FontRole.Black);
-        coachText=UiKit.Label(coach,"Text","",28,52,604,112,T.subheadingSize,T.line,FontRole.Black,TextAlignmentOptions.TopLeft,true);
-        nextButton=UiKit.Button(coach,"TutorialNext","次へ ▶",StickerKind.Primary,404,166,228,56,T.subheadingSize,Next);
-        secondButton=UiKit.Button(coach,"TutorialTitle","タイトルへ",StickerKind.Secondary,176,166,212,56,T.bodySize,()=>GameScenes.LoadTitle());
-        quitButton=UiKit.Button(coach,"TutorialQuit","やめる",StickerKind.Secondary,28,166,132,56,T.bodySize,()=>GameScenes.LoadTitle());
+        // Large, red-framed and bouncing on every new step, so it is read rather than missed.
+        coach=UiKit.Card(overlay,"TutorialCoach",0,0,800,300,T.paper,22,10,6,T.tomato);
+        var band=UiKit.Box(coach,"Band",0,0,800,60);UiKit.Fill(band,T.tomato,18);
+        UiKit.Fill(UiKit.Box(band,"Square",0,30,800,30),T.tomato,0);
+        coachTitle=UiKit.Label(band,"Title","",28,0,744,60,T.subheadingSize,Color.white,FontRole.Display);
+        coachText=UiKit.Label(coach,"Text","",32,76,736,132,30,T.line,FontRole.Black,TextAlignmentOptions.TopLeft,true);
+        nextButton=UiKit.Button(coach,"TutorialNext","次へ ▶",StickerKind.Primary,520,220,248,64,T.headingSize,Next,FontRole.Display);
+        secondButton=UiKit.Button(coach,"TutorialTitle","タイトルへ",StickerKind.Secondary,268,220,232,64,T.subheadingSize,()=>GameScenes.LoadTitle());
+        quitButton=UiKit.Button(coach,"TutorialQuit","やめる",StickerKind.Secondary,32,220,140,64,T.bodySize,()=>GameScenes.LoadTitle());
+        pointer=UiKit.Card(overlay,"TutorialPointer",0,0,150,56,T.tomato,28,6,3,Color.white);
+        pointerText=UiKit.Label(pointer,"Text","ここ！ ▼",0,0,150,56,T.subheadingSize,Color.white,FontRole.Display,TextAlignmentOptions.Center);
+        foreach(var g in pointer.GetComponentsInChildren<Graphic>())g.raycastTarget=false;
         overlay.SetAsLastSibling();
     }
     private void Highlight(IEnumerable<RectTransform> targets)
@@ -144,18 +151,37 @@ public sealed partial class TutorialDirector : MonoBehaviour
         {
             bool shown=i<rects.Count;frameList[i].gameObject.SetActive(shown);if(!shown)continue;
             var r=rects[i];UiKit.Place(frameList[i],r.x-10,r.y-10,r.width+20,r.height+20);
-            foreach(var g in frameList[i].GetComponentsInChildren<Image>())g.color=new Color(T.tomato.r,T.tomato.g,T.tomato.b,pulse);
+            foreach(var g in frameList[i].GetComponentsInChildren<Image>())if(g.name!="Glow")g.color=new Color(T.tomato.r,T.tomato.g,T.tomato.b,pulse);
         }
         PlaceCoach(rects);
+        // "ここ！" bobs above the first framed part; the card pops when a step begins.
+        pointer.gameObject.SetActive(rects.Count>0);
+        if(rects.Count>0)
+        {
+            var r=rects[0];float bob=Mathf.Abs(Mathf.Sin(Time.unscaledTime*4))*12;
+            // Above the part; if that would cover the top bar, beside it (right, else below).
+            float x=Mathf.Clamp(r.center.x-75,8,overlay.rect.width-158),y=r.y-10-56-12-bob;
+            string text="ここ！ ▼";
+            if(y<124)
+            {
+                if(r.xMax+178<overlay.rect.width){x=r.xMax+16+bob;y=r.center.y-28;text="← ここ！";}
+                else{y=r.yMax+22+bob;text="▲ ここ！";}
+            }
+            pointerText.text=text;
+            UiKit.Place(pointer,x,y,150,56);
+        }
+        float pop=Mathf.Clamp01((Time.unscaledTime-poppedAt)/.35f);
+        coach.localScale=Vector3.one*(1+.12f*Mathf.Sin(pop*Mathf.PI)*(1-pop));
     }
     private RectTransform NewFrame()
     {
         var f=UiKit.Box(frames,"Frame",0,0,10,10);
+        var glow=UiKit.Stretch(f,"Glow");var gi=UiKit.Fill(glow,new Color(T.cheese.r,T.cheese.g,T.cheese.b,.18f),12);gi.raycastTarget=false;
         foreach(var (name,min,max) in new[]{("Top",new Vector2(0,1),new Vector2(1,1)),("Bottom",new Vector2(0,0),new Vector2(1,0)),("Left",new Vector2(0,0),new Vector2(0,1)),("Right",new Vector2(1,0),new Vector2(1,1))})
         {
             var side=new GameObject(name,typeof(RectTransform),typeof(Image)).GetComponent<RectTransform>();side.SetParent(f,false);
             side.anchorMin=min;side.anchorMax=max;side.pivot=new Vector2(.5f,.5f);
-            bool horizontal=name=="Top" || name=="Bottom";side.sizeDelta=horizontal?new Vector2(0,8):new Vector2(8,0);side.anchoredPosition=Vector2.zero;
+            bool horizontal=name=="Top" || name=="Bottom";side.sizeDelta=horizontal?new Vector2(0,12):new Vector2(12,0);side.anchoredPosition=Vector2.zero;
             side.GetComponent<Image>().raycastTarget=false;
         }
         return f;

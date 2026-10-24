@@ -47,6 +47,7 @@ public sealed class UITheme : ScriptableObject
     [SerializeField] public Color mapBuildingFill=Hex("#E6D9C4");
     [SerializeField, Tooltip("配達先の家。飾りの建物と見分けられる色にします。")] public Color mapHomeFill=Hex("#F1A43A");
     [SerializeField, Min(.1f), Tooltip("配達先の家の大きさ（nodeSizeに対する倍率）。")] public float mapHomeScale=1.4f;
+    [SerializeField, Min(0f), Tooltip("配達先の家を道の横へずらす距離（ワールド単位）。家の前の点は道の上に残り、短い私道でつなぎます。0で道の上に描きます。")] public float mapHomeOffset=.6f;
     [SerializeField] public Color mapResidentialFill=Hex("#FFF6E5");
     public Color CourierColor(string name)
     {
