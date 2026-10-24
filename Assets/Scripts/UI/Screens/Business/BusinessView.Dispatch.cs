@@ -508,6 +508,10 @@ public sealed partial class BusinessView
     // ---- pins on the map (world space, constant screen size) ----
     private string pinViewSignature;
     private float Px=>Camera.main.orthographicSize*2f/Mathf.Max(1,Camera.main.pixelHeight);
+    // Pins keep a constant screen size while zoomed in; zoomed out they shrink so a pin stays about this many world units
+    // tall (roughly one street apart) and the town is not buried under them.
+    private const float PinWorldHeight=1.1f,PinPixels=36,PinMinimumFit=.4f;
+    private float PinFit(float px)=>Mathf.Clamp(PinWorldHeight/(PinPixels*px),PinMinimumFit,1f);
     private void UpdatePins()
     {
         if(map==null || !map.IsReady)return;var cam=Camera.main;if(cam==null)return;
@@ -539,7 +543,7 @@ public sealed partial class BusinessView
             }
             if(!pins.TryGetValue(node.Id,out var pin))pin=pins[node.Id]=MakePin(node);
             pin.Root.gameObject.SetActive(true);
-            var home=map.HomeAt(node.Id);pin.Root.position=new Vector3(home.x,home.y,-1);pin.Root.localScale=Vector3.one*px;
+            var home=map.HomeAt(node.Id);pin.Root.position=new Vector3(home.x,home.y,-1);pin.Root.localScale=Vector3.one*px*PinFit(px);
             if(node.IsStore)
             {
                 pin.Sprite.sprite=UiKit.Art("shop_badge");
@@ -555,15 +559,15 @@ public sealed partial class BusinessView
             bool red=visit>=0 || (order!=null && order.IsReady);
             bool compact=map.City!=null && map.CitySettings.blockSize/px<T.cityDetailMinimumBlockPixels;
             pin.Sprite.sprite=UiKit.Art("pin_white");
-            pin.Sprite.transform.localScale=Vector3.one*(compact?Mathf.Max(T.cityCompactPinPixels,T.orderPinNumberSize*.2f):red?36:30);
-            pin.Sprite.transform.localPosition=new Vector3(0,compact?14:red?26:22,0);
+            pin.Sprite.transform.localScale=Vector3.one*(compact?PinPixels:red?36:30);
+            pin.Sprite.transform.localPosition=new Vector3(0,compact?26:red?26:22,0);
             pin.Number.text=order!=null?"#"+Number(order):"";
             pin.Number.fontSize=T.orderPinNumberSize;
             pin.Number.rectTransform.sizeDelta=new Vector2(110,42);
             pin.Number.fontStyle=FontStyles.Normal;
             pin.Number.outlineWidth=0;
             pin.Number.color=T.line;
-            pin.Number.transform.localPosition=new Vector3(0,compact?18:red?32:26,0);
+            pin.Number.transform.localPosition=new Vector3(0,compact?32:red?32:26,0);
             pin.NumberBack.enabled=true;
             pin.NumberBack.transform.localPosition=pin.Number.transform.localPosition;
             float numberWidth=Mathf.Max(T.orderPinNumberBackgroundPixels,pin.Number.GetPreferredValues().x+T.smallSpace);

@@ -82,6 +82,10 @@ public sealed partial class TutorialDirector
         var homes=DeliveryHomes();
         var a=AddOrder(homes[0],BakingState.Ready);var b=AddOrder(homes[homes.Length>1?1:0],BakingState.Ready);
         Explain("ここは配達指示の画面です。左に焼き上がった伝票、下に配達員のレーン、地図に届け先が出ます。",()=>Parts("Orders","LaneViewport"),()=>FocusMap(homes));
+        Explain("地図のピンが届け先です。ピンの色で注文の状態がわかります。黄＝受付（まだ作っていない）、青＝作っている、赤＝窯で焼いている、緑＝焼き上がり（配達できる）。ピンの番号は左の伝票の番号と同じです。",()=>Parts("Orders"));
+        var score=FindFirstObjectByType<ScoreManager>();float grace=score!=null?score.LateAcceptanceSeconds:20;
+        Explain("注文には「お届け目安」があります（上のバーの秒数）。注文が入ってからこの秒数以内に届けると期限内で、代金にチップが付きます。伝票に残り時間が出ます。",()=>Parts("Orders"));
+        Explain($"遅れると、1秒ごとに代金が減り、評判（★）も下がります。期限を過ぎてから{grace:F0}秒以内に出発しないと、注文はキャンセルになります。出発した注文はキャンセルされません。",()=>Parts("Orders"));
         Add($"伝票を、配達員のレーンへドラッグしましょう（{Courier.Name} は{Courier.Capacity}枚まで運べます）。",()=>Roster.People.Any(p=>Handover.BagOf(p).Count>=1),()=>new[]{OrderCard(),Part("Lane_"+Courier.Name)});
         Add("もう1枚も同じレーンへ入れると、1回の配達でまとめて届けられます。",()=>Roster.People.Any(p=>Handover.BagOf(p).Count>=2),()=>new[]{OrderCard(),Part("Lane_"+Courier.Name)});
         Explain("地図の赤い線が、配達員が通る道です。線をつかんで別の道へドラッグすると、道順を変えられます（道をクリックしても選べます）。混んでいる道は避けましょう。");

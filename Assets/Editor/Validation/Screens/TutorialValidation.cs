@@ -62,19 +62,21 @@ public static class TutorialValidation
             director=Start(2);
             var ready=orders.Orders.Where(x=>x.IsReady).ToArray();Check(ready.Length==2,"two baked orders to deliver");
             director.Next();director.Poll();
+            // Pin colours, the delivery promise, and lateness and cancellation.
+            for(int i=1;i<=3;i++){Check(director.StepIndex==i,"delivery rules explanation "+i);director.Next();director.Poll();}
             var person=roster.People.OrderByDescending(p=>p.Capacity).First();
-            Check(director.StepIndex==1,"drag to a lane step");
+            Check(director.StepIndex==4,"drag to a lane step");
             Check(handover.Bag(ready[0],person),"first order into the lane");director.Poll();
-            Check(director.StepIndex==2 && handover.Bag(ready[1],person),"second order into the same lane");director.Poll();
-            Check(director.StepIndex==3,"route explanation");director.Next();director.Poll();
+            Check(director.StepIndex==5 && handover.Bag(ready[1],person),"second order into the same lane");director.Poll();
+            Check(director.StepIndex==6,"route explanation");director.Next();director.Poll();
             var depart=business.GetComponentsInChildren<StickerButton>(true).FirstOrDefault(b=>b.name=="Depart_"+person.Name);
-            Check(director.StepIndex==4,"the 出発 step");
+            Check(director.StepIndex==7,"the 出発 step");
             // The lanes are laid out in rendered frames; without one, call what the button calls.
             if(depart!=null)depart.Button.onClick.Invoke();else business.Depart(person);
             director.Poll();
-            Check(person.CurrentTrip!=null && director.StepIndex==5,"departed, waiting step");
+            Check(person.CurrentTrip!=null && director.StepIndex==8,"departed, waiting step");
             Advance(director,600,()=>ready.All(x=>x.Status==OrderStatus.Delivered));
-            Check(director.StepIndex==6,"both delivered, closing explanation");
+            Check(director.StepIndex==9,"both delivered, closing explanation");
             director.Next();director.Poll();Check(director.Finished,"chapter 2 finishes");
             UnityEngine.Object.DestroyImmediate(director.gameObject);director=null;
 
