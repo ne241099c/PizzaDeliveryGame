@@ -23,7 +23,7 @@
 | late | 遅れ・キャンセル | Kenney Interface Sounds `error_006` |
 | stamp / mission | ミッション達成のハンコ／ジングル | Kenney Impact Sounds `impactPunch_heavy_000` / Music Jingles `jingles_PIZZI03` |
 | day_start | 営業開始のファンファーレ（鳴っている間はBGMを待たせる） | "Just a random fanfare" / spring-spring（OpenGameArt, CC0） |
-| day_end | 閉店 | Kenney Music Jingles `jingles_PIZZI07` |
+| day_end | 閉店の笛「ピッ、ピー」（0.8秒） | このプロジェクトで合成（`day_end.wav`、CC0扱い） |
 | repay / payoff | 返済／完済 | Kenney Casino Audio `chips-stack-1` / Music Jingles `jingles_PIZZI12` |
 | page | ストーリーのページ送り | Kenney RPG Audio `bookFlip1` |
 

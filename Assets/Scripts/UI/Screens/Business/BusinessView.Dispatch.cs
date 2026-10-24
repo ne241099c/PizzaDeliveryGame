@@ -510,7 +510,7 @@ public sealed partial class BusinessView
     private float Px=>Camera.main.orthographicSize*2f/Mathf.Max(1,Camera.main.pixelHeight);
     // Pins keep a constant screen size while zoomed in; zoomed out they shrink so a pin stays about this many world units
     // tall (roughly one street apart) and the town is not buried under them.
-    private const float PinWorldHeight=1.1f,PinPixels=36,PinMinimumFit=.4f;
+    private const float PinWorldHeight=.8f,PinPixels=30,PinMinimumFit=.3f;
     private float PinFit(float px)=>Mathf.Clamp(PinWorldHeight/(PinPixels*px),PinMinimumFit,1f);
     private void UpdatePins()
     {
@@ -559,19 +559,20 @@ public sealed partial class BusinessView
             bool red=visit>=0 || (order!=null && order.IsReady);
             bool compact=map.City!=null && map.CitySettings.blockSize/px<T.cityDetailMinimumBlockPixels;
             pin.Sprite.sprite=UiKit.Art("pin_white");
-            pin.Sprite.transform.localScale=Vector3.one*(compact?PinPixels:red?36:30);
+            pin.Sprite.transform.localScale=Vector3.one*(compact?PinPixels:red?30:26);
             pin.Sprite.transform.localPosition=new Vector3(0,compact?26:red?26:22,0);
-            pin.Number.text=order!=null?"#"+Number(order):"";
-            pin.Number.fontSize=T.orderPinNumberSize;
+            pin.Number.text=order!=null?Number(order).ToString():"";
+            pin.Number.fontSize=T.orderPinNumberSize*.65f;
             pin.Number.rectTransform.sizeDelta=new Vector2(110,42);
             pin.Number.fontStyle=FontStyles.Normal;
             pin.Number.outlineWidth=0;
             pin.Number.color=T.line;
-            pin.Number.transform.localPosition=new Vector3(0,compact?32:red?32:26,0);
+            pin.Number.transform.localPosition=new Vector3(0,compact?28:red?28:24,0);
             pin.NumberBack.enabled=true;
             pin.NumberBack.transform.localPosition=pin.Number.transform.localPosition;
-            float numberWidth=Mathf.Max(T.orderPinNumberBackgroundPixels,pin.Number.GetPreferredValues().x+T.smallSpace);
-            pin.NumberBack.transform.localScale=new Vector3(numberWidth,T.orderPinNumberBackgroundPixels,1)/1.28f;
+            // The number sits in a round badge that grows only as far as a two- or three-digit number needs.
+            float numberSize=Mathf.Max(T.orderPinNumberBackgroundPixels*.7f,pin.Number.GetPreferredValues().x+6);
+            pin.NumberBack.transform.localScale=new Vector3(numberSize,numberSize,1)/1.28f;
             bool near=Carries(held) && nearSeconds.TryGetValue(node.Id,out _);
             pin.Glow.enabled=near;
             if(near)SetPinLabel(pin,nearSeconds[node.Id]<.5f?"同じ届け先":$"近い・{nearSeconds[node.Id]:F0}秒",T.basil,Color.white);
