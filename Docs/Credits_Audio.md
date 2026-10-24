@@ -22,9 +22,10 @@
 | delivered | 配達完了（売上） | Kenney RPG Audio `handleCoins` |
 | late | 遅れ・キャンセル | Kenney Interface Sounds `error_006` |
 | stamp / mission | ミッション達成のハンコ／ジングル | Kenney Impact Sounds `impactPunch_heavy_000` / Music Jingles `jingles_PIZZI03` |
-| day_start / day_end | 開店／閉店 | Kenney Music Jingles `jingles_PIZZI01` / `jingles_PIZZI07` |
+| day_start | 営業開始のファンファーレ（鳴っている間はBGMを待たせる） | "Just a random fanfare" / spring-spring（OpenGameArt, CC0） |
+| day_end | 閉店 | Kenney Music Jingles `jingles_PIZZI07` |
 | repay / payoff | 返済／完済 | Kenney Casino Audio `chips-stack-1` / Music Jingles `jingles_PIZZI12` |
 | page | ストーリーのページ送り | Kenney RPG Audio `bookFlip1` |
 
 - Kenney: https://kenney.nl （Interface Sounds, Impact Sounds, RPG Audio, Casino Audio, Music Jingles）
-- OpenGameArt: https://opengameart.org/content/happy-clappy-loop ・ /flowerbed-fields-loop ・ /once-upon-a-time-loop
+- OpenGameArt: https://opengameart.org/content/happy-clappy-loop ・ /flowerbed-fields-loop ・ /once-upon-a-time-loop ・ /just-a-random-fanfare

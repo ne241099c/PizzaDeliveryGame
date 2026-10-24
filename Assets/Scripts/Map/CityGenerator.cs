@@ -59,6 +59,12 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     [Min(2), Tooltip("v10のゆがみの波長。大きいほどゆったり曲がります。")] public float newTownWarpLength=7.5f;
     [Range(0,.6f), Tooltip("v10の区画内の生活道路のふくらみ。")] public float newTownBow=.3f;
     [Min(100), Tooltip("v10の道の本数の上限（検証）。")] public int newTownMaximumEdges=900;
+    [Header("v11: 幹線と近所ごとの道（美しが丘のような郊外）")]
+    [Min(.8f), Tooltip("v11の道の点の間隔。")] public float patchStreetSpacing=1.25f;
+    [Min(6), Tooltip("v11で街全体を作る半径（そのうち店に近い近所から開きます）。")] public float patchTownRadius=13.5f;
+    [Range(1,4), Tooltip("v11の幹線（太い道）の本数。")] public int patchAvenues=3;
+    [Min(14), Tooltip("v11の近所の最大数（開ける街区の最大数以上）。")] public int patchCount=20;
+    [Min(3), Tooltip("v11の近所の中心どうしの最低間隔。")] public float patchSpacing=5f;
     [Header("渋滞（v9）")]
     [Range(0,1), Tooltip("毎日、大通りのうち渋滞する割合。日付と街のseedで決まります。")] public float dailyCongestionShare=.3f;
     [Range(.1f,1), Tooltip("渋滞した道の速さの倍率（下限）。小さいほどひどい渋滞。")] public float congestionTrafficMin=.3f;
@@ -103,11 +109,12 @@ public sealed class GeneratedCity
 /// <summary>Deterministic template placement. Prefixes and each block's RNG are independent of later expansion.</summary>
 public static partial class CityGenerator
 {
-    public const int CurrentVersion=10;
+    public const int CurrentVersion=11;
     private static readonly Dictionary<string,int> validatedNetworkVariants=new();
     public static GeneratedCity Build(int seed,int blockCount,CityGenerationSettings s,int variant=0,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
         if(blockCount<1 || s.templates==null || s.templates.Length<1)throw new ArgumentException("City needs blocks and templates.");
+        if(version>=11)return BuildPatchwork(seed,blockCount,s,variant,version,savedHousesPerBlock);
         if(version>=10)return BuildNewTown(seed,blockCount,s,variant,version,savedHousesPerBlock);
         if(version>=8)return BuildConnectedStreets(seed,blockCount,s,variant,version,savedHousesPerBlock);
         if(version>=7)return BuildStreetNetwork(seed,blockCount,s,variant,version,savedHousesPerBlock);

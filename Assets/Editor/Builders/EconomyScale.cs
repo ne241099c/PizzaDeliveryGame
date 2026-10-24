@@ -6,7 +6,8 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using Object=UnityEngine.Object;
 
-/// <summary>The shop's money values (2026-10-24: loan 10000, every amount larger). Each value is written as
+/// <summary>The shop's money values (2026-10-24: loan 10000, every amount larger; 2026-10-25: loan 15000 and sales x2.8
+/// after the user cleared in 8 of 20 days). Each value is written as
 /// base x factor, so applying again changes nothing. The base values are the ones before the change; the older
 /// validations are written against them and run inside <see cref="Legacy"/>.</summary>
 public static class EconomyScale
@@ -14,8 +15,8 @@ public static class EconomyScale
     /// <summary>Costs (wages, materials, fixed costs, equipment, training, starting cash).</summary>
     public const float CostFactor=2.5f;
     /// <summary>Sales (pizza prices, quality bonus, late reduction). Larger than costs so the loan can be repaid.</summary>
-    public const float RevenueFactor=3f;
-    public const float InitialLoan=10000;
+    public const float RevenueFactor=2.8f;
+    public const float InitialLoan=15000;
     /// <summary>Equipment maintenance on top of the cost factor (2026-10-24: halved so equipment pays back).</summary>
     public const float MaintenanceFactor=.5f;
     /// <summary>Direct earnings per upgrade: oven price +8%, bike on-time tip +8% of the price, workbench materials -20%

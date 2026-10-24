@@ -60,7 +60,8 @@ public static class RoadGeometry
     private static Vector2[] Curved(MapManager map,MapEdge edge)
     {
         if(!known.Contains(edge))Index(map);
-        if(curves.TryGetValue(edge,out var cached))return cached;
+        // Callers may reverse the array for their direction of travel, so they always get their own copy.
+        if(curves.TryGetValue(edge,out var cached))return (Vector2[])cached.Clone();
         Vector2 a=nodeAt[edge.NodeAId],b=nodeAt[edge.NodeBId];
         Vector2 before=Continuation(edge,edge.NodeAId,edge.NodeBId)??a-(b-a),after=Continuation(edge,edge.NodeBId,edge.NodeAId)??b+(b-a);
         // Catmull-Rom through a and b; the ends keep the neighbouring roads' direction.
@@ -71,7 +72,7 @@ public static class RoadGeometry
             float t=(float)i/CurveSamples,t2=t*t,t3=t2*t;
             points[i]=(2*t3-3*t2+1)*a+(t3-2*t2+t)*t0+(-2*t3+3*t2)*b+(t3-t2)*t1;
         }
-        curves[edge]=points;return points;
+        curves[edge]=points;return (Vector2[])points.Clone();
     }
 
     public static Vector2 PointAt(IReadOnlyList<Vector2> points,float progress)

@@ -14,6 +14,7 @@ public sealed class GameAudio : MonoBehaviour
     private readonly Dictionary<string,float> lastPlayed=new();
     private AudioSource music,effects;
     private string musicName="";
+    private float musicHoldUntil;
     // Bound scene objects.
     private GameClock clock;private ScreenRouter router;private CookingManager cooking;private OrderBook orders;
     private DeliveryFlowController flow;private DayStats stats;
@@ -49,7 +50,10 @@ public sealed class GameAudio : MonoBehaviour
         if(instance==null || instance.musicName==name)return;
         instance.musicName=name;var clip=instance.Clip(name);
         instance.music.Stop();if(clip==null)return;
-        instance.music.clip=clip;instance.music.volume=MusicVolume;instance.music.Play();
+        instance.music.clip=clip;instance.music.volume=MusicVolume;
+        // While the opening fanfare plays the music waits, then comes in (Update).
+        if(Time.unscaledTime<instance.musicHoldUntil)return;
+        instance.music.Play();
     }
     /// <summary>The story music while the opening/ending plays, then the screen's music again.</summary>
     public static void StoryMusic(bool on)
@@ -96,7 +100,12 @@ public sealed class GameAudio : MonoBehaviour
         Music(router.Current==ScreenId.Business?"bgm_business":router.Current==ScreenId.GameOver?"":"bgm_prep");
     }
     private void ScreenChanged(ScreenId id)=>ScreenMusic();
-    private void DayStarted()=>Play("day_start");
+    private void DayStarted()
+    {
+        // The shop opens with a fanfare; the business music starts once it has rung out.
+        var clip=Clip("day_start");musicHoldUntil=Time.unscaledTime+(clip!=null?Mathf.Min(clip.length,8f):0);
+        music.Stop();Play("day_start");
+    }
     private void DayEnded()=>Play("day_end");
     private void PlayerActed(string sound)=>Play(sound);
     private void Packed(PizzaJob job){if(job.Worker==PizzaWorker.Player)Play("boxed",.8f);}
@@ -110,6 +119,7 @@ public sealed class GameAudio : MonoBehaviour
     }
     private void Update()
     {
+        if(music.clip!=null && !music.isPlaying && Time.unscaledTime>=musicHoldUntil && musicHoldUntil>0){musicHoldUntil=0;music.Play();}
         if(cooking==null || clock==null || clock.Phase!=DayPhase.Open)return;
         // The player's pizza reaches the green band: a ding, once per pizza.
         for(int i=0;i<cooking.OvenCount;i++)

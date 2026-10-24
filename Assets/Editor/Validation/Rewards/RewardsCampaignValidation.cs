@@ -23,7 +23,7 @@ public static class RewardsCampaignValidation
             clock.AutomaticTick=false;F<OrderSpawner>().enabled=false;map.SeedOverride=104;
             GameScenes.NewGameMode=GameMode.Normal;campaign.NewGame();
             Check(goals.State.mode==GameMode.Normal && goals.State.normalDays==1,"chosen mode and configurable duration");
-            Check(goals.Loan==10000 && goals.InterestFor(1000)==5,"configured loan and daily 0.5 percent interest");
+            Check(goals.Loan==(decimal)EconomyScale.InitialLoan && goals.InterestFor(1000)==5,"configured loan and daily 0.5 percent interest");
             Check(goals.NetAssets==economy.Cash-goals.Loan,"net assets separate from cash");
             Check(goals.TodayMissions.Count==3 && goals.TodayMissions.Select(m=>m.id).Distinct().Count()==3,"three distinct offers");
             var mission=goals.TodayMissions[0];Check(goals.TodayMissions.All(m=>m.selected),"every mission is active without choosing");

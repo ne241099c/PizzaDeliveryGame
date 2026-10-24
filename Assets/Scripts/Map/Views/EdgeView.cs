@@ -9,7 +9,7 @@ public class EdgeView : MonoBehaviour
     private LineRenderer border;
     private bool styledUsed,styledAvailable,styledLast;
     private float styledPixelScale;
-    private bool directionalView,residentialRoad;
+    private bool directionalView,residentialRoad,avenue;
     private void LateUpdate()
     {
         var cam=Camera.main;if(road==null || cam==null)return;
@@ -22,6 +22,7 @@ public class EdgeView : MonoBehaviour
     {
         road=edge;EdgeId = edge.Id;
         residentialRoad=mapManager.City!=null && mapManager.City.version>=6 && (edge.Id.Contains("_Local") || edge.Id.Contains("_House") || edge.Id.Contains("_Pair"));
+        avenue=edge.Id.Contains("_Avenue");
         gameObject.name = "Edge_" + edge.Id;
         worldPoints=RoadGeometry.Points(mapManager,edge);
         Vector2 start=worldPoints[0];
@@ -78,6 +79,7 @@ public class EdgeView : MonoBehaviour
         var theme=UITheme.Active;bool main=road.RoadType==RoadType.Main;bool route=used || last;
         float width=Mathf.Min(main?theme.mapMainRoad:theme.mapBackRoad,theme.mapRoadMaxPixels*styledPixelScale);
         if(residentialRoad)width*=theme.mapResidentialWidthScale;
+        if(avenue)width*=1.7f;
         // Zoomed out, keep roads wide enough to see and to click.
         width=Mathf.Max(width,theme.mapRoadMinPixels*(main && !residentialRoad?1:.65f)*styledPixelScale);
         Color fill=route && !directionalView?theme.tomato:residentialRoad?theme.mapResidentialFill:main?theme.mainRoadFill:theme.backRoadFill;
