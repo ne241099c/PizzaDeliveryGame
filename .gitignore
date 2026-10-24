@@ -129,3 +129,6 @@ InitTestScene*.unity*
 __pycache__/
 # Local Codex settings (MCP connection; never commit)
 /.codex/
+
+# Player builds (macOS / Windows)
+/Builds/
