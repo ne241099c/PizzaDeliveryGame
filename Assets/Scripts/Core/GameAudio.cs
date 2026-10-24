@@ -12,7 +12,10 @@ public sealed class GameAudio : MonoBehaviour
     private static GameAudio instance;
     private readonly Dictionary<string,AudioClip> clips=new();
     private readonly Dictionary<string,float> lastPlayed=new();
-    private AudioSource music,effects;
+    private AudioSource music,effects,fanfare;
+    // The opening fanfare is cut short: it fades over the last part of FanfareSeconds.
+    private const float FanfareSeconds=3f,FanfareFade=.8f;
+    private float fanfareStartedAt=-1;
     private string musicName="";
     private float musicHoldUntil;
     // Bound scene objects.
@@ -31,6 +34,7 @@ public sealed class GameAudio : MonoBehaviour
         instance=this;
         music=gameObject.AddComponent<AudioSource>();music.loop=true;music.playOnAwake=false;
         effects=gameObject.AddComponent<AudioSource>();effects.playOnAwake=false;
+        fanfare=gameObject.AddComponent<AudioSource>();fanfare.playOnAwake=false;
         SceneManager.sceneLoaded+=(_,_)=>Bind();
         Bind();
     }
@@ -103,8 +107,10 @@ public sealed class GameAudio : MonoBehaviour
     private void DayStarted()
     {
         // The shop opens with a fanfare; the business music starts once it has rung out.
-        var clip=Clip("day_start");musicHoldUntil=Time.unscaledTime+(clip!=null?Mathf.Min(clip.length,8f):0);
-        music.Stop();Play("day_start");
+        var clip=Clip("day_start");music.Stop();
+        musicHoldUntil=Time.unscaledTime+(clip!=null?Mathf.Min(clip.length,FanfareSeconds):0);
+        if(clip==null)return;
+        fanfare.clip=clip;fanfare.volume=EffectVolume;fanfare.Play();fanfareStartedAt=Time.unscaledTime;
     }
     private void DayEnded()=>Play("day_end");
     private void PlayerActed(string sound)=>Play(sound);
@@ -119,6 +125,12 @@ public sealed class GameAudio : MonoBehaviour
     }
     private void Update()
     {
+        if(fanfareStartedAt>=0)
+        {
+            float t=Time.unscaledTime-fanfareStartedAt;
+            fanfare.volume=EffectVolume*Mathf.Clamp01((FanfareSeconds-t)/FanfareFade);
+            if(t>=FanfareSeconds){fanfare.Stop();fanfareStartedAt=-1;}
+        }
         if(music.clip!=null && !music.isPlaying && Time.unscaledTime>=musicHoldUntil && musicHoldUntil>0){musicHoldUntil=0;music.Play();}
         if(cooking==null || clock==null || clock.Phase!=DayPhase.Open)return;
         // The player's pizza reaches the green band: a ding, once per pizza.
