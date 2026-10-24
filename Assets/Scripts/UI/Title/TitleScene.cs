@@ -12,7 +12,7 @@ public sealed class TitleScene : MonoBehaviour
     [SerializeField] private TextAsset creditsText;
     /// <summary>Where the help and credits modals are placed (above the title).</summary>
     [SerializeField] private RectTransform overlay;
-    private CanvasGroup help,credits,mode,profile;
+    private CanvasGroup help,credits,mode,profile,tutorial;
     private ShopModals.Modal profileModal;
     private TextMeshProUGUI profileText;
     private RectTransform profileContent;
@@ -20,8 +20,8 @@ public sealed class TitleScene : MonoBehaviour
     private TextMeshProUGUI helpPageText;
     private int helpPage;
     private static UITheme T=>UiKit.T;
-    /// <summary>The tutorial (S2-T) is not implemented yet: the title shows its button disabled with "準備中".</summary>
-    public static bool TutorialReady=>false;
+    /// <summary>The tutorial (S2-T): chosen here, never forced on day 1 of the game.</summary>
+    public static bool TutorialReady=>true;
     /// <summary>Validations read a temporary file instead of the player's save.</summary>
     public string SavePathOverride {get;set;}
     private string SavePath=>SavePathOverride??CampaignSaveFile.DefaultPath;
@@ -34,6 +34,7 @@ public sealed class TitleScene : MonoBehaviour
         view.ContinueButton.Button.onClick.AddListener(()=>GameScenes.LoadGame(LaunchMode.Continue));
         view.NewGameButton.Button.onClick.AddListener(ShowMode);
         view.HelpButton.Button.onClick.AddListener(ShowHelp);
+        if(view.TutorialButton!=null)view.TutorialButton.Button.onClick.AddListener(ShowTutorial);
         view.QuitButton.Button.onClick.AddListener(Quit);
         view.CreditsButton.onClick.AddListener(ShowCredits);
         BuildModals();
@@ -81,6 +82,7 @@ public sealed class TitleScene : MonoBehaviour
         if(Keyboard.current==null || !Keyboard.current.escapeKey.wasPressedThisFrame)return;
         if(profile!=null && profile.alpha>.5f)UiKit.Show(profile,false);
         else if(mode!=null && mode.alpha>.5f)UiKit.Show(mode,false);
+        else if(TutorialOpen)UiKit.Show(tutorial,false);
         else if(CreditsOpen)CloseCredits();else if(HelpOpen)CloseHelp();
     }
     private void BuildRewardModals()
@@ -93,6 +95,17 @@ public sealed class TitleScene : MonoBehaviour
         ShopModals.Button(choice,"NormalMode",RewardStrings.Normal,StickerKind.Primary,40,336,540,92,()=>StartMode(GameMode.Normal));
         ShopModals.Button(choice,"EndlessMode",RewardStrings.Endless,StickerKind.Secondary,660,336,540,92,()=>StartMode(GameMode.Endless));
         ShopModals.Button(choice,"CancelMode",RewardStrings.Cancel,StickerKind.Secondary,940,520,280,76,()=>UiKit.Show(mode,false));
+        tutorial=Panel("TutorialOverlay");
+        var chapters=ShopModals.Build(tutorial,overlay,1260,470,"チュートリアル");
+        UiKit.Label(chapters.Card,"TutorialHelp","覚えたい章を選んでください。チュートリアルはセーブされません。",40,104,1180,40,T.subheadingSize,T.inkSub,FontRole.Bold);
+        string[] notes={"伝票から生地・ソース・具をのせて、窯で焼く","伝票をレーンへ入れて、道順を決めて出発","内勤にまかせる・失敗したピザを作り直す"};
+        for(int i=0;i<TutorialDirector.ChapterCount;i++)
+        {
+            int chapter=i+1;
+            ShopModals.Button(chapters,"TutorialChapter"+chapter,$"{chapter}. {TutorialDirector.ChapterTitles[i]}",i==0?StickerKind.Primary:StickerKind.Secondary,40+i*400,170,380,92,()=>GameScenes.LoadTutorial(chapter));
+            UiKit.Label(chapters.Card,"TutorialNote"+chapter,notes[i],40+i*400,276,380,90,T.bodySize,T.line,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
+        }
+        ShopModals.Button(chapters,"CancelTutorial",RewardStrings.Cancel,StickerKind.Secondary,940,372,280,76,()=>UiKit.Show(tutorial,false));
         profile=Panel("RecordsOverlay");
         profileModal=ShopModals.Build(profile,overlay,1420,880,RewardStrings.Records);
         var viewport=UiKit.Box(profileModal.Card,"RecordsViewport",40,108,1340,648);
@@ -113,6 +126,12 @@ public sealed class TitleScene : MonoBehaviour
         ShopModals.Button(profileModal,"CloseRecords",RewardStrings.Close,StickerKind.Primary,1100,788,280,64,()=>UiKit.Show(profile,false));
     }
     public bool ModeOpen=>mode!=null && mode.alpha>.5f;
+    public bool TutorialOpen=>tutorial!=null && tutorial.alpha>.5f;
+    public void ShowTutorial()
+    {
+        tutorial.transform.SetAsLastSibling();
+        UiKit.Show(tutorial,true);
+    }
     public bool ProfileOpen=>profile!=null && profile.alpha>.5f;
     public void ShowMode()
     {

@@ -35,7 +35,7 @@ public static class TitleValidation
             Check(Stage("first")=="","first launch layout: "+Stage("first"));
             Check(!view.ShowsContinue && view.ShowsFirstTimeBadge,"first launch hides continue and tags the tutorial");
             Check(view.NewGameButton.Kind==StickerKind.Primary,"without a save, new game is the main button");
-            Check(!view.TutorialButton.Interactable && !TitleScene.TutorialReady,"tutorial shown disabled until S2-T");
+            Check(view.TutorialButton.Interactable && TitleScene.TutorialReady,"tutorial button can be pressed (S2-T)");
             Check(view.Status=="","no problem note on first launch");
             // A usable save (the summary line comes from the file).
             Check(Stage("save")=="","save layout: "+Stage("save"));

@@ -92,6 +92,10 @@ public sealed class GameClock : MonoBehaviour
         Advanced?.Invoke(before, ElapsedSeconds);
     }
 
+    /// <summary>The tutorial keeps the shop open while the player learns (its scene is never saved).</summary>
+    public void ExtendBusinessForTutorial(float seconds){if(tutorialOriginal==null)tutorialOriginal=businessDuration;businessDuration=Mathf.Max(businessDuration,seconds);}
+    public void EndTutorialBusiness(){if(tutorialOriginal!=null){businessDuration=tutorialOriginal.Value;tutorialOriginal=null;}}
+    private float? tutorialOriginal;
     public void RestoreEnded(){Phase=DayPhase.Ended;ElapsedSeconds=businessDuration;IsPlanning=FastForward=false;}
     public void FinishDay()
     {

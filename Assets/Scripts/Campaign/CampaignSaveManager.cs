@@ -115,6 +115,13 @@ public sealed class CampaignSaveManager : MonoBehaviour
     {
         var mode=GameScenes.Consume();
         if(mode==LaunchMode.NewGame){StartNewGame();return;}
+        if(mode==LaunchMode.Tutorial)
+        {
+            // A tutorial never writes the save, the records or the profile, and never deletes the save.
+            AutomaticSavingEnabled=false;StartNewGame();
+            new GameObject("Tutorial").AddComponent<TutorialDirector>().Chapter=GameScenes.TutorialChapter;
+            return;
+        }
         if(!File.Exists(SavePath)){StartNewGame();return;}
         if(TryRead(out var data,out var reason))
         {

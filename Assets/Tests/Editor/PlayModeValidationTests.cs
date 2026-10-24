@@ -79,6 +79,7 @@ public sealed class PlayModeValidationTests
     [UnityTest] public IEnumerator KitchenTraining()=>Run(KitchenTrainingValidation.Run);
     [UnityTest] public IEnumerator GameOverSave()=>Run(GameOverSaveValidation.Run);
     [UnityTest] public IEnumerator RewardCampaign()=>Run(RewardsCampaignValidation.Run,legacyAmounts:false);
+    [UnityTest] public IEnumerator Tutorial()=>Run(TutorialValidation.Run,legacyAmounts:false);
     [UnityTest] public IEnumerator FacilityEarnings()=>Run(FacilityEarningsValidation.Run,legacyAmounts:false);
     [UnityTest] public IEnumerator RewardScreens()=>Run(RewardsUiValidation.RunGame,legacyAmounts:false);
     [UnityTest] public IEnumerator PizzaMenu()=>Run(PizzaMenuValidation.Run);

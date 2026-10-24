@@ -1,3 +1,5 @@
+> **完了（2026-10-24）：Claude Codeがチュートリアル（S2-T）を実装。** タイトルから章を選ぶ独立モード（1. 作る／2. 配達する／3. 内勤と作り直し）。案内カードと赤枠で1手順ずつ、操作すると次へ。セーブ・記録・トロフィーは書かない。Test Runner 35件通過、セーブ前後一致、全手順の画面を撮影。詳細：[記録](../Results/Tutorial_S2T.md)。Unity編集モード。
+
 > **完了（2026-10-24）：Claude Codeがローン返済とミッションを開店準備画面へ移動。** 返済は開店準備の間だけ。上のバーにローン残り・返済％・利息・残り日数、左に「ローン・ミッション」タブ（返済ボタン・今日のミッション）。精算画面の返済ボタンは削除。準備中の返済でセーブが読めなくなる不具合も修正。Test Runner 34件通過、セーブ前後一致。詳細：[記録](../Results/Loan_Missions_Preparation.md)。Unity編集モード。
 
 > **完了（2026-10-24）：Claude Codeが設備投資で稼げるように変更。** 設備のグレード上限を撤廃、窯=売値+8%・自転車=期限内チップ+ピザ代の8%・作業台=材料費-20%、維持費半分。測定で元が取れるまで約3〜9日、12日目まで投資→返済で20日目の純資産12991（投資なし10456）。Test Runner 34件通過、セーブ前後一致。詳細：[記録](../Results/Facility_Investment.md)。Unity編集モード。
@@ -31,7 +33,7 @@
 
 担当：**Claude Code（Unity操作の所有者）**。shop、pushなし。第1弾 a9bc3e6 → d7f17c1 → d28f01e → 72aee10 → a86dda4、第2弾は下の節。
 
-- **タイトル（D-5a）**：`Assets/Prefabs/UI/TitleView.prefab`（`TitleView`、生成 `TitleViewBuilder`）。絵は `Tools/Art/title_art.py` → `Assets/Art/Title/`。ゲーム名は `Assets/Scripts/Core/GameInfo.cs` だけで定義し、**Tools > Game Info > Sync** でproductName・README・クレジットへ反映。チュートリアルは未実装なので「準備中」。
+- **タイトル（D-5a）**：`Assets/Prefabs/UI/TitleView.prefab`（`TitleView`、生成 `TitleViewBuilder`）。絵は `Tools/Art/title_art.py` → `Assets/Art/Title/`。ゲーム名は `Assets/Scripts/Core/GameInfo.cs` だけで定義し、**Tools > Game Info > Sync** でproductName・README・クレジットへ反映。チュートリアルはS2-Tとして実装済み（タイトルから章を選ぶ）。
 - **セーブ置き場**：productNameを変えるとUnityのデータフォルダ名が変わるため、セーブは固定の `GameInfo.SaveFolder`（PizzaDeliveryGame）に置く。**SaveFolderは変えない**。通常セーブ・最高記録は作業の前後でバイト一致。
 - **プレハブ化**：タイトル・開店準備（枠）・精算（枠）・閉店は `Assets/Prefabs/UI/`。生成は `ScreenPrefabs`（Tools > Screens）。作り直すとプレハブの手修正は消える。データで変わるカード・レシート行・スタッフ行は実行時に作る。
 - **asmdef**：`PizzaDelivery`（実行時）、`PizzaDelivery.Editor`、`PizzaDelivery.Tests`。execute_code・Tools/Reviewはそのまま動く。
