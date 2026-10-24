@@ -19,7 +19,7 @@ public static class ScreenPrefabValidation
 
         // 開店準備 (4-2): tabs, the promise slider and the start button.
         var hub=Find<HubView>();Check(hub!=null,"hub view exists");
-        var hubMissing=TitleValidation.MissingReferences(AssetDatabase.LoadAssetAtPath<HubView>(ScreenPrefabs.Folder+"HubView.prefab")).Split(' ').Where(m=>m.Length>0 && !m.StartsWith("tabBadges.Array.data[2]") && !m.StartsWith("tabBadges.Array.data[3]")).ToArray();
+        var hubMissing=TitleValidation.MissingReferences(AssetDatabase.LoadAssetAtPath<HubView>(ScreenPrefabs.Folder+"HubView.prefab")).Split(' ').Where(m=>m.Length>0 && !m.StartsWith("tabBadges.Array.data[2]") && !m.StartsWith("tabBadges.Array.data[3]") && !m.StartsWith("tabBadges.Array.data[4]")).ToArray();
         Check(hubMissing.Length==0,"hub prefab references set: "+string.Join(" ",hubMissing));
         save.StartNewGame();Canvas.ForceUpdateCanvases();
         Check(router.Current==ScreenId.Hub && router.Root(ScreenId.Hub)==hub.GetComponent<CanvasGroup>(),"new game shows the prefab hub");

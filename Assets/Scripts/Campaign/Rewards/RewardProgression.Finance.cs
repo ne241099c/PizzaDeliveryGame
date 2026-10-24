@@ -43,13 +43,20 @@ public sealed partial class RewardProgression
         while(State.grade<grades.Length && Qualifies(grades[State.grade],FindFirstObjectByType<ReputationManager>().Value,Campaign.TotalRevenue,NetAssets,RecentOnTime,ThreeStarRate))State.grade++;
         promotionNotice=before<State.grade?$"{GradeName}に昇格！ 街区{UnlockedDistricts}・ピザ{UnlockedMenuKinds}種を解放":"";
     }
-    public bool CanRepay=>Clock.Phase==DayPhase.Ended && !Campaign.IsBankrupt && Loan>0 && Economy.Cash>0;
+    /// <summary>The loan is repaid in preparation only (2026-10-24), from the 開店準備 screen.</summary>
+    public bool CanRepay=>Clock.Phase==DayPhase.BeforeOpening && !Campaign.IsBankrupt && Loan>0 && Economy.Cash>0;
+    public decimal Borrowed{get{decimal b=string.IsNullOrEmpty(State.borrowed)?Loan:CampaignSaveManager.Decimal(State.borrowed);return Math.Max(b,0);}}
+    public decimal Repaid=>Math.Max(0,Borrowed-Loan);
+    /// <summary>Share of the borrowed amount paid back (interest can keep it at 0 before the first repayment).</summary>
+    public float LoanProgress=>Loan<=0?1:Borrowed>0?Mathf.Clamp01((float)(1-Loan/Borrowed)):0;
+    /// <summary>Operating days left including today in the normal mode; -1 in endless.</summary>
+    public int DaysLeft=>State.mode==GameMode.Normal?Math.Max(0,State.normalDays-Campaign.DayNumber+1):-1;
     public bool Repay(decimal amount)
     {
         amount=BusinessEconomy.Money(amount);
         if(!CanRepay || amount<=0 || amount>Loan || amount>Economy.Cash)return false;
-        Economy.ApplyGoalCash(-amount);State.loan=Money(Loan-amount);
-        if(Loan==0 && !State.loanCelebrated){State.loanCelebrated=true;Economy.ApplyGoalCash((decimal)payoffBonus);EvaluateProfileAchievements();}
+        Economy.TransferInPreparation(-amount);State.loan=Money(Loan-amount);
+        if(Loan==0 && !State.loanCelebrated){State.loanCelebrated=true;Economy.TransferInPreparation((decimal)payoffBonus);EvaluateProfileAchievements();}
         Promote();CheckCustomGoal();SaveCheckpoint();return true;
     }
 }

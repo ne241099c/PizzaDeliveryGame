@@ -16,13 +16,10 @@ public sealed class RewardsView : MonoBehaviour
     private CanvasGroup panel,result,profile;
     private ShopModals.Modal modal,resultModal;
     private RectTransform body,endlessGoals;
-    private TextMeshProUGUI grade,summary,loan,repayment,resultText;
-    private StickerButton launcher,repayButton,repayAll,continueButton;
-    private Slider repaySlider;
+    private TextMeshProUGUI grade,summary,loan,resultText;
+    private StickerButton continueButton;
     private readonly List<TextMeshProUGUI> missionRows=new();
     private Action onClose;
-    private readonly List<StickerButton> repaymentButtons=new();
-    private decimal selectedRepayment,availableRepayment;
     private float nextRefresh;
     private string missionSignature;
     private float sectionOffset;
@@ -41,12 +38,11 @@ public sealed class RewardsView : MonoBehaviour
         var canvas=router.Root(ScreenId.Hub).GetComponentInParent<Canvas>();
         if(canvas==null)return;
         overlay=UiKit.Stretch(canvas.transform,"RewardsOverlay");
-        // Only after settlement (to repay); otherwise missions open from the ≡ menu.
-        launcher=UiKit.Button(overlay,"GoalsButton",RewardStrings.SettlementLauncher,StickerKind.Secondary,1490,128,390,52,T.captionSize,()=>Show());
+        // Opened from the ≡ menu during business; in preparation the 開店準備 tab shows the loan and missions instead.
         panel=NewPanel("GoalsModal");
         modal=ShopModals.Build(panel,overlay,1440,880,RewardStrings.Goals);
         UiKit.Label(modal.Card,"ProvisionalNotice",RewardStrings.Provisional,760,36,640,40,T.captionSize,T.inkSub,FontRole.Bold,TextAlignmentOptions.MidlineRight);
-        body=Scrollable(modal.Card,"GoalsScroll",40,108,1360,650,1500);
+        body=Scrollable(modal.Card,"GoalsScroll",40,108,1360,650,1260);
         BuildBody();
         ShopModals.Button(modal,"CloseGoals",RewardStrings.Close,StickerKind.Primary,1140,788,260,64,Close);
         result=NewPanel("NormalResult");
@@ -98,28 +94,16 @@ public sealed class RewardsView : MonoBehaviour
         summary=Text("Progress","",64,160,T.bodySize);
         Text("MissionsHeading",RewardStrings.Missions,240,48,T.headingSize);
         Text("MissionHelp",RewardStrings.MissionHelp,292,66,T.bodySize);
-        Text("LoanHeading",RewardStrings.Loan,660,48,T.headingSize);
+        Text("LoanHeading",RewardStrings.LoanState,660,48,T.headingSize);
         loan=Text("LoanState","",716,60,T.subheadingSize);
-        Text("RepayHelp",RewardStrings.RepayHelp,780,66,T.bodySize);
-        repayment=Text("Repayment","",856,42,T.subheadingSize);
-        repaySlider=UiKit.Slider(body,"RepaymentSlider",16,924,1260,24,T.cheese,v=>
-        {
-            selectedRepayment=Math.Min(availableRepayment,BusinessEconomy.Money((decimal)v));
-            repayment.text=RewardStrings.Repayment(selectedRepayment);
-        });
-        repaySlider.minValue=0;
-        repaySlider.wholeNumbers=false;
-        repaymentButtons.Add(UiKit.Button(body,"Repay100","100円",StickerKind.Secondary,0,984,200,64,T.subheadingSize,()=>Repay(100)));
-        repaymentButtons.Add(UiKit.Button(body,"Repay500","500円",StickerKind.Secondary,216,984,200,64,T.subheadingSize,()=>Repay(500)));
-        repayAll=UiKit.Button(body,"RepayAll",RewardStrings.RepayAll,StickerKind.Secondary,432,984,400,64,T.subheadingSize,()=>Repay(availableRepayment));
-        repayButton=UiKit.Button(body,"RepaySelected",RewardStrings.Repay,StickerKind.Primary,848,984,448,64,T.subheadingSize,()=>Repay(selectedRepayment));
-        endlessGoals=UiKit.Box(body,"EndlessGoals",0,1112,1296,160);
+        Text("RepayHelp",RewardStrings.RepayWhere,780,66,T.bodySize);
+        endlessGoals=UiKit.Box(body,"EndlessGoals",0,872,1296,160);
         UiKit.Label(endlessGoals,"FreeGoalHeading",RewardStrings.EndlessGoals,0,0,1296,48,T.headingSize,T.line);
         UiKit.Button(endlessGoals,"AssetsGoal",RewardStrings.AssetsGoal,StickerKind.Secondary,0,64,408,72,T.subheadingSize,()=>Goal("assets"));
         UiKit.Button(endlessGoals,"ReputationGoal",RewardStrings.ReputationGoal,StickerKind.Secondary,432,64,408,72,T.subheadingSize,()=>Goal("reputation"));
         UiKit.Button(endlessGoals,"StreakGoal",RewardStrings.StreakGoal,StickerKind.Secondary,864,64,432,72,T.subheadingSize,()=>Goal("streak"));
-        Text("ProfileHeading",RewardStrings.Records,1296,48,T.headingSize);
-        UiKit.Button(body,"ProfileDetails",RewardStrings.Records,StickerKind.Secondary,0,1360,600,72,T.subheadingSize,ShowProfile);
+        Text("ProfileHeading",RewardStrings.Records,1056,48,T.headingSize);
+        UiKit.Button(body,"ProfileDetails",RewardStrings.Records,StickerKind.Secondary,0,1120,600,72,T.subheadingSize,ShowProfile);
         foreach(RectTransform item in body)bodyPositions[item]=item.anchoredPosition;
     }
     private void OnDestroy()
@@ -129,7 +113,7 @@ public sealed class RewardsView : MonoBehaviour
     }
     private void Update()
     {
-        if(rewards==null || launcher==null)return;
+        if(rewards==null || panel==null)return;
         if(Keyboard.current!=null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             if(profile!=null && profile.alpha>.5f)UiKit.Show(profile,false);
@@ -137,12 +121,10 @@ public sealed class RewardsView : MonoBehaviour
         }
         if(Time.unscaledTime<nextRefresh)return;
         nextRefresh=Time.unscaledTime+.5f;
-        launcher.Text=RewardStrings.SettlementLauncher+(rewards.HasNewAchievements?"・トロフィー！":"");
         if(IsOpen)Refresh();
     }
     private void ScreenChanged(ScreenId screen)
     {
-        UiKit.Show(launcher,screen==ScreenId.Settlement);
         Close();
         UiKit.Show(result,false);
         UiKit.Show(profile,false);
@@ -170,19 +152,8 @@ public sealed class RewardsView : MonoBehaviour
         summary.rectTransform.sizeDelta=new Vector2(1296,160+sectionOffset);
         foreach(var pair in bodyPositions)if(pair.Key!=null && pair.Value.y<=-240)pair.Key.anchoredPosition=pair.Value+new Vector2(0,-sectionOffset);
         for(int i=0;i<missionRows.Count;i++)missionRows[i].rectTransform.anchoredPosition=new Vector2(0,-370-i*88-sectionOffset);
-        body.sizeDelta=new Vector2(body.sizeDelta.x,1500+sectionOffset);
-        loan.text=$"ローン {UiKit.Yen(rewards.Loan)}　純資産 {UiKit.Yen(rewards.NetAssets)}";
-        var economy=FindFirstObjectByType<BusinessEconomy>();
-        decimal available=economy!=null?Math.Max(0,Math.Min(economy.Cash,rewards.Loan)):0;
-        availableRepayment=available;
-        repaySlider.maxValue=(float)available;
-        selectedRepayment=Math.Min(selectedRepayment,available);
-        repaySlider.SetValueWithoutNotify((float)selectedRepayment);
-        repaySlider.interactable=rewards.CanRepay && available>0;
-        repayment.text=RewardStrings.Repayment(selectedRepayment);
-        repayButton.Interactable=repayAll.Interactable=rewards.CanRepay && available>0;
-        repaymentButtons[0].Interactable=rewards.CanRepay && available>=100;
-        repaymentButtons[1].Interactable=rewards.CanRepay && available>=500;
+        body.sizeDelta=new Vector2(body.sizeDelta.x,1260+sectionOffset);
+        loan.text=RewardStrings.LoanLine(rewards);
         string signature=string.Join("|",rewards.TodayMissions.Select(m=>m.id+":"+m.completed+":"+m.rewarded));
         if(signature!=missionSignature){missionSignature=signature;BuildMissions();}
     }
@@ -205,7 +176,6 @@ public sealed class RewardsView : MonoBehaviour
             i++;
         }
     }
-    private void Repay(decimal amount){rewards.Repay(amount);Refresh();}
     private void Goal(string id){rewards.SetEndlessGoal(id);Refresh();}
     public void ShowResult()
     {

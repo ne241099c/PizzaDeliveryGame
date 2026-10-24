@@ -48,7 +48,7 @@ public static class ShopValidation
                 foreach(string name in new[]{"tabs","tabBadges"})
                 {
                     var values=hubControls.FindProperty(name);
-                    Check(values!=null && values.arraySize==4 && Enumerable.Range(0,name=="tabs"?4:2).All(i=>values.GetArrayElementAtIndex(i).objectReferenceValue!=null),"hub controls survive Unity serialization "+name);
+                    Check(values!=null && values.arraySize==5 && Enumerable.Range(0,name=="tabs"?5:2).All(i=>values.GetArrayElementAtIndex(i).objectReferenceValue!=null),"hub controls survive Unity serialization "+name);
                 }
             }
             // ---- handover bags ----

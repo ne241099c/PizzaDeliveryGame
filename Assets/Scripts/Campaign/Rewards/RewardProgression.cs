@@ -10,6 +10,8 @@ public enum GameMode { Normal, Endless }
     public int version=1,normalDays=20,grade=1,totalDelivered,totalOnTime,totalThreeStars,points,noLateStreak;
     public GameMode mode;
     public string runId,loan="0",interest="0",missionCash="0",goalId="",settlementText="";
+    /// <summary>The amount first borrowed (progress bar). Older saves without it use the loan at load time.</summary>
+    public string borrowed="";
     public bool resultSeen,resultPending,resultRecorded,ended,loanCelebrated,goalCompleted;
     public List<RewardDayMetrics> recent=new();
     public List<MissionState> missions=new();
@@ -48,11 +50,13 @@ public sealed partial class RewardProgression : MonoBehaviour
     public void NewGame()
     {
         State=new RewardSaveData{mode=GameScenes.NewGameMode,normalDays=normalDays,runId=Guid.NewGuid().ToString("N"),loan=Money((decimal)initialLoan)};
+        State.borrowed=State.loan;
         ResetTelemetry();
     }
     public void Restore(RewardSaveData data,int day)
     {
         State=data??new RewardSaveData{mode=GameMode.Endless,normalDays=normalDays,runId=Guid.NewGuid().ToString("N"),grade=Mathf.Clamp(day,1,4),loan="0",loanCelebrated=true};
+        if(string.IsNullOrEmpty(State.borrowed))State.borrowed=State.loan;
         ResetTelemetry();
     }
     public void PrepareDay()

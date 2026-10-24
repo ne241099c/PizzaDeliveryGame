@@ -66,6 +66,9 @@ public sealed class GameMenu : MonoBehaviour
     /// <summary>Today's missions, the shop grade and the loan, from the menu (the clock stays paused until closed).</summary>
     public void ShowMissions()
     {
+        // In preparation the 開店準備 screen has its own tab for the loan (repayment) and missions.
+        var hub=FindFirstObjectByType<HubView>();
+        if(!InBusiness && hub!=null && hub.isActiveAndEnabled && clock.Phase==DayPhase.BeforeOpening){Resume();hub.ShowTab(HubView.LoanTab);return;}
         var view=FindFirstObjectByType<RewardsView>();if(view==null)return;
         UIVisibility.Set(menu.gameObject,false);view.Show(ResumeClock);
     }

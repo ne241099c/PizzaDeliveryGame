@@ -63,6 +63,7 @@ public static class RewardsMeasurement
     static RewardProgression rewards;
     static GameMode previousMode;
     static int policyIndex;
+    static decimal pendingRepayment;
     static string settingsJson;
     static Dictionary<string, byte[]> protectedFiles;
     public static string OutputDirectory = "Docs/Results/Rewards_R7";
@@ -87,7 +88,7 @@ public static class RewardsMeasurement
         protection = save.SuppressSaving();
         previousMode = GameScenes.NewGameMode;
         clock.AutomaticTick = false;
-        Done = false; results.Clear(); policyIndex = 0;
+        Done = false; results.Clear(); policyIndex = 0; pendingRepayment = 0;
         try
         {
             var original = Find<DaySimulationSettings>();
@@ -108,6 +109,7 @@ public static class RewardsMeasurement
     static void StartPolicy()
     {
         var policy = Policies[policyIndex];
+        pendingRepayment = 0;
         var serialized = new SerializedObject(settings);
         serialized.FindProperty("randomSeed").intValue = policy.seed;
         serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -134,6 +136,12 @@ public static class RewardsMeasurement
             for (int step = 0; step < steps && !Done; step++)
             {
                 // Every mission is active automatically (2026-10-24): nothing to select before opening.
+                if (pendingRepayment > 0 && clock.Phase == DayPhase.BeforeOpening)
+                {
+                    decimal pay = BusinessEconomy.Money(Math.Min(pendingRepayment, Math.Min(rewards.Loan, economy.Cash)));
+                    pendingRepayment = 0;
+                    if (pay > 0 && !rewards.Repay(pay)) throw new InvalidOperationException("R-7 repayment rejected: " + Policies[policyIndex].name);
+                }
                 session.Step();
                 Status = "Running " + Policies[policyIndex].name + " / " + session.Progress;
                 if (!session.Finished) continue;
@@ -161,8 +169,8 @@ public static class RewardsMeasurement
         decimal available = Math.Max(0, cashBefore - reserve);
         decimal amount = record.Day < policy.repayFromDay ? 0 : BusinessEconomy.Money(Math.Min(rewards.Loan,
             available * CampaignSaveManager.Decimal(policy.repaymentFraction)));
-        if (amount > 0 && !campaign.IsBankrupt && !rewards.Repay(amount))
-            throw new InvalidOperationException("R-7 repayment rejected: " + policy.name);
+        // Repaid at the next preparation (repayment is preparation-only, 2026-10-24).
+        pendingRepayment = campaign.IsBankrupt ? 0 : amount;
         if (campaign.IsBankrupt) amount = 0;
         var day = rewards.State.last ?? new RewardDayMetrics();
         results.Add(new DayResult

@@ -35,7 +35,7 @@ public static class ShopStrings
     public const string Trash="ゴミ箱",TrashHint="ピザ・箱をここにドロップ",Redo="作り直し",ServeAsIs="このまま出す",DiscardRedo="捨てて作り直す";
     public const string Undercooked="生焼け：窯へ戻せます",Burnt="焦げた！★1・ボーナスなし",WrongIngredients="伝票と具が違います",ThinSauce="ソース不足",Overbaked="焼きのタイミング失敗";
     public const string Day="日目",Preparation="開店準備",Open="営業中",Closed="閉店",Ended="閉店 / 全員帰還";
-    public const string Staff="スタッフ",Applicants="求人",Facilities="設備",Management="経営";
+    public const string Staff="スタッフ",Applicants="求人",Facilities="設備",Management="経営",LoanMissions="ローン・ミッション";
     public const string Courier="配達員",Kitchen="内勤",Train="訓練",CancelTraining="訓練を取り消す",Fire="解雇",Hire="雇う",Wage="日給";
     public const string StartBusiness="営業開始",Promise="お届け目安",Seconds="秒";
     public const string TeamNote="従業員の人数制限はありません。日給と設備の数を見て採用しましょう。";

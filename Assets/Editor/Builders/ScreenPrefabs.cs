@@ -336,20 +336,26 @@ public static class ScreenPrefabs
         UiKit.Icon(top,"Star","icon_star",880,24,44,T.line);
         var reputation=UiKit.Label(top,"Reputation","50",936,10,90,72,38,T.line,FontRole.Display);
         var reputationBar=UiKit.Bar(top,"ReputationBar",1020,34,150,24,T.cheese);
-        var message=UiKit.Label(top,"Message","",1200,20,560,52,18,T.inkSub,FontRole.Bold,TextAlignmentOptions.MidlineRight,true);
+        // Loan gauge (2026-10-24): always visible in preparation; opens the ローン・ミッション tab.
+        var loanButton=UiKit.Button(top,"LoanGauge","",StickerKind.Secondary,1214,8,540,76,16,null);
+        UiKit.Label(loanButton.Face,"Title","ローン残り",16,6,140,24,16,T.inkSub,FontRole.Black);
+        var loanAmount=UiKit.Label(loanButton.Face,"Amount","¥0",16,24,190,50,30,T.line,FontRole.Display);
+        var loanBar=UiKit.Bar(loanButton.Face,"Bar",214,12,306,24,T.basil);
+        var loanCaption=UiKit.Label(loanButton.Face,"Caption","",214,40,310,28,15,T.line,FontRole.Black);
+        var message=UiKit.Label(root,"Message","",1100,118,788,32,18,T.inkSub,FontRole.Bold,TextAlignmentOptions.MidlineRight);
         var menuButton=UiKit.Button(top,"MenuButton","",StickerKind.Secondary,1774,12,64,64,20,null,FontRole.Black,"icon_menu");
-        string[] names={ShopStrings.Staff,ShopStrings.Applicants,ShopStrings.Facilities,ShopStrings.Management};
-        var tabs=new StickerButton[4];var badges=new RectTransform[4];
-        for(int i=0;i<4;i++)
+        string[] names={ShopStrings.Staff,ShopStrings.Applicants,ShopStrings.Facilities,ShopStrings.Management,ShopStrings.LoanMissions};
+        var tabs=new StickerButton[5];var badges=new RectTransform[5];
+        for(int i=0;i<5;i++)
         {
             tabs[i]=UiKit.Button(root,"Tab"+i,names[i],StickerKind.Secondary,32,156+i*104,236,82,32,null,FontRole.Display);
             tabs[i].Label.alignment=TextAlignmentOptions.MidlineLeft;
             tabs[i].Label.rectTransform.offsetMin=new Vector2(24,0);
-            tabs[i].Label.fontSize=tabs[i].Label.fontSizeMax=i<2?28:32;
+            tabs[i].Label.fontSize=tabs[i].Label.fontSizeMax=i<2?28:i==4?22:32;
             if(i<2)badges[i]=UiKit.Badge(tabs[i].Face,"Count","0",150,26,T.paper,T.line,30,16,56);
         }
         tabs[0].Kind=StickerKind.Primary;
-        var note=UiKit.Label(root,"TeamNote","",32,640,236,120,17,T.inkSub,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
+        var note=UiKit.Label(root,"TeamNote","",32,684,236,120,17,T.inkSub,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
         var content=UiKit.Box(root,"Content",300,152,1600,624);
         // No hint row on the preparation screen (2026-10-24).
         var bottom=UiKit.Card(root,"BottomBar",300,872,1588,168,T.paper);
@@ -402,6 +408,7 @@ public static class ScreenPrefabs
         SetArray(so,"tabBadges",badges);
         Set(so,"startButton",start);
         Set(so,"menuButton",menuButton);
+        Set(so,"loanButton",loanButton);Set(so,"loanAmount",loanAmount);Set(so,"loanCaption",loanCaption);Set(so,"loanBar",loanBar);
         Set(so,"promiseSlider",slider);
         so.ApplyModifiedPropertiesWithoutUndo();
         return Save(go,"HubView");

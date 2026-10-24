@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// <summary>開店準備の事務室 (UI_Mock/Hub.png): top bar, tabs, cards and the start button. Presentation only: every action
 /// calls the existing managers. The frame is the prefab Assets/Prefabs/UI/HubView.prefab; each card is an instance of a
 /// card prefab (Assets/Prefabs/UI/Cards), placed in Content and rebuilt when the data changes.</summary>
-public sealed class HubView : MonoBehaviour
+public sealed partial class HubView : MonoBehaviour
 {
     [Header("Frame")]
     [SerializeField] private RectTransform content,dialog;
@@ -16,7 +16,7 @@ public sealed class HubView : MonoBehaviour
     [SerializeField] private TextMeshProUGUI forecastWages,forecastFixed,forecastMaintenance,forecastTraining,promiseText;
     [SerializeField] private RectTransform cashDelta;
     [SerializeField] private UiBar reputationBar;
-    [SerializeField] private StickerButton[] tabs=new StickerButton[4];
+    [SerializeField] private StickerButton[] tabs=new StickerButton[5];
     /// <summary>Count badges on the staff and applicant tabs ([2] and [3] stay empty).</summary>
     [SerializeField] private RectTransform[] tabBadges=new RectTransform[4];
     [SerializeField] private StickerButton startButton,menuButton;
@@ -62,6 +62,7 @@ public sealed class HubView : MonoBehaviour
     {
         for(int i=0;i<tabs.Length;i++){int tab=i;tabs[i].Button.onClick.AddListener(()=>ShowTab(tab));}
         menuButton.Button.onClick.AddListener(()=>menu.ShowMenu());
+        if(loanButton!=null)loanButton.Button.onClick.AddListener(()=>ShowTab(LoanTab));
         startButton.Button.onClick.AddListener(()=>campaign.StartBusiness());
         UiKit.BindSlider(promiseSlider,v=>spawner.SetPromiseSeconds(v));
         trainingDialog.Close.Button.onClick.AddListener(CloseTraining);
@@ -110,6 +111,7 @@ public sealed class HubView : MonoBehaviour
         SetTabCount(0,$"{recruitment.TeamCount}人",T.paper);
         SetTabCount(1,(recruitment.Applicants.Count+recruitment.KitchenApplicants.Count)+"人",T.cheese);
         noteText.text=ShopStrings.TeamNote;
+        ShowLoanGauge();
     }
     private void SetTabCount(int tab,string text,Color fill)
     {
@@ -144,6 +146,7 @@ public sealed class HubView : MonoBehaviour
         var f=facilities.Capture();
         parts.Add(f.oven+"/"+f.bike+"/"+f.expansion+"/"+f.workbench+"/"+f.menu+"/"+facilities.Advertisement);
         parts.Add(records.Count.ToString());
+        if(SelectedTab==LoanTab)parts.Add(LoanSignature());
         return string.Join("|",parts);
     }
     // ---- cards ----
@@ -160,6 +163,7 @@ public sealed class HubView : MonoBehaviour
             case 0:BuildTeam();break;
             case 1:BuildApplicants();break;
             case 2:BuildFacilities();break;
+            case LoanTab:BuildLoan();break;
             default:BuildManagement();break;
         }
     }

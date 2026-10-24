@@ -96,6 +96,9 @@ public sealed class BusinessEconomy : MonoBehaviour
     }
     /// <summary>Loan/mission transfers deliberately stay outside operating profit.</summary>
     public void ApplyGoalCash(decimal amount)=>Cash+=amount;
+    /// <summary>Money moved in preparation outside the operating ledger (loan repayment, payoff bonus): the day opens
+    /// with the new amount, so the preparation save still reconciles (cash = opening - preparation costs).</summary>
+    public void TransferInPreparation(decimal amount){Cash+=amount;Ledger.OpeningCash+=amount;}
     public void RestoreSettledLedger(string[] a,int wasted)
     {
         decimal N(int i)=>CampaignSaveManager.Decimal(a[i]);
