@@ -2023,7 +2023,7 @@ MonoBehaviour:
   markersParent: {fileID: 506782586}
   markerOffset: 0.2
   markerFontSize: 5.5
-  minimumMarkerPixels: 44
+  minimumMarkerPixels: 28
 --- !u!114 &884947488
 MonoBehaviour:
   m_ObjectHideFlags: 0

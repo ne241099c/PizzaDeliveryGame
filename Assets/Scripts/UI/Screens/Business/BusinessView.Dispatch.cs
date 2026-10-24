@@ -510,7 +510,7 @@ public sealed partial class BusinessView
     private float Px=>Camera.main.orthographicSize*2f/Mathf.Max(1,Camera.main.pixelHeight);
     // Pins keep a constant screen size while zoomed in; zoomed out they shrink so a pin stays about this many world units
     // tall (roughly one street apart) and the town is not buried under them.
-    private const float PinWorldHeight=.8f,PinPixels=30,PinMinimumFit=.3f;
+    private const float PinWorldHeight=.8f,PinPixels=30,PinMinimumFit=.55f;
     private float PinFit(float px)=>Mathf.Clamp(PinWorldHeight/(PinPixels*px),PinMinimumFit,1f);
     private void UpdatePins()
     {

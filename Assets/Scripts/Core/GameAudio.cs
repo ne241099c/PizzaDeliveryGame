@@ -108,11 +108,18 @@ public sealed class GameAudio : MonoBehaviour
     {
         // The shop opens with a fanfare; the business music starts once it has rung out.
         var clip=Clip("day_start");music.Stop();
+        if(stats!=null){lateCount=stats.LateCount;cancelledCount=stats.CancelledCount;}
         musicHoldUntil=Time.unscaledTime+(clip!=null?Mathf.Min(clip.length,FanfareSeconds):0);
         if(clip==null)return;
         fanfare.clip=clip;fanfare.volume=EffectVolume;fanfare.Play();fanfareStartedAt=Time.unscaledTime;
     }
-    private void DayEnded()=>Play("day_end");
+    private void DayEnded()
+    {
+        // Only the whistle: the settlement music waits for it, and orders cancelled at closing make no "late" sound.
+        var clip=Clip("day_end");music.Stop();musicHoldUntil=Time.unscaledTime+(clip!=null?clip.length+.2f:0);
+        if(stats!=null){lateCount=stats.LateCount;cancelledCount=stats.CancelledCount;}
+        Play("day_end");
+    }
     private void PlayerActed(string sound)=>Play(sound);
     private void Packed(PizzaJob job){if(job.Worker==PizzaWorker.Player)Play("boxed",.8f);}
     private void Dispatched(DeliveryTrip trip)=>Play("dispatch");
