@@ -544,7 +544,7 @@ public sealed partial class BusinessView
             {
                 pin.Sprite.sprite=UiKit.Art("shop_badge");
                 pin.Sprite.transform.localPosition=Vector3.zero;
-                pin.Sprite.transform.localScale=Vector3.one*40;
+                pin.Sprite.transform.localScale=Vector3.one*28;
                 pin.Number.text="";
                 SetPinLabel(pin,ShopStrings.Store,T.paper,T.line);
                 pin.Glow.enabled=false;
@@ -555,15 +555,15 @@ public sealed partial class BusinessView
             bool red=visit>=0 || (order!=null && order.IsReady);
             bool compact=map.City!=null && map.CitySettings.blockSize/px<T.cityDetailMinimumBlockPixels;
             pin.Sprite.sprite=UiKit.Art("pin_white");
-            pin.Sprite.transform.localScale=Vector3.one*(compact?Mathf.Max(T.cityCompactPinPixels,T.orderPinNumberSize*.2f):red?50:42);
-            pin.Sprite.transform.localPosition=new Vector3(0,compact?14:red?36:30,0);
+            pin.Sprite.transform.localScale=Vector3.one*(compact?Mathf.Max(T.cityCompactPinPixels,T.orderPinNumberSize*.2f):red?36:30);
+            pin.Sprite.transform.localPosition=new Vector3(0,compact?14:red?26:22,0);
             pin.Number.text=order!=null?"#"+Number(order):"";
             pin.Number.fontSize=T.orderPinNumberSize;
             pin.Number.rectTransform.sizeDelta=new Vector2(110,42);
             pin.Number.fontStyle=FontStyles.Normal;
             pin.Number.outlineWidth=0;
             pin.Number.color=T.line;
-            pin.Number.transform.localPosition=new Vector3(0,compact?18:red?44:36,0);
+            pin.Number.transform.localPosition=new Vector3(0,compact?18:red?32:26,0);
             pin.NumberBack.enabled=true;
             pin.NumberBack.transform.localPosition=pin.Number.transform.localPosition;
             float numberWidth=Mathf.Max(T.orderPinNumberBackgroundPixels,pin.Number.GetPreferredValues().x+T.smallSpace);
@@ -614,8 +614,8 @@ public sealed partial class BusinessView
         pin.Glow.sprite=UiKit.Circle;
         pin.Glow.color=new Color(T.cheese.r,T.cheese.g,T.cheese.b,.6f);
         pin.Glow.sortingOrder=39;
-        pin.Glow.transform.localScale=Vector3.one*72/1.28f;
-        pin.Glow.transform.localPosition=new Vector3(0,34,0);
+        pin.Glow.transform.localScale=Vector3.one*54/1.28f;
+        pin.Glow.transform.localPosition=new Vector3(0,25,0);
         pin.Glow.enabled=false;
         pin.Sprite=new GameObject("Pin").AddComponent<SpriteRenderer>();pin.Sprite.transform.SetParent(pin.Root,false);pin.Sprite.sortingOrder=40;
         pin.NumberBack=new GameObject("NumberBack").AddComponent<SpriteRenderer>();
@@ -638,7 +638,7 @@ public sealed partial class BusinessView
         pin.Pill.color=T.paper;
         pin.Pill.sortingOrder=43;
         pin.Pill.transform.localScale=Vector3.one*25;
-        pin.Pill.transform.localPosition=new Vector3(0,node.IsStore?-46:-22,0);
+        pin.Pill.transform.localPosition=new Vector3(0,node.IsStore?-34:-22,0);
         pin.PillEdge=new GameObject("PillEdge").AddComponent<SpriteRenderer>();
         pin.PillEdge.transform.SetParent(pin.Pill.transform,false);
         pin.PillEdge.sprite=UiKit.MapLabel;
@@ -652,7 +652,7 @@ public sealed partial class BusinessView
         pin.Label.color=T.line;
         pin.Label.alignment=TextAlignmentOptions.Center;
         pin.Label.rectTransform.sizeDelta=new Vector2(240,34);
-        pin.Label.transform.localPosition=new Vector3(0,node.IsStore?-46:-22,0);
+        pin.Label.transform.localPosition=new Vector3(0,node.IsStore?-34:-22,0);
         pin.Label.GetComponent<MeshRenderer>().sortingOrder=44;
         pin.Label.text="";return pin;
     }
