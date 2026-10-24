@@ -140,7 +140,7 @@ public sealed class TitleScene : MonoBehaviour
     }
     private static void StartMode(GameMode chosen)
     {
-        GameScenes.NewGameMode=chosen;
+        GameScenes.NewGameMode=chosen;GameScenes.PlayOpening=true;
         GameScenes.LoadGame(LaunchMode.NewGame);
     }
     public void ShowProfile()

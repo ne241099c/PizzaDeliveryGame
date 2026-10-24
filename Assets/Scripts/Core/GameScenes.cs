@@ -20,12 +20,14 @@ public static class GameScenes
     public static GameMode NewGameMode {get;set;}=GameMode.Normal;
     /// <summary>The chapter for LaunchMode.Tutorial (1 作る, 2 配達する, 3 内勤と作り直し).</summary>
     public static int TutorialChapter {get;set;}=1;
+    /// <summary>Set by the title for a new game, so the opening plays once when the Game scene starts.</summary>
+    public static bool PlayOpening {get;set;}
     private static LaunchMode pending=LaunchMode.Direct;
 
     /// <summary>A rejected full save load is shown on the title, without replacing that save.</summary>
     public static string TitleProblem {get;private set;}="";
     [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void Reset(){NewGameMode=GameMode.Normal;TutorialChapter=1;pending=LaunchMode.Direct;TitleProblem="";}
+    private static void Reset(){NewGameMode=GameMode.Normal;PlayOpening=false;TutorialChapter=1;pending=LaunchMode.Direct;TitleProblem="";}
     public static void LoadGame(LaunchMode mode){TitleProblem="";pending=mode;SceneManager.LoadScene(Game);}
     public static void LoadTutorial(int chapter){TutorialChapter=chapter;LoadGame(LaunchMode.Tutorial);}
     public static void LoadTitle()=>LoadTitle("");

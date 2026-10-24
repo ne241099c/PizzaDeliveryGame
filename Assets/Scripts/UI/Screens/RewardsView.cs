@@ -192,7 +192,8 @@ public sealed class RewardsView : MonoBehaviour
     }
     private void ExitResult()
     {
-        rewards.RecordResult();
+        // After the ending chosen in preparation the run goes on as endless when continued from the title.
+        if(rewards.EndedEarly)rewards.ContinueEndless();else rewards.RecordResult();
         GameScenes.LoadTitle();
     }
     private void ContinueEndless()

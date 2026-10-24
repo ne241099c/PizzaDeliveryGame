@@ -87,6 +87,12 @@ public sealed partial class RewardProgression : MonoBehaviour
         RecordResult();State.resultSeen=true;State.resultPending=false;State.mode=GameMode.Endless;
         SaveCheckpoint();Campaign.NextDay();
     }
+    /// <summary>The player chose the ending after repaying the loan: the result (今回の成績) opens in preparation.</summary>
+    public void ChooseEnding(){if(Loan==0 && !Campaign.IsBankrupt){State.resultPending=true;State.resultSeen=false;}}
+    /// <summary>The result was opened from the ending chosen in preparation (not at the last day's settlement).</summary>
+    public bool EndedEarly=>HasPendingResult && Clock.Phase==DayPhase.BeforeOpening;
+    /// <summary>The last day of the normal mode ends with the loan repaid: the ending plays before the result.</summary>
+    public bool EndingDue=>HasPendingResult && Loan==0 && !Campaign.IsBankrupt;
     public void RecordResult(){if(HasPendingResult)TrackProfile(true);SaveCheckpoint();}
     public void SaveCheckpoint()=>FindFirstObjectByType<CampaignSaveManager>().SavePreparation();
     public string HudSummary=>$"{GradeName} / ローン {UiKit.Yen(Loan)} / ミッション {State.missions.Count(m=>m.rewarded)}/{State.missions.Count}件達成"+(State.mode==GameMode.Normal?$" / {Campaign.DayNumber}/{State.normalDays}日":" / "+GoalLabel);

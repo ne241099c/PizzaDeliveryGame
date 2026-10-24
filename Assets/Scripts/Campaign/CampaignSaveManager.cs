@@ -114,7 +114,12 @@ public sealed class CampaignSaveManager : MonoBehaviour
     public void Startup()
     {
         var mode=GameScenes.Consume();
-        if(mode==LaunchMode.NewGame){StartNewGame();return;}
+        if(mode==LaunchMode.NewGame)
+        {
+            StartNewGame();
+            if(GameScenes.PlayOpening){GameScenes.PlayOpening=false;Story.PlayOpening();}
+            return;
+        }
         if(mode==LaunchMode.Tutorial)
         {
             // A tutorial never writes the save, the records or the profile, and never deletes the save.

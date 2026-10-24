@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// then growth, reputation and pizza quality. Values are read from the settled DayLedger and day statistics.
 /// The frame (sky, title, progress dots, buttons) is the prefab Assets/Prefabs/UI/SettlementView.prefab (ScreenPrefabs);
 /// the receipt and the cards on the right change every day and are built here.</summary>
-public sealed class SettlementView : MonoBehaviour
+public sealed partial class SettlementView : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI title,cityTomorrow;
     [SerializeField] private RectTransform titleBadge;
@@ -63,6 +63,7 @@ public sealed class SettlementView : MonoBehaviour
     {
         if(revealed<4){RevealAll();return;}
         if(campaign.IsBankrupt){router.Show(ScreenId.GameOver);return;}
+        if(campaign.Rewards.EndingDue){if(Story.Current==null)Story.PlayEnding(()=>FindFirstObjectByType<RewardsView>().ShowResult());return;}
         if(campaign.Rewards.HasPendingResult){FindFirstObjectByType<RewardsView>().ShowResult();return;}
         campaign.NextDay();
     }
@@ -70,6 +71,7 @@ public sealed class SettlementView : MonoBehaviour
     {
         if(clock.Phase!=DayPhase.Ended || !economy.Ledger.Settled)return;
         if(pending || !built){pending=false;BuildContent();}
+        EndMissionCelebration();
         revealed=4;shownAt=Time.unscaledTime-101;
     }
 
@@ -120,6 +122,7 @@ public sealed class SettlementView : MonoBehaviour
         BuildGrowth();BuildQuality();BuildAccidents();
         cityTomorrow.text=FindFirstObjectByType<MapManager>().TomorrowCityInfo(campaign.DayNumber);
         foreach(var r in rows)r.row.gameObject.SetActive(false);
+        shownAt+=BuildMissionCelebration(root);
     }
     private void Row(RectTransform card,ref float y,int page,string name,string detail,decimal amount,bool small=false,bool emphasis=false)
     {
@@ -213,6 +216,7 @@ public sealed class SettlementView : MonoBehaviour
         if(UiRendering.Suspended)return;
         if(router.Current!=ScreenId.Settlement)return;
         if((pending || !built) && clock.Phase==DayPhase.Ended && economy.Ledger.Settled){pending=false;BuildContent();}
+        AnimateMissionCelebration();
         float t=Time.unscaledTime-shownAt;
         int page=Mathf.Min(4,Mathf.FloorToInt(t/1.1f));if(page>revealed)revealed=page;
         for(int i=0;i<legendDots.Length;i++)legendDots[i].color=i<revealed?T.basil:i==revealed?T.cheese:T.paper;
@@ -223,7 +227,7 @@ public sealed class SettlementView : MonoBehaviour
             float k=Mathf.Clamp01((t-r.page*1.1f)/.9f);if(revealed>=4 && t>100)k=1;decimal shown=r.target*(decimal)(1-(1-k)*(1-k));
             r.value.text=r.format=="signed"?UiKit.Signed(shown):(shown<0?"−":"")+"¥"+System.Math.Abs(System.Math.Round(shown,0)).ToString("#,0");
         }
-        nextButton.Text=revealed<4?"次へ ▶":campaign.IsBankrupt?"結果を見る ▶":campaign.Rewards.HasPendingResult?"最終結果へ ▶":"次の日へ ▶";skipButton.gameObject.SetActive(revealed<4);
+        nextButton.Text=revealed<4?"次へ ▶":campaign.IsBankrupt?"結果を見る ▶":campaign.Rewards.EndingDue?"エンディングへ ▶":campaign.Rewards.HasPendingResult?"最終結果へ ▶":"次の日へ ▶";skipButton.gameObject.SetActive(revealed<4);
         nextButton.Interactable=clock.Phase==DayPhase.Ended;
     }
 }
