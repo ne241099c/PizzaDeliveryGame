@@ -137,17 +137,23 @@ public sealed class MapVisuals : MonoBehaviour
         }
         uint Hash(string text){uint hash=2166136261;foreach(char c in text)hash=unchecked((hash^c)*16777619);return hash;}
         var plots=new List<Vector2>();
+        // Along the drawn road (curved in a v10 town), checked against every drawn road.
+        var drawn=map.Edges.ToDictionary(e=>e,e=>RoadGeometry.Points(map,e));
+        float ToRoad(Vector2 point,Vector2[] road){float best=float.PositiveInfinity;for(int i=1;i<road.Length;i++)best=Mathf.Min(best,Distance(point,road[i-1],road[i]));return best;}
         foreach(var edge in map.Edges)
         {
-            Vector2 a=positions[edge.NodeAId],b=positions[edge.NodeBId],delta=b-a;float length=delta.magnitude;
-            if(length<spacing)continue;var normal=new Vector2(-delta.y,delta.x).normalized;
+            var road=drawn[edge];float length=0;for(int i=1;i<road.Length;i++)length+=Vector2.Distance(road[i-1],road[i]);
+            if(length<spacing)continue;
             int count=Mathf.Max(1,Mathf.FloorToInt(length/spacing));
             for(int i=0;i<count;i++)foreach(int side in new[]{-1,1})
             {
                 uint hash=Hash(edge.Id+"/"+i+"/"+side);float jitter=((hash%101)/100f-.5f)*spacing*.3f;
-                Vector2 point=Vector2.Lerp(a,b,Mathf.Clamp01(((i+.5f)*spacing+jitter)/length))+normal*setback*side;
+                float t=Mathf.Clamp01(((i+.5f)*spacing+jitter)/length);
+                Vector2 delta=RoadGeometry.PointAt(road,Mathf.Min(1,t+.02f))-RoadGeometry.PointAt(road,Mathf.Max(0,t-.02f));
+                var normal=new Vector2(-delta.y,delta.x).normalized;
+                Vector2 point=RoadGeometry.PointAt(road,t)+normal*setback*side;
                 if(Vector2.Distance(point,positions[map.StoreNodeId])<1 || plots.Any(p=>Vector2.Distance(p,point)<size*1.6f))continue;
-                if(map.Edges.Any(other=>Distance(point,positions[other.NodeAId],positions[other.NodeBId])<size*.7f))continue;
+                if(map.Edges.Any(other=>ToRoad(point,drawn[other])<size*.7f))continue;
                 plots.Add(point);Vector2 dimensions=new Vector2(size*(.85f+(hash%7)*.05f),size*(1+(hash%5)*.08f));
                 var building=Block(new Rect(point-dimensions*.5f,dimensions),Color.Lerp(theme.mapBuildingFill,theme.paper,(hash%5)*.08f),"NeighborhoodBuilding");
                 building.transform.rotation=Quaternion.Euler(0,0,Mathf.Atan2(delta.y,delta.x)*Mathf.Rad2Deg);

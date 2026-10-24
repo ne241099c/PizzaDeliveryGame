@@ -399,7 +399,9 @@ public sealed partial class CookingManager : MonoBehaviour
     // ---- the player's hands ----
     private PizzaJob PlayerBench(int bench)=>BenchJob(bench) is PizzaJob job && job.Worker==PizzaWorker.Player?job:null;
     private bool Ready(){if(!ManualControlEnabled || clock.Phase!=DayPhase.Open)return false;AdvanceTo(clock.ElapsedSeconds);return true;}
-    private bool Done(){AdvanceTo(clock.ElapsedSeconds);return true;}
+    /// <summary>A sound for something the player did by hand (GameAudio): ticket, ingredient, oven_in, oven_out, failed, discard.</summary>
+    public event Action<string> PlayerActed;
+    private bool Done(string sound=null){AdvanceTo(clock.ElapsedSeconds);if(sound!=null)PlayerActed?.Invoke(sound);return true;}
     public string ClaimRejection(Order order,int bench)
     {
         if(!ManualControlEnabled)return "いまは自分で調理できません。";
@@ -414,11 +416,11 @@ public sealed partial class CookingManager : MonoBehaviour
     {
         if(!Ready() || ClaimRejection(order,bench).Length>0)return false;
         var job=new PizzaJob(order,PizzaWorker.Player){Bench=bench,Stage=IsRedo(order)?PizzaStage.Dough:PizzaStage.Ticket,StartedAt=clock.ElapsedSeconds,LastTouchedAt=clock.ElapsedSeconds};
-        jobs.Add(job);benches[bench]=job;order.Baking=BakingState.Cooking;return Done();
+        jobs.Add(job);benches[bench]=job;order.Baking=BakingState.Cooking;return Done("ticket");
     }
     private bool Step(int bench,PizzaStage from,Action<PizzaJob> apply)
     {
-        if(!Ready())return false;var job=PlayerBench(bench);if(job==null || job.Stage!=from)return false;apply(job);Touch(job);return Done();
+        if(!Ready())return false;var job=PlayerBench(bench);if(job==null || job.Stage!=from)return false;apply(job);Touch(job);return Done("ingredient");
     }
     public bool AddDough(int bench)=>Step(bench,PizzaStage.Ticket,j=>j.Stage=PizzaStage.Dough);
     public bool AddSauce(int bench,float coverage)=>Step(bench,PizzaStage.Dough,j=>
@@ -441,7 +443,7 @@ public sealed partial class CookingManager : MonoBehaviour
     {
         if(!Ready())return false;var job=PlayerBench(bench);
         if(job==null || job.Stage!=PizzaStage.Topping || oven<0 || oven>=ovens.Length)return false;
-        QueueOven(job,clock.ElapsedSeconds);return Done();
+        QueueOven(job,clock.ElapsedSeconds);return Done("oven_in");
     }
     public float OvenElapsed(int oven)=>OvenJob(oven) is PizzaJob job?clock.ElapsedSeconds-job.OvenStartedAt:0;
     public bool CanTakeOut(int oven)=>ManualControlEnabled && clock.Phase==DayPhase.Open && OvenJob(oven) is PizzaJob job && job.Worker==PizzaWorker.Player ;
@@ -454,7 +456,7 @@ public sealed partial class CookingManager : MonoBehaviour
         FinishOven(job,clock.ElapsedSeconds);
         job.Undercooked=elapsed<BandStartFor(job.Order);
         if(!job.Undercooked)CompleteBake(job,clock.ElapsedSeconds);
-        return Done();
+        return Done(job.Burnt || job.Undercooked || job.NeedsDecision?"failed":"oven_out");
     }
     public bool Box(PizzaJob job)
     {

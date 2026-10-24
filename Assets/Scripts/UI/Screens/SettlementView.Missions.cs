@@ -63,6 +63,7 @@ public sealed partial class SettlementView
         }
         UiKit.Label(missionPanel,"Hint","クリックで次へ",40,panelH-44,960,32,T.captionSize,T.inkSub,FontRole.Black,TextAlignmentOptions.Center);
         missionEnd=missionStart+stampAt+MissionHold;
+        GameAudio.Play("mission");
         AnimateMissionCelebration();
         return missionEnd+MissionFade-missionStart;
     }
@@ -86,6 +87,7 @@ public sealed partial class SettlementView
             if(r.at<0)continue;
             float k=t-r.at;
             bool stamped=k>=0;
+            if(stamped && !r.stamp.gameObject.activeSelf)GameAudio.Play("stamp");
             r.stamp.gameObject.SetActive(stamped);
             if(!stamped)continue;
             float hit=Mathf.Clamp01(k/.18f);

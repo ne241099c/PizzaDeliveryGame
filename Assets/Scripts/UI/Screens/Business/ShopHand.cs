@@ -40,6 +40,7 @@ public sealed class ShopHand : MonoBehaviour
     public void BeginAt(DragPayload payload,Vector2 screen,Camera eventCamera=null)
     {
         if(payload.Job!=null)UnityEngine.Object.FindFirstObjectByType<CookingManager>()?.Touch(payload.Job);
+        GameAudio.Play("pick",.6f);
         Held=payload;ghost.gameObject.SetActive(true);ghost.SetAsLastSibling();ghost.sizeDelta=payload.Size;
         var sprite=UiKit.Art(payload.Sprite);
         ghostImage.sprite=sprite;
@@ -64,7 +65,7 @@ public sealed class ShopHand : MonoBehaviour
     public void EndAt(Vector2 screen)
     {
         if(Held==null)return;var payload=Held;var over=ZoneAt(screen);Cancel();
-        if(over!=null && over.Accepts!=null && over.Accepts(payload))over.Dropped?.Invoke(payload);
+        if(over!=null && over.Accepts!=null && over.Accepts(payload)){GameAudio.Play("drop",.6f);over.Dropped?.Invoke(payload);}
         Released?.Invoke(payload);
     }
     public void Cancel()

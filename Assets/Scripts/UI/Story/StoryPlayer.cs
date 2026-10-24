@@ -37,6 +37,7 @@ public sealed class StoryPlayer : MonoBehaviour
     {
         var player=new GameObject(name).AddComponent<StoryPlayer>();
         player.Scenes=scenes;player.Done=done;player.Build();player.Show(0);
+        GameAudio.StoryMusic(true);
         return player;
     }
     private void Build()
@@ -71,12 +72,13 @@ public sealed class StoryPlayer : MonoBehaviour
     {
         if(Finished || leavingAt>=0)return;
         if(caption.maxVisibleCharacters<caption.text.Length){sceneAt-=caption.text.Length/CharsPerSecond;return;}
-        leavingAt=Time.unscaledTime;
+        leavingAt=Time.unscaledTime;GameAudio.Play("page",.6f);
     }
     public void Finish()
     {
         if(Finished)return;Finished=true;
         Destroy(gameObject);Done?.Invoke();
+        GameAudio.StoryMusic(false);
     }
     private void Update()
     {

@@ -97,7 +97,7 @@ public sealed partial class CookingManager
     public bool Discard(PizzaJob job)
     {
         if(!Ready() || !CanDiscard(job))return false;
-        DiscardInternal(job,clock.ElapsedSeconds,false);return Done();
+        DiscardInternal(job,clock.ElapsedSeconds,false);return Done("discard");
     }
     public event System.Action<PizzaJob> PizzaDiscarded;
     private void DiscardInternal(PizzaJob job,float at,bool automatic)
@@ -132,6 +132,6 @@ public sealed partial class CookingManager
     public bool ResumeBaking(PizzaJob job,int oven)
     {
         if(!Ready() || job==null || !jobs.Contains(job) || !job.Undercooked || job.Stage!=PizzaStage.Baked || oven<0 || oven>=ovens.Length)return false;
-        Touch(job);QueueOven(job,clock.ElapsedSeconds);return Done();
+        Touch(job);QueueOven(job,clock.ElapsedSeconds);return Done("oven_in");
     }
 }

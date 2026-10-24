@@ -57,7 +57,7 @@ public static class CityValidator
         Fail(m.shortcutDestinations>0 && m.shortcutDestinations<m.destinations && m.maximumSaving<=s.maximumShortcutSaving,"shortcut value/mix");
         foreach(var edge in map.Edges.Where(e=>e.RoadType==RoadType.Main && e.TrafficFactor<1))
             Fail(!float.IsInfinity(Distance(edge.NodeAId,edge.NodeBId,map.Edges.Where(e=>e!=edge),Cost)),"congestion detours");
-        Fail(m.edges>=s.minimumEdges && m.edges<=s.maximumEdges && m.destinations>=s.minimumDestinations && m.destinations<=s.maximumDestinations && m.totalDistance<=s.maximumTotalDistance,"scale");
+        Fail(m.edges>=s.minimumEdges && m.edges<=(city.version>=10?Mathf.Max(s.maximumEdges,s.newTownMaximumEdges):s.maximumEdges) && m.destinations>=s.minimumDestinations && m.destinations<=s.maximumDestinations && m.totalDistance<=s.maximumTotalDistance,"scale");
         if(distances.Count>0 && distances.All(d=>!float.IsInfinity(d)))
         {
             float min=distances.Min(),span=Mathf.Max(.001f,distances.Max()-min);

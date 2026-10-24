@@ -6,8 +6,9 @@ using UnityEngine.UI;
 /// <summary>Pill button with a dark edge and an offset shadow. Hover lifts the face, press sinks it (0.08s).
 /// Kinds follow the style guide: primary (tomato), secondary (paper), danger (berry), selected (cheese).</summary>
 [RequireComponent(typeof(Button))]
-public sealed class StickerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
+public sealed class StickerButton : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler, IPointerClickHandler
 {
+    public void OnPointerClick(PointerEventData e){if(Button.interactable)GameAudio.Play("ui_click",.7f);}
     [SerializeField] private StickerKind kind;
     // Serialized so a button built into a prefab keeps its parts.
     [SerializeField] private RectTransform face;

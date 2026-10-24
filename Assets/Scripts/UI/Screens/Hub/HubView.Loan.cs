@@ -70,7 +70,7 @@ public sealed partial class HubView
     }
     private void Repayment(RectTransform card,string name,string label,float x,float width,decimal amount)
     {
-        var button=UiKit.Button(card,name,label,name=="RepayAll"?StickerKind.Primary:StickerKind.Secondary,x,354,width,68,T.subheadingSize,()=>{bool owed=Rewards.Loan>0;if(Rewards.Repay(amount)){RefreshNow();if(owed && Rewards.Loan==0)Story.OfferEnding();}});
+        var button=UiKit.Button(card,name,label,name=="RepayAll"?StickerKind.Primary:StickerKind.Secondary,x,354,width,68,T.subheadingSize,()=>{bool owed=Rewards.Loan>0;if(Rewards.Repay(amount)){RefreshNow();GameAudio.Play("repay");if(owed && Rewards.Loan==0){GameAudio.Play("payoff");Story.OfferEnding();}}});
         button.Interactable=Rewards.CanRepay && amount>0;
     }
 }

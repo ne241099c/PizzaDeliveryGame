@@ -53,6 +53,12 @@ public enum DistrictKind { Residential, Shopping, Park, Riverside, Apartments }
     [Min(3), Tooltip("v9で道を結ぶ最大距離。")] public float denseMaximumConnection=6;
     [Range(0,4), Tooltip("v9で新しい交差点から追加でつなぐ道の最大本数。")] public int denseExtraLinks=3;
     [Range(0,1), Tooltip("v9で、家の何割にお店から別々の道で行ける回り道があるべきか（検証の条件）。")] public float minimumMultiRouteShare=.9f;
+    [Header("v10: ニュータウン（整った区画と、ゆるく曲がる通り）")]
+    [Min(3), Tooltip("v10の区画（大きな街区）の一辺。通りの間隔はこの1/4。")] public float newTownCellSize=5;
+    [Range(0,2f), Tooltip("v10の街全体のゆがみの大きさ。通りがゆるく曲がります。")] public float newTownWarp=1.3f;
+    [Min(2), Tooltip("v10のゆがみの波長。大きいほどゆったり曲がります。")] public float newTownWarpLength=7.5f;
+    [Range(0,.6f), Tooltip("v10の区画内の生活道路のふくらみ。")] public float newTownBow=.3f;
+    [Min(100), Tooltip("v10の道の本数の上限（検証）。")] public int newTownMaximumEdges=900;
     [Header("渋滞（v9）")]
     [Range(0,1), Tooltip("毎日、大通りのうち渋滞する割合。日付と街のseedで決まります。")] public float dailyCongestionShare=.3f;
     [Range(.1f,1), Tooltip("渋滞した道の速さの倍率（下限）。小さいほどひどい渋滞。")] public float congestionTrafficMin=.3f;
@@ -95,13 +101,14 @@ public sealed class GeneratedCity
 }
 
 /// <summary>Deterministic template placement. Prefixes and each block's RNG are independent of later expansion.</summary>
-public static class CityGenerator
+public static partial class CityGenerator
 {
-    public const int CurrentVersion=9;
+    public const int CurrentVersion=10;
     private static readonly Dictionary<string,int> validatedNetworkVariants=new();
     public static GeneratedCity Build(int seed,int blockCount,CityGenerationSettings s,int variant=0,int version=CurrentVersion,int savedHousesPerBlock=0)
     {
         if(blockCount<1 || s.templates==null || s.templates.Length<1)throw new ArgumentException("City needs blocks and templates.");
+        if(version>=10)return BuildNewTown(seed,blockCount,s,variant,version,savedHousesPerBlock);
         if(version>=8)return BuildConnectedStreets(seed,blockCount,s,variant,version,savedHousesPerBlock);
         if(version>=7)return BuildStreetNetwork(seed,blockCount,s,variant,version,savedHousesPerBlock);
         if(version>=6)return BuildOrganic(seed,blockCount,s,variant,version,savedHousesPerBlock);
