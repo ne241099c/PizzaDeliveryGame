@@ -25,6 +25,11 @@ public sealed class FacilityManager : MonoBehaviour
     [SerializeField,Min(0)] private float additionalBikeSpeedPerLevel=.08f;
     [SerializeField,Min(0)] private float additionalBikeRiskReduction=.1f;
     [SerializeField,Range(0,1)] private float minimumBikeRisk=.2f;
+    [Header("Direct earnings per upgrade (2026-10-24)")]
+    [SerializeField,Range(0,1),Tooltip("窯1台ごとのピザ代の上乗せ（焼きたて）。")] private float ovenSalesBonus=.08f;
+    [SerializeField,Range(0,1),Tooltip("自転車1段階ごとに、期限内の配達でピザ代のこの割合をチップとして受け取る。")] private float bikeTipBonus=.08f;
+    [SerializeField,Range(0,1),Tooltip("作業台1台ごとの材料費の節約。")] private float workbenchMaterialSaving=.2f;
+    [SerializeField,Range(0,1)] private float minimumMaterialShare=.2f;
     [SerializeField] private int implementationStage=3;
     public int ImplementationStage=>implementationStage;
     public int OvenUpgrades {get;private set;}
@@ -40,6 +45,15 @@ public sealed class FacilityManager : MonoBehaviour
     public int BikeLevel=>initialBikeLevel+BikeUpgrades;
     public int MaximumPeople=>int.MaxValue; // Legacy API; staffing is unlimited.
     public float SpeedMultiplier=>BikeSpeed(BikeUpgrades);
+    /// <summary>Pizza prices with the bought ovens.</summary>
+    public float SalesMultiplier=>1+ovenSalesBonus*OvenUpgrades;
+    /// <summary>Extra tip for an on-time delivery, as a share of the pizza price, from the bought bike levels.</summary>
+    public float ExtraTipRatio=>bikeTipBonus*BikeUpgrades;
+    /// <summary>Share of the material cost still paid with the bought workbenches.</summary>
+    public float MaterialShare=>Mathf.Max(minimumMaterialShare,1-workbenchMaterialSaving*WorkbenchUpgrades);
+    public float OvenSalesBonus=>ovenSalesBonus;
+    public float BikeTipBonus=>bikeTipBonus;
+    public float WorkbenchMaterialSaving=>workbenchMaterialSaving;
     public float RiskMultiplier=>BikeRisk(BikeUpgrades);
     public float DemandMultiplier=>clock.Phase==DayPhase.Closed || clock.Phase==DayPhase.Ended?1:advertisingDemand[Advertisement];
     public decimal Maintenance=>BusinessEconomy.Money((decimal)ovenMaintenance*OvenUpgrades+(decimal)bikeMaintenance*BikeUpgrades+(decimal)expansionMaintenance*ShopUpgrades+(decimal)workbenchMaintenance*WorkbenchUpgrades+(decimal)menuMaintenance*MenuUpgrades);
@@ -87,7 +101,7 @@ public sealed class FacilityManager : MonoBehaviour
     {
         if(clock.Phase!=DayPhase.BeforeOpening)return "Buy during preparation only.";
         var goals=FindFirstObjectByType<CampaignManager>();
-        if(goals!=null && (type==FacilityType.Oven || type==FacilityType.Bike || type==FacilityType.Workbench) && (type==FacilityType.Oven?Ovens:type==FacilityType.Bike?BikeLevel:Workbenches)>=goals.Rewards.UnlockedEquipmentLevel)return "店グレードを上げると次の設備が解放されます。";
+        // Equipment is not locked by the shop grade (2026-10-24): investing pays from the first days.
         if(type==FacilityType.Menu && goals!=null && goals.Rewards.UnlockedMenuKinds>MenuUpgrades+1)return "店の昇格ですでに解放されています。";
         if(IsMaximum(type))return type==FacilityType.Advertising?"Advertising already booked today.":"Already at maximum.";
         if(advertisementTier<1 || advertisementTier>advertisingPrices.Length)return "Invalid advertising tier.";

@@ -4163,7 +4163,7 @@ MonoBehaviour:
   menuPrices:
   - 1000
   - 1750
-  menuMaintenance: 25
+  menuMaintenance: 12.5
   advertisingPrices:
   - 250
   - 500
@@ -4181,10 +4181,10 @@ MonoBehaviour:
   - 1
   - 0.9
   - 0.8
-  ovenMaintenance: 75
-  bikeMaintenance: 50
-  expansionMaintenance: 100
-  workbenchMaintenance: 37.5
+  ovenMaintenance: 37.5
+  bikeMaintenance: 25
+  expansionMaintenance: 50
+  workbenchMaintenance: 18.75
   initialOvens: 1
   initialBikeLevel: 1
   initialWorkbenches: 2
@@ -4193,6 +4193,10 @@ MonoBehaviour:
   additionalBikeSpeedPerLevel: 0.08
   additionalBikeRiskReduction: 0.1
   minimumBikeRisk: 0.2
+  ovenSalesBonus: 0.08
+  bikeTipBonus: 0.08
+  workbenchMaterialSaving: 0.2
+  minimumMaterialShare: 0.2
   implementationStage: 4
 --- !u!114 &1737208722
 MonoBehaviour:
@@ -4261,6 +4265,7 @@ MonoBehaviour:
   scorePerDelivery: 300
   pepperoniPoints: 360
   seafoodPoints: 450
+  facilities: {fileID: 0}
   latePenaltyPerSecond: 15
   closingCancellationPenalty: 0
   tipRatio: 0.2

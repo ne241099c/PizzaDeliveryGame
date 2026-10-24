@@ -4,9 +4,21 @@ public sealed class ScoreManager : MonoBehaviour
 {
     [SerializeField, Min(1)] private int scorePerDelivery = 100;
     [SerializeField, Min(1)] private int pepperoniPoints=120,seafoodPoints=150;
-    public int BasePoints(Order order)=>order.Kind==PizzaKind.Seafood?seafoodPoints:order.Kind==PizzaKind.Pepperoni?pepperoniPoints:scorePerDelivery;
-    public int ScoreArrival(Order order,float arrivedAt,float service=0)=>DeliveryScoring.Calculate(arrivedAt,order.Deadline,BasePoints(order),latePenaltyPerSecond,service,tipRatio);
-    public int TipForArrival(Order order,float arrivedAt,float service)=>arrivedAt<=order.Deadline?(int)System.Math.Round(BasePoints(order)*tipRatio*Mathf.Clamp01(service),System.MidpointRounding.AwayFromZero):0;
+    [SerializeField] private FacilityManager facilities;
+    private FacilityManager Facilities{get{if(facilities==null)facilities=FindFirstObjectByType<FacilityManager>();return facilities;}}
+    /// <summary>The pizza price, raised by the bought ovens.</summary>
+    public int BasePoints(Order order)
+    {
+        return PriceOf(order.Kind);
+    }
+    public int PriceOf(PizzaKind kind)
+    {
+        int price=kind==PizzaKind.Seafood?seafoodPoints:kind==PizzaKind.Pepperoni?pepperoniPoints:scorePerDelivery;
+        return Facilities!=null?Mathf.RoundToInt(price*Facilities.SalesMultiplier):price;
+    }
+    private int BikeTip(Order order,float arrivedAt)=>arrivedAt<=order.Deadline && Facilities!=null?Mathf.RoundToInt(BasePoints(order)*Facilities.ExtraTipRatio):0;
+    public int ScoreArrival(Order order,float arrivedAt,float service=0)=>DeliveryScoring.Calculate(arrivedAt,order.Deadline,BasePoints(order),latePenaltyPerSecond,service,tipRatio)+BikeTip(order,arrivedAt);
+    public int TipForArrival(Order order,float arrivedAt,float service)=>(arrivedAt<=order.Deadline?(int)System.Math.Round(BasePoints(order)*tipRatio*Mathf.Clamp01(service),System.MidpointRounding.AwayFromZero):0)+BikeTip(order,arrivedAt);
     [SerializeField, Min(0f)] private float latePenaltyPerSecond = 5f;
     [SerializeField, Min(0)] private int closingCancellationPenalty = 0;
     [SerializeField, Range(0,1)] private float tipRatio = 0.2f;

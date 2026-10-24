@@ -18,6 +18,8 @@ public static class RewardsMeasurement
         public float promiseSeconds = 60;
         public bool buyFacilities;
         public string repaymentFraction = "1";
+        public int lastPurchaseDay = 99, repayFromDay = 1;
+        public bool advertise = true;
     }
 
     [Serializable]
@@ -43,7 +45,8 @@ public static class RewardsMeasurement
     static readonly MeasurementPolicy[] Policies =
     {
         new MeasurementPolicy { name = "early-repay", buyFacilities = false, repaymentFraction = "1" },
-        new MeasurementPolicy { name = "invest-first", buyFacilities = true, repaymentFraction = ".25" }
+        new MeasurementPolicy { name = "invest-first", buyFacilities = true, repaymentFraction = ".25" },
+        new MeasurementPolicy { name = "invest-then-repay", buyFacilities = true, advertise = false, lastPurchaseDay = 12, repayFromDay = 13, repaymentFraction = "1" }
     };
     static readonly List<DayResult> results = new();
     public static IReadOnlyList<DayResult> Results => results;
@@ -113,6 +116,8 @@ public static class RewardsMeasurement
             adjustOverride: false, name: policy.name, daysOverride: policy.maximumDays,
             promisesOverride: new[] { policy.promiseSeconds }, trainOverride: false,
             facilityOverride: policy.buyFacilities, citySeedOverride: policy.seed);
+        session.LastPurchaseDay = policy.lastPurchaseDay;
+        if (!policy.advertise) session.PurchaseOrder = session.PurchaseOrder.Where(t => t != FacilityType.Advertising).ToArray();
         session.DayCompleted += Record;
         Status = "Running " + policy.name + " / day 1";
     }
@@ -154,7 +159,7 @@ public static class RewardsMeasurement
         decimal cashBefore = economy.Cash;
         decimal reserve = economy.FixedCost(campaign.DayNumber + 1) + economy.TeamWages;
         decimal available = Math.Max(0, cashBefore - reserve);
-        decimal amount = BusinessEconomy.Money(Math.Min(rewards.Loan,
+        decimal amount = record.Day < policy.repayFromDay ? 0 : BusinessEconomy.Money(Math.Min(rewards.Loan,
             available * CampaignSaveManager.Decimal(policy.repaymentFraction)));
         if (amount > 0 && !campaign.IsBankrupt && !rewards.Repay(amount))
             throw new InvalidOperationException("R-7 repayment rejected: " + policy.name);

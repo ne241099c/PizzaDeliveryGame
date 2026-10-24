@@ -82,6 +82,10 @@ public sealed class DaySimulationSession : IDisposable
     public List<SimulationDayRecord> Records { get; }=new();
     public string Progress => Finished ? $"Finished / {Records.Count} days recorded" : $"Promise {promises[policy]:F0}s / day {campaign.DayNumber}/{days}";
     public event Action<SimulationDayRecord> DayCompleted;
+    /// <summary>Equipment bought before opening, the first affordable in this order (when buying is enabled).</summary>
+    public FacilityType[] PurchaseOrder={FacilityType.Oven,FacilityType.Workbench,FacilityType.Bike,FacilityType.Menu,FacilityType.Advertising};
+    /// <summary>No purchases after this operating day.</summary>
+    public int LastPurchaseDay=int.MaxValue;
     private static T Find<T>() where T:UnityEngine.Object => UnityEngine.Object.FindFirstObjectByType<T>()
         ?? throw new InvalidOperationException("Missing scene component: "+typeof(T).Name);
     public DaySimulationSession(DaySimulationSettings settings,bool? batchOverride=null,bool? hireOverride=null,bool? adjustOverride=null,string name="comparison",int? daysOverride=null,float[] promisesOverride=null,bool? trainOverride=null,float? initialCashOverride=null,bool? facilityOverride=null,int? citySeedOverride=null,int? cityBlocksOverride=null,int? kitchenStaffOverride=null,bool? hireKitchenOverride=null,bool? substituteOverride=null)
@@ -173,9 +177,9 @@ public sealed class DaySimulationSession : IDisposable
             dynamics.SeedOverride=unchecked(seed^campaign.DayNumber);dynamics.ResetForDay();
             spawner.SetPromiseSeconds(currentPromise);hired=0;
             facilityPurchase="";
-            if(buyFacilities)
+            if(buyFacilities && campaign.DayNumber<=LastPurchaseDay)
             {
-                foreach(var type in new[]{FacilityType.Oven,FacilityType.Workbench,FacilityType.Bike,FacilityType.Menu,FacilityType.Advertising})
+                foreach(var type in PurchaseOrder)
                 {
                     if(facilities.IsMaximum(type) || facilities.Rejection(type).Length>0 || economy.Cash<facilities.Price(type)+settings.FacilityReserve)continue;
                     if(!facilities.Purchase(type))throw new InvalidOperationException(facilities.LastMessage);

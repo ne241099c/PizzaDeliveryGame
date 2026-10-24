@@ -61,7 +61,8 @@ public sealed class BusinessEconomy : MonoBehaviour
     public decimal FixedCost(int day) => BaseFixedCost(day)+(facilities!=null?facilities.Maintenance:0);
     public decimal BaseFixedCost(int day) => Money((decimal)dailyFixedCost+(decimal)fixedCostGrowthPerDay*System.Math.Max(0,day-1));
     public static decimal Money(decimal amount) => System.Math.Round(amount,2,System.MidpointRounding.AwayFromZero);
-    public decimal MaterialCost(int orderCount) => Money((decimal)materialCostPerOrder*orderCount);
+    /// <summary>Materials for the orders, reduced by the bought workbenches.</summary>
+    public decimal MaterialCost(int orderCount) => Money((decimal)materialCostPerOrder*orderCount*(facilities!=null?(decimal)facilities.MaterialShare:1));
     public decimal FuelCost(decimal distance) => Money((decimal)fuelCostPerDistance*distance);
     public decimal DailyWage(DeliveryPerson person) => Money((decimal)wageBase
         +(decimal)wageAbilityFactor*((decimal)person.Driving+(decimal)person.LocalKnowledge+(decimal)person.Service+(decimal)person.Endurance+(decimal)person.Safety)

@@ -31,7 +31,7 @@ public sealed class HubView : MonoBehaviour
     [SerializeField] private ManagementPanelView managementPanel;
 
     private CampaignManager campaign;private GameClock clock;private BusinessEconomy economy;private CourierRoster roster;private KitchenCrew crew;
-    private RecruitmentManager recruitment;private TrainingManager training;private FacilityManager facilities;private OrderSpawner spawner;
+    private RecruitmentManager recruitment;private TrainingManager training;private FacilityManager facilities;private OrderSpawner spawner;private ScoreManager score;
     private ReputationManager reputation;
     private GameMenu menu;
     private CourierProgression progression;
@@ -51,7 +51,7 @@ public sealed class HubView : MonoBehaviour
         economy=Find<BusinessEconomy>();
         roster=Find<CourierRoster>();
         crew=Find<KitchenCrew>();
-        recruitment=Find<RecruitmentManager>();training=Find<TrainingManager>();facilities=Find<FacilityManager>();spawner=Find<OrderSpawner>();
+        recruitment=Find<RecruitmentManager>();training=Find<TrainingManager>();facilities=Find<FacilityManager>();spawner=Find<OrderSpawner>();score=Find<ScoreManager>();
         reputation=Find<ReputationManager>();
         menu=Find<GameMenu>();
         progression=Find<CourierProgression>();
@@ -277,13 +277,14 @@ public sealed class HubView : MonoBehaviour
     };
     private string FacilityEffect(FacilityType type)=>type switch
     {
-        FacilityType.Oven=>"窯を1台増やす\n同時に焼ける枚数 +1",
-        FacilityType.Workbench=>"作業台を1台増やす\n同時に作れる枚数 +1",
-        FacilityType.Bike=>$"速さ x{facilities.NextBikeSpeed:0.00}\n事故率 x{facilities.NextBikeRisk:0.00}",
-        FacilityType.Menu=>facilities.MenuUpgrades==0?"ペパロニを解禁\n基本の得点 120":"シーフードを解禁\n基本の得点 150",
+        FacilityType.Oven=>$"窯 +1台・ピザの売値 +{Percent(facilities.OvenSalesBonus)}\nいまの売値 x{facilities.SalesMultiplier:0.00}",
+        FacilityType.Workbench=>$"作業台 +1台・材料費 -{Percent(facilities.WorkbenchMaterialSaving)}\nいまの材料費 x{facilities.MaterialShare:0.00}",
+        FacilityType.Bike=>$"速さ x{facilities.NextBikeSpeed:0.00}・事故率 x{facilities.NextBikeRisk:0.00}\n期限内チップ +ピザ代の{Percent(facilities.BikeTipBonus)}",
+        FacilityType.Menu=>facilities.MenuUpgrades==0?$"ペパロニを解禁\nピザ代 {UiKit.Yen(score.PriceOf(PizzaKind.Pepperoni))}":$"シーフードを解禁\nピザ代 {UiKit.Yen(score.PriceOf(PizzaKind.Seafood))}",
         FacilityType.Expansion=>"雇える人数 +1",
         _=>"今日の注文が増える\n(その日だけ)"
     };
+    private static string Percent(float share)=>$"{share*100:0}%";
     private void ShowFacility(FacilityCardView card,FacilityType type,string picture)
     {
         card.Show(UiKit.Art(picture),ShopStrings.Facility(type),FacilityLevel(type),facilities.IsMaximum(type) && type!=FacilityType.Advertising?(type==FacilityType.Menu?ShopStrings.MenuCompleted:ShopStrings.FacilityCompleted):FacilityEffect(type));

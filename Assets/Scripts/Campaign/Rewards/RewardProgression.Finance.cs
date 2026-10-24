@@ -23,6 +23,7 @@ public sealed partial class RewardProgression
     public string GradeName=>CurrentGrade.name;
     public int UnlockedDistricts=>CurrentGrade.districts;
     public int UnlockedMenuKinds=>CurrentGrade.menuKinds;
+    /// <summary>No longer limits purchases (2026-10-24); kept for older data and tools.</summary>
     public int UnlockedEquipmentLevel=>CurrentGrade.equipmentLevel;
     public string NextGradeProgress
     {
@@ -40,7 +41,7 @@ public sealed partial class RewardProgression
     {
         int before=State.grade;
         while(State.grade<grades.Length && Qualifies(grades[State.grade],FindFirstObjectByType<ReputationManager>().Value,Campaign.TotalRevenue,NetAssets,RecentOnTime,ThreeStarRate))State.grade++;
-        promotionNotice=before<State.grade?$"{GradeName}に昇格！ 街区{UnlockedDistricts}・ピザ{UnlockedMenuKinds}種・設備Lv{UnlockedEquipmentLevel}を解放":"";
+        promotionNotice=before<State.grade?$"{GradeName}に昇格！ 街区{UnlockedDistricts}・ピザ{UnlockedMenuKinds}種を解放":"";
     }
     public bool CanRepay=>Clock.Phase==DayPhase.Ended && !Campaign.IsBankrupt && Loan>0 && Economy.Cash>0;
     public bool Repay(decimal amount)

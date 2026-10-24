@@ -96,7 +96,6 @@ public static class ShopValidation
             decimal cash=economy.Cash,fee=recruitment.HiringCost(candidate.Staff);
             Check(fee==economy.DailyWage(candidate.Staff)*3 && recruitment.Hire(candidate) && crew.Count==2 && economy.Cash==cash-fee,"hiring kitchen staff costs three wage days");
             Check(recruitment.TeamCount==4 && recruitment.Hire(recruitment.Applicants.First()) && recruitment.TeamCount==5,"couriers can be hired beyond four including kitchen staff");
-            RewardProgression.Get(campaign).State.grade=2; // equipment beyond level 2 unlocks at the second grade (R-1)
             Check(facilities.Purchase(FacilityType.Workbench) && facilities.Workbenches==3 && facilities.Maintenance==15,"workbench purchase 400 adds a bench and maintenance");
             Check(facilities.Price(FacilityType.Workbench)==700,"second workbench costs 700");
             string json=save.SnapshotJson();Check(save.TryParse(json,out var data,out var reason),"version 3 save validates "+reason);

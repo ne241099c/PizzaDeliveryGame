@@ -16,8 +16,13 @@ public static class EconomyScale
     /// <summary>Sales (pizza prices, quality bonus, late reduction). Larger than costs so the loan can be repaid.</summary>
     public const float RevenueFactor=3f;
     public const float InitialLoan=10000;
+    /// <summary>Equipment maintenance on top of the cost factor (2026-10-24: halved so equipment pays back).</summary>
+    public const float MaintenanceFactor=.5f;
+    /// <summary>Direct earnings per upgrade: oven price +8%, bike on-time tip +8% of the price, workbench materials -20%
+    /// (measured payback about 4-9 days, Docs/Results/Facility_Value).</summary>
+    public const float OvenSalesBonus=.08f,BikeTipBonus=.08f,WorkbenchMaterialSaving=.2f;
 
-    private enum Kind { Cost, Revenue }
+    private enum Kind { Cost, Revenue, Maintenance }
     private static readonly (Type type,string field,float value,Kind kind)[] Values=
     {
         (typeof(BusinessEconomy),"accidentRepairCost",30,Kind.Cost),
@@ -37,11 +42,11 @@ public static class EconomyScale
         (typeof(ScoreManager),"latePenaltyPerSecond",5,Kind.Revenue),
         (typeof(CookingManager),"qualityTwoStarBonus",15,Kind.Revenue),
         (typeof(CookingManager),"qualityThreeStarBonus",40,Kind.Revenue),
-        (typeof(FacilityManager),"menuMaintenance",10,Kind.Cost),
-        (typeof(FacilityManager),"ovenMaintenance",30,Kind.Cost),
-        (typeof(FacilityManager),"bikeMaintenance",20,Kind.Cost),
-        (typeof(FacilityManager),"expansionMaintenance",40,Kind.Cost),
-        (typeof(FacilityManager),"workbenchMaintenance",15,Kind.Cost),
+        (typeof(FacilityManager),"menuMaintenance",10,Kind.Maintenance),
+        (typeof(FacilityManager),"ovenMaintenance",30,Kind.Maintenance),
+        (typeof(FacilityManager),"bikeMaintenance",20,Kind.Maintenance),
+        (typeof(FacilityManager),"expansionMaintenance",40,Kind.Maintenance),
+        (typeof(FacilityManager),"workbenchMaintenance",15,Kind.Maintenance),
         (typeof(TrainingManager),"baseCost",80,Kind.Cost),
         (typeof(TrainingManager),"abilityCostFactor",150,Kind.Cost),
         (typeof(TrainingManager),"capacityCost",300,Kind.Cost),
@@ -55,7 +60,7 @@ public static class EconomyScale
         (typeof(FacilityManager),"menuPrices",new float[]{400,700},Kind.Cost),
         (typeof(FacilityManager),"advertisingPrices",new float[]{100,200,350},Kind.Cost),
     };
-    private static float Factor(Kind kind,float cost,float revenue)=>kind==Kind.Cost?cost:revenue;
+    private static float Factor(Kind kind,float cost,float revenue,float maintenance)=>kind==Kind.Cost?cost:kind==Kind.Revenue?revenue:cost*maintenance;
 
     /// <summary>Writes the scaled values into the open Game scene (edit mode) and resets the mission and trophy lists
     /// to the code defaults, then saves the scene.</summary>
@@ -63,7 +68,12 @@ public static class EconomyScale
     {
         if(Application.isPlaying)throw new InvalidOperationException("Exit Play first.");
         var log=new List<string>();
-        Set(CostFactor,RevenueFactor,log,true);
+        Set(CostFactor,RevenueFactor,MaintenanceFactor,log,true);
+        var equipment=new SerializedObject(Find(typeof(FacilityManager)));
+        equipment.FindProperty("ovenSalesBonus").floatValue=OvenSalesBonus;
+        equipment.FindProperty("bikeTipBonus").floatValue=BikeTipBonus;
+        equipment.FindProperty("workbenchMaterialSaving").floatValue=WorkbenchMaterialSaving;
+        equipment.ApplyModifiedProperties();
         var rewards=Find(typeof(RewardProgression));
         var so=new SerializedObject(rewards);
         so.FindProperty("initialLoan").floatValue=InitialLoan;
@@ -90,11 +100,18 @@ public static class EconomyScale
     }
 
     /// <summary>Play mode, for validations written against the earlier amounts: puts the base values on the live
-    /// components until disposed, including the earlier loan (4000) and payoff bonus (100), and no mission pay. Grades and ranks are kept.</summary>
+    /// components until disposed, including the earlier loan (4000) and payoff bonus (100), no mission pay, no direct equipment earnings and full maintenance. Grades and ranks are kept.</summary>
     public static IDisposable Legacy()
     {
         var previous=new List<(SerializedProperty property,float value)>();
-        Set(1,1,null,false,previous);
+        Set(1,1,1,null,false,previous);
+        // The older checks predate the direct equipment earnings (oven price, bike tip, workbench materials).
+        var equipment=new SerializedObject(Find(typeof(FacilityManager)));
+        foreach(var field in new[]{"ovenSalesBonus","bikeTipBonus","workbenchMaterialSaving"})
+        {
+            var p=equipment.FindProperty(field);previous.Add((p.Copy(),Read(p)));Write(p,0);
+        }
+        equipment.ApplyModifiedPropertiesWithoutUndo();
         var rewards=new SerializedObject(Find(typeof(RewardProgression)));
         foreach(var (field,value) in new[]{("initialLoan",4000f),("payoffBonus",100f)})
         {
@@ -142,7 +159,7 @@ public static class EconomyScale
         if(property.propertyType==SerializedPropertyType.Integer)property.intValue=Mathf.RoundToInt(value);else property.floatValue=value;
     }
     private static float Read(SerializedProperty property)=>property.propertyType==SerializedPropertyType.Integer?property.intValue:property.floatValue;
-    private static void Set(float cost,float revenue,List<string> log,bool withUndo,List<(SerializedProperty,float)> previous=null)
+    private static void Set(float cost,float revenue,float maintenance,List<string> log,bool withUndo,List<(SerializedProperty,float)> previous=null)
     {
         foreach(var group in Values.GroupBy(v=>v.type))
         {
@@ -151,7 +168,7 @@ public static class EconomyScale
             {
                 var p=so.FindProperty(v.field);if(p==null)throw new InvalidOperationException("Missing field "+group.Key.Name+"."+v.field);
                 previous?.Add((p.Copy(),Read(p)));
-                Write(p,v.value*Factor(v.kind,cost,revenue));log?.Add(v.field+"="+Read(p));
+                Write(p,v.value*Factor(v.kind,cost,revenue,maintenance));log?.Add(v.field+"="+Read(p));
             }
             if(withUndo)so.ApplyModifiedProperties();else so.ApplyModifiedPropertiesWithoutUndo();
         }
@@ -165,7 +182,7 @@ public static class EconomyScale
                 for(int i=0;i<v.values.Length;i++)
                 {
                     var element=p.GetArrayElementAtIndex(i);previous?.Add((element.Copy(),Read(element)));
-                    Write(element,v.values[i]*Factor(v.kind,cost,revenue));
+                    Write(element,v.values[i]*Factor(v.kind,cost,revenue,maintenance));
                 }
                 log?.Add(v.field+"="+string.Join("/",Enumerable.Range(0,v.values.Length).Select(i=>Read(p.GetArrayElementAtIndex(i)))));
             }
