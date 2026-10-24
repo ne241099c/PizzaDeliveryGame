@@ -12,6 +12,22 @@ public sealed class EditModeTests
     public void BuildSettingsReadmeAndCreditsMatchGameInfo()=>Assert.AreEqual("",GameInfoSync.Differences(),"run Tools > Game Info > Sync");
 
     [Test]
+    public void RewardMissions()=>StringAssert.StartsWith("PASS",RewardsMissionValidation.Run());
+
+    [Test]
+    public void RewardTrophies()=>StringAssert.StartsWith("PASS",RewardProfileValidation.Run());
+
+    [Test]
+    public void BankruptSaveCannotBeContinued()
+    {
+        var data=new CampaignSaveData{cash="-12.5",rewards=new RewardSaveData{ended=true}};
+        Assert.IsTrue(CampaignSaveFile.IsFinished(data),"settled with negative cash");
+        data.cash="40";Assert.IsFalse(CampaignSaveFile.IsFinished(data),"positive cash continues");
+        data.cash="-1";data.rewards.ended=false;Assert.IsFalse(CampaignSaveFile.IsFinished(data),"not settled yet");
+        data.rewards=null;Assert.IsFalse(CampaignSaveFile.IsFinished(data),"saves from before the rewards");
+    }
+
+    [Test]
     public void SaveFolderDoesNotFollowTheDisplayName()=>Assert.AreEqual(GameInfo.SaveFolder,System.IO.Path.GetFileName(CampaignSaveFile.Directory));
 
     [Test]

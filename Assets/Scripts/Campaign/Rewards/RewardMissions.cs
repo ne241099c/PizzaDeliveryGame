@@ -25,7 +25,8 @@ public enum MissionKind
     ThreeStars, NoFailures, NoLate, Batch, Backstreets, RouteSavings, Revenue, NoWaste, StaffProduction
 }
 
-/// <summary>Editable template. Grade one uses the base values; increments apply for each higher grade.</summary>
+/// <summary>Editable template. Grade one uses the base values; increments apply for each higher grade.
+/// Every mission of the day is active and pays automatically at settlement when achieved (2026-10-24).</summary>
 [Serializable]
 public sealed class MissionDefinition
 {
@@ -39,17 +40,18 @@ public sealed class MissionDefinition
     public int points = 1;
     public int pointsPerGrade;
 
+    // No "no late / no cancellation" mission: too hard for a daily task (user decision, 2026-10-24).
+    // Every mission pays 100 yen.
     public static List<MissionDefinition> Defaults() => new List<MissionDefinition>
     {
-        Make("three-stars", MissionKind.ThreeStars, "★3を{0}枚作る", 2, 1, "60", "10", 2),
-        Make("no-failures", MissionKind.NoFailures, "失敗なしで営業する", 0, 0, "50", "10", 2),
-        Make("no-late", MissionKind.NoLate, "遅れ・キャンセルなしで配達する", 0, 0, "60", "10", 2),
-        Make("batch-three", MissionKind.Batch, "1便で{0}件まとめて配達する", 3, 0, "70", "10", 3),
-        Make("backstreets", MissionKind.Backstreets, "裏道を{0}回通る", 2, 2, "40", "10", 2),
-        Make("route-savings", MissionKind.RouteSavings, "おすすめ経路より{0}秒速く配達する", 2, 1, "50", "10", 2),
-        Make("revenue", MissionKind.Revenue, "売上{0}円を達成する", 500, 250, "50", "10", 2),
-        Make("no-waste", MissionKind.NoWaste, "廃棄なしで営業する", 0, 0, "30", "10", 1),
-        Make("staff-production", MissionKind.StaffProduction, "内勤に{0}枚作ってもらう", 3, 2, "40", "10", 2)
+        Make("three-stars", MissionKind.ThreeStars, "★3を{0}枚作る", 2, 1, "100", "0", 2),
+        Make("no-failures", MissionKind.NoFailures, "失敗なしで営業する", 0, 0, "100", "0", 2),
+        Make("batch-three", MissionKind.Batch, "1便で{0}件まとめて配達する", 3, 0, "100", "0", 3),
+        Make("backstreets", MissionKind.Backstreets, "裏道を{0}回通る", 2, 2, "100", "0", 2),
+        Make("route-savings", MissionKind.RouteSavings, "おすすめ経路より{0}秒速く配達する", 2, 1, "100", "0", 2),
+        Make("revenue", MissionKind.Revenue, "売上{0}円を達成する", 1500, 750, "100", "0", 2),
+        Make("no-waste", MissionKind.NoWaste, "廃棄なしで営業する", 0, 0, "100", "0", 1),
+        Make("staff-production", MissionKind.StaffProduction, "内勤に{0}枚作ってもらう", 3, 2, "100", "0", 2)
     };
 
     static MissionDefinition Make(string id, MissionKind kind, string title, int target, int increment,
@@ -94,6 +96,7 @@ public static class RewardMissions
         return fresh.Take(3).Select(d => new MissionState
         {
             id = d.id,
+            selected = true,
             target = Scale(d.baseTarget, d.targetPerGrade, level),
             cashReward = Math.Max(0m, CampaignSaveManager.Decimal(d.cashReward)
                 + CampaignSaveManager.Decimal(d.cashRewardPerGrade) * level).ToString(CultureInfo.InvariantCulture),

@@ -12,7 +12,7 @@ public sealed class HubView : MonoBehaviour
 {
     [Header("Frame")]
     [SerializeField] private RectTransform content,dialog;
-    [SerializeField] private TextMeshProUGUI dayText,phaseText,cashText,reputationText,hintText,noteText,messageText;
+    [SerializeField] private TextMeshProUGUI dayText,phaseText,cashText,reputationText,noteText,messageText;
     [SerializeField] private TextMeshProUGUI forecastWages,forecastFixed,forecastMaintenance,forecastTraining,promiseText;
     [SerializeField] private RectTransform cashDelta;
     [SerializeField] private UiBar reputationBar;
@@ -36,7 +36,6 @@ public sealed class HubView : MonoBehaviour
     private GameMenu menu;
     private CourierProgression progression;
     private ScreenRouter router;
-    private MapManager map;
     private ManagementPanelView management;
     private string signature="";private float messageUntil;private string lastMessage="";
     private readonly List<(int day,decimal revenue,decimal profit,decimal cash)> records=new();
@@ -57,7 +56,6 @@ public sealed class HubView : MonoBehaviour
         menu=Find<GameMenu>();
         progression=Find<CourierProgression>();
         router=Find<ScreenRouter>();
-        map=Find<MapManager>();
     }
     private static TComp Find<TComp>() where TComp:UnityEngine.Object=>FindFirstObjectByType<TComp>();
     private void Start()
@@ -96,7 +94,6 @@ public sealed class HubView : MonoBehaviour
         string message=FirstNonEmpty(recruitment.LastMessage,training.LastMessage,facilities.LastMessage);
         if(message!=lastMessage){lastMessage=message;messageUntil=Time.unscaledTime+4;}
         messageText.text=Time.unscaledTime<messageUntil?UiStrings.Japanese(message):"";
-        hintText.text=map.TodayCityInfo+"  ／  "+Hint();
         string next=Signature();
         if(next!=signature){signature=next;Rebuild();}
     }
@@ -149,15 +146,6 @@ public sealed class HubView : MonoBehaviour
         parts.Add(records.Count.ToString());
         return string.Join("|",parts);
     }
-    private string Hint()
-    {
-        if(crew.Count==0)return "内勤がいないと、ピザはすべてあなたが作ります。求人で内勤を探せます。";
-        var weakest=roster.People.OrderBy(p=>p.LocalKnowledge).FirstOrDefault();
-        if(weakest!=null && weakest.LocalKnowledge<.4f)return $"土地勘は、裏道を通って配達すると育ちます。{weakest.Name} は土地勘が低いので、訓練で伸ばすのも手です。";
-        if(facilities.Workbenches<=2 && crew.Count>=2)return "内勤が2人なら、作業台を増やすと同時に作れる枚数が増えます。";
-        return $"まとめて配達すると、1回の往復で最大{DeliveryPerson.MaximumCapacity}軒に届けられます。地図で順番を決めましょう。";
-    }
-
     // ---- cards ----
     /// <summary>Rebuilds the cards now (normally they follow the data on the next frame).</summary>
     public void RefreshNow(){signature=Signature();Rebuild();}

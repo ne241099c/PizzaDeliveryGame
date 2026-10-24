@@ -22,11 +22,12 @@ public sealed class GameMenu : MonoBehaviour
     private void BuildModals()
     {
         var shop=FindFirstObjectByType<ShopUiRoot>(FindObjectsInactive.Include);var root=shop!=null?shop.transform:null;
-        var menuModal=ShopModals.Build(menu,root,560,500,"メニュー");
+        var menuModal=ShopModals.Build(menu,root,560,594,"メニュー");
         menuNote=ShopModals.Body(menuModal,92,64,"",18);menuNote.color=T.inkSub;
         ShopModals.Button(menuModal,"ModalResume","再開する",StickerKind.Primary,60,170,440,84,Resume);
         ShopModals.Button(menuModal,"ModalHelp","遊び方",StickerKind.Secondary,60,276,440,72,ShowHelp);
-        ShopModals.Button(menuModal,"ModalTitle","タイトルへ",StickerKind.Secondary,60,370,440,72,RequestTitle);
+        ShopModals.Button(menuModal,"ModalMissions",RewardStrings.MenuMissions,StickerKind.Secondary,60,370,440,72,ShowMissions);
+        ShopModals.Button(menuModal,"ModalTitle","タイトルへ",StickerKind.Secondary,60,464,440,72,RequestTitle);
         helpModal=ShopModals.Build(help,root,1200,640,"遊び方");
         ShopModals.Body(helpModal,104,400,"",24);
         helpPageText=UiKit.Label(helpModal.Card,"Page","",900,34,260,44,20,T.inkSub,FontRole.Black,TextAlignmentOptions.MidlineRight);
@@ -62,6 +63,12 @@ public sealed class GameMenu : MonoBehaviour
         if(menuNote!=null)menuNote.text=InBusiness?"営業は止まっています。セーブは毎日の開店準備で自動。途中でやめると、今日の開店準備から再開します。":"開店準備の内容は自動でセーブされています。";
     }
     public void Resume(){HidePanels();ResumeClock();}
+    /// <summary>Today's missions, the shop grade and the loan, from the menu (the clock stays paused until closed).</summary>
+    public void ShowMissions()
+    {
+        var view=FindFirstObjectByType<RewardsView>();if(view==null)return;
+        UIVisibility.Set(menu.gameObject,false);view.Show(ResumeClock);
+    }
     public void ShowHelp(){if(InBusiness)PauseClock();UIVisibility.Set(help.gameObject,true);helpPage=0;RefreshHelp();}
     private void TurnHelp(int step){helpPage=(helpPage+HelpPages.Pages.Length+step)%HelpPages.Pages.Length;RefreshHelp();}
     private void RefreshHelp()

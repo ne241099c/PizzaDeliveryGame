@@ -88,14 +88,6 @@ public sealed partial class RewardProgression
     }
     public IReadOnlyList<MissionState> TodayMissions=>State.missions;
     public string MissionLabel(MissionState m){var d=RewardMissions.Lookup(missionDefinitions,m.id);return d!=null?RewardMissions.Title(d,m):m.id;}
-    public void ToggleMission(string id)
-    {
-        if(Clock.Phase!=DayPhase.BeforeOpening)return;
-        var m=State.missions.FirstOrDefault(x=>x.id==id);
-        if(m==null)return;
-        m.selected=!m.selected;
-        SaveCheckpoint();
-    }
     private void AwardMissions()
     {
         decimal amount=0;
@@ -103,7 +95,8 @@ public sealed partial class RewardProgression
         {
             var d=RewardMissions.Lookup(missionDefinitions,m.id);
             m.completed=d!=null && RewardMissions.Evaluate(d,m,State.last);
-            if(m.selected && m.completed && !m.rewarded)
+            // Every mission of the day counts; there is nothing to choose or to claim.
+            if(m.completed && !m.rewarded)
             {
                 m.rewarded=true;
                 amount+=CampaignSaveManager.Decimal(m.cashReward);

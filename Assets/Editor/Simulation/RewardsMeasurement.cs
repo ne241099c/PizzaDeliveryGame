@@ -62,7 +62,7 @@ public static class RewardsMeasurement
     static int policyIndex;
     static string settingsJson;
     static Dictionary<string, byte[]> protectedFiles;
-    const string OutputDirectory = "Docs/Results/Rewards_R7";
+    public static string OutputDirectory = "Docs/Results/Rewards_R7";
 
     static T Find<T>() where T : UnityEngine.Object
     {
@@ -128,8 +128,7 @@ public static class RewardsMeasurement
             if (!Application.isPlaying) throw new InvalidOperationException("Play stopped during R-7 measurement.");
             for (int step = 0; step < steps && !Done; step++)
             {
-                if (clock.Phase == DayPhase.BeforeOpening)
-                    foreach (var mission in rewards.TodayMissions.Where(m => !m.selected).ToArray()) rewards.ToggleMission(mission.id);
+                // Every mission is active automatically (2026-10-24): nothing to select before opening.
                 session.Step();
                 Status = "Running " + Policies[policyIndex].name + " / " + session.Progress;
                 if (!session.Finished) continue;

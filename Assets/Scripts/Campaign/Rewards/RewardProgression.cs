@@ -85,8 +85,8 @@ public sealed partial class RewardProgression : MonoBehaviour
     }
     public void RecordResult(){if(HasPendingResult)TrackProfile(true);SaveCheckpoint();}
     public void SaveCheckpoint()=>FindFirstObjectByType<CampaignSaveManager>().SavePreparation();
-    public string HudSummary=>$"{GradeName} / ローン {UiKit.Yen(Loan)} / 目標 {State.missions.Count(m=>m.selected)}件"+(State.mode==GameMode.Normal?$" / {Campaign.DayNumber}/{State.normalDays}日":" / "+GoalLabel);
-    public string SettlementSummary=>State.settlementText+$"ローン {UiKit.Yen(Loan)} / 純資産 {UiKit.Yen(NetAssets)}\n{promotionNotice}\n"+string.Join("\n",State.missions.Where(m=>m.selected).Select(m=>$"{(m.completed?"達成":"未達成")} {MissionLabel(m)}"))+(Economy.Cash<Economy.FixedCost(Campaign.DayNumber+1)+Economy.TeamWages?"\n警告：あしたの固定費・日給に所持金が足りません。":"");
+    public string HudSummary=>$"{GradeName} / ローン {UiKit.Yen(Loan)} / ミッション {State.missions.Count(m=>m.rewarded)}/{State.missions.Count}件達成"+(State.mode==GameMode.Normal?$" / {Campaign.DayNumber}/{State.normalDays}日":" / "+GoalLabel);
+    public string SettlementSummary=>State.settlementText+$"ローン {UiKit.Yen(Loan)} / 純資産 {UiKit.Yen(NetAssets)}\n{promotionNotice}\n"+string.Join("\n",State.missions.Select(m=>$"{(m.completed?"達成":"未達成")} {MissionLabel(m)}"))+(Economy.Cash<Economy.FixedCost(Campaign.DayNumber+1)+Economy.TeamWages?"\n警告：あしたの固定費・日給に所持金が足りません。":"");
     public static string Money(decimal n)=>n.ToString(CultureInfo.InvariantCulture);
     public static bool Valid(RewardSaveData d)
     {

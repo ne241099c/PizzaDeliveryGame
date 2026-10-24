@@ -351,8 +351,7 @@ public static class ScreenPrefabs
         tabs[0].Kind=StickerKind.Primary;
         var note=UiKit.Label(root,"TeamNote","",32,640,236,120,17,T.inkSub,FontRole.Bold,TextAlignmentOptions.TopLeft,true);
         var content=UiKit.Box(root,"Content",300,152,1600,624);
-        var hint=UiKit.Box(root,"Hint",300,792,1588,48);UiKit.Badge(hint,"HintBadge","ヒント",0,8,T.cheese,T.line,34,18,88);
-        var hintText=UiKit.Label(hint,"HintText","",104,0,1480,48,20,T.line,FontRole.Black);
+        // No hint row on the preparation screen (2026-10-24).
         var bottom=UiKit.Card(root,"BottomBar",300,872,1588,168,T.paper);
         UiKit.Label(bottom,"ForecastTitle","今日の見通し",30,22,300,30,18,T.inkSub,FontRole.Black);
         string[] heads={"日給の合計","固定費","維持費","訓練費"};var values=new TextMeshProUGUI[4];
@@ -393,7 +392,6 @@ public static class ScreenPrefabs
         Set(so,"phaseText",phase);
         Set(so,"cashText",cash);
         Set(so,"reputationText",reputation);
-        Set(so,"hintText",hintText);
         Set(so,"noteText",note);
         Set(so,"forecastWages",values[0]);
         Set(so,"forecastFixed",values[1]);

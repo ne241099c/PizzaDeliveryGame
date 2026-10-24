@@ -55,6 +55,8 @@ public sealed class CampaignManager : MonoBehaviour
         Rewards.SettleDay();
         ConsecutiveNegativeDays=economy.Cash<0 ? ConsecutiveNegativeDays+1 : 0;
         IsBankrupt=IsBankrupt || economy.Cash<0;
+        // A bankrupt game ends here: SavePreparation removes its save and the equipment returns to the start.
+        if(IsBankrupt)facilities?.NewGame();
         saveGame?.SavePreparation();
     }
     public string FinancialSummary => $"Day {DayNumber} / {(IsBankrupt ? "BANKRUPT - GAME OVER" : "SETTLEMENT")}\n"

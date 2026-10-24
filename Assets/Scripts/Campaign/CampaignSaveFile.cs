@@ -42,6 +42,8 @@ public static class CampaignSaveFile
         catch(Exception e)when(e is IOException || e is UnauthorizedAccessException || e is ArgumentException || e is FormatException || e is OverflowException)
         {data=null;reason=e.Message;return false;}
     }
+    /// <summary>A game that ended in bankruptcy (settled with negative cash). Older versions saved it; it cannot continue.</summary>
+    public static bool IsFinished(CampaignSaveData data)=>data!=null && data.rewards!=null && data.rewards.ended && Decimal(data.cash)<0;
     /// <summary>"3日目 ・ ¥1,240 ・ 評判 72" for the continue button.</summary>
     public static string Summary(CampaignSaveData data)=>$"{data.day}日目 ・ {UiKit.Yen(Decimal(data.cash))} ・ 評判 {data.reputation:F0}";
     public static string Problem(string reason)=>"セーブを読めませんでした（"+reason+"）。元のファイルはそのままです。「最初から」で新しく始めます。";

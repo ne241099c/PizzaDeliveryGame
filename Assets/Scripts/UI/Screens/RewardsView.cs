@@ -19,7 +19,8 @@ public sealed class RewardsView : MonoBehaviour
     private TextMeshProUGUI grade,summary,loan,repayment,resultText;
     private StickerButton launcher,repayButton,repayAll,continueButton;
     private Slider repaySlider;
-    private readonly List<StickerButton> missionButtons=new();
+    private readonly List<TextMeshProUGUI> missionRows=new();
+    private Action onClose;
     private readonly List<StickerButton> repaymentButtons=new();
     private decimal selectedRepayment,availableRepayment;
     private float nextRefresh;
@@ -40,7 +41,8 @@ public sealed class RewardsView : MonoBehaviour
         var canvas=router.Root(ScreenId.Hub).GetComponentInParent<Canvas>();
         if(canvas==null)return;
         overlay=UiKit.Stretch(canvas.transform,"RewardsOverlay");
-        launcher=UiKit.Button(overlay,"GoalsButton",RewardStrings.Goals,StickerKind.Secondary,32,98,560,24,T.captionSize,Show);
+        // Only after settlement (to repay); otherwise missions open from the ≡ menu.
+        launcher=UiKit.Button(overlay,"GoalsButton",RewardStrings.SettlementLauncher,StickerKind.Secondary,1490,128,390,52,T.captionSize,()=>Show());
         panel=NewPanel("GoalsModal");
         modal=ShopModals.Build(panel,overlay,1440,880,RewardStrings.Goals);
         UiKit.Label(modal.Card,"ProvisionalNotice",RewardStrings.Provisional,760,36,640,40,T.captionSize,T.inkSub,FontRole.Bold,TextAlignmentOptions.MidlineRight);
@@ -135,27 +137,30 @@ public sealed class RewardsView : MonoBehaviour
         }
         if(Time.unscaledTime<nextRefresh)return;
         nextRefresh=Time.unscaledTime+.5f;
-        launcher.Text=router.Current==ScreenId.Business
-            ?RewardStrings.Hud(rewards.Loan,rewards.TodayMissions.Count(m=>m.selected))+(rewards.State.mode==GameMode.Endless?" / "+rewards.GoalLabel:""):RewardStrings.Goals+(rewards.HasNewAchievements?"・称号獲得！":"");
+        launcher.Text=RewardStrings.SettlementLauncher+(rewards.HasNewAchievements?"・トロフィー！":"");
         if(IsOpen)Refresh();
     }
     private void ScreenChanged(ScreenId screen)
     {
-        UiKit.Show(launcher,screen!=ScreenId.GameOver);
-        UiKit.Place((RectTransform)launcher.transform,screen==ScreenId.Business?32:1490,screen==ScreenId.Business?98:screen==ScreenId.Hub?112:128,screen==ScreenId.Business?560:390,screen==ScreenId.Business?24:screen==ScreenId.Hub?34:52);
+        UiKit.Show(launcher,screen==ScreenId.Settlement);
         Close();
         UiKit.Show(result,false);
         UiKit.Show(profile,false);
     }
-    public void Show()
+    public void Show(Action closed=null)
     {
         if(panel==null)return;
+        onClose=closed;
         modal.Title.text=RewardStrings.Goals;
         Refresh();
         panel.transform.SetAsLastSibling();
         UiKit.Show(panel,true);
     }
-    public void Close()=>UiKit.Show(panel,false);
+    public void Close()
+    {
+        bool wasOpen=IsOpen;UiKit.Show(panel,false);
+        var callback=onClose;onClose=null;if(wasOpen)callback?.Invoke();
+    }
     private void Refresh()
     {
         grade.text=RewardStrings.Grade+"："+rewards.GradeName;
@@ -164,7 +169,7 @@ public sealed class RewardsView : MonoBehaviour
         sectionOffset=Mathf.Max(0,summary.GetPreferredValues(summary.text,1296,0).y-160);
         summary.rectTransform.sizeDelta=new Vector2(1296,160+sectionOffset);
         foreach(var pair in bodyPositions)if(pair.Key!=null && pair.Value.y<=-240)pair.Key.anchoredPosition=pair.Value+new Vector2(0,-sectionOffset);
-        for(int i=0;i<missionButtons.Count;i++)((RectTransform)missionButtons[i].transform).anchoredPosition=new Vector2(0,-370-i*88-sectionOffset);
+        for(int i=0;i<missionRows.Count;i++)missionRows[i].rectTransform.anchoredPosition=new Vector2(0,-370-i*88-sectionOffset);
         body.sizeDelta=new Vector2(body.sizeDelta.x,1500+sectionOffset);
         loan.text=$"ローン {UiKit.Yen(rewards.Loan)}　純資産 {UiKit.Yen(rewards.NetAssets)}";
         var economy=FindFirstObjectByType<BusinessEconomy>();
@@ -178,26 +183,25 @@ public sealed class RewardsView : MonoBehaviour
         repayButton.Interactable=repayAll.Interactable=rewards.CanRepay && available>0;
         repaymentButtons[0].Interactable=rewards.CanRepay && available>=100;
         repaymentButtons[1].Interactable=rewards.CanRepay && available>=500;
-        string signature=string.Join("|",rewards.TodayMissions.Select(m=>m.id+":"+m.selected+":"+m.completed+":"+m.rewarded));
+        string signature=string.Join("|",rewards.TodayMissions.Select(m=>m.id+":"+m.completed+":"+m.rewarded));
         if(signature!=missionSignature){missionSignature=signature;BuildMissions();}
-        foreach(var button in missionButtons)button.Interactable=router.Current==ScreenId.Hub;
     }
     private void BuildMissions()
     {
-        foreach(var button in missionButtons)
+        foreach(var row in missionRows)
         {
-            button.transform.SetParent(null,false);
-            Destroy(button.gameObject);
+            row.transform.SetParent(null,false);
+            Destroy(row.gameObject);
         }
-        missionButtons.Clear();
+        missionRows.Clear();
         int i=0;
-        foreach(var mission in rewards.TodayMissions)
+        // Every mission is active; achieved ones are paid automatically at settlement.
+        foreach(var item in rewards.TodayMissions)
         {
-            var item=mission;
-            string mark=item.rewarded?"達成・受取済":item.completed?"達成":item.selected?"選択中":"選ぶ";
-            string text=$"{mark}：{rewards.MissionLabel(item)}　報酬 {UiKit.Yen(CampaignSaveManager.Decimal(item.cashReward))} / {item.points}pt";
-            missionButtons.Add(UiKit.Button(body,"Mission_"+item.id,text,item.selected?StickerKind.Selected:StickerKind.Secondary,
-                0,370+i*88+sectionOffset,1296,72,T.bodySize,()=>{rewards.ToggleMission(item.id);Refresh();}));
+            string mark=item.rewarded?"★ 達成・受け取り済み":item.completed?"★ 達成":"☆ 挑戦中";
+            string text=$"{mark}　{rewards.MissionLabel(item)}　報酬 {UiKit.Yen(CampaignSaveManager.Decimal(item.cashReward))}";
+            var row=UiKit.Label(body,"Mission_"+item.id,text,0,370+i*88+sectionOffset,1296,72,T.bodySize,item.rewarded?T.basil:T.line,FontRole.Black);
+            missionRows.Add(row);
             i++;
         }
     }

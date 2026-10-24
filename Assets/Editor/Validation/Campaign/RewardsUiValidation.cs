@@ -27,7 +27,7 @@ public static class RewardsUiValidation
         var slider=all.First(t=>t.name=="RepaymentSlider").GetComponent<Slider>();
         Check(!slider.wholeNumbers && slider.minValue==0,"repayment supports decimal values and zero");
         var rewards=RewardProgression.Get(UnityEngine.Object.FindFirstObjectByType<CampaignManager>());
-        Check(all.Count(t=>t.name.StartsWith("Mission_"))==rewards.TodayMissions.Count,"all offered mission buttons present");
+        Check(all.Count(t=>t.name.StartsWith("Mission_"))==rewards.TodayMissions.Count,"every mission of the day is listed");
         Check(all.Any(t=>t.name=="Repay100") && all.Any(t=>t.name=="Repay500") && all.Any(t=>t.name=="RepayAll"),"repayment presets present");
         Check(all.Any(t=>t.name=="ContinueEndless") && all.Any(t=>t.name=="ResultTitle"),"result offers continue or title");
         view.Close();

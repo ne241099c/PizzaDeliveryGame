@@ -116,7 +116,12 @@ public sealed class CampaignSaveManager : MonoBehaviour
         var mode=GameScenes.Consume();
         if(mode==LaunchMode.NewGame){StartNewGame();return;}
         if(!File.Exists(SavePath)){StartNewGame();return;}
-        if(TryRead(out _,out var reason)){Continue();return;}
+        if(TryRead(out var data,out var reason))
+        {
+            // Saves written before bankrupt games were deleted: nothing to continue.
+            if(CampaignSaveFile.IsFinished(data)){DeleteSave();StartNewGame();return;}
+            Continue();return;
+        }
         RejectLoad(reason);
         GameScenes.LoadTitle(LastMessage);
     }
@@ -204,6 +209,8 @@ public sealed class CampaignSaveManager : MonoBehaviour
     public void SavePreparation()
     {
         if(!Saving || !ready || restoring || (clock.Phase!=DayPhase.BeforeOpening && clock.Phase!=DayPhase.Ended))return;
+        // A bankrupt game is over: drop its save so 続きから does not reopen the game-over screen (records stay).
+        if(campaign.IsBankrupt){DeleteSave();return;}
         try
         {
             string path=SavePath,temp=path+".tmp";Directory.CreateDirectory(Path.GetDirectoryName(path));

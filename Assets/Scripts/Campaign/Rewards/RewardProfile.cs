@@ -13,14 +13,14 @@ public sealed class ProfileData
     public int version=1;
     public List<string> achievementIds=new();
     public List<string> pizzas=new(),threeStarPizzas=new(),districts=new(),shortcuts=new();
-    public int bestDays,bestGrade,achievementPoints,noFailureDays,backstreetUses;
+    public int bestDays,bestGrade,achievementPoints,noFailureDays,backstreetUses,missionsCompleted;
     public float bestReputation;
     public string bestCash="0",bestNetAssets="0",bestScore="0";
     public List<string> rankHistory=new(),observedDays=new();
     [NonSerialized] public bool WriteBlocked;
 }
 
-public enum AchievementMetric { NoLateDay, MaxBatch, Backstreets, PaidLoan, NoFailureDays, CustomGoal }
+public enum AchievementMetric { NoLateDay, MaxBatch, Backstreets, PaidLoan, NoFailureDays, CustomGoal, MissionsCompleted, AllMissionsDay }
 public enum AchievementComparison { AtLeast, AtMost, Equal }
 [Serializable]
 public sealed class AchievementDefinition
@@ -36,7 +36,7 @@ public sealed class AchievementDefinition
 public sealed class ProfileObservation
 {
     public string runId,rank;
-    public int day,grade,delivered,late,maxBatch,backstreets,failedPizzas;
+    public int day,grade,delivered,late,maxBatch,backstreets,failedPizzas,missionsCompleted,missionCount;
     public float reputation;
     public decimal cash,loan,score;
     public bool loanPaid,customGoalMet;
@@ -53,11 +53,16 @@ public static class RewardProfile
     /// <summary>Examples are editable data. Gameplay may supply its own serialized definitions.</summary>
     public static AchievementDefinition[] DefaultDefinitions()=>new[]
     {
+        // Trophies for what the player achieved (missions and milestones), not for things found on the map.
+        Definition("firstMission","はじめてのミッション達成",AchievementMetric.MissionsCompleted,1),
+        Definition("missions10","ミッション10回達成",AchievementMetric.MissionsCompleted,10),
+        Definition("missions30","ミッション30回達成",AchievementMetric.MissionsCompleted,30),
+        Definition("missions60","ミッション60回達成",AchievementMetric.MissionsCompleted,60),
+        Definition("perfectDay","ミッション全達成の日",AchievementMetric.AllMissionsDay,1),
         Definition("noLateDay","遅れゼロの日",AchievementMetric.NoLateDay,1),
         Definition("batch3","まとめ名人",AchievementMetric.MaxBatch,3),
-        Definition("backstreets","裏道の達人",AchievementMetric.Backstreets,10),
-        Definition("paidLoan","完済",AchievementMetric.PaidLoan,1),
         Definition("noBurn10days","焦げなし10日",AchievementMetric.NoFailureDays,10),
+        Definition("paidLoan","ローン完済",AchievementMetric.PaidLoan,1),
         Definition("customGoal","自分の目標を達成",AchievementMetric.CustomGoal,1)
     };
     private static AchievementDefinition Definition(string id,string title,AchievementMetric metric,float threshold)
@@ -130,7 +135,7 @@ public static class RewardProfile
     {
         reason="";
         if(data==null || data.version!=FormatVersion){reason="未対応の記録バージョン";return false;}
-        if(data.bestDays<0 || data.bestGrade<0 || data.achievementPoints<0 || data.noFailureDays<0 || data.backstreetUses<0 ||
+        if(data.bestDays<0 || data.bestGrade<0 || data.achievementPoints<0 || data.noFailureDays<0 || data.backstreetUses<0 || data.missionsCompleted<0 ||
             float.IsNaN(data.bestReputation) || float.IsInfinity(data.bestReputation) || data.bestReputation<0)
         {reason="記録の数値が不正";return false;}
         if(!Money(data.bestCash,out _) || !Money(data.bestNetAssets,out _) || !Money(data.bestScore,out _))
@@ -163,6 +168,7 @@ public static class RewardProfile
         profile.bestScore=first?observation.score.ToString(Invariant):Maximum(profile.bestScore,observation.score);
         profile.noFailureDays=observation.failedPizzas==0 && (observation.delivered>0 || observation.madePizzas!=null && observation.madePizzas.Length>0)?(followsPreviousDay?AddCounter(profile.noFailureDays,1):1):0;
         profile.backstreetUses=AddCounter(profile.backstreetUses,observation.backstreets);
+        profile.missionsCompleted=AddCounter(profile.missionsCompleted,Math.Max(0,observation.missionsCompleted));
         Add(profile.pizzas,observation.madePizzas);Add(profile.threeStarPizzas,observation.threeStarPizzas);
         Add(profile.districts,observation.districts);Add(profile.shortcuts,observation.shortcuts);
         if(!string.IsNullOrEmpty(observation.rank) && ValidRank(observation.rank))profile.rankHistory.Add(observation.rank);
@@ -186,6 +192,8 @@ public static class RewardProfile
                 AchievementMetric.PaidLoan=>observation.loanPaid?1:0,
                 AchievementMetric.NoFailureDays=>profile.noFailureDays,
                 AchievementMetric.CustomGoal=>observation.customGoalMet?1:0,
+                AchievementMetric.MissionsCompleted=>profile.missionsCompleted,
+                AchievementMetric.AllMissionsDay=>observation.missionCount>0 && observation.missionsCompleted>=observation.missionCount?1:0,
                 _=>float.NaN
             };
             bool passed=definition.comparison switch
@@ -212,10 +220,9 @@ public static class RewardProfile
         text.AppendLine($"最高記録：{data.bestDays}日目 / グレード {data.bestGrade} / 評判 {data.bestReputation:F0}");
         text.AppendLine($"所持金 ¥{data.bestCash} / 純資産 ¥{data.bestNetAssets} / スコア {data.bestScore}");
         text.AppendLine("ランク："+string.Join("・",data.rankHistory));
-        text.AppendLine("称号："+(data.achievementIds.Count==0?"まだありません":string.Join("、",data.achievementIds.Select(id=>names.TryGetValue(id,out var title)?title:id))));
-        text.AppendLine("ピザ図鑑："+string.Join("、",data.pizzas.Select(id=>id+(data.threeStarPizzas.Contains(id)?" ★3":""))));
-        text.AppendLine("街区図鑑："+string.Join("、",data.districts));
-        text.AppendLine("発見した近道："+string.Join("、",data.shortcuts));
+        text.AppendLine($"達成したミッション：{data.missionsCompleted}回");
+        text.AppendLine($"トロフィー（{data.achievementIds.Count(names.ContainsKey)}/{names.Count}）");
+        foreach(var pair in names)text.AppendLine((data.achievementIds.Contains(pair.Key)?"★ ":"☆ ")+pair.Value);
         text.Append("実績ポイント："+data.achievementPoints);
         return text.ToString();
     }

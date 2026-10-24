@@ -1918,8 +1918,8 @@ MonoBehaviour:
   sauceThreshold: 0.7
   staffSuccessBase: 0.3
   staffSuccessScale: 0.5
-  qualityTwoStarBonus: 15
-  qualityThreeStarBonus: 40
+  qualityTwoStarBonus: 45
+  qualityThreeStarBonus: 120
   threeStarReputation: 0.5
   rackCapacity: 6
   packingSlots: 2
@@ -4149,25 +4149,25 @@ MonoBehaviour:
   clock: {fileID: 1660095297}
   economy: {fileID: 1737208722}
   ovenPrices:
-  - 600
-  - 1000
+  - 1500
+  - 2500
   bikePrices:
-  - 500
-  - 900
+  - 1250
+  - 2250
   expansionPrices:
-  - 800
-  - 1400
+  - 2000
+  - 3500
   workbenchPrices:
-  - 400
-  - 700
+  - 1000
+  - 1750
   menuPrices:
-  - 400
-  - 700
-  menuMaintenance: 10
+  - 1000
+  - 1750
+  menuMaintenance: 25
   advertisingPrices:
-  - 100
-  - 200
-  - 350
+  - 250
+  - 500
+  - 875
   advertisingDemand:
   - 1
   - 1.1
@@ -4181,10 +4181,10 @@ MonoBehaviour:
   - 1
   - 0.9
   - 0.8
-  ovenMaintenance: 30
-  bikeMaintenance: 20
-  expansionMaintenance: 40
-  workbenchMaintenance: 15
+  ovenMaintenance: 75
+  bikeMaintenance: 50
+  expansionMaintenance: 100
+  workbenchMaintenance: 37.5
   initialOvens: 1
   initialBikeLevel: 1
   initialWorkbenches: 2
@@ -4208,21 +4208,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BusinessEconomy
   facilities: {fileID: 1737208721}
   stats: {fileID: 1737208731}
-  accidentRepairCost: 30
+  accidentRepairCost: 75
   clock: {fileID: 1660095297}
   flow: {fileID: 884947492}
   roster: {fileID: 884947491}
   crew: {fileID: 864088359}
-  kitchenWageBase: 24
-  kitchenWageAbilityFactor: 30
-  materialCostPerOrder: 20
-  fuelCostPerDistance: 0.4
-  wageBase: 30
-  wageAbilityFactor: 24
-  wageCapacityFactor: 18
-  dailyFixedCost: 90
-  fixedCostGrowthPerDay: 15
-  initialCash: 300
+  kitchenWageBase: 60
+  kitchenWageAbilityFactor: 75
+  materialCostPerOrder: 50
+  fuelCostPerDistance: 1
+  wageBase: 75
+  wageAbilityFactor: 60
+  wageCapacityFactor: 45
+  dailyFixedCost: 225
+  fixedCostGrowthPerDay: 37.5
+  initialCash: 750
 --- !u!114 &1737208723
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4258,10 +4258,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab33204bba25643b99cb482d632db675, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
-  scorePerDelivery: 100
-  pepperoniPoints: 120
-  seafoodPoints: 150
-  latePenaltyPerSecond: 5
+  scorePerDelivery: 300
+  pepperoniPoints: 360
+  seafoodPoints: 450
+  latePenaltyPerSecond: 15
   closingCancellationPenalty: 0
   tipRatio: 0.2
   lateAcceptanceSeconds: 20
@@ -4408,9 +4408,9 @@ MonoBehaviour:
   economy: {fileID: 1737208722}
   progression: {fileID: 1737208727}
   crew: {fileID: 864088359}
-  baseCost: 80
-  abilityCostFactor: 150
-  capacityCost: 300
+  baseCost: 200
+  abilityCostFactor: 375
+  capacityCost: 750
   abilityGain: 0.1
   capacityGain: 1
 --- !u!114 &1737208729
@@ -4480,13 +4480,13 @@ MonoBehaviour:
   threeStarWeight: 1000
   onTimeWeight: 1000
   rankThresholds:
+  - 37500
+  - 25000
   - 15000
-  - 10000
-  - 6000
-  - 2000
-  initialLoan: 4000
+  - 5000
+  initialLoan: 10000
   dailyInterest: 0.005
-  payoffBonus: 100
+  payoffBonus: 250
   recentDays: 5
   grades:
   - name: "\u5C4B\u53F0"
@@ -4500,7 +4500,7 @@ MonoBehaviour:
     equipmentLevel: 2
   - name: "\u8857\u306E\u4EBA\u6C17\u5E97"
     reputation: 40
-    revenue: 4000
+    revenue: 12000
     netAssets: 0
     onTimeRate: 0.8
     threeStarRate: 0
@@ -4509,7 +4509,7 @@ MonoBehaviour:
     equipmentLevel: 4
   - name: "\u884C\u5217\u306E\u3067\u304D\u308B\u5E97"
     reputation: 70
-    revenue: 12000
+    revenue: 36000
     netAssets: 0
     onTimeRate: 0
     threeStarRate: 0.3
@@ -4519,7 +4519,7 @@ MonoBehaviour:
   - name: "\u540D\u5E97"
     reputation: 90
     revenue: 0
-    netAssets: 4000
+    netAssets: 10000
     onTimeRate: 0
     threeStarRate: 0
     districts: 14
@@ -4532,8 +4532,8 @@ MonoBehaviour:
     title: "\u26053\u3092{0}\u679A\u4F5C\u308B"
     baseTarget: 2
     targetPerGrade: 1
-    cashReward: 60
-    cashRewardPerGrade: 10
+    cashReward: 100
+    cashRewardPerGrade: 0
     points: 2
     pointsPerGrade: 0
   - id: no-failures
@@ -4541,17 +4541,8 @@ MonoBehaviour:
     title: "\u5931\u6557\u306A\u3057\u3067\u55B6\u696D\u3059\u308B"
     baseTarget: 0
     targetPerGrade: 0
-    cashReward: 50
-    cashRewardPerGrade: 10
-    points: 2
-    pointsPerGrade: 0
-  - id: no-late
-    kind: 2
-    title: "\u9045\u308C\u30FB\u30AD\u30E3\u30F3\u30BB\u30EB\u306A\u3057\u3067\u914D\u9054\u3059\u308B"
-    baseTarget: 0
-    targetPerGrade: 0
-    cashReward: 60
-    cashRewardPerGrade: 10
+    cashReward: 100
+    cashRewardPerGrade: 0
     points: 2
     pointsPerGrade: 0
   - id: batch-three
@@ -4559,8 +4550,8 @@ MonoBehaviour:
     title: "1\u4FBF\u3067{0}\u4EF6\u307E\u3068\u3081\u3066\u914D\u9054\u3059\u308B"
     baseTarget: 3
     targetPerGrade: 0
-    cashReward: 70
-    cashRewardPerGrade: 10
+    cashReward: 100
+    cashRewardPerGrade: 0
     points: 3
     pointsPerGrade: 0
   - id: backstreets
@@ -4568,8 +4559,8 @@ MonoBehaviour:
     title: "\u88CF\u9053\u3092{0}\u56DE\u901A\u308B"
     baseTarget: 2
     targetPerGrade: 2
-    cashReward: 40
-    cashRewardPerGrade: 10
+    cashReward: 100
+    cashRewardPerGrade: 0
     points: 2
     pointsPerGrade: 0
   - id: route-savings
@@ -4577,17 +4568,17 @@ MonoBehaviour:
     title: "\u304A\u3059\u3059\u3081\u7D4C\u8DEF\u3088\u308A{0}\u79D2\u901F\u304F\u914D\u9054\u3059\u308B"
     baseTarget: 2
     targetPerGrade: 1
-    cashReward: 50
-    cashRewardPerGrade: 10
+    cashReward: 100
+    cashRewardPerGrade: 0
     points: 2
     pointsPerGrade: 0
   - id: revenue
     kind: 6
     title: "\u58F2\u4E0A{0}\u5186\u3092\u9054\u6210\u3059\u308B"
-    baseTarget: 500
-    targetPerGrade: 250
-    cashReward: 50
-    cashRewardPerGrade: 10
+    baseTarget: 1500
+    targetPerGrade: 750
+    cashReward: 100
+    cashRewardPerGrade: 0
     points: 2
     pointsPerGrade: 0
   - id: no-waste
@@ -4595,8 +4586,8 @@ MonoBehaviour:
     title: "\u5EC3\u68C4\u306A\u3057\u3067\u55B6\u696D\u3059\u308B"
     baseTarget: 0
     targetPerGrade: 0
-    cashReward: 30
-    cashRewardPerGrade: 10
+    cashReward: 100
+    cashRewardPerGrade: 0
     points: 1
     pointsPerGrade: 0
   - id: staff-production
@@ -4604,15 +4595,45 @@ MonoBehaviour:
     title: "\u5185\u52E4\u306B{0}\u679A\u4F5C\u3063\u3066\u3082\u3089\u3046"
     baseTarget: 3
     targetPerGrade: 2
-    cashReward: 40
-    cashRewardPerGrade: 10
+    cashReward: 100
+    cashRewardPerGrade: 0
     points: 2
     pointsPerGrade: 0
-  goalNetAssets: 5000
+  goalNetAssets: 12500
   goalReputation: 90
   goalDays: 30
   goalNoLateDays: 3
   achievementDefinitions:
+  - id: firstMission
+    title: "\u306F\u3058\u3081\u3066\u306E\u30DF\u30C3\u30B7\u30E7\u30F3\u9054\u6210"
+    metric: 6
+    comparison: 0
+    threshold: 1
+    points: 0
+  - id: missions10
+    title: "\u30DF\u30C3\u30B7\u30E7\u30F310\u56DE\u9054\u6210"
+    metric: 6
+    comparison: 0
+    threshold: 10
+    points: 0
+  - id: missions30
+    title: "\u30DF\u30C3\u30B7\u30E7\u30F330\u56DE\u9054\u6210"
+    metric: 6
+    comparison: 0
+    threshold: 30
+    points: 0
+  - id: missions60
+    title: "\u30DF\u30C3\u30B7\u30E7\u30F360\u56DE\u9054\u6210"
+    metric: 6
+    comparison: 0
+    threshold: 60
+    points: 0
+  - id: perfectDay
+    title: "\u30DF\u30C3\u30B7\u30E7\u30F3\u5168\u9054\u6210\u306E\u65E5"
+    metric: 7
+    comparison: 0
+    threshold: 1
+    points: 0
   - id: noLateDay
     title: "\u9045\u308C\u30BC\u30ED\u306E\u65E5"
     metric: 0
@@ -4625,23 +4646,17 @@ MonoBehaviour:
     comparison: 0
     threshold: 3
     points: 0
-  - id: backstreets
-    title: "\u88CF\u9053\u306E\u9054\u4EBA"
-    metric: 2
-    comparison: 0
-    threshold: 10
-    points: 0
-  - id: paidLoan
-    title: "\u5B8C\u6E08"
-    metric: 3
-    comparison: 0
-    threshold: 1
-    points: 0
   - id: noBurn10days
     title: "\u7126\u3052\u306A\u305710\u65E5"
     metric: 4
     comparison: 0
     threshold: 10
+    points: 0
+  - id: paidLoan
+    title: "\u30ED\u30FC\u30F3\u5B8C\u6E08"
+    metric: 3
+    comparison: 0
+    threshold: 1
     points: 0
   - id: customGoal
     title: "\u81EA\u5206\u306E\u76EE\u6A19\u3092\u9054\u6210"

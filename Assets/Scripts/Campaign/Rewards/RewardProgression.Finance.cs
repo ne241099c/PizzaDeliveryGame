@@ -17,6 +17,7 @@ public sealed partial class RewardProgression
     };
     private string promotionNotice="";
     public decimal Loan=>CampaignSaveManager.Decimal(State.loan);
+    public decimal PayoffBonus=>BusinessEconomy.Money((decimal)payoffBonus);
     public decimal InterestFor(decimal amount)=>BusinessEconomy.Money(amount*(decimal)dailyInterest);
     private RewardGradeDefinition CurrentGrade=>grades[Mathf.Clamp(State.grade-1,0,grades.Length-1)];
     public string GradeName=>CurrentGrade.name;

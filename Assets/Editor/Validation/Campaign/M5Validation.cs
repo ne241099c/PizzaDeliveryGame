@@ -80,8 +80,11 @@ public static class M5Validation
         var ledger=economy.Ledger;
         check(ledger.Settled && ledger.FixedCosts==90 && ledger.Wages==economy.TeamWages && economy.KitchenWages>0,"settlement pays all courier and kitchen wages and fixed cost");
         check(ledger.Fuel==economy.FuelCost(ledger.Distance),"fuel uses actual distance");
-        check(economy.Cash==beforeSettlement-ledger.Fuel-ledger.Wages-ledger.FixedCosts-ledger.Repairs,"materials are not deducted twice");
-        check(economy.Cash==ledger.OpeningCash+ledger.Profit,"profit reconciles to cash");
+        // Loan interest and mission pay move cash at settlement outside the operating ledger (rewards, R-1).
+        var goals=RewardProgression.Get(campaign).State;
+        decimal outsideLedger=CampaignSaveManager.Decimal(goals.missionCash)-CampaignSaveManager.Decimal(goals.interest);
+        check(economy.Cash==beforeSettlement-ledger.Fuel-ledger.Wages-ledger.FixedCosts-ledger.Repairs+outsideLedger,"materials are not deducted twice");
+        check(economy.Cash==ledger.OpeningCash+ledger.Profit+outsideLedger,"profit reconciles to cash");
         decimal carriedCash=economy.Cash;economy.SettleDay();
         check(economy.Cash==carriedCash,"settlement is applied only once");
         float value=rep.Value;int total=campaign.TotalScore;int daily=stats.TotalScore;
@@ -147,7 +150,8 @@ public static class M5Validation
         check(!recruitment.Hire(recruitment.Applicants.FirstOrDefault()) && recruitment.LastMessage.Contains("preparation"),"hiring blocked during business");
         clock.Advance(clock.BusinessDuration+1000);
         check(economy.Ledger.Wages==hiredWages && hiredWages>roster.People.Sum(p=>economy.DailyWage(p)),"hired courier and kitchen staff wages included at settlement");
-        check(economy.Cash==economy.OpeningCash+economy.Ledger.Profit-economy.Ledger.PreparationCosts,"cash reconciles including preparation fees");
+        goals=RewardProgression.Get(campaign).State;outsideLedger=CampaignSaveManager.Decimal(goals.missionCash)-CampaignSaveManager.Decimal(goals.interest);
+        check(economy.Cash==economy.OpeningCash+economy.Ledger.Profit-economy.Ledger.PreparationCosts+outsideLedger,"cash reconciles including preparation fees");
         var oldApplicants=recruitment.Applicants.ToArray();campaign.NextDay();
         check(clock.Phase==DayPhase.BeforeOpening && !recruitment.Applicants.Intersect(oldApplicants).Any(),"unhired applicants expire next morning");
         check(roster.People.Contains(candidate.Person) && candidate.Person.CurrentStamina==1,"hired courier carried with full stamina");

@@ -25,7 +25,7 @@ public sealed partial class RewardProgression
     private ProfileObservation Observation(bool result=false)
     {
         var m=State.last??new RewardDayMetrics();
-        return new ProfileObservation{runId=State.runId,day=Campaign.DayNumber,grade=State.grade,reputation=FindFirstObjectByType<ReputationManager>().Value,cash=Economy.Cash,loan=Loan,score=Score,delivered=m.delivered,late=m.late+m.cancelled,maxBatch=m.maxBatch,backstreets=m.backstreets,failedPizzas=m.failedPizzas,loanPaid=State.loanCelebrated,customGoalMet=State.goalCompleted,rank=null,madePizzas=m.madePizzas,threeStarPizzas=m.threeStarPizzas,districts=m.visitedDistricts,shortcuts=m.shortcuts};
+        return new ProfileObservation{runId=State.runId,day=Campaign.DayNumber,grade=State.grade,reputation=FindFirstObjectByType<ReputationManager>().Value,cash=Economy.Cash,loan=Loan,score=Score,delivered=m.delivered,late=m.late+m.cancelled,maxBatch=m.maxBatch,backstreets=m.backstreets,failedPizzas=m.failedPizzas,loanPaid=State.loanCelebrated,customGoalMet=State.goalCompleted,missionsCompleted=State.missions.Count(x=>x.rewarded),missionCount=State.missions.Count,rank=null,madePizzas=m.madePizzas,threeStarPizzas=m.threeStarPizzas,districts=m.visitedDistricts,shortcuts=m.shortcuts};
     }
     private void TrackProfile(bool result=false)
     {
@@ -45,7 +45,7 @@ public sealed partial class RewardProgression
     }
     private void Notice(System.Collections.Generic.List<string> ids)
     {
-        if(ids.Count>0)achievementNotice="称号獲得："+string.Join("・",ids.Select(id=>achievementDefinitions.FirstOrDefault(d=>d.id==id)?.title??id));
+        if(ids.Count>0)achievementNotice="トロフィー獲得："+string.Join("・",ids.Select(id=>achievementDefinitions.FirstOrDefault(d=>d.id==id)?.title??id));
     }
     private void WriteProfile()
     {

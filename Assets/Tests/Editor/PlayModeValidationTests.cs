@@ -15,7 +15,9 @@ public sealed class PlayModeValidationTests
     /// <summary>Enters Play Mode in the Title scene, locks saving for the session, loads the scene under test (in the given
     /// mode), runs the validation and exits. The lock is in place before the Game scene starts, so its startup can never write
     /// the player's save. One flat coroutine: the Test Runner only handles EnterPlayMode yielded from the test itself.</summary>
-    private static IEnumerator Run(Func<string> validation,bool newGameFirst=false,string scene=GameScene,LaunchMode mode=LaunchMode.Direct)
+    /// <param name="legacyAmounts">Older validations check exact amounts from before the money change of 2026-10-24
+    /// (EconomyScale): they run with those base amounts. Reward validations use the real amounts.</param>
+    private static IEnumerator Run(Func<string> validation,bool newGameFirst=false,string scene=GameScene,LaunchMode mode=LaunchMode.Direct,bool legacyAmounts=true)
     {
         if(!Application.isPlaying)
         {
@@ -36,15 +38,20 @@ public sealed class PlayModeValidationTests
         }
         yield return null; // let Start() run once
         var save=UnityEngine.Object.FindFirstObjectByType<CampaignSaveManager>();if(save!=null)save.AutomaticSavingEnabled=false;
-        if(newGameFirst)
-        {
-            // As in run_suite.py, where earlier validations leave a started campaign (and its generated town) behind.
-            save.StartNewGame();
-            yield return null;yield return null;
-        }
+        var amounts=scene==GameScene && legacyAmounts?EconomyScale.Legacy():null;
         string result=null;
-        try{result=validation();}
-        finally{CleanUp();}
+        try
+        {
+            if(newGameFirst)
+            {
+                // As in run_suite.py, where earlier validations leave a started campaign (and its generated town) behind.
+                save.StartNewGame();
+                yield return null;yield return null;
+            }
+            try{result=validation();}
+            finally{CleanUp();}
+        }
+        finally{amounts?.Dispose();}
         yield return new ExitPlayMode();
         StringAssert.StartsWith("PASS",result);
     }
@@ -70,6 +77,9 @@ public sealed class PlayModeValidationTests
     [UnityTest] public IEnumerator KitchenRecovery()=>Run(KitchenRecoveryValidation.Run);
     [UnityTest] public IEnumerator KitchenQueue()=>Run(KitchenQueueValidation.Run);
     [UnityTest] public IEnumerator KitchenTraining()=>Run(KitchenTrainingValidation.Run);
+    [UnityTest] public IEnumerator GameOverSave()=>Run(GameOverSaveValidation.Run);
+    [UnityTest] public IEnumerator RewardCampaign()=>Run(RewardsCampaignValidation.Run,legacyAmounts:false);
+    [UnityTest] public IEnumerator RewardScreens()=>Run(RewardsUiValidation.RunGame,legacyAmounts:false);
     [UnityTest] public IEnumerator PizzaMenu()=>Run(PizzaMenuValidation.Run);
     [UnityTest] public IEnumerator CityGeneration()=>Run(CityGenerationValidation.RunBasic);
     [UnityTest] public IEnumerator CityNetwork()=>Run(CityGenerationValidation.RunNetwork);

@@ -22,11 +22,12 @@ public static class RewardProfileValidation
             Check(warning=="" && profile.bestDays==0 && !File.Exists(path),"new profile read has no write side effect");
             var definitions=RewardProfile.DefaultDefinitions();
             var observation=new ProfileObservation{runId="runA",day=1,grade=2,reputation=60,cash=100,loan=200,score=-10,
-                delivered=4,late=0,maxBatch=3,backstreets=10,failedPizzas=0,rank="B",
+                delivered=4,late=0,maxBatch=3,backstreets=10,failedPizzas=0,rank="B",missionsCompleted=3,missionCount=3,
                 madePizzas=new[]{"Margherita","Margherita","Pepperoni"},threeStarPizzas=new[]{"Margherita"},
                 districts=new[]{"district-a"},shortcuts=new[]{"shortcut-a"}};
             var earned=RewardProfile.Track(profile,observation,definitions);
-            Check(earned.Count==3 && earned.Contains("batch3") && earned.Contains("backstreets") && earned.Contains("noLateDay"),"data conditions award three achievements");
+            Check(earned.Count==4 && earned.Contains("batch3") && earned.Contains("noLateDay") && earned.Contains("firstMission") && earned.Contains("perfectDay") && profile.missionsCompleted==3,"achieved missions and milestones award trophies");
+            Check(!definitions.Any(d=>d.metric==AchievementMetric.Backstreets),"no trophy for merely finding backstreets");
             Check(profile.bestNetAssets=="-100" && profile.bestScore=="-10","negative first records retain actual values");
             Check(profile.pizzas.Count==2 && profile.threeStarPizzas.Count==1 && profile.districts.Count==1 && profile.shortcuts.Count==1,"encyclopedia unique discovery");
             Check(RewardProfile.Track(profile,observation,definitions).Count==0 && profile.noFailureDays==1 && profile.backstreetUses==10 && profile.rankHistory.Count==1,"same run/day is idempotent");
